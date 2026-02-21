@@ -1,0 +1,13 @@
+# ── File SQL (data sensitif, jangan di-push) ──────────────────────────────
+*.sql
+
+# ── File PHP debug di root ─────────────────────────────────────────────────
+db_analyze.php
+test_connection.php
+
+# ── macOS ──────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
