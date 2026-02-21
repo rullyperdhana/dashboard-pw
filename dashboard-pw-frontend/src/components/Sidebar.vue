@@ -169,6 +169,7 @@ const menuItems = ref([
   { header: 'Dashboard & Analitik' },
   { title: 'Dashboard PPPK-PW', icon: 'mdi-view-dashboard-outline', value: 'dashboard', to: '/' },
   { title: 'Dashboard PNS', icon: 'mdi-account-tie-outline', value: 'pns', to: '/pns' },
+  { title: 'Estimasi JKK/JKM/JKN', icon: 'mdi-shield-check-outline', value: 'pppk-settings', to: '/settings/pppk' },
 
   { divider: true },
   { header: 'Data Master' },
@@ -192,7 +193,6 @@ const menuItems = ref([
   { divider: true },
   { header: 'Pengaturan' },
   { title: 'Manajemen User', icon: 'mdi-account-group-outline', value: 'users', to: '/settings/users' },
-  { title: 'Pengaturan PPPK', icon: 'mdi-shield-check-outline', value: 'pppk-settings', to: '/settings/pppk' },
 ])
 </script>
 
