@@ -21,3 +21,4 @@ yarn-error.log
 *.bak
 debug-*.php
 restore_*.php
+*.xlsx
