@@ -39,29 +39,136 @@
     <template v-slot:append>
       <div class="pa-4">
         <v-card variant="tonal" class="bg-primary-lighten-5 rounded-lg pa-3" flat>
-          <div class="d-flex align-center mb-2">
+          <div class="d-flex align-center mb-3">
             <v-avatar size="32" color="primary" variant="flat" class="mr-2">
-              <span class="text-caption font-weight-bold">A</span>
+              <span class="text-caption font-weight-bold">{{ userInitials }}</span>
             </v-avatar>
-            <div>
-              <div class="text-caption font-weight-bold">Admin User</div>
-              <div class="text-caption text-medium-emphasis" style="font-size: 10px">BKAD Prov Kalsel</div>
+            <div style="overflow: hidden">
+              <div class="text-caption font-weight-bold text-truncate">{{ user.name }}</div>
+              <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 10px">{{ user.role?.toUpperCase() }}</div>
             </div>
           </div>
+          <v-divider class="mb-2 border-opacity-10"></v-divider>
+          <v-btn
+            block
+            prepend-icon="mdi-key-outline"
+            variant="text"
+            size="x-small"
+            class="justify-start mb-1 px-2"
+            @click="passwordDialog = true"
+          >
+            Ganti Password
+          </v-btn>
+          <v-btn
+            block
+            prepend-icon="mdi-logout"
+            color="error"
+            variant="text"
+            size="x-small"
+            class="justify-start px-2"
+            @click="handleLogout"
+          >
+            Logout
+          </v-btn>
         </v-card>
       </div>
     </template>
+
+    <!-- Change Password Dialog -->
+    <v-dialog v-model="passwordDialog" max-width="400px">
+      <v-card class="rounded-xl pa-2">
+        <v-card-title class="pa-4 font-weight-bold">Ganti Password</v-card-title>
+        <v-card-text>
+          <v-form ref="pwForm" v-model="pwValid">
+            <v-text-field
+              v-model="pwData.current_password"
+              label="Password Sekarang"
+              type="password"
+              variant="outlined"
+              density="compact"
+              :rules="[v => !!v || 'Wajib diisi']"
+            ></v-text-field>
+            <v-text-field
+              v-model="pwData.new_password"
+              label="Password Baru"
+              type="password"
+              variant="outlined"
+              density="compact"
+              :rules="[v => !!v || 'Wajib diisi', v => (v && v.length >= 6) || 'Minimal 6 karakter']"
+            ></v-text-field>
+            <v-text-field
+              v-model="pwData.new_password_confirmation"
+              label="Konfirmasi Password Baru"
+              type="password"
+              variant="outlined"
+              density="compact"
+              :rules="[v => !!v || 'Wajib diisi', v => v === pwData.new_password || 'Konfirmasi password tidak cocok']"
+            ></v-text-field>
+          </v-form>
+        </v-card-text>
+        <v-card-actions class="pa-4 pt-0">
+          <v-spacer></v-spacer>
+          <v-btn color="grey" variant="text" @click="passwordDialog = false">Batal</v-btn>
+          <v-btn color="primary" @click="changePassword" :loading="pwLoading" :disabled="!pwValid">Simpan</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-navigation-drawer>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import api from '../api'
+
+const router = useRouter()
+const user = ref(JSON.parse(localStorage.getItem('user') || '{}'))
+
+const userInitials = computed(() => {
+  if (!user.value.name) return 'U'
+  return user.value.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+})
+
+const passwordDialog = ref(false)
+const pwLoading = ref(false)
+const pwValid = ref(false)
+const pwData = ref({
+  current_password: '',
+  new_password: '',
+  new_password_confirmation: ''
+})
+
+const changePassword = async () => {
+  pwLoading.value = true
+  try {
+    await api.post('/change-password', pwData.value)
+    alert('Password berhasil diubah')
+    passwordDialog.value = false
+    pwData.value = { current_password: '', new_password: '', new_password_confirmation: '' }
+  } catch (error) {
+    console.error('Error changing password:', error)
+    alert(error.response?.data?.message || 'Gagal mengubah password. Pastikan password lama benar.')
+  } finally {
+    pwLoading.value = false
+  }
+}
+
+const handleLogout = async () => {
+  try {
+    await api.post('/logout')
+  } catch (error) {
+    console.error('Logout error:', error)
+  } finally {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    router.push('/login')
+  }
+}
 
 const menuItems = ref([
   { header: 'Dashboard & Analitik' },
   { title: 'Dashboard PPPK-PW', icon: 'mdi-view-dashboard-outline', value: 'dashboard', to: '/' },
   { title: 'Dashboard PNS', icon: 'mdi-account-tie-outline', value: 'pns', to: '/pns' },
-  { title: 'Estimasi JKK/JKM', icon: 'mdi-shield-check-outline', value: 'pppk-settings', to: '/settings/pppk' },
 
   { divider: true },
   { header: 'Data Master' },
@@ -81,6 +188,11 @@ const menuItems = ref([
   { header: 'TPG (Tunjangan Profesi Guru)' },
   { title: 'Upload TPG', icon: 'mdi-file-upload-outline', value: 'tpg-upload', to: '/tpg-upload' },
   { title: 'Dashboard TPG', icon: 'mdi-school-outline', value: 'tpg-dashboard', to: '/tpg-dashboard' },
+
+  { divider: true },
+  { header: 'Pengaturan' },
+  { title: 'Manajemen User', icon: 'mdi-account-group-outline', value: 'users', to: '/settings/users' },
+  { title: 'Pengaturan PPPK', icon: 'mdi-shield-check-outline', value: 'pppk-settings', to: '/settings/pppk' },
 ])
 </script>
 

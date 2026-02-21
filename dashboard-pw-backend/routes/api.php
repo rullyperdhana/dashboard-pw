@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\TpgController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\GajiPnsController;
 use App\Http\Controllers\Api\GajiPppkController;
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -102,4 +103,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}/pdf', [PaymentController::class, 'downloadPdf']);
         Route::post('/{id}/approve', [PaymentController::class, 'approve']);
     });
+
+    // User Management
+    Route::apiResource('users', UserController::class);
+    Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword']);
 });

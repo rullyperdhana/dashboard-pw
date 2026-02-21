@@ -93,6 +93,12 @@ const router = createRouter({
             component: () => import('../views/TpgDashboard.vue'),
             meta: { requiresAuth: true },
         },
+        {
+            path: '/settings/users',
+            name: 'UserManagement',
+            component: () => import('../views/Settings/UserManagement.vue'),
+            meta: { requiresAuth: true },
+        },
     ],
 })
 
