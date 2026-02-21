@@ -1,5 +1,8 @@
 <template>
-  <v-main class="bg-light">
+  <v-app>
+    <Navbar />
+    <Sidebar />
+    <v-main class="bg-light">
     <v-container fluid class="pa-8">
       <!-- Header -->
       <v-row class="mb-6 align-center">
@@ -151,10 +154,13 @@
       </v-dialog>
     </v-container>
   </v-main>
+</v-app>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import Sidebar from '../../components/Sidebar.vue'
+import Navbar from '../../components/Navbar.vue'
 import api from '../../api'
 
 const loading = ref(false)
