@@ -1116,11 +1116,9 @@ const uploadData = async () => {
   formData.append('jenis_gaji', jenisGaji.value)
   
   try {
-    const token = localStorage.getItem('token')
     const endpoint = uploadType.value === 'pns' ? '/pns/upload' : '/pppk/upload'
-    const response = await axios.post(`http://localhost:8000/api${endpoint}`, formData, {
+    const response = await api.post(endpoint, formData, {
       headers: { 
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'multipart/form-data'
       }
     })
