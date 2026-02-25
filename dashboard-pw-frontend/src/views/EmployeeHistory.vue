@@ -35,17 +35,28 @@
                       </template>
                     </v-autocomplete>
                   </v-col>
-                  <v-col cols="12" md="4" class="d-flex align-center">
+                  <v-col cols="12" md="4" class="d-flex align-center justify-end">
                     <v-btn
                       color="secondary"
                       prepend-icon="mdi-file-pdf-box"
                       :disabled="!selectedEmployee || !history.length"
                       @click="exportPdf"
-                      block
-                      height="56"
+                      class="mr-2"
+                      height="48"
+                      rounded="lg"
+                      variant="outlined"
+                    >
+                      PDF
+                    </v-btn>
+                    <v-btn
+                      color="primary"
+                      prepend-icon="mdi-account-cog"
+                      :disabled="!selectedEmployee"
+                      @click="openStatusDialog"
+                      height="48"
                       rounded="lg"
                     >
-                      Cetak Trace PDF
+                      Kelola Status & SK
                     </v-btn>
                   </v-col>
                 </v-row>
@@ -123,6 +134,83 @@
           </v-col>
         </v-row>
       </v-container>
+
+      <!-- Dialog Kelola Status & SK -->
+      <v-dialog v-model="statusDialog" max-width="600px" persistent>
+        <v-card class="rounded-xl pa-4">
+          <v-card-title class="text-h5 font-weight-bold d-flex align-center">
+            <v-icon start icon="mdi-account-cog" color="primary" class="mr-2"></v-icon>
+            Kelola Status & SK Pegawai
+          </v-card-title>
+          
+          <v-card-text class="pt-4">
+            <v-alert v-if="selectedEmployee" type="info" variant="tonal" class="mb-6 rounded-lg">
+              Pegawai: <strong>{{ selectedEmployee.nama }}</strong> ({{ selectedEmployee.nip }})
+              <br>Status Saat Ini: <strong>{{ selectedEmployee.status || 'Aktif' }}</strong>
+            </v-alert>
+
+            <v-form ref="statusForm">
+              <v-select
+                v-model="formData.status"
+                :items="statusOptions"
+                label="Pilih Status Baru"
+                variant="outlined"
+                class="mb-4"
+                density="comfortable"
+              ></v-select>
+
+              <div class="text-subtitle-1 mb-2 font-weight-bold">Upload Dokumen SK</div>
+              <v-file-input
+                v-model="formData.file"
+                label="Pilih File SK (PDF/JPG/PNG)"
+                prepend-icon="mdi-paperclip"
+                variant="outlined"
+                accept=".pdf,.jpg,.jpeg,.png"
+                class="mb-4"
+                density="comfortable"
+                :rules="[v => !!v || 'Dokumen SK wajib dipilih untuk perubahan status']"
+              ></v-file-input>
+
+              <v-textarea
+                v-model="formData.notes"
+                label="Catatan / Nomor SK"
+                variant="outlined"
+                rows="2"
+                class="mb-4"
+                density="comfortable"
+              ></v-textarea>
+            </v-form>
+
+            <div v-if="selectedEmployee?.documents?.length" class="mt-4">
+              <div class="text-subtitle-2 mb-2 grey--text">Dokumen Terkait:</div>
+              <v-list density="compact" class="bg-grey-lighten-4 rounded-lg">
+                <v-list-item
+                  v-for="doc in selectedEmployee.documents"
+                  :key="doc.id"
+                  :title="doc.file_name"
+                  :subtitle="doc.type + ' - ' + new Date(doc.created_at).toLocaleDateString()"
+                  prepend-icon="mdi-file-document-outline"
+                >
+                </v-list-item>
+              </v-list>
+            </div>
+          </v-card-text>
+
+          <v-card-actions class="pa-4">
+            <v-spacer></v-spacer>
+            <v-btn variant="text" @click="statusDialog = false" :disabled="savingStatus">Batal</v-btn>
+            <v-btn
+              color="primary"
+              variant="elevated"
+              @click="submitStatusUpdate"
+              :loading="savingStatus"
+              class="px-6 rounded-lg"
+            >
+              Simpan Perubahan
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </v-main>
   </v-app>
 </template>
@@ -138,6 +226,18 @@ const selectedEmployee = ref(null)
 const history = ref([])
 const searching = ref(false)
 const loadingHistory = ref(false)
+
+// Status & SK Management
+const statusDialog = ref(false)
+const savingStatus = ref(false)
+const statusOptions = ref(['Aktif', 'Pensiun', 'Keluar', 'Diberhentikan'])
+const formData = ref({
+  status: '',
+  file: null,
+  notes: '',
+  type: 'SK Status'
+})
+const statusForm = ref(null)
 
 const headers = [
   { title: 'Periode', key: 'period', align: 'start' },
@@ -205,6 +305,49 @@ const exportPdf = async () => {
   } catch (error) {
     console.error('Error exporting PDF:', error)
     alert('Gagal mengekspor PDF. Silakan coba lagi.')
+  }
+}
+
+const openStatusDialog = () => {
+  if (!selectedEmployee.value) return
+  formData.value.status = selectedEmployee.value.status || 'Aktif'
+  formData.value.file = null
+  formData.value.notes = ''
+  statusDialog.value = true
+}
+
+const submitStatusUpdate = async () => {
+  const { valid } = await statusForm.value.validate()
+  if (!valid) return
+
+  savingStatus.value = true
+  try {
+    const fData = new FormData()
+    fData.append('file', formData.value.file)
+    fData.append('type', formData.value.type)
+    fData.append('notes', formData.value.notes)
+    fData.append('new_status', formData.value.status)
+
+    const response = await api.post(`/employees/${selectedEmployee.value.id}/documents`, fData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+
+    if (response.data.success) {
+      // Update local state
+      selectedEmployee.value.status = response.data.employee_status
+      if (!selectedEmployee.value.documents) selectedEmployee.value.documents = []
+      selectedEmployee.value.documents.unshift(response.data.document)
+      
+      alert('Status dan Dokumen SK berhasil diperbarui.')
+      statusDialog.value = false
+    }
+  } catch (error) {
+    console.error('Error updating status:', error)
+    alert('Gagal memperbarui status. Pastikan file valid (maks 5MB).')
+  } finally {
+    savingStatus.value = false
   }
 }
 

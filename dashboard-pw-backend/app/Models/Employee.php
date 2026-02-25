@@ -75,6 +75,27 @@ class Employee extends Model
     ];
 
     /**
+     * Employment Status Constants
+     */
+    const STATUS_AKTIF = 'Aktif';
+    const STATUS_PENSIUN = 'Pensiun';
+    const STATUS_KELUAR = 'Keluar';
+    const STATUS_DIBERHENTIKAN = 'Diberhentikan';
+
+    /**
+     * Get all possible statuses
+     */
+    public static function getStatuses(): array
+    {
+        return [
+            self::STATUS_AKTIF,
+            self::STATUS_PENSIUN,
+            self::STATUS_KELUAR,
+            self::STATUS_DIBERHENTIKAN,
+        ];
+    }
+
+    /**
      * Relasi ke SKPD
      */
     public function skpd()
@@ -99,6 +120,14 @@ class Employee extends Model
     }
 
     /**
+     * Relasi ke EmployeeDocument
+     */
+    public function documents()
+    {
+        return $this->hasMany(EmployeeDocument::class, 'employee_id', 'id');
+    }
+
+    /**
      * Scope untuk filter berdasarkan SKPD
      */
     public function scopeBySkpd($query, $skpdId)
@@ -107,12 +136,19 @@ class Employee extends Model
     }
 
     /**
+     * Scope untuk filter berdasarkan Status
+     */
+    public function scopeByStatus($query, $status)
+    {
+        return $query->where('status', $status);
+    }
+
+    /**
      * Scope untuk pegawai aktif
      */
     public function scopeActive($query)
     {
-        // Assuming all employees in the table are active or based on gapok
-        return $query->whereNotNull('nip');
+        return $query->where('status', self::STATUS_AKTIF);
     }
 
     /**

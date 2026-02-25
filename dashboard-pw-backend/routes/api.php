@@ -82,9 +82,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tpg/export', [TpgController::class, 'export']);
 
     // Employees
+    Route::get('/employees/statuses', [EmployeeController::class, 'getStatuses']);
     Route::get('/employees/export', [EmployeeController::class, 'export']);
     Route::get('/employees/{id}/history', [EmployeeController::class, 'payrollHistory']);
     Route::get('/employees/{id}/history-export', [EmployeeController::class, 'exportIndividualPayroll']);
+    Route::post('/employees/{id}/status', [EmployeeController::class, 'updateStatus']);
+    Route::post('/employees/{id}/documents', [EmployeeController::class, 'uploadDocument']);
     Route::apiResource('employees', EmployeeController::class);
 
     // Gaji PNS & PPPK CRUD

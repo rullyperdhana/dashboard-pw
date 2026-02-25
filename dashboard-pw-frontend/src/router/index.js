@@ -94,7 +94,7 @@ const router = createRouter({
             meta: { requiresAuth: true },
         },
         {
-            path: '/users',
+            path: '/settings/users',
             name: 'UserManagement',
             component: () => import('../views/Settings/UserManagement.vue'),
             meta: { requiresAuth: true },

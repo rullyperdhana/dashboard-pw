@@ -268,6 +268,29 @@
             </v-card>
           </v-col>
         </v-row>
+
+        <!-- Status Kepegawaian Distribution -->
+        <v-row class="mb-6">
+          <v-col cols="12">
+            <v-card class="glass-card rounded-xl pa-6 shadow-premium" elevation="0">
+              <div class="d-flex align-center mb-6">
+                <v-icon color="primary" class="mr-2">mdi-account-clock-outline</v-icon>
+                <h2 class="text-h6 font-weight-bold">Status Kepegawaian PPPK-PW</h2>
+              </div>
+              <v-row>
+                <v-col v-for="(s, idx) in distribution.status" :key="idx" cols="6" sm="3">
+                  <v-card variant="tonal" :color="getStatusColor(s.status)" class="rounded-xl pa-4 text-center">
+                    <div class="text-h4 font-weight-black mb-1">{{ s.total }}</div>
+                    <div class="text-overline font-weight-bold">{{ s.status || 'Aktif' }}</div>
+                  </v-card>
+                </v-col>
+                <v-col v-if="!distribution.status?.length" cols="12" class="text-center py-8 text-grey">
+                  Belum ada data status kepegawaian
+                </v-col>
+              </v-row>
+            </v-card>
+          </v-col>
+        </v-row>
         
         <!-- ═══════════════════════════════════════════ -->
         <!-- SECTION 4: PAYROLL EXPENDITURE TREND       -->
@@ -896,8 +919,18 @@ const formatDate = (dateStr) => {
 }
 
 const getProgressColor = (index) => {
-  const colors = ['primary', 'success', 'info', 'warning', 'purple', 'teal']
+  const colors = ['primary', 'success', 'info', 'warning', 'purple', 'teal', 'cyan', 'indigo']
   return colors[index % colors.length]
+}
+
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'Aktif': return 'success'
+    case 'Pensiun': return 'warning'
+    case 'Keluar': return 'error'
+    case 'Diberhentikan': return 'deep-orange'
+    default: return 'primary'
+  }
 }
 
 const downloadBlob = (data, format, filename) => {

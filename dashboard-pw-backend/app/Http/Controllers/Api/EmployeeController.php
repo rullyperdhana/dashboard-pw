@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Exports\EmployeesExport;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
+use App\Models\EmployeeDocument;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 
 class EmployeeController extends Controller
@@ -16,7 +18,12 @@ class EmployeeController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Employee::query()->with('skpd');
+        $query = Employee::query()->with(['skpd', 'documents']);
+
+        // Filter status
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
 
         // Filter berdasarkan SKPD (untuk admin_skpd atau request global)
         if ($request->user()->isAdminSkpd()) {
@@ -281,6 +288,84 @@ class EmployeeController extends Controller
 
         $filename = 'payroll_trace_' . $employee->nip . '_' . date('YmdHis');
         return $pdf->download($filename . '.pdf');
+    }
+
+    /**
+     * Get list of standard employment statuses
+     */
+    public function getStatuses()
+    {
+        return response()->json([
+            'success' => true,
+            'data' => Employee::getStatuses(),
+        ]);
+    }
+
+    /**
+     * Upload an SK document for an employee
+     */
+    public function uploadDocument(Request $request, $id)
+    {
+        $employee = Employee::findOrFail($id);
+
+        $request->validate([
+            'file' => 'required|mimes:pdf,jpg,jpeg,png|max:5120', // 5MB max
+            'type' => 'required|string',
+            'notes' => 'nullable|string',
+            'new_status' => 'nullable|string',
+        ]);
+
+        try {
+            $file = $request->file('file');
+            $originalName = $file->getClientOriginalName();
+            $path = $file->store('documents/employees', 'public');
+
+            $document = EmployeeDocument::create([
+                'employee_id' => $id,
+                'type' => $request->type,
+                'file_path' => $path,
+                'file_name' => $originalName,
+                'status_at_upload' => $employee->status,
+                'notes' => $request->notes,
+            ]);
+
+            // If a new status is provided, update the employee status as well
+            if ($request->has('new_status') && in_array($request->new_status, Employee::getStatuses())) {
+                $employee->update(['status' => $request->new_status]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Dokumen SK berhasil diupload.',
+                'document' => $document,
+                'employee_status' => $employee->status,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal upload dokumen: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Update employee status manually
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $employee = Employee::findOrFail($id);
+
+        $request->validate([
+            'status' => 'required|in:' . implode(',', Employee::getStatuses()),
+        ]);
+
+        $employee->update(['status' => $request->status]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Status pegawai berhasil diperbarui.',
+            'status' => $employee->status,
+        ]);
     }
 }
 

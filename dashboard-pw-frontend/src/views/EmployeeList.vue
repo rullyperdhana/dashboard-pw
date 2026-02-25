@@ -61,6 +61,14 @@
                     density="compact"
                     clearable
                   ></v-select>
+                  <v-select
+                    v-model="statusFilter"
+                    label="Status Pegawai"
+                    :items="['Semua', 'Aktif', 'Pensiun', 'Keluar', 'Diberhentikan']"
+                    variant="underlined"
+                    density="compact"
+                    clearable
+                  ></v-select>
                 </v-card-text>
               </v-card>
             </div>
@@ -207,7 +215,7 @@
                 <v-select v-model="form.agama" label="Agama" :items="['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu']" variant="outlined" density="compact"></v-select>
               </v-col>
               <v-col cols="12" md="4">
-                <v-text-field v-model="form.status" label="Status" variant="outlined" density="compact"></v-text-field>
+                <v-select v-model="form.status" label="Status" :items="['Aktif', 'Pensiun', 'Keluar', 'Diberhentikan']" variant="outlined" density="compact"></v-select>
               </v-col>
               <v-col cols="12" md="4">
                 <v-text-field v-model="form.no_hp" label="No. HP" variant="outlined" density="compact"></v-text-field>
@@ -399,6 +407,7 @@ const search = ref('')
 const employees = ref([])
 const stats = ref({ total: 0, male: 0, female: 0 })
 const genderFilter = ref('Semua')
+const statusFilter = ref('Semua')
 const selectedSkpd = ref(null)
 const skpdOptions = ref([])
 const exportLoading = ref(null)
@@ -451,6 +460,10 @@ const filteredEmployees = computed(() => {
   if (genderFilter.value !== 'Semua') {
     const filterValue = genderFilter.value === 'Laki-laki' ? 'LAKI' : 'PEREMPUAN'
     list = list.filter(e => e.jk?.toUpperCase().includes(filterValue))
+  }
+
+  if (statusFilter.value && statusFilter.value !== 'Semua') {
+    list = list.filter(e => e.status === statusFilter.value)
   }
   
   if (selectedSkpd.value) {

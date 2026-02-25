@@ -103,6 +103,10 @@ class DashboardController extends Controller
                 ],
                 'distribution' => [
                     'gender' => $genderDistribution,
+                    'status' => (clone $employeeQuery)
+                        ->select('status', DB::raw('COUNT(*) as total'))
+                        ->groupBy('status')
+                        ->get(),
                 ],
                 'charts' => [
                     'employees_per_skpd' => $employeesPerSkpd,
