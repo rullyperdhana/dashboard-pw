@@ -21,8 +21,14 @@ class EmployeeController extends Controller
         $query = Employee::query()->with(['skpd', 'documents']);
 
         // Filter status
-        if ($request->has('status')) {
+        if ($request->has('status') && $request->status !== 'Semua') {
             $query->where('status', $request->status);
+        }
+
+        // Filter gender
+        if ($request->has('gender') && $request->gender !== 'Semua') {
+            $value = $request->gender === 'Laki-laki' ? 'LAKI - LAKI' : 'PEREMPUAN';
+            $query->where('jk', $value);
         }
 
         // Filter berdasarkan SKPD (untuk admin_skpd atau request global)
@@ -30,11 +36,6 @@ class EmployeeController extends Controller
             $query->where('idskpd', $request->user()->institution);
         } elseif ($request->has('skpd_id')) {
             $query->where('idskpd', $request->skpd_id);
-        }
-
-        // Filter berdasarkan status
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
         }
 
         // Search
@@ -72,6 +73,15 @@ class EmployeeController extends Controller
         $query = Employee::query()->with('skpd');
 
         // Apply same filters as index
+        if ($request->has('status') && $request->status !== 'Semua') {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->has('gender') && $request->gender !== 'Semua') {
+            $value = $request->gender === 'Laki-laki' ? 'LAKI - LAKI' : 'PEREMPUAN';
+            $query->where('jk', $value);
+        }
+
         if ($request->user()->isAdminSkpd()) {
             $query->where('idskpd', $request->user()->institution);
         } elseif ($request->has('skpd_id')) {

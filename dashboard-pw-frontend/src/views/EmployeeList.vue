@@ -454,24 +454,7 @@ const headers = [
   { title: 'AKSI', key: 'actions', sortable: false, width: '140px', align: 'center' },
 ]
 
-const filteredEmployees = computed(() => {
-  let list = employees.value
-  
-  if (genderFilter.value !== 'Semua') {
-    const filterValue = genderFilter.value === 'Laki-laki' ? 'LAKI' : 'PEREMPUAN'
-    list = list.filter(e => e.jk?.toUpperCase().includes(filterValue))
-  }
-
-  if (statusFilter.value && statusFilter.value !== 'Semua') {
-    list = list.filter(e => e.status === statusFilter.value)
-  }
-  
-  if (selectedSkpd.value) {
-    list = list.filter(e => e.idskpd === selectedSkpd.value)
-  }
-  
-  return list
-})
+const filteredEmployees = computed(() => employees.value)
 
 const formatCurrency = (value) => {
   if (!value) return 'Rp 0'
@@ -490,6 +473,8 @@ const fetchEmployees = async () => {
       params: { 
         search: search.value,
         skpd_id: route.query.skpd_id || selectedSkpd.value || undefined,
+        gender: genderFilter.value,
+        status: statusFilter.value,
         per_page: 50
       }
     })
@@ -515,7 +500,9 @@ const exportEmployees = async (format) => {
     const params = {
       format: format,
       search: search.value,
-      skpd_id: selectedSkpd.value || undefined
+      skpd_id: selectedSkpd.value || undefined,
+      gender: genderFilter.value,
+      status: statusFilter.value
     }
     const response = await api.get('/employees/export', {
       params,
@@ -640,6 +627,10 @@ onMounted(() => {
 })
 
 watch(() => route.query.skpd_id, () => {
+  fetchEmployees()
+})
+
+watch([genderFilter, statusFilter, selectedSkpd], () => {
   fetchEmployees()
 })
 
