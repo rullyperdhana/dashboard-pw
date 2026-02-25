@@ -377,5 +377,46 @@ class EmployeeController extends Controller
             'status' => $employee->status,
         ]);
     }
+
+    /**
+     * Get all documents for an employee
+     */
+    public function getDocuments($id)
+    {
+        $employee = Employee::findOrFail($id);
+
+        $documents = EmployeeDocument::where('employee_id', $id)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($doc) {
+                $doc->file_url = asset('storage/' . $doc->file_path);
+                return $doc;
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $documents,
+        ]);
+    }
+
+    /**
+     * Delete a document
+     */
+    public function deleteDocument($id, $documentId)
+    {
+        $document = EmployeeDocument::where('employee_id', $id)
+            ->where('id', $documentId)
+            ->firstOrFail();
+
+        // Delete file from storage
+        \Storage::disk('public')->delete($document->file_path);
+
+        $document->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Dokumen berhasil dihapus.',
+        ]);
+    }
 }
 

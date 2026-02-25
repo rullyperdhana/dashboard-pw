@@ -362,6 +362,87 @@
               <div class="text-body-2 font-weight-medium">{{ formatCurrency(selectedEmployee?.tunjangan) }}</div>
             </v-col>
           </v-row>
+
+          <!-- Status Pegawai -->
+          <v-divider class="my-4"></v-divider>
+          <div class="text-overline text-primary mb-2">Status Pegawai</div>
+          <v-chip :color="selectedEmployee?.status === 'Aktif' ? 'success' : 'warning'" variant="tonal" class="mb-4">
+            {{ selectedEmployee?.status || 'Aktif' }}
+          </v-chip>
+
+          <!-- Dokumen SK -->
+          <v-divider class="my-4"></v-divider>
+          <div class="d-flex align-center justify-space-between mb-3">
+            <div class="text-overline text-primary">Dokumen SK</div>
+            <v-btn size="small" color="primary" variant="tonal" prepend-icon="mdi-upload" @click="showUploadForm = !showUploadForm">
+              Upload SK
+            </v-btn>
+          </div>
+
+          <!-- Upload Form -->
+          <v-expand-transition>
+            <v-card v-if="showUploadForm" variant="outlined" class="mb-4 pa-4 rounded-lg">
+              <v-row dense>
+                <v-col cols="12">
+                  <v-file-input
+                    v-model="docFile"
+                    label="Pilih File (PDF/JPG/PNG, maks 5MB)"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    variant="outlined"
+                    density="compact"
+                    prepend-icon="mdi-file-document"
+                  ></v-file-input>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <v-select
+                    v-model="docType"
+                    :items="['SK Pengangkatan', 'SK Mutasi', 'SK Pensiun', 'SK Kenaikan Pangkat', 'SK Lainnya']"
+                    label="Jenis Dokumen"
+                    variant="outlined"
+                    density="compact"
+                  ></v-select>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <v-text-field v-model="docNotes" label="Catatan (opsional)" variant="outlined" density="compact"></v-text-field>
+                </v-col>
+                <v-col cols="12" class="text-right">
+                  <v-btn size="small" variant="text" @click="showUploadForm = false" class="mr-2">Batal</v-btn>
+                  <v-btn size="small" color="primary" variant="flat" :loading="uploadingDoc" :disabled="!docFile || !docType" @click="uploadDocument">
+                    Upload
+                  </v-btn>
+                </v-col>
+              </v-row>
+            </v-card>
+          </v-expand-transition>
+
+          <!-- Document List -->
+          <v-progress-linear v-if="loadingDocs" indeterminate color="primary" class="mb-2"></v-progress-linear>
+          <div v-else-if="employeeDocuments.length === 0" class="text-center py-4">
+            <v-icon size="40" color="grey-lighten-2">mdi-file-document-outline</v-icon>
+            <div class="text-grey text-body-2 mt-1">Belum ada dokumen SK.</div>
+          </div>
+          <v-list v-else density="compact" class="rounded-lg" variant="outlined">
+            <v-list-item v-for="doc in employeeDocuments" :key="doc.id" class="px-4">
+              <template v-slot:prepend>
+                <v-icon :color="doc.file_name?.endsWith('.pdf') ? 'red' : 'blue'" size="24">
+                  {{ doc.file_name?.endsWith('.pdf') ? 'mdi-file-pdf-box' : 'mdi-file-image' }}
+                </v-icon>
+              </template>
+              <v-list-item-title class="text-body-2 font-weight-medium">{{ doc.type }}</v-list-item-title>
+              <v-list-item-subtitle class="text-caption">
+                {{ doc.file_name }} · {{ formatDate(doc.created_at) }}
+                <span v-if="doc.notes"> · {{ doc.notes }}</span>
+              </v-list-item-subtitle>
+              <template v-slot:append>
+                <v-btn icon size="x-small" variant="text" color="primary" @click="downloadDoc(doc)" title="Download">
+                  <v-icon size="18">mdi-download</v-icon>
+                </v-btn>
+                <v-btn icon size="x-small" variant="text" color="error" @click="deleteDoc(doc)" title="Hapus">
+                  <v-icon size="18">mdi-delete</v-icon>
+                </v-btn>
+              </template>
+            </v-list-item>
+          </v-list>
         </v-card-text>
 
         <v-card-actions class="pa-6 pt-0">
@@ -423,6 +504,15 @@ const formRef = ref(null)
 const formValid = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
+
+// Documents
+const employeeDocuments = ref([])
+const loadingDocs = ref(false)
+const showUploadForm = ref(false)
+const uploadingDoc = ref(false)
+const docFile = ref(null)
+const docType = ref(null)
+const docNotes = ref('')
 
 // Snackbar
 const snackbar = ref(false)
@@ -539,9 +629,69 @@ const fetchSkpds = async () => {
   }
 }
 
-const showDetails = (item) => {
+const showDetails = async (item) => {
   selectedEmployee.value = item
   detailDialog.value = true
+  showUploadForm.value = false
+  await fetchDocuments(item.id)
+}
+
+const fetchDocuments = async (employeeId) => {
+  loadingDocs.value = true
+  employeeDocuments.value = []
+  try {
+    const res = await api.get(`/employees/${employeeId}/documents`)
+    employeeDocuments.value = res.data.data || []
+  } catch (e) {
+    console.error('Failed to load documents', e)
+  } finally {
+    loadingDocs.value = false
+  }
+}
+
+const uploadDocument = async () => {
+  if (!docFile.value || !docType.value || !selectedEmployee.value) return
+  uploadingDoc.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', docFile.value[0] || docFile.value)
+    formData.append('type', docType.value)
+    if (docNotes.value) formData.append('notes', docNotes.value)
+    await api.post(`/employees/${selectedEmployee.value.id}/documents`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    showSnack('Dokumen berhasil diupload', 'success')
+    showUploadForm.value = false
+    docFile.value = null
+    docType.value = null
+    docNotes.value = ''
+    await fetchDocuments(selectedEmployee.value.id)
+  } catch (e) {
+    showSnack('Gagal upload: ' + (e.response?.data?.message || e.message), 'error')
+  } finally {
+    uploadingDoc.value = false
+  }
+}
+
+const downloadDoc = (doc) => {
+  window.open(doc.file_url, '_blank')
+}
+
+const deleteDoc = async (doc) => {
+  if (!confirm('Hapus dokumen "' + doc.type + '"?')) return
+  try {
+    await api.delete(`/employees/${selectedEmployee.value.id}/documents/${doc.id}`)
+    showSnack('Dokumen berhasil dihapus', 'success')
+    await fetchDocuments(selectedEmployee.value.id)
+  } catch (e) {
+    showSnack('Gagal menghapus dokumen', 'error')
+  }
+}
+
+const showSnack = (message, color = 'success') => {
+  snackbarMessage.value = message
+  snackbarColor.value = color
+  snackbar.value = true
 }
 
 const openCreateDialog = () => {
