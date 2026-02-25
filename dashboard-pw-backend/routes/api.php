@@ -91,6 +91,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/employees/{id}/documents', [EmployeeController::class, 'getDocuments']);
     Route::post('/employees/{id}/documents', [EmployeeController::class, 'uploadDocument']);
     Route::delete('/employees/{id}/documents/{documentId}', [EmployeeController::class, 'deleteDocument']);
+    Route::get('/employees/{id}/documents/{documentId}/download', [EmployeeController::class, 'downloadDocument']);
     Route::apiResource('employees', EmployeeController::class);
 
     // Gaji PNS & PPPK CRUD

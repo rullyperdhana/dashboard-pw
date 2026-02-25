@@ -434,8 +434,8 @@
                 <span v-if="doc.notes"> · {{ doc.notes }}</span>
               </v-list-item-subtitle>
               <template v-slot:append>
-                <v-btn icon size="x-small" variant="text" color="primary" @click="downloadDoc(doc)" title="Download">
-                  <v-icon size="18">mdi-download</v-icon>
+                <v-btn icon size="x-small" variant="text" color="primary" @click="previewDoc(doc)" title="Lihat">
+                  <v-icon size="18">mdi-eye</v-icon>
                 </v-btn>
                 <v-btn icon size="x-small" variant="text" color="error" @click="deleteDoc(doc)" title="Hapus">
                   <v-icon size="18">mdi-delete</v-icon>
@@ -449,6 +449,31 @@
           <v-spacer></v-spacer>
           <v-btn variant="tonal" color="primary" rounded="xl" @click="detailDialog = false">TUTUP</v-btn>
         </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Document Preview Dialog -->
+    <v-dialog v-model="previewDialog" max-width="900px" scrollable>
+      <v-card class="rounded-xl overflow-hidden">
+        <v-toolbar color="primary" density="compact">
+          <v-toolbar-title class="text-body-1 font-weight-bold">{{ previewTitle }}</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-btn icon variant="text" @click="previewDialog = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-toolbar>
+        <v-card-text class="pa-0" style="min-height: 500px;">
+          <!-- PDF Preview -->
+          <iframe
+            v-if="previewIsPdf"
+            :src="previewUrl"
+            style="width: 100%; height: 80vh; border: none;"
+          ></iframe>
+          <!-- Image Preview -->
+          <div v-else class="d-flex justify-center align-center pa-4" style="min-height: 400px; background: #f5f5f5;">
+            <img :src="previewUrl" style="max-width: 100%; max-height: 75vh; object-fit: contain; border-radius: 8px;" />
+          </div>
+        </v-card-text>
       </v-card>
     </v-dialog>
 
@@ -513,6 +538,10 @@ const uploadingDoc = ref(false)
 const docFile = ref(null)
 const docType = ref(null)
 const docNotes = ref('')
+const previewDialog = ref(false)
+const previewUrl = ref('')
+const previewTitle = ref('')
+const previewIsPdf = ref(false)
 
 // Snackbar
 const snackbar = ref(false)
@@ -673,8 +702,40 @@ const uploadDocument = async () => {
   }
 }
 
-const downloadDoc = (doc) => {
-  window.open(doc.file_url, '_blank')
+const previewDoc = async (doc) => {
+  try {
+    const res = await api.get(`/employees/${selectedEmployee.value.id}/documents/${doc.id}/download`, {
+      responseType: 'blob'
+    })
+    const blob = new Blob([res.data], { type: res.headers['content-type'] })
+    // Revoke previous URL to avoid memory leaks
+    if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
+    previewUrl.value = URL.createObjectURL(blob)
+    previewTitle.value = `${doc.type} - ${doc.file_name}`
+    previewIsPdf.value = doc.file_name?.toLowerCase().endsWith('.pdf')
+    previewDialog.value = true
+  } catch (e) {
+    showSnack('Gagal memuat file: ' + (e.response?.data?.message || e.message), 'error')
+  }
+}
+
+const downloadDoc = async (doc) => {
+  try {
+    const res = await api.get(`/employees/${selectedEmployee.value.id}/documents/${doc.id}/download`, {
+      responseType: 'blob'
+    })
+    const blob = new Blob([res.data], { type: res.headers['content-type'] })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = doc.file_name
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    showSnack('Gagal download file', 'error')
+  }
 }
 
 const deleteDoc = async (doc) => {

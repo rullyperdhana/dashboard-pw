@@ -418,5 +418,31 @@ class EmployeeController extends Controller
             'message' => 'Dokumen berhasil dihapus.',
         ]);
     }
+
+    /**
+     * Download / Preview a document (serves file inline)
+     */
+    public function downloadDocument($id, $documentId)
+    {
+        $document = EmployeeDocument::where('employee_id', $id)
+            ->where('id', $documentId)
+            ->firstOrFail();
+
+        $filePath = storage_path('app/public/' . $document->file_path);
+
+        if (!file_exists($filePath)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'File tidak ditemukan di server.',
+            ], 404);
+        }
+
+        $mimeType = mime_content_type($filePath);
+
+        return response()->file($filePath, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline; filename="' . $document->file_name . '"',
+        ]);
+    }
 }
 
