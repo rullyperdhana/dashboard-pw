@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Public routes
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::get('/settings/pppk-pw-estimation', [SettingController::class, 'pppkPwEstimation']);
 
 // Protected routes

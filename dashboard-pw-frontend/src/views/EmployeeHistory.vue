@@ -185,12 +185,27 @@ const fetchHistory = async (id) => {
   }
 }
 
-const exportPdf = () => {
+const exportPdf = async () => {
   if (!selectedEmployee.value) return
   
-  const url = `/api/employees/${selectedEmployee.value.id}/history-export`
-  const token = localStorage.getItem('token')
-  window.open(`${url}?token=${token}`, '_blank')
+  try {
+    const response = await api.get(`/employees/${selectedEmployee.value.id}/history-export`, {
+      responseType: 'blob'
+    })
+    
+    const blob = new Blob([response.data], { type: 'application/pdf' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `payroll_trace_${selectedEmployee.value.nip}_${new Date().toISOString().slice(0, 10)}.pdf`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Error exporting PDF:', error)
+    alert('Gagal mengekspor PDF. Silakan coba lagi.')
+  }
 }
 
 const formatCurrency = (value) => {
