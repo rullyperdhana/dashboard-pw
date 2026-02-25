@@ -231,15 +231,13 @@ class EmployeeController extends Controller
             ->where('employee_id', $id)
             ->get()
             ->map(function ($detail) {
-                $totalPotongan = ($detail->potongan ?? 0) + ($detail->iwp ?? 0) + ($detail->pajak ?? 0);
                 return [
                     'id' => $detail->id,
                     'month' => $detail->payment->month,
                     'year' => $detail->payment->year,
                     'gaji_pokok' => $detail->gaji_pokok,
                     'tunjangan' => $detail->tunjangan,
-                    'potongan' => $totalPotongan,
-                    'potongan_detail' => $detail->potongan,
+                    'potongan' => $detail->potongan,
                     'pajak' => $detail->pajak,
                     'iwp' => $detail->iwp,
                     'total_bersih' => $detail->total_amoun,
@@ -269,10 +267,6 @@ class EmployeeController extends Controller
         $history = \App\Models\PaymentDetail::with('payment')
             ->where('employee_id', $id)
             ->get()
-            ->map(function ($detail) {
-                $detail->total_potongan = ($detail->potongan ?? 0) + ($detail->iwp ?? 0) + ($detail->pajak ?? 0);
-                return $detail;
-            })
             ->sortByDesc(function ($detail) {
                 return $detail->payment->year * 100 + $detail->payment->month;
             });

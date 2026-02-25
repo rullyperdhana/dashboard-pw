@@ -65,6 +65,8 @@
                 <th>Gaji Pokok</th>
                 <th>Tunjangan</th>
                 <th>Potongan</th>
+                <th>IWP</th>
+                <th>Pajak</th>
                 <th>Total Bersih</th>
             </tr>
         </thead>
@@ -73,16 +75,18 @@
                 $totalGaji = 0; 
                 $totalTunj = 0; 
                 $totalPot = 0; 
-                $totalIwpPajak = 0;
+                $totalIwp = 0;
+                $totalPajak = 0;
                 $totalBersih = 0;
                 $months = [1=>'Januari', 2=>'Februari', 3=>'Maret', 4=>'April', 5=>'Mei', 6=>'Juni', 7=>'Juli', 8=>'Agustus', 9=>'September', 10=>'Oktober', 11=>'November', 12=>'Desember'];
             @endphp
             @forelse($history as $index => $item)
                 @php
-                    $totalPotonganItem = ($item->potongan ?? 0) + ($item->iwp ?? 0) + ($item->pajak ?? 0);
                     $totalGaji += $item->gaji_pokok;
                     $totalTunj += $item->tunjangan;
-                    $totalPot += $totalPotonganItem;
+                    $totalPot += $item->potongan;
+                    $totalIwp += $item->iwp;
+                    $totalPajak += $item->pajak;
                     $totalBersih += $item->total_amoun;
                 @endphp
                 <tr>
@@ -90,12 +94,14 @@
                     <td class="text-left">{{ $months[$item->payment->month] ?? $item->payment->month }} {{ $item->payment->year }}</td>
                     <td>{{ number_format($item->gaji_pokok, 0, ',', '.') }}</td>
                     <td>{{ number_format($item->tunjangan, 0, ',', '.') }}</td>
-                    <td>{{ number_format($totalPotonganItem, 0, ',', '.') }}</td>
+                    <td>{{ number_format($item->potongan, 0, ',', '.') }}</td>
+                    <td>{{ number_format($item->iwp, 0, ',', '.') }}</td>
+                    <td>{{ number_format($item->pajak, 0, ',', '.') }}</td>
                     <td>{{ number_format($item->total_amoun, 0, ',', '.') }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center">Data penggajian tidak ditemukan</td>
+                    <td colspan="8" class="text-center">Data penggajian tidak ditemukan</td>
                 </tr>
             @endforelse
         </tbody>
@@ -105,6 +111,8 @@
                 <td>{{ number_format($totalGaji, 0, ',', '.') }}</td>
                 <td>{{ number_format($totalTunj, 0, ',', '.') }}</td>
                 <td>{{ number_format($totalPot, 0, ',', '.') }}</td>
+                <td>{{ number_format($totalIwp, 0, ',', '.') }}</td>
+                <td>{{ number_format($totalPajak, 0, ',', '.') }}</td>
                 <td>{{ number_format($totalBersih, 0, ',', '.') }}</td>
             </tr>
         </tfoot>

@@ -91,6 +91,14 @@
                     {{ formatCurrency(item.potongan) }}
                   </template>
 
+                  <template v-slot:item.iwp="{ item }">
+                    {{ formatCurrency(item.iwp) }}
+                  </template>
+
+                  <template v-slot:item.pajak="{ item }">
+                    {{ formatCurrency(item.pajak) }}
+                  </template>
+
                   <template v-slot:item.total_bersih="{ item }">
                     <span class="font-weight-bold text-success">
                       {{ formatCurrency(item.total_bersih) }}
@@ -136,6 +144,8 @@ const headers = [
   { title: 'Gaji Pokok', key: 'gaji_pokok', align: 'end' },
   { title: 'Tunjangan', key: 'tunjangan', align: 'end' },
   { title: 'Potongan', key: 'potongan', align: 'end' },
+  { title: 'IWP', key: 'iwp', align: 'end' },
+  { title: 'Pajak', key: 'pajak', align: 'end' },
   { title: 'Total Bersih', key: 'total_bersih', align: 'end' },
 ]
 
