@@ -37,8 +37,7 @@
                   bg-color="grey-lighten-4"
                 ></v-text-field>
               </div>
-              
-              <div class="mb-8">
+              <div class="mb-5">
                 <div class="text-caption font-weight-bold text-grey-darken-1 ml-1 mb-2">SECURITY KEY</div>
                 <v-text-field
                   v-model="password"
@@ -54,6 +53,32 @@
                   autocomplete="current-password"
                   bg-color="grey-lighten-4"
                 ></v-text-field>
+              </div>
+
+              <div class="mb-8">
+                <div class="text-caption font-weight-bold text-grey-darken-1 ml-1 mb-2">VERIFICATION CODE ({{ captchaQuestion }})</div>
+                <div class="d-flex align-center">
+                  <v-text-field
+                    v-model="captchaAnswer"
+                    label="Solve it"
+                    prepend-inner-icon="mdi-calculator-variant-outline"
+                    :rules="[rules.required]"
+                    variant="solo-filled"
+                    flat
+                    rounded="lg"
+                    bg-color="grey-lighten-4"
+                    hide-details
+                    class="mr-2"
+                  ></v-text-field>
+                  <v-btn 
+                    icon="mdi-refresh" 
+                    variant="tonal" 
+                    color="primary" 
+                    rounded="lg" 
+                    @click="fetchCaptcha"
+                    title="Refresh"
+                  ></v-btn>
+                </div>
               </div>
 
               <v-alert
@@ -109,6 +134,24 @@ const password = ref('')
 const showPassword = ref(false)
 const loading = ref(false)
 const error = ref('')
+const captchaQuestion = ref('')
+const captchaKey = ref('')
+const captchaAnswer = ref('')
+
+const fetchCaptcha = async () => {
+  try {
+    const response = await api.get('/captcha')
+    if (response.data.success) {
+      captchaQuestion.value = response.data.data.captcha_question
+      captchaKey.value = response.data.data.captcha_key
+      captchaAnswer.value = ''
+    }
+  } catch (err) {
+    console.error('Failed to fetch captcha:', err)
+  }
+}
+
+fetchCaptcha()
 
 const rules = {
   required: value => !!value || 'Identification is required',
@@ -122,6 +165,8 @@ const handleLogin = async () => {
     const response = await api.post('/login', {
       username: username.value,
       password: password.value,
+      captcha_key: captchaKey.value,
+      captcha_answer: captchaAnswer.value
     })
     
     if (response.data.success) {
@@ -132,6 +177,8 @@ const handleLogin = async () => {
   } catch (err) {
     if (err.response) {
       error.value = err.response.data.message || 'Authentication failed'
+      // If captcha is wrong or other validation error, refresh captcha
+      fetchCaptcha()
     } else {
       error.value = 'Network disruption detected'
     }
