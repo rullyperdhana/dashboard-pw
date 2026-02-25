@@ -425,6 +425,7 @@ class PnsPayrollController extends Controller
         $model = $employeeType === 'pns' ? GajiPns::class : GajiPppk::class;
 
         $selectFields = '
+            bulan,
             COUNT(DISTINCT nip) as total_employees,
             SUM(gaji_pokok) as total_gaji_pokok,
             SUM(tunj_istri) as total_tunj_istri,
@@ -484,79 +485,117 @@ class PnsPayrollController extends Controller
             'total_tunj_km'
         ];
 
+        // Single query with GROUP BY instead of 12 separate queries
+        $query = $model::where('tahun', $year);
+        if ($skpdFilter) {
+            $query->where('skpd', $skpdFilter);
+        }
+
+        $results = $query->selectRaw($selectFields)
+            ->groupBy('bulan')
+            ->orderBy('bulan')
+            ->get()
+            ->keyBy('bulan');
+
+        // Build monthly data for all 12 months (fill empty months with zeros)
+        $numericKeys = [
+            'total_employees',
+            'total_gaji_pokok',
+            'total_tunj_istri',
+            'total_tunj_anak',
+            'total_tunj_fungsional',
+            'total_tunj_struktural',
+            'total_tunj_umum',
+            'total_tunj_beras',
+            'total_tunj_pph',
+            'total_tunj_tpp',
+            'total_tunj_eselon',
+            'total_tunj_guru',
+            'total_tunj_langka',
+            'total_tunj_tkd',
+            'total_tunj_terpencil',
+            'total_tunj_khusus',
+            'total_tunj_askes',
+            'total_tunj_kk',
+            'total_tunj_km',
+            'total_pembulatan',
+            'total_kotor',
+            'total_pot_iwp',
+            'total_pot_iwp1',
+            'total_pot_iwp8',
+            'total_pot_askes',
+            'total_pot_pph',
+            'total_pot_bulog',
+            'total_pot_taperum',
+            'total_pot_sewa',
+            'total_pot_hutang',
+            'total_pot_korpri',
+            'total_pot_irdhata',
+            'total_pot_koperasi',
+            'total_pot_jkk',
+            'total_pot_jkm',
+            'total_potongan',
+            'total_bersih',
+        ];
+
         $monthlyData = [];
-
         for ($month = 1; $month <= 12; $month++) {
-            $query = $model::where('tahun', $year)
-                ->where('bulan', $month);
-
-            if ($skpdFilter) {
-                $query->where('skpd', $skpdFilter);
-            }
-
-            $data = $query->selectRaw($selectFields)
-                ->first();
-
-            $totalTunjangan = 0;
-            foreach ($tunjanganFields as $field) {
-                $totalTunjangan += ($data->$field ?? 0);
-            }
-
-            $monthlyData[] = [
+            $data = $results->get($month);
+            $row = [
                 'month' => $month,
                 'month_name' => date('F', mktime(0, 0, 0, $month, 1)),
-                'total_employees' => (int) ($data->total_employees ?? 0),
-                'total_gaji_pokok' => (float) ($data->total_gaji_pokok ?? 0),
-                'total_tunj_istri' => (float) ($data->total_tunj_istri ?? 0),
-                'total_tunj_anak' => (float) ($data->total_tunj_anak ?? 0),
-                'total_tunj_fungsional' => (float) ($data->total_tunj_fungsional ?? 0),
-                'total_tunj_struktural' => (float) ($data->total_tunj_struktural ?? 0),
-                'total_tunj_umum' => (float) ($data->total_tunj_umum ?? 0),
-                'total_tunj_beras' => (float) ($data->total_tunj_beras ?? 0),
-                'total_tunj_pph' => (float) ($data->total_tunj_pph ?? 0),
-                'total_tunj_tpp' => (float) ($data->total_tunj_tpp ?? 0),
-                'total_tunj_eselon' => (float) ($data->total_tunj_eselon ?? 0),
-                'total_tunj_guru' => (float) ($data->total_tunj_guru ?? 0),
-                'total_tunj_langka' => (float) ($data->total_tunj_langka ?? 0),
-                'total_tunj_tkd' => (float) ($data->total_tunj_tkd ?? 0),
-                'total_tunj_terpencil' => (float) ($data->total_tunj_terpencil ?? 0),
-                'total_tunj_khusus' => (float) ($data->total_tunj_khusus ?? 0),
-                'total_tunj_askes' => (float) ($data->total_tunj_askes ?? 0),
-                'total_tunj_kk' => (float) ($data->total_tunj_kk ?? 0),
-                'total_tunj_km' => (float) ($data->total_tunj_km ?? 0),
-                'total_pembulatan' => (float) ($data->total_pembulatan ?? 0),
-                'total_tunjangan' => (float) $totalTunjangan,
-                'total_kotor' => (float) ($data->total_kotor ?? 0),
-                'total_pot_iwp' => (float) ($data->total_pot_iwp ?? 0),
-                'total_pot_iwp1' => (float) ($data->total_pot_iwp1 ?? 0),
-                'total_pot_iwp8' => (float) ($data->total_pot_iwp8 ?? 0),
-                'total_pot_askes' => (float) ($data->total_pot_askes ?? 0),
-                'total_pot_pph' => (float) ($data->total_pot_pph ?? 0),
-                'total_pot_bulog' => (float) ($data->total_pot_bulog ?? 0),
-                'total_pot_taperum' => (float) ($data->total_pot_taperum ?? 0),
-                'total_pot_sewa' => (float) ($data->total_pot_sewa ?? 0),
-                'total_pot_hutang' => (float) ($data->total_pot_hutang ?? 0),
-                'total_pot_korpri' => (float) ($data->total_pot_korpri ?? 0),
-                'total_pot_irdhata' => (float) ($data->total_pot_irdhata ?? 0),
-                'total_pot_koperasi' => (float) ($data->total_pot_koperasi ?? 0),
-                'total_pot_jkk' => (float) ($data->total_pot_jkk ?? 0),
-                'total_pot_jkm' => (float) ($data->total_pot_jkm ?? 0),
-                'total_potongan' => (float) ($data->total_potongan ?? 0),
-                'total_bersih' => (float) ($data->total_bersih ?? 0),
             ];
+
+            foreach ($numericKeys as $key) {
+                if ($key === 'total_employees') {
+                    $row[$key] = (int) ($data->$key ?? 0);
+                } else {
+                    $row[$key] = (float) ($data->$key ?? 0);
+                }
+            }
+
+            // Calculate total tunjangan
+            $totalTunjangan = 0;
+            foreach ($tunjanganFields as $field) {
+                $totalTunjangan += $row[$field];
+            }
+            $row['total_tunjangan'] = (float) $totalTunjangan;
+
+            $monthlyData[] = $row;
         }
 
         // Calculate yearly totals dynamically
         $yearlyTotal = [];
-        $numericFields = array_keys(array_filter($monthlyData[0], fn($v, $k) => $k !== 'month' && $k !== 'month_name', ARRAY_FILTER_USE_BOTH));
-        foreach ($numericFields as $field) {
+        foreach ($numericKeys as $field) {
             $yearlyTotal[$field] = array_sum(array_column($monthlyData, $field));
         }
+        $yearlyTotal['total_tunjangan'] = array_sum(array_column($monthlyData, 'total_tunjangan'));
 
         // Calculate averages
         $monthsWithData = count(array_filter($monthlyData, fn($m) => $m['total_employees'] > 0));
         $avgEmployees = $monthsWithData > 0 ? $yearlyTotal['total_employees'] / $monthsWithData : 0;
         $avgSalaryPerEmployee = $yearlyTotal['total_employees'] > 0 ? $yearlyTotal['total_bersih'] / $yearlyTotal['total_employees'] : 0;
+
+        // Optimized SKPD list — single indexed query
+        $skpdList = $model::where('tahun', $year)
+            ->whereNotNull('skpd')
+            ->where('skpd', '!=', '')
+            ->select('skpd')
+            ->distinct()
+            ->orderBy('skpd')
+            ->pluck('skpd')
+            ->map(function ($rawName) use ($employeeType) {
+                $mapping = \App\Models\SkpdMapping::with('skpd')
+                    ->where('source_name', $rawName)
+                    ->whereIn('type', [$employeeType, 'all'])
+                    ->first();
+                return [
+                    'source_name' => $rawName,
+                    'display_name' => $mapping?->skpd?->nama_skpd ?? $rawName,
+                    'is_mapped' => $mapping !== null,
+                ];
+            })
+            ->toArray();
 
         return response()->json([
             'success' => true,
@@ -572,25 +611,7 @@ class PnsPayrollController extends Controller
                     'year' => (int) $year,
                     'type' => $employeeType,
                     'skpd_filter' => $skpdFilter,
-                    // Normalized SKPD list: prefer master SKPD name via mapping, fallback to raw
-                    'skpd_list' => $model::where('tahun', $year)
-                        ->whereNotNull('skpd')
-                        ->where('skpd', '!=', '')
-                        ->distinct()
-                        ->orderBy('skpd')
-                        ->pluck('skpd')
-                        ->map(function ($rawName) use ($employeeType) {
-                            $mapping = \App\Models\SkpdMapping::with('skpd')
-                                ->where('source_name', $rawName)
-                                ->whereIn('type', [$employeeType, 'all'])
-                                ->first();
-                            return [
-                                'source_name' => $rawName,
-                                'display_name' => $mapping?->skpd?->nama_skpd ?? $rawName,
-                                'is_mapped' => $mapping !== null,
-                            ];
-                        })
-                        ->toArray(),
+                    'skpd_list' => $skpdList,
                 ]
             ]
         ]);
