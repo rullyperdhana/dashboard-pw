@@ -94,9 +94,21 @@ const router = createRouter({
             meta: { requiresAuth: true },
         },
         {
-            path: '/settings/users',
+            path: '/users',
             name: 'UserManagement',
             component: () => import('../views/Settings/UserManagement.vue'),
+            meta: { requiresAuth: true },
+        },
+        {
+            path: '/employees/:id/history',
+            name: 'EmployeeHistory',
+            component: () => import('../views/EmployeeHistory.vue'),
+            meta: { requiresAuth: true },
+        },
+        {
+            path: '/employee-trace',
+            name: 'EmployeeTrace',
+            component: () => import('../views/EmployeeHistory.vue'),
             meta: { requiresAuth: true },
         },
     ],

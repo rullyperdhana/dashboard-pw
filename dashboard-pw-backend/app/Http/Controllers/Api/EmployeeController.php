@@ -219,5 +219,68 @@ class EmployeeController extends Controller
             'message' => 'Pegawai berhasil dihapus',
         ]);
     }
+
+    /**
+     * Get payroll history for a specific employee
+     */
+    public function payrollHistory($id)
+    {
+        $employee = Employee::with('skpd')->findOrFail($id);
+
+        $history = \App\Models\PaymentDetail::with('payment')
+            ->where('employee_id', $id)
+            ->get()
+            ->map(function ($detail) {
+                return [
+                    'id' => $detail->id,
+                    'month' => $detail->payment->month,
+                    'year' => $detail->payment->year,
+                    'gaji_pokok' => $detail->gaji_pokok,
+                    'tunjangan' => $detail->tunjangan,
+                    'potongan' => $detail->potongan,
+                    'pajak' => $detail->pajak,
+                    'iwp' => $detail->iwp,
+                    'total_bersih' => $detail->total_amoun,
+                    'notes' => $detail->notes,
+                    'created_at' => $detail->created_at->format('Y-m-d H:i:s'),
+                ];
+            })
+            ->sortByDesc(function ($item) {
+                return $item['year'] * 100 + $item['month'];
+            })
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'employee' => $employee,
+            'data' => $history,
+        ]);
+    }
+
+    /**
+     * Export individual payroll history to PDF
+     */
+    public function exportIndividualPayroll($id)
+    {
+        $employee = Employee::with('skpd')->findOrFail($id);
+
+        $history = \App\Models\PaymentDetail::with('payment')
+            ->where('employee_id', $id)
+            ->get()
+            ->sortByDesc(function ($detail) {
+                return $detail->payment->year * 100 + $detail->payment->month;
+            });
+
+        $pdf = Pdf::loadView('exports.individual-payroll-pdf', [
+            'employee' => $employee,
+            'history' => $history,
+            'generated_at' => date('d/m/Y H:i:s'),
+        ]);
+
+        $pdf->setPaper('a4', 'portrait');
+
+        $filename = 'payroll_trace_' . $employee->nip . '_' . date('YmdHis');
+        return $pdf->download($filename . '.pdf');
+    }
 }
 
