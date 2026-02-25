@@ -26,6 +26,7 @@ class PnsPayrollController extends Controller
         ]);
 
         try {
+            ini_set('memory_limit', '512M');
             \Log::info('PNS Upload Started', [
                 'month' => $request->month,
                 'year' => $request->year,
@@ -244,6 +245,7 @@ class PnsPayrollController extends Controller
         ]);
 
         try {
+            ini_set('memory_limit', '512M');
             \Log::info('PPPK Upload Started', [
                 'month' => $request->month,
                 'year' => $request->year,

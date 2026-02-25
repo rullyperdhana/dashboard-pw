@@ -22,6 +22,7 @@ class TppController extends Controller
         ]);
 
         try {
+            ini_set('memory_limit', '512M');
             $file = $request->file('file');
             $month = $request->input('month');
             $year = $request->input('year');

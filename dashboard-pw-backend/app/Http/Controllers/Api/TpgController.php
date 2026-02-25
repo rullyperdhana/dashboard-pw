@@ -26,6 +26,7 @@ class TpgController extends Controller
         ]);
 
         try {
+            ini_set('memory_limit', '512M');
             $file = $request->file('file');
             $triwulan = $request->input('triwulan');
             $tahun = $request->input('tahun');
