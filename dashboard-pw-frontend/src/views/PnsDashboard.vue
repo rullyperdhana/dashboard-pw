@@ -687,46 +687,105 @@
 
 
         <!-- Upload Dialog -->
-        <v-dialog v-model="uploadDialog" max-width="500">
+        <v-dialog v-model="uploadDialog" max-width="550" persistent>
           <v-card class="rounded-xl">
-            <v-card-title class="pa-4 bg-teal text-white">Upload PNS Data</v-card-title>
+            <v-card-title class="pa-4 bg-teal text-white d-flex align-center">
+              <span>Upload Data Gaji</span>
+              <v-spacer></v-spacer>
+              <v-btn icon variant="text" size="small" @click="closeUploadDialog" :disabled="uploading">
+                <v-icon color="white">mdi-close</v-icon>
+              </v-btn>
+            </v-card-title>
             <v-card-text class="pa-6">
-              <v-form @submit.prevent="uploadData">
-                <v-radio-group v-model="uploadType" inline label="Tipe Pegawai" class="mb-4">
-                  <v-radio label="PNS" value="pns" color="teal"></v-radio>
-                  <v-radio label="PPPK Penuh Waktu" value="pppk" color="teal"></v-radio>
-                </v-radio-group>
+              <!-- Upload Form (shown when no active job) -->
+              <div v-if="!activeJobId">
+                <v-form @submit.prevent="uploadData">
+                  <v-radio-group v-model="uploadType" inline label="Tipe Pegawai" class="mb-4">
+                    <v-radio label="PNS" value="pns" color="teal"></v-radio>
+                    <v-radio label="PPPK Penuh Waktu" value="pppk" color="teal"></v-radio>
+                  </v-radio-group>
 
-                <v-select
-                  v-model="jenisGaji"
-                  :items="['Induk', 'Susulan', 'Kekurangan', 'Terusan']"
-                  label="Jenis Gaji"
-                  variant="outlined"
-                  class="mb-4"
-                ></v-select>
+                  <v-select
+                    v-model="jenisGaji"
+                    :items="['Induk', 'Susulan', 'Kekurangan', 'Terusan']"
+                    label="Jenis Gaji"
+                    variant="outlined"
+                    class="mb-4"
+                  ></v-select>
 
-                <v-file-input
-                  v-model="file"
-                  label="Pilih File XLS/XLSX"
-                  prepend-icon="mdi-microsoft-excel"
-                  variant="outlined"
-                  accept=".xls,.xlsx"
-                  show-size
-                  :rules="[v => !!v || 'File wajib dipilih']"
-                ></v-file-input>
-                
-                <div class="text-caption text-grey mb-4">
-                  <v-icon size="small" color="info" class="mr-1">mdi-information</v-icon>
-                  Uploading will REPLACE existing data for {{ selectedMonthName }} {{ selectedYear }}.
+                  <v-file-input
+                    v-model="file"
+                    label="Pilih File XLS/XLSX"
+                    prepend-icon="mdi-microsoft-excel"
+                    variant="outlined"
+                    accept=".xls,.xlsx"
+                    show-size
+                    :rules="[v => !!v || 'File wajib dipilih']"
+                  ></v-file-input>
+                  
+                  <div class="text-caption text-grey mb-4">
+                    <v-icon size="small" color="info" class="mr-1">mdi-information</v-icon>
+                    Data akan diproses di background. Anda bisa menutup dialog ini.
+                  </div>
+
+                  <v-alert v-if="uploadError" type="error" variant="tonal" class="mb-4 text-caption">{{ uploadError }}</v-alert>
+
+                  <v-btn block color="teal" size="large" type="submit" :loading="uploading" :disabled="!file">MULAI UPLOAD</v-btn>
+                </v-form>
+              </div>
+
+              <!-- Job Status Tracker (shown when job is active) -->
+              <div v-else>
+                <div class="text-center mb-4">
+                  <v-icon :color="jobStatusColor" size="48" class="mb-2">
+                    {{ jobStatusIcon }}
+                  </v-icon>
+                  <div class="text-h6 font-weight-bold">{{ jobStatusLabel }}</div>
+                  <div class="text-caption text-grey">{{ activeJobFileName }}</div>
                 </div>
-                
-                <v-progress-linear v-if="uploading" indeterminate color="teal" height="6" class="mb-4 rounded-pill"></v-progress-linear>
-                
-                <v-alert v-if="uploadError" type="error" variant="tonal" class="mb-4 text-caption">{{ uploadError }}</v-alert>
-                <v-alert v-if="uploadSuccess" type="success" variant="tonal" class="mb-4 text-caption">{{ uploadSuccess }}</v-alert>
 
-                <v-btn block color="teal" size="large" type="submit" :loading="uploading" :disabled="!file">START UPLOAD</v-btn>
-              </v-form>
+                <!-- Progress Bar -->
+                <v-progress-linear
+                  :model-value="activeJobProgress"
+                  :color="jobStatusColor"
+                  height="10"
+                  rounded
+                  class="mb-4"
+                  :indeterminate="activeJobStatus === 'processing' && activeJobProgress < 10"
+                ></v-progress-linear>
+                <div class="text-caption text-center text-grey mb-4">{{ activeJobProgress }}%</div>
+
+                <!-- Success Result -->
+                <v-alert v-if="activeJobStatus === 'completed'" type="success" variant="tonal" class="mb-4">
+                  <div class="font-weight-bold mb-1">Import Berhasil!</div>
+                  <div class="text-body-2">{{ activeJobResult?.message || 'Data berhasil diproses.' }}</div>
+                  <div v-if="activeJobResult?.total_records" class="text-caption mt-1">
+                    Total data: {{ activeJobResult.total_records?.toLocaleString() }} baris
+                  </div>
+                </v-alert>
+
+                <!-- Error Result -->
+                <v-alert v-if="activeJobStatus === 'failed'" type="error" variant="tonal" class="mb-4">
+                  <div class="font-weight-bold mb-1">Gagal Import</div>
+                  <div class="text-body-2">{{ activeJobError }}</div>
+                  <v-expansion-panels v-if="activeJobErrorDetail" variant="accordion" class="mt-2">
+                    <v-expansion-panel>
+                      <v-expansion-panel-title class="text-caption">Lihat Detail Error</v-expansion-panel-title>
+                      <v-expansion-panel-text>
+                        <pre class="text-caption" style="white-space: pre-wrap; font-family: monospace;">{{ activeJobErrorDetail }}</pre>
+                      </v-expansion-panel-text>
+                    </v-expansion-panel>
+                  </v-expansion-panels>
+                </v-alert>
+
+                <!-- Actions -->
+                <div class="d-flex gap-2">
+                  <v-btn v-if="activeJobStatus === 'completed' || activeJobStatus === 'failed'" 
+                    block color="teal" variant="tonal" @click="resetUpload">
+                    Upload File Baru
+                  </v-btn>
+                </div>
+              </div>
             </v-card-text>
           </v-card>
         </v-dialog>
@@ -917,6 +976,46 @@ const file = ref(null)
 const uploadError = ref('')
 const uploadSuccess = ref('')
 
+// Queue Job Tracking
+const activeJobId = ref(null)
+const activeJobStatus = ref('')
+const activeJobProgress = ref(0)
+const activeJobFileName = ref('')
+const activeJobResult = ref(null)
+const activeJobError = ref('')
+const activeJobErrorDetail = ref('')
+let pollInterval = null
+
+const jobStatusColor = computed(() => {
+  switch (activeJobStatus.value) {
+    case 'pending': return 'grey'
+    case 'processing': return 'teal'
+    case 'completed': return 'success'
+    case 'failed': return 'error'
+    default: return 'grey'
+  }
+})
+
+const jobStatusIcon = computed(() => {
+  switch (activeJobStatus.value) {
+    case 'pending': return 'mdi-clock-outline'
+    case 'processing': return 'mdi-loading mdi-spin'
+    case 'completed': return 'mdi-check-circle'
+    case 'failed': return 'mdi-alert-circle'
+    default: return 'mdi-clock-outline'
+  }
+})
+
+const jobStatusLabel = computed(() => {
+  switch (activeJobStatus.value) {
+    case 'pending': return 'Menunggu Antrian...'
+    case 'processing': return 'Sedang Memproses...'
+    case 'completed': return 'Selesai!'
+    case 'failed': return 'Gagal'
+    default: return 'Menunggu...'
+  }
+})
+
 const fetchData = async () => {
   loading.value = true
   try {
@@ -1095,46 +1194,96 @@ const renderChart = () => {
 }
 
 const uploadData = async () => {
-  if (!file.value) return
-  
   uploading.value = true
   uploadError.value = ''
-  uploadSuccess.value = ''
   
   const formData = new FormData()
   const fileToUpload = Array.isArray(file.value) ? file.value[0] : file.value
   
   if (!fileToUpload) {
-     uploadError.value = "Silakan pilih file terlebih dahulu"
-     uploading.value = false
-     return
+    uploadError.value = 'Silakan pilih file terlebih dahulu'
+    uploading.value = false
+    return
   }
   
   formData.append('file', fileToUpload)
+  formData.append('type', uploadType.value)
   formData.append('month', selectedMonth.value)
   formData.append('year', selectedYear.value)
   formData.append('jenis_gaji', jenisGaji.value)
   
   try {
-    const endpoint = uploadType.value === 'pns' ? '/pns/upload' : '/pppk/upload'
-    const response = await api.post(endpoint, formData, {
-      headers: { 
-        'Content-Type': 'multipart/form-data'
-      }
+    const response = await api.post('/upload-jobs', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
     })
-    uploadSuccess.value = `Berhasil! ${response.data.meta.total_records} data diimport.`
-    file.value = null
-    setTimeout(() => {
-      uploadDialog.value = false
-      fetchData() // Refresh data
-    }, 2000)
+    
+    // Job created — start polling
+    activeJobId.value = response.data.data.job_id
+    activeJobFileName.value = response.data.data.file_name
+    activeJobStatus.value = 'pending'
+    activeJobProgress.value = 0
+    activeJobResult.value = null
+    activeJobError.value = ''
+    activeJobErrorDetail.value = ''
+    
+    startPolling()
   } catch (err) {
-    uploadError.value = err.response?.data?.message || 'Upload gagal'
+    uploadError.value = err.response?.data?.message || 'Gagal mengirim file'
     if (err.response?.data?.errors) {
       uploadError.value += ': ' + Object.values(err.response.data.errors).flat().join(', ')
     }
   } finally {
     uploading.value = false
+  }
+}
+
+const startPolling = () => {
+  if (pollInterval) clearInterval(pollInterval)
+  pollInterval = setInterval(async () => {
+    try {
+      const res = await api.get(`/upload-jobs/${activeJobId.value}`)
+      const job = res.data.data
+      activeJobStatus.value = job.status
+      activeJobProgress.value = job.progress
+      
+      if (job.status === 'completed') {
+        clearInterval(pollInterval)
+        pollInterval = null
+        activeJobResult.value = job.result_summary
+        fetchData() // Refresh dashboard data
+      } else if (job.status === 'failed') {
+        clearInterval(pollInterval)
+        pollInterval = null
+        activeJobError.value = job.error_message || 'Proses gagal'
+        activeJobErrorDetail.value = job.error_detail || ''
+      }
+    } catch (e) {
+      console.error('Polling error:', e)
+    }
+  }, 3000) // Poll every 3 seconds
+}
+
+const resetUpload = () => {
+  activeJobId.value = null
+  activeJobStatus.value = ''
+  activeJobProgress.value = 0
+  activeJobFileName.value = ''
+  activeJobResult.value = null
+  activeJobError.value = ''
+  activeJobErrorDetail.value = ''
+  file.value = null
+  uploadError.value = ''
+}
+
+const closeUploadDialog = () => {
+  if (pollInterval) {
+    clearInterval(pollInterval)
+    pollInterval = null
+  }
+  uploadDialog.value = false
+  // Don't reset if job is still processing
+  if (activeJobStatus.value === 'completed' || activeJobStatus.value === 'failed' || !activeJobId.value) {
+    resetUpload()
   }
 }
 

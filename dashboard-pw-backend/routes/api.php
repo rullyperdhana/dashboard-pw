@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\GajiPnsController;
 use App\Http\Controllers\Api\GajiPppkController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\UploadJobController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -116,4 +117,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // User Management
     Route::apiResource('users', UserController::class);
     Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword']);
+
+    // Upload Jobs (Queue-based)
+    Route::post('/upload-jobs', [UploadJobController::class, 'store']);
+    Route::get('/upload-jobs', [UploadJobController::class, 'index']);
+    Route::get('/upload-jobs/{id}', [UploadJobController::class, 'show']);
 });
