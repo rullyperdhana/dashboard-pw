@@ -117,6 +117,12 @@ const router = createRouter({
             component: () => import('../views/BpjsRekon.vue'),
             meta: { requiresAuth: true },
         },
+        {
+            path: '/settings/sumber-dana',
+            name: 'SumberDanaSetting',
+            component: () => import('../views/SumberDanaSetting.vue'),
+            meta: { requiresAuth: true },
+        },
     ],
 })
 

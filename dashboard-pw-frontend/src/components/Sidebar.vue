@@ -194,6 +194,7 @@ const menuItems = ref([
 
   { divider: true },
   { header: 'Pengaturan' },
+  { title: 'Sumber Dana SKPD', icon: 'mdi-cash-multiple', value: 'sumber-dana', to: '/settings/sumber-dana' },
   { title: 'Manajemen User', icon: 'mdi-account-group-outline', value: 'users', to: '/settings/users' },
 ])
 </script>
