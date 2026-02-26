@@ -12,7 +12,7 @@
               <v-icon start color="teal" size="36">mdi-account-tie</v-icon>
               Dashboard Gaji Pegawai
             </h1>
-            <p class="text-subtitle-1 text-grey-darken-1">Kelola dan analisis data gaji PNS & PPPK.</p>
+            <p class="text-subtitle-1 text-medium-emphasis">Kelola dan analisis data gaji PNS & PPPK.</p>
           </v-col>
           <v-col cols="12" md="6" class="text-right">
             <!-- Date Filter -->
@@ -84,19 +84,19 @@
                         </div>
                         <v-row dense>
                           <v-col cols="6">
-                            <div class="text-caption text-grey-darken-1">Total Pegawai</div>
+                            <div class="text-caption text-medium-emphasis">Total Pegawai</div>
                             <div class="text-h5 font-weight-bold">{{ pnsStats?.total_employees?.toLocaleString() || 0 }}</div>
                           </v-col>
                           <v-col cols="6">
-                            <div class="text-caption text-grey-darken-1">Gaji Bersih</div>
+                            <div class="text-caption text-medium-emphasis">Gaji Bersih</div>
                             <div class="text-h6 font-weight-bold">{{ formatCurrencyShort(pnsStats?.total_net_salary) }}</div>
                           </v-col>
                           <v-col cols="6">
-                            <div class="text-caption text-grey-darken-1">Gaji Kotor</div>
+                            <div class="text-caption text-medium-emphasis">Gaji Kotor</div>
                             <div class="text-body-2 font-weight-medium">{{ formatCurrencyShort(pnsStats?.total_gross_salary) }}</div>
                           </v-col>
                           <v-col cols="6">
-                            <div class="text-caption text-grey-darken-1">Potongan</div>
+                            <div class="text-caption text-medium-emphasis">Potongan</div>
                             <div class="text-body-2 font-weight-medium">{{ formatCurrencyShort(pnsStats?.total_deductions) }}</div>
                           </v-col>
                         </v-row>
@@ -111,19 +111,19 @@
                         </div>
                         <v-row dense>
                           <v-col cols="6">
-                            <div class="text-caption text-grey-darken-1">Total Pegawai</div>
+                            <div class="text-caption text-medium-emphasis">Total Pegawai</div>
                             <div class="text-h5 font-weight-bold">{{ pppkStats?.total_employees?.toLocaleString() || 0 }}</div>
                           </v-col>
                           <v-col cols="6">
-                            <div class="text-caption text-grey-darken-1">Gaji Bersih</div>
+                            <div class="text-caption text-medium-emphasis">Gaji Bersih</div>
                             <div class="text-h6 font-weight-bold">{{ formatCurrencyShort(pppkStats?.total_net_salary) }}</div>
                           </v-col>
                           <v-col cols="6">
-                            <div class="text-caption text-grey-darken-1">Gaji Kotor</div>
+                            <div class="text-caption text-medium-emphasis">Gaji Kotor</div>
                             <div class="text-body-2 font-weight-medium">{{ formatCurrencyShort(pppkStats?.total_gross_salary) }}</div>
                           </v-col>
                           <v-col cols="6">
-                            <div class="text-caption text-grey-darken-1">Potongan</div>
+                            <div class="text-caption text-medium-emphasis">Potongan</div>
                             <div class="text-body-2 font-weight-medium">{{ formatCurrencyShort(pppkStats?.total_deductions) }}</div>
                           </v-col>
                         </v-row>
@@ -136,31 +136,31 @@
                   <v-row>
                     <v-col cols="12" sm="6" md="2">
                       <div class="text-center pa-3">
-                        <div class="text-overline text-grey-darken-1">Total Pegawai</div>
+                        <div class="text-overline text-medium-emphasis">Total Pegawai</div>
                         <div class="text-h4 font-weight-bold text-primary">{{ combinedTotal.employees.toLocaleString() }}</div>
                       </div>
                     </v-col>
                     <v-col cols="12" sm="6" md="3">
                       <div class="text-center pa-3">
-                        <div class="text-overline text-grey-darken-1">Total Gaji Bersih</div>
+                        <div class="text-overline text-medium-emphasis">Total Gaji Bersih</div>
                         <div class="text-h5 font-weight-bold text-success">{{ formatCurrencyShort(combinedTotal.net) }}</div>
                       </div>
                     </v-col>
                     <v-col cols="12" sm="6" md="3">
                       <div class="text-center pa-3">
-                        <div class="text-overline text-grey-darken-1">Total TPP</div>
+                        <div class="text-overline text-medium-emphasis">Total TPP</div>
                         <div class="text-h5 font-weight-bold text-info">{{ formatCurrencyShort(combinedTotal.tpp) }}</div>
                       </div>
                     </v-col>
                     <v-col cols="12" sm="6" md="2">
                       <div class="text-center pa-3">
-                        <div class="text-overline text-grey-darken-1">Total Gaji Kotor</div>
-                        <div class="text-h5 font-weight-bold text-grey-darken-2">{{ formatCurrencyShort(combinedTotal.gross) }}</div>
+                        <div class="text-overline text-medium-emphasis">Total Gaji Kotor</div>
+                        <div class="text-h5 font-weight-bold">{{ formatCurrencyShort(combinedTotal.gross) }}</div>
                       </div>
                     </v-col>
                     <v-col cols="12" sm="6" md="2">
                       <div class="text-center pa-3">
-                        <div class="text-overline text-grey-darken-1">Total Potongan</div>
+                        <div class="text-overline text-medium-emphasis">Total Potongan</div>
                         <div class="text-h5 font-weight-bold text-warning">{{ formatCurrencyShort(combinedTotal.deductions) }}</div>
                       </div>
                     </v-col>
@@ -176,35 +176,35 @@
           <v-row>
             <v-col cols="12" sm="6" md="3">
               <v-card class="glass-card rounded-xl pa-4" elevation="0">
-                <div class="text-overline text-grey-darken-1">Total {{ employeeType === 'pns' ? 'PNS' : 'PPPK' }}</div>
+                <div class="text-overline text-medium-emphasis">Total {{ employeeType === 'pns' ? 'PNS' : 'PPPK' }}</div>
                 <div class="text-h4 font-weight-bold">{{ stats?.total_employees?.toLocaleString() || 0 }}</div>
                 <v-icon color="teal" class="float-right mt-n8" size="48">mdi-account-group</v-icon>
               </v-card>
             </v-col>
             <v-col cols="12" sm="6" md="3">
               <v-card class="glass-card rounded-xl pa-4" elevation="0">
-                <div class="text-overline text-grey-darken-1">Net Payroll</div>
+                <div class="text-overline text-medium-emphasis">Net Payroll</div>
                 <div class="text-h5 font-weight-bold">{{ formatCurrencyShort(stats?.total_net_salary) }}</div>
                 <v-icon color="success" class="float-right mt-n8" size="48">mdi-cash-multiple</v-icon>
               </v-card>
             </v-col>
             <v-col cols="12" sm="6" md="3">
               <v-card class="glass-card rounded-xl pa-4" elevation="0">
-                <div class="text-overline text-grey-darken-1">Total Deductions</div>
+                <div class="text-overline text-medium-emphasis">Total Deductions</div>
                 <div class="text-h5 font-weight-bold">{{ formatCurrencyShort(stats?.total_deductions) }}</div>
                 <v-icon color="warning" class="float-right mt-n8" size="48">mdi-content-cut</v-icon>
               </v-card>
             </v-col>
             <v-col cols="12" sm="6" md>
               <v-card class="glass-card rounded-xl pa-4" elevation="0">
-                <div class="text-overline text-grey-darken-1">Gross Total</div>
+                <div class="text-overline text-medium-emphasis">Gross Total</div>
                 <div class="text-h5 font-weight-bold">{{ formatCurrencyShort(stats?.total_gross_salary) }}</div>
                 <v-icon color="grey" class="float-right mt-n8" size="48">mdi-chart-line</v-icon>
               </v-card>
             </v-col>
             <v-col cols="12" sm="6" md>
               <v-card class="glass-card rounded-xl pa-4" elevation="0">
-                <div class="text-overline text-grey-darken-1">Total TPP</div>
+                <div class="text-overline text-medium-emphasis">Total TPP</div>
                 <div class="text-h5 font-weight-bold text-info">{{ formatCurrencyShort(stats?.total_tunj_tpp) }}</div>
                 <v-icon color="info" class="float-right mt-n8" size="48">mdi-cash-plus</v-icon>
               </v-card>
@@ -223,7 +223,7 @@
                 <v-col cols="12">
                     <v-card class="glass-card rounded-xl" elevation="0">
                         <v-card-text class="pa-6">
-                            <div class="text-overline text-grey-darken-1 mb-2">Projected Annual Budget</div>
+                            <div class="text-overline text-medium-emphasis mb-2">Projected Annual Budget</div>
                             <div class="text-h4 font-weight-bold text-primary mb-1">
                             {{ formatCurrencyShort(stats?.projected_annual_budget) }}
                             </div>
@@ -236,7 +236,7 @@
                 <v-col cols="12">
                     <v-card class="glass-card rounded-xl" elevation="0">
                         <v-card-text class="pa-6">
-                            <div class="text-overline text-grey-darken-1 mb-2">TPP Budget Forecast (Next Year)</div>
+                            <div class="text-overline text-medium-emphasis mb-2">TPP Budget Forecast (Next Year)</div>
                             <div class="text-h4 font-weight-bold text-info mb-1">
                             {{ formatCurrencyShort(stats?.tpp_forecast_next_year) }}
                             </div>
@@ -358,7 +358,7 @@
                     <v-row>
                       <v-col cols="12" sm="6" md="3" v-for="(allowance, key) in allowanceBreakdown" :key="key">
                         <div class="pa-4 rounded-lg" style="background: rgba(var(--v-theme-primary), 0.05)">
-                          <div class="text-caption text-grey-darken-1 mb-1">{{ allowance.label }}</div>
+                          <div class="text-caption text-medium-emphasis mb-1">{{ allowance.label }}</div>
                           <div class="text-h6 font-weight-bold mb-1">{{ formatCurrencyShort(allowance.value) }}</div>
                           <div class="text-caption text-grey">
                             {{ stats?.total_gross_salary > 0 ? ((allowance.value / stats?.total_gross_salary) * 100).toFixed(1) : '0.0' }}% dari total
@@ -382,7 +382,7 @@
                     <v-row>
                       <v-col cols="12" sm="6" md="3" v-for="(deduction, key) in deductionBreakdown" :key="key">
                         <div class="pa-4 rounded-lg" style="background: rgba(var(--v-theme-error), 0.05)">
-                          <div class="text-caption text-grey-darken-1 mb-1">{{ deduction.label }}</div>
+                          <div class="text-caption text-medium-emphasis mb-1">{{ deduction.label }}</div>
                           <div class="text-h6 font-weight-bold mb-1 text-error">{{ formatCurrencyShort(deduction.value) }}</div>
                           <div class="text-caption text-grey">
                             {{ stats?.total_deductions > 0 ? ((deduction.value / stats?.total_deductions) * 100).toFixed(1) : '0.0' }}% dari total potongan
@@ -391,7 +391,7 @@
                       </v-col>
                       <v-col cols="12" sm="6" md="3">
                         <div class="pa-4 rounded-lg" style="background: rgba(var(--v-theme-info), 0.05)">
-                          <div class="text-caption text-grey-darken-1 mb-1">Pembulatan</div>
+                          <div class="text-caption text-medium-emphasis mb-1">Pembulatan</div>
                           <div class="text-h6 font-weight-bold mb-1 text-info">{{ formatCurrencyShort(stats?.total_pembulatan || 0) }}</div>
                         </div>
                       </v-col>
@@ -487,21 +487,21 @@
             <v-row class="mb-4">
               <v-col cols="12" md="4">
                 <v-card class="glass-card rounded-xl pa-4" elevation="0">
-                  <div class="text-overline text-grey-darken-1">Rata-rata Pegawai/Bulan</div>
+                  <div class="text-overline text-medium-emphasis">Rata-rata Pegawai/Bulan</div>
                   <div class="text-h4 font-weight-bold">{{ annualReport.summary?.avg_employees_per_month?.toLocaleString() || 0 }}</div>
                   <div class="text-caption text-grey">Dari {{ annualReport.summary?.months_with_data || 0 }} bulan dengan data</div>
                 </v-card>
               </v-col>
               <v-col cols="12" md="4">
                 <v-card class="glass-card rounded-xl pa-4" elevation="0">
-                  <div class="text-overline text-grey-darken-1">Total Gaji Dibayarkan</div>
+                  <div class="text-overline text-medium-emphasis">Total Gaji Dibayarkan</div>
                   <div class="text-h5 font-weight-bold">{{ formatCurrencyShort(annualReport.yearly_total?.total_bersih) }}</div>
                   <div class="text-caption text-grey">Selama {{ selectedYear }}</div>
                 </v-card>
               </v-col>
               <v-col cols="12" md="4">
                 <v-card class="glass-card rounded-xl pa-4" elevation="0">
-                  <div class="text-overline text-grey-darken-1">Rata-rata Gaji/Pegawai</div>
+                  <div class="text-overline text-medium-emphasis">Rata-rata Gaji/Pegawai</div>
                   <div class="text-h5 font-weight-bold">{{ formatCurrency(annualReport.summary?.avg_salary_per_employee) }}</div>
                   <div class="text-caption text-grey">Per pegawai per bulan</div>
                 </v-card>
@@ -1413,8 +1413,8 @@ watch(reportViewMode, (val) => {
 }
 
 .glass-card {
-  background-color: rgba(255, 255, 255, 0.9) !important;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  background-color: rgb(var(--v-theme-surface)) !important;
+  border: 1px solid rgba(var(--v-border-color), 0.08) !important;
 }
 
 /* Annual Report Table Styles */
@@ -1440,16 +1440,16 @@ watch(reportViewMode, (val) => {
 
 .annual-report-table td {
   padding: 10px 16px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.1);
   white-space: nowrap;
 }
 
 .annual-report-table .sticky-col {
   position: sticky;
   left: 0;
-  background: white;
+  background: rgb(var(--v-theme-surface));
   z-index: 5;
-  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 2px 0 4px rgba(var(--v-border-color), 0.1);
 }
 
 .annual-report-table thead .sticky-col {
