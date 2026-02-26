@@ -21,40 +21,51 @@ class BpjsRekonController extends Controller
 
         $month = $request->month;
         $year = $request->year;
+        $sumberDana = $request->input('sumber_dana'); // optional: APBD or BLUD
 
         // Get payment detail with employee info for the given period
-        $data = DB::table('tb_payment_detail')
+        $query = DB::table('tb_payment_detail')
             ->join('tb_payment', 'tb_payment_detail.payment_id', '=', 'tb_payment.id')
             ->join('pegawai_pw', 'tb_payment_detail.employee_id', '=', 'pegawai_pw.id')
             ->where('tb_payment.month', $month)
-            ->where('tb_payment.year', $year)
-            ->select(
-                'pegawai_pw.nip',
-                'pegawai_pw.nama',
-                'pegawai_pw.skpd',
-                'pegawai_pw.upt',
-                'pegawai_pw.jabatan',
-                'tb_payment_detail.gaji_pokok',
-                'tb_payment_detail.total_amoun',
-                DB::raw('ROUND(tb_payment_detail.gaji_pokok * 0.04, 0) as bpjs_4_persen')
-            )
+            ->where('tb_payment.year', $year);
+
+        if ($sumberDana) {
+            $query->where('pegawai_pw.sumber_dana', $sumberDana);
+        }
+
+        $data = $query->select(
+            'pegawai_pw.nip',
+            'pegawai_pw.nama',
+            'pegawai_pw.skpd',
+            'pegawai_pw.upt',
+            'pegawai_pw.jabatan',
+            'tb_payment_detail.gaji_pokok',
+            'tb_payment_detail.total_amoun',
+            DB::raw('ROUND(tb_payment_detail.gaji_pokok * 0.04, 0) as bpjs_4_persen')
+        )
             ->orderBy('pegawai_pw.skpd')
             ->orderBy('pegawai_pw.nama')
             ->get();
 
         // Summary per SKPD
-        $skpdSummary = DB::table('tb_payment_detail')
+        $skpdQuery = DB::table('tb_payment_detail')
             ->join('tb_payment', 'tb_payment_detail.payment_id', '=', 'tb_payment.id')
             ->join('pegawai_pw', 'tb_payment_detail.employee_id', '=', 'pegawai_pw.id')
             ->where('tb_payment.month', $month)
-            ->where('tb_payment.year', $year)
-            ->select(
-                'pegawai_pw.skpd',
-                DB::raw('COUNT(*) as jumlah_pegawai'),
-                DB::raw('SUM(tb_payment_detail.gaji_pokok) as total_gaji_pokok'),
-                DB::raw('SUM(ROUND(tb_payment_detail.gaji_pokok * 0.04, 0)) as total_bpjs_4_persen'),
-                DB::raw('SUM(tb_payment_detail.total_amoun) as total_gaji_bersih')
-            )
+            ->where('tb_payment.year', $year);
+
+        if ($sumberDana) {
+            $skpdQuery->where('pegawai_pw.sumber_dana', $sumberDana);
+        }
+
+        $skpdSummary = $skpdQuery->select(
+            'pegawai_pw.skpd',
+            DB::raw('COUNT(*) as jumlah_pegawai'),
+            DB::raw('SUM(tb_payment_detail.gaji_pokok) as total_gaji_pokok'),
+            DB::raw('SUM(ROUND(tb_payment_detail.gaji_pokok * 0.04, 0)) as total_bpjs_4_persen'),
+            DB::raw('SUM(tb_payment_detail.total_amoun) as total_gaji_bersih')
+        )
             ->groupBy('pegawai_pw.skpd')
             ->orderBy('pegawai_pw.skpd')
             ->get();

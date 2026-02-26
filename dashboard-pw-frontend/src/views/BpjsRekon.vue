@@ -47,7 +47,19 @@
                     hide-details
                   ></v-select>
                 </v-col>
-                <v-col cols="3" class="d-flex align-center">
+                <v-col cols="3">
+                  <v-select
+                    v-model="selectedSumberDana"
+                    :items="sumberDanaOptions"
+                    label="Sumber Dana"
+                    variant="outlined"
+                    density="compact"
+                    color="teal"
+                    prepend-inner-icon="mdi-cash-multiple"
+                    hide-details
+                  ></v-select>
+                </v-col>
+                <v-col cols="2" class="d-flex align-center">
                   <v-btn color="teal" block @click="fetchData" :loading="loading" height="40">
                     <v-icon start>mdi-magnify</v-icon> Cari
                   </v-btn>
@@ -207,6 +219,8 @@ const searchDetail = ref('')
 
 const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedYear = ref(new Date().getFullYear())
+const selectedSumberDana = ref('Semua')
+const sumberDanaOptions = ['Semua', 'APBD', 'BLUD']
 
 const detail = ref([])
 const skpdSummary = ref([])
@@ -243,9 +257,11 @@ const detailHeaders = [
 const fetchData = async () => {
   loading.value = true
   try {
-    const res = await api.get('/bpjs-rekon', {
-      params: { month: selectedMonth.value, year: selectedYear.value }
-    })
+    const params = { month: selectedMonth.value, year: selectedYear.value }
+    if (selectedSumberDana.value !== 'Semua') {
+      params.sumber_dana = selectedSumberDana.value
+    }
+    const res = await api.get('/bpjs-rekon', { params })
     if (res.data.success) {
       detail.value = res.data.data.detail
       skpdSummary.value = res.data.data.skpd_summary

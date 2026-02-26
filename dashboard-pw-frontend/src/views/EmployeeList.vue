@@ -144,6 +144,13 @@
                   </div>
                 </template>
 
+                <!-- Sumber Dana -->
+                <template v-slot:item.sumber_dana="{ item }">
+                  <v-chip :color="item.sumber_dana === 'BLUD' ? 'orange' : 'blue'" size="x-small" variant="tonal">
+                    {{ item.sumber_dana || 'APBD' }}
+                  </v-chip>
+                </template>
+
                 <!-- Gaji Pokok -->
                 <template v-slot:item.gapok="{ item }">
                   <span class="font-weight-medium">{{ formatCurrency(item.gapok) }}</span>
@@ -358,6 +365,12 @@
               <div class="text-body-2 font-weight-bold text-success">{{ formatCurrency(selectedEmployee?.gapok) }}</div>
             </v-col>
             <v-col cols="6" class="mb-3">
+              <div class="text-caption text-grey">Sumber Dana</div>
+              <v-chip :color="selectedEmployee?.sumber_dana === 'BLUD' ? 'orange' : 'blue'" size="small" variant="tonal">
+                {{ selectedEmployee?.sumber_dana || 'APBD' }}
+              </v-chip>
+            </v-col>
+            <v-col cols="6" class="mb-3">
               <div class="text-caption text-grey">Tunjangan</div>
               <div class="text-body-2 font-weight-medium">{{ formatCurrency(selectedEmployee?.tunjangan) }}</div>
             </v-col>
@@ -569,6 +582,7 @@ const headers = [
   { title: 'GOLONGAN', key: 'golru', sortable: true, width: '100px' },
   { title: 'JABATAN', key: 'jabatan', sortable: true },
   { title: 'SKPD/UPT', key: 'skpd', sortable: false },
+  { title: 'SUMBER DANA', key: 'sumber_dana', sortable: true, width: '120px' },
   { title: 'GAJI POKOK', key: 'gapok', sortable: true, align: 'end' },
   { title: 'AKSI', key: 'actions', sortable: false, width: '140px', align: 'center' },
 ]

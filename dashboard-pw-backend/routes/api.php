@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\GajiPppkController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UploadJobController;
 use App\Http\Controllers\Api\BpjsRekonController;
+use App\Http\Controllers\Api\SumberDanaSettingController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -126,4 +127,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // BPJS Rekon
     Route::get('/bpjs-rekon', [BpjsRekonController::class, 'index']);
+
+    // Sumber Dana Settings
+    Route::get('/sumber-dana', [SumberDanaSettingController::class, 'index']);
+    Route::put('/sumber-dana', [SumberDanaSettingController::class, 'update']);
+    Route::put('/sumber-dana/bulk', [SumberDanaSettingController::class, 'bulkUpdate']);
 });

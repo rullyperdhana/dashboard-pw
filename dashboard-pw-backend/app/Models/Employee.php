@@ -52,6 +52,7 @@ class Employee extends Model
         'pajak',
         'iwp',
         'potongan',
+        'sumber_dana',
     ];
 
     /**

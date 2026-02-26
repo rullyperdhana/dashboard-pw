@@ -164,6 +164,7 @@ class EmployeeController extends Controller
             'pajak' => 'nullable|numeric',
             'iwp' => 'nullable|numeric',
             'potongan' => 'nullable|numeric',
+            'sumber_dana' => 'nullable|in:APBD,BLUD',
         ]);
 
         $employee = Employee::create($validated);
@@ -212,6 +213,7 @@ class EmployeeController extends Controller
             'pajak' => 'nullable|numeric',
             'iwp' => 'nullable|numeric',
             'potongan' => 'nullable|numeric',
+            'sumber_dana' => 'nullable|in:APBD,BLUD',
         ]);
 
         $employee->update($validated);
