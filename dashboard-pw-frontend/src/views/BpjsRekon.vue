@@ -281,7 +281,7 @@ const exportExcel = (type) => {
     fileName = `Rekon_BPJS_4persen_Detail_${monthName}_${selectedYear.value}.csv`
     csvContent = 'No,NIP,Nama,SKPD,Jabatan,Gaji Pokok,BPJS 4%,Gaji Bersih\n'
     detail.value.forEach((row, i) => {
-      csvContent += `${i+1},"${row.nip}","${row.nama}","${row.skpd || row.upt || ''}","${row.jabatan || ''}",${row.gaji_pokok},${row.bpjs_4_persen},${row.total_amoun}\n`
+      csvContent += `${i+1},"=""${row.nip}""","${row.nama}","${row.skpd || row.upt || ''}","${row.jabatan || ''}",${row.gaji_pokok},${row.bpjs_4_persen},${row.total_amoun}\n`
     })
   }
 
