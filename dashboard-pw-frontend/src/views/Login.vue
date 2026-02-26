@@ -111,7 +111,7 @@
           <v-divider class="mx-10"></v-divider>
           
           <v-card-text class="text-center text-caption text-grey-darken-1 py-8">
-            <span class="font-weight-bold text-primary">DASHBOARD PENGGAJIAN PPPK</span><br>
+            <span class="font-weight-bold text-primary">DASHBOARD PENGGAJIAN</span><br>
             Provinsi Kalimantan Selatan &copy; 2026
           </v-card-text>
         </v-card>

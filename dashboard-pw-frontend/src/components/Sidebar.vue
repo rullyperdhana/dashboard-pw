@@ -184,6 +184,7 @@ const menuItems = ref([
   { title: 'Payroll', icon: 'mdi-wallet-outline', value: 'payments', to: '/payments' },
   { title: 'Trace Gaji', icon: 'mdi-account-search-outline', value: 'employee-trace', to: '/employee-trace' },
   { title: 'Upload TPP', icon: 'mdi-upload-multiple', value: 'tpp-upload', to: '/tpp/upload' },
+  { title: 'Rekon BPJS 4%', icon: 'mdi-hospital-box-outline', value: 'bpjs-rekon', to: '/bpjs-rekon' },
   { title: 'Laporan SKPD', icon: 'mdi-file-table-outline', value: 'skpd-monthly', to: '/reports/skpd-monthly' },
 
   { divider: true },

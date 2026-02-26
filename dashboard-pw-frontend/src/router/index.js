@@ -111,6 +111,12 @@ const router = createRouter({
             component: () => import('../views/EmployeeHistory.vue'),
             meta: { requiresAuth: true },
         },
+        {
+            path: '/bpjs-rekon',
+            name: 'BpjsRekon',
+            component: () => import('../views/BpjsRekon.vue'),
+            meta: { requiresAuth: true },
+        },
     ],
 })
 

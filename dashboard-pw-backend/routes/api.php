@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\GajiPnsController;
 use App\Http\Controllers\Api\GajiPppkController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UploadJobController;
+use App\Http\Controllers\Api\BpjsRekonController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -122,4 +123,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/upload-jobs', [UploadJobController::class, 'store']);
     Route::get('/upload-jobs', [UploadJobController::class, 'index']);
     Route::get('/upload-jobs/{id}', [UploadJobController::class, 'show']);
+
+    // BPJS Rekon
+    Route::get('/bpjs-rekon', [BpjsRekonController::class, 'index']);
 });
