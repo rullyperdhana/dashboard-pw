@@ -21,17 +21,21 @@
                       :items="employees"
                       item-title="nama"
                       item-value="id"
-                      label="Cari Nama Pegawai PPPK Paruh Waktu"
-                      prepend-inner-icon="mdi-account"
+                      label="Cari Nama atau NIP Pegawai"
+                      prepend-inner-icon="mdi-account-search"
                       variant="outlined"
                       clearable
                       :loading="searching"
                       @update:search="onSearch"
                       return-object
-                      placeholder="Ketik minimal 3 karakter untuk mencari..."
+                      placeholder="Ketik nama atau NIP (minimal 3 karakter)..."
                     >
                       <template v-slot:item="{ props, item }">
-                        <v-list-item v-bind="props" :subtitle="item.raw.nip + ' - ' + item.raw.jabatan"></v-list-item>
+                        <v-list-item v-bind="props">
+                          <template v-slot:subtitle>
+                            {{ item.raw.nip }} · {{ item.raw.skpd?.nama_skpd || item.raw.upt || '-' }} · {{ item.raw.jabatan }}
+                          </template>
+                        </v-list-item>
                       </template>
                     </v-autocomplete>
                   </v-col>
@@ -69,7 +73,7 @@
                   <div>
                     <h3 class="text-h6 mb-1 font-weight-bold">{{ selectedEmployee.nama }}</h3>
                     <div class="text-subtitle-2 text-grey-darken-1">
-                      NIP: {{ selectedEmployee.nip }} | Jabatan: {{ selectedEmployee.jabatan }}
+                      NIP: {{ selectedEmployee.nip }} | {{ selectedEmployee.skpd?.nama_skpd || selectedEmployee.upt || '-' }} | {{ selectedEmployee.jabatan }}
                     </div>
                   </div>
                   <v-chip color="info" label variant="tonal">
