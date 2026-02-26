@@ -82,6 +82,7 @@ class Employee extends Model
     const STATUS_PENSIUN = 'Pensiun';
     const STATUS_KELUAR = 'Keluar';
     const STATUS_DIBERHENTIKAN = 'Diberhentikan';
+    const STATUS_MENINGGAL = 'Meninggal';
 
     /**
      * Get all possible statuses
@@ -93,6 +94,7 @@ class Employee extends Model
             self::STATUS_PENSIUN,
             self::STATUS_KELUAR,
             self::STATUS_DIBERHENTIKAN,
+            self::STATUS_MENINGGAL,
         ];
     }
 

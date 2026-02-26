@@ -234,7 +234,7 @@ const loadingHistory = ref(false)
 // Status & SK Management
 const statusDialog = ref(false)
 const savingStatus = ref(false)
-const statusOptions = ref(['Aktif', 'Pensiun', 'Keluar', 'Diberhentikan'])
+const statusOptions = ref(['Aktif', 'Pensiun', 'Keluar', 'Diberhentikan', 'Meninggal'])
 const formData = ref({
   status: '',
   file: null,

@@ -64,7 +64,7 @@
                   <v-select
                     v-model="statusFilter"
                     label="Status Pegawai"
-                    :items="['Semua', 'Aktif', 'Pensiun', 'Keluar', 'Diberhentikan']"
+                    :items="['Semua', 'Aktif', 'Pensiun', 'Keluar', 'Diberhentikan', 'Meninggal']"
                     variant="underlined"
                     density="compact"
                     clearable
@@ -222,7 +222,7 @@
                 <v-select v-model="form.agama" label="Agama" :items="['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu']" variant="outlined" density="compact"></v-select>
               </v-col>
               <v-col cols="12" md="4">
-                <v-select v-model="form.status" label="Status" :items="['Aktif', 'Pensiun', 'Keluar', 'Diberhentikan']" variant="outlined" density="compact"></v-select>
+                <v-select v-model="form.status" label="Status" :items="['Aktif', 'Pensiun', 'Keluar', 'Diberhentikan', 'Meninggal']" variant="outlined" density="compact"></v-select>
               </v-col>
               <v-col cols="12" md="4">
                 <v-text-field v-model="form.no_hp" label="No. HP" variant="outlined" density="compact"></v-text-field>

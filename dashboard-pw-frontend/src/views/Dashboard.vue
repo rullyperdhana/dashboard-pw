@@ -929,6 +929,7 @@ const getStatusColor = (status) => {
     case 'Pensiun': return 'warning'
     case 'Keluar': return 'error'
     case 'Diberhentikan': return 'deep-orange'
+    case 'Meninggal': return 'grey-darken-2'
     default: return 'primary'
   }
 }
