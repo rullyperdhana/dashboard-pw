@@ -26,12 +26,15 @@ class SettingController extends Controller
     {
         $validated = $request->validate([
             'settings' => 'required|array',
-            'settings.*.key' => 'required|exists:settings,key',
+            'settings.*.key' => 'required|string',
             'settings.*.value' => 'required'
         ]);
 
         foreach ($validated['settings'] as $item) {
-            Setting::where('key', $item['key'])->update(['value' => $item['value']]);
+            Setting::updateOrCreate(
+                ['key' => $item['key']],
+                ['value' => $item['value']]
+            );
         }
 
         return response()->json([

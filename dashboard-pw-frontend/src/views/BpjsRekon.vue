@@ -8,20 +8,38 @@
         <!-- Header -->
         <v-row class="mb-6">
           <v-col cols="12">
-            <h1 class="text-h4 font-weight-bold mb-1">
-              <v-icon start color="teal" size="36">mdi-hospital-box</v-icon>
-              Rekon BPJS 4% - PPPK Paruh Waktu
-            </h1>
-            <p class="text-subtitle-1 text-grey-darken-1">Rekonsiliasi pembayaran BPJS Kesehatan 4% berdasarkan data gaji.</p>
+            <div class="d-flex align-center justify-space-between">
+              <div>
+                <h1 class="text-h4 font-weight-bold mb-1">
+                  <v-icon start color="teal" size="36">mdi-hospital-box</v-icon>
+                  Rekon BPJS 4% - PPPK Paruh Waktu
+                </h1>
+                <p class="text-subtitle-1 text-medium-emphasis">Rekonsiliasi pembayaran BPJS Kesehatan 4% berdasarkan data gaji.</p>
+              </div>
+              <v-btn variant="tonal" color="teal" prepend-icon="mdi-cog" @click="showUmpDialog = true">
+                Setting UMP
+              </v-btn>
+            </div>
+          </v-col>
+        </v-row>
+
+        <!-- UMP Info Banner -->
+        <v-row v-if="umpValue" class="mb-2">
+          <v-col cols="12">
+            <v-alert type="info" variant="tonal" density="compact" class="rounded-lg">
+              <strong>Rumus BPJS 4%:</strong>
+              Jika gaji pokok ≥ UMP ({{ formatCurrency(umpValue) }}) → BPJS = Gaji Pokok × 4%.
+              Jika gaji pokok &lt; UMP → BPJS = {{ formatCurrency(bpjsUmpValue) }} ({{ formatCurrency(umpValue) }} × 4%).
+            </v-alert>
           </v-col>
         </v-row>
 
         <!-- Filter -->
         <v-row>
-          <v-col cols="12" md="8" lg="6">
+          <v-col cols="12" md="10" lg="8">
             <v-card class="glass-card rounded-xl pa-4" elevation="0">
               <v-row>
-                <v-col cols="5">
+                <v-col cols="4">
                   <v-select
                     v-model="selectedMonth"
                     :items="months"
@@ -35,7 +53,7 @@
                     hide-details
                   ></v-select>
                 </v-col>
-                <v-col cols="4">
+                <v-col cols="3">
                   <v-select
                     v-model="selectedYear"
                     :items="years"
@@ -71,28 +89,40 @@
 
         <!-- Grand Total Summary -->
         <v-row v-if="grandTotal" class="mt-4">
-          <v-col cols="6" md="3">
+          <v-col cols="6" md="2">
             <v-card class="glass-card rounded-xl pa-4 text-center" elevation="0">
-              <div class="text-caption text-grey mb-1">Jumlah Pegawai</div>
+              <div class="text-caption text-medium-emphasis mb-1">Jumlah Pegawai</div>
               <div class="text-h5 font-weight-bold text-teal">{{ grandTotal.jumlah_pegawai?.toLocaleString() }}</div>
             </v-card>
           </v-col>
-          <v-col cols="6" md="3">
+          <v-col cols="6" md="2">
             <v-card class="glass-card rounded-xl pa-4 text-center" elevation="0">
-              <div class="text-caption text-grey mb-1">Total Gaji Pokok</div>
+              <div class="text-caption text-medium-emphasis mb-1">Total Gaji Pokok</div>
               <div class="text-h6 font-weight-bold">{{ formatCurrency(grandTotal.total_gaji_pokok) }}</div>
             </v-card>
           </v-col>
-          <v-col cols="6" md="3">
+          <v-col cols="6" md="2">
             <v-card class="glass-card rounded-xl pa-4 text-center" elevation="0">
-              <div class="text-caption text-grey mb-1">Total BPJS 4%</div>
+              <div class="text-caption text-medium-emphasis mb-1">Total BPJS 4%</div>
               <div class="text-h5 font-weight-bold text-red-darken-1">{{ formatCurrency(grandTotal.total_bpjs_4_persen) }}</div>
             </v-card>
           </v-col>
-          <v-col cols="6" md="3">
+          <v-col cols="6" md="2">
             <v-card class="glass-card rounded-xl pa-4 text-center" elevation="0">
-              <div class="text-caption text-grey mb-1">Total Gaji Bersih</div>
+              <div class="text-caption text-medium-emphasis mb-1">Total Gaji Bersih</div>
               <div class="text-h6 font-weight-bold text-green">{{ formatCurrency(grandTotal.total_gaji_bersih) }}</div>
+            </v-card>
+          </v-col>
+          <v-col cols="6" md="2">
+            <v-card class="glass-card rounded-xl pa-4 text-center" elevation="0">
+              <div class="text-caption text-medium-emphasis mb-1">Gaji &lt; UMP</div>
+              <div class="text-h6 font-weight-bold text-orange">{{ grandTotal.pegawai_bawah_ump || 0 }} orang</div>
+            </v-card>
+          </v-col>
+          <v-col cols="6" md="2">
+            <v-card class="glass-card rounded-xl pa-4 text-center" elevation="0">
+              <div class="text-caption text-medium-emphasis mb-1">Gaji ≥ UMP</div>
+              <div class="text-h6 font-weight-bold text-blue">{{ grandTotal.pegawai_atas_ump || 0 }} orang</div>
             </v-card>
           </v-col>
         </v-row>
@@ -136,6 +166,10 @@
                   <span class="font-weight-bold text-red-darken-1">{{ formatCurrency(item.total_bpjs_4_persen) }}</span>
                 </template>
                 <template v-slot:item.total_gaji_bersih="{ item }">{{ formatCurrency(item.total_gaji_bersih) }}</template>
+                <template v-slot:item.pegawai_bawah_ump="{ item }">
+                  <v-chip v-if="item.pegawai_bawah_ump > 0" color="orange" size="x-small" variant="tonal">{{ item.pegawai_bawah_ump }}</v-chip>
+                  <span v-else class="text-medium-emphasis">-</span>
+                </template>
 
                 <template v-slot:body.append>
                   <tr class="font-weight-bold bg-grey-lighten-4">
@@ -145,6 +179,7 @@
                     <td class="text-end">{{ formatCurrency(grandTotal.total_gaji_pokok) }}</td>
                     <td class="text-end text-red-darken-1">{{ formatCurrency(grandTotal.total_bpjs_4_persen) }}</td>
                     <td class="text-end">{{ formatCurrency(grandTotal.total_gaji_bersih) }}</td>
+                    <td class="text-center">{{ grandTotal.pegawai_bawah_ump || 0 }}</td>
                   </tr>
                 </template>
               </v-data-table>
@@ -188,6 +223,11 @@
                 <template v-slot:item.bpjs_4_persen="{ item }">
                   <span class="font-weight-bold text-red-darken-1">{{ formatCurrency(item.bpjs_4_persen) }}</span>
                 </template>
+                <template v-slot:item.basis_hitung="{ item }">
+                  <v-chip :color="item.basis_hitung === 'UMP' ? 'orange' : 'blue'" size="x-small" variant="tonal">
+                    {{ item.basis_hitung }}
+                  </v-chip>
+                </template>
                 <template v-slot:item.total_amoun="{ item }">{{ formatCurrency(item.total_amoun) }}</template>
               </v-data-table>
             </v-card>
@@ -198,17 +238,51 @@
         <v-row v-if="!loading && !grandTotal" class="mt-8">
           <v-col cols="12" class="text-center">
             <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-hospital-box-outline</v-icon>
-            <div class="text-h6 text-grey-darken-1">Pilih bulan dan tahun, lalu klik Cari</div>
-            <div class="text-caption text-grey">Data BPJS 4% akan ditampilkan berdasarkan record pembayaran.</div>
+            <div class="text-h6 text-medium-emphasis">Pilih bulan dan tahun, lalu klik Cari</div>
+            <div class="text-caption text-medium-emphasis">Data BPJS 4% akan ditampilkan berdasarkan record pembayaran.</div>
           </v-col>
         </v-row>
       </v-container>
     </v-main>
+
+    <!-- UMP Settings Dialog -->
+    <v-dialog v-model="showUmpDialog" max-width="480">
+      <v-card class="rounded-xl">
+        <v-card-title class="d-flex align-center pa-6 pb-2">
+          <v-icon start color="teal">mdi-cog</v-icon>
+          Setting UMP Provinsi
+        </v-card-title>
+        <v-card-text class="pa-6 pt-2">
+          <v-alert type="info" variant="tonal" density="compact" class="mb-4 rounded-lg">
+            <div class="text-caption">UMP digunakan sebagai batas minimum perhitungan BPJS 4%.</div>
+            <div class="text-caption">Jika gaji pokok &lt; UMP, maka BPJS 4% = UMP × 4%.</div>
+          </v-alert>
+          <v-text-field
+            v-model.number="editUmpValue"
+            label="UMP Provinsi Kalimantan Selatan"
+            type="number"
+            variant="outlined"
+            color="teal"
+            prefix="Rp"
+            hint="Contoh: 3725000"
+            persistent-hint
+          ></v-text-field>
+          <div v-if="editUmpValue" class="mt-2 text-body-2">
+            BPJS 4% dari UMP = <strong class="text-red-darken-1">{{ formatCurrency(Math.round(editUmpValue * 0.04)) }}</strong>
+          </div>
+        </v-card-text>
+        <v-card-actions class="pa-6 pt-0">
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showUmpDialog = false">Batal</v-btn>
+          <v-btn color="teal" variant="flat" :loading="savingUmp" @click="saveUmp">Simpan</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-app>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import api from '../api'
 import Navbar from '../components/Navbar.vue'
 import Sidebar from '../components/Sidebar.vue'
@@ -225,6 +299,13 @@ const sumberDanaOptions = ['Semua', 'APBD', 'BLUD']
 const detail = ref([])
 const skpdSummary = ref([])
 const grandTotal = ref(null)
+const umpValue = ref(null)
+const bpjsUmpValue = ref(null)
+
+// UMP Dialog
+const showUmpDialog = ref(false)
+const editUmpValue = ref(null)
+const savingUmp = ref(false)
 
 const months = [
   { title: 'Januari', value: 1 }, { title: 'Februari', value: 2 }, { title: 'Maret', value: 3 },
@@ -236,11 +317,12 @@ const years = [2024, 2025, 2026, 2027]
 
 const skpdHeaders = [
   { title: 'No', key: 'no', width: '50px', sortable: false },
-  { title: 'SKPD', key: 'skpd', width: '35%' },
+  { title: 'SKPD', key: 'skpd', width: '30%' },
   { title: 'Jml Pegawai', key: 'jumlah_pegawai', align: 'end' },
   { title: 'Total Gaji Pokok', key: 'total_gaji_pokok', align: 'end' },
   { title: 'BPJS 4%', key: 'total_bpjs_4_persen', align: 'end' },
   { title: 'Total Gaji Bersih', key: 'total_gaji_bersih', align: 'end' },
+  { title: '< UMP', key: 'pegawai_bawah_ump', align: 'center', width: '80px' },
 ]
 
 const detailHeaders = [
@@ -251,8 +333,22 @@ const detailHeaders = [
   { title: 'Jabatan', key: 'jabatan' },
   { title: 'Gaji Pokok', key: 'gaji_pokok', align: 'end' },
   { title: 'BPJS 4%', key: 'bpjs_4_persen', align: 'end' },
+  { title: 'Basis', key: 'basis_hitung', align: 'center', width: '80px' },
   { title: 'Gaji Bersih', key: 'total_amoun', align: 'end' },
 ]
+
+const fetchUmp = async () => {
+  try {
+    const res = await api.get('/bpjs-rekon/ump')
+    if (res.data.success) {
+      umpValue.value = res.data.data.ump
+      bpjsUmpValue.value = Math.round(res.data.data.ump * 0.04)
+      editUmpValue.value = res.data.data.ump
+    }
+  } catch (e) {
+    console.error('Error fetching UMP:', e)
+  }
+}
 
 const fetchData = async () => {
   loading.value = true
@@ -266,12 +362,33 @@ const fetchData = async () => {
       detail.value = res.data.data.detail
       skpdSummary.value = res.data.data.skpd_summary
       grandTotal.value = res.data.data.grand_total
+      umpValue.value = res.data.data.ump
+      bpjsUmpValue.value = res.data.data.bpjs_ump
     }
   } catch (e) {
     console.error('Error fetching BPJS rekon:', e)
     alert('Gagal memuat data: ' + (e.response?.data?.message || e.message))
   } finally {
     loading.value = false
+  }
+}
+
+const saveUmp = async () => {
+  savingUmp.value = true
+  try {
+    const res = await api.put('/bpjs-rekon/ump', { ump: editUmpValue.value })
+    if (res.data.success) {
+      umpValue.value = res.data.data.ump
+      bpjsUmpValue.value = res.data.data.bpjs_4_persen
+      showUmpDialog.value = false
+      alert(res.data.message)
+      // Refresh data if already loaded
+      if (grandTotal.value) fetchData()
+    }
+  } catch (e) {
+    alert('Gagal menyimpan: ' + (e.response?.data?.message || e.message))
+  } finally {
+    savingUmp.value = false
   }
 }
 
@@ -288,16 +405,16 @@ const exportExcel = (type) => {
 
   if (type === 'skpd') {
     fileName = `Rekon_BPJS_4persen_PerSKPD_${monthName}_${selectedYear.value}.csv`
-    csvContent = 'No,SKPD,Jumlah Pegawai,Total Gaji Pokok,BPJS 4%,Total Gaji Bersih\n'
+    csvContent = 'No,SKPD,Jumlah Pegawai,Total Gaji Pokok,BPJS 4%,Total Gaji Bersih,Pegawai < UMP\n'
     skpdSummary.value.forEach((row, i) => {
-      csvContent += `${i+1},"${row.skpd}",${row.jumlah_pegawai},${row.total_gaji_pokok},${row.total_bpjs_4_persen},${row.total_gaji_bersih}\n`
+      csvContent += `${i+1},"${row.skpd}",${row.jumlah_pegawai},${row.total_gaji_pokok},${row.total_bpjs_4_persen},${row.total_gaji_bersih},${row.pegawai_bawah_ump}\n`
     })
-    csvContent += `,"TOTAL",${grandTotal.value.jumlah_pegawai},${grandTotal.value.total_gaji_pokok},${grandTotal.value.total_bpjs_4_persen},${grandTotal.value.total_gaji_bersih}\n`
+    csvContent += `,"TOTAL",${grandTotal.value.jumlah_pegawai},${grandTotal.value.total_gaji_pokok},${grandTotal.value.total_bpjs_4_persen},${grandTotal.value.total_gaji_bersih},${grandTotal.value.pegawai_bawah_ump}\n`
   } else {
     fileName = `Rekon_BPJS_4persen_Detail_${monthName}_${selectedYear.value}.csv`
-    csvContent = 'No,NIP,Nama,SKPD,Jabatan,Gaji Pokok,BPJS 4%,Gaji Bersih\n'
+    csvContent = 'No,NIP,Nama,SKPD,Jabatan,Gaji Pokok,BPJS 4%,Basis Hitung,Gaji Bersih\n'
     detail.value.forEach((row, i) => {
-      csvContent += `${i+1},"=""${row.nip}""","${row.nama}","${row.skpd || row.upt || ''}","${row.jabatan || ''}",${row.gaji_pokok},${row.bpjs_4_persen},${row.total_amoun}\n`
+      csvContent += `${i+1},"=""${row.nip}""","${row.nama}","${row.skpd || row.upt || ''}","${row.jabatan || ''}",${row.gaji_pokok},${row.bpjs_4_persen},${row.basis_hitung},${row.total_amoun}\n`
     })
   }
 
@@ -312,6 +429,8 @@ const exportExcel = (type) => {
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
 }
+
+onMounted(fetchUmp)
 </script>
 
 <style scoped>
