@@ -129,6 +129,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/bpjs-rekon', [BpjsRekonController::class, 'index']);
     Route::get('/bpjs-rekon/ump', [BpjsRekonController::class, 'getUmp']);
     Route::put('/bpjs-rekon/ump', [BpjsRekonController::class, 'updateUmp']);
+    Route::get('/bpjs-rekon/export', [BpjsRekonController::class, 'export']);
 
     // Sumber Dana Settings
     Route::get('/sumber-dana', [SumberDanaSettingController::class, 'index']);

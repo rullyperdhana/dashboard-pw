@@ -398,36 +398,38 @@ const formatCurrency = (val) => {
   }).format(val || 0)
 }
 
-const exportExcel = (type) => {
-  const monthName = months.find(m => m.value === selectedMonth.value)?.title || ''
-  let csvContent = ''
-  let fileName = ''
-
-  if (type === 'skpd') {
-    fileName = `Rekon_BPJS_4persen_PerSKPD_${monthName}_${selectedYear.value}.csv`
-    csvContent = 'No,SKPD,Jumlah Pegawai,Total Gaji Pokok,BPJS 4%,Total Gaji Bersih,Pegawai < UMP\n'
-    skpdSummary.value.forEach((row, i) => {
-      csvContent += `${i+1},"${row.skpd}",${row.jumlah_pegawai},${row.total_gaji_pokok},${row.total_bpjs_4_persen},${row.total_gaji_bersih},${row.pegawai_bawah_ump}\n`
+const exportExcel = async (type) => {
+  try {
+    const params = { 
+      month: selectedMonth.value, 
+      year: selectedYear.value,
+      type: type
+    }
+    if (selectedSumberDana.value !== 'Semua') {
+      params.sumber_dana = selectedSumberDana.value
+    }
+    
+    // Use window.open with authentication token or fetch with blob
+    // Fetch with blob is safer for auth
+    const response = await api.get('/bpjs-rekon/export', { 
+      params,
+      responseType: 'blob'
     })
-    csvContent += `,"TOTAL",${grandTotal.value.jumlah_pegawai},${grandTotal.value.total_gaji_pokok},${grandTotal.value.total_bpjs_4_persen},${grandTotal.value.total_gaji_bersih},${grandTotal.value.pegawai_bawah_ump}\n`
-  } else {
-    fileName = `Rekon_BPJS_4persen_Detail_${monthName}_${selectedYear.value}.csv`
-    csvContent = 'No,NIP,Nama,SKPD,Jabatan,Gaji Pokok,BPJS 4%,Basis Hitung,Gaji Bersih\n'
-    detail.value.forEach((row, i) => {
-      csvContent += `${i+1},"=""${row.nip}""","${row.nama}","${row.skpd || row.upt || ''}","${row.jabatan || ''}",${row.gaji_pokok},${row.bpjs_4_persen},${row.basis_hitung},${row.total_amoun}\n`
-    })
+    
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    const fileName = type === 'skpd' 
+      ? `Rekon_BPJS_4persen_PerSKPD_${selectedMonth.value}_${selectedYear.value}.xlsx`
+      : `Rekon_BPJS_4persen_Detail_${selectedMonth.value}_${selectedYear.value}.xlsx`
+    link.setAttribute('download', fileName)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } catch (e) {
+    console.error('Export error:', e)
+    alert('Gagal mengunduh export: ' + (e.message))
   }
-
-  const BOM = '\uFEFF'
-  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = fileName
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
 }
 
 onMounted(fetchUmp)

@@ -275,4 +275,4 @@ Export Excel/PDF secara otomatis menyesuaikan kolom dengan tab yang aktif.
 ## 👤 Developer
 
 **Rully Perdhana**  
-📧 rullyperdhana@email.com
+📧 rully.perdhana@egmail.com
