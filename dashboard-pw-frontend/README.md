@@ -1,5 +1,47 @@
-# Vue 3 + Vite
+# Dashboard Payroll — Frontend
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Frontend SPA untuk aplikasi Dashboard Payroll PNS, PPPK & PPPK Paruh Waktu.
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+## Tech Stack
+- **Vue 3** (Composition API + `<script setup>`)
+- **Vuetify 3** — Material Design Component Library
+- **Vite** — Build Tool
+- **Axios** — HTTP Client
+
+## Menjalankan
+
+```bash
+# Install dependencies
+npm install
+
+# Development server
+npm run dev
+# → http://localhost:5173
+
+# Build production
+npm run build
+```
+
+## Environment
+API backend dikonfigurasi di `src/api.js`:
+- Development: `http://localhost:8000/api`
+- Production: sesuai `.env` atau hardcoded
+
+## Halaman Utama
+
+| Route | View | Deskripsi |
+|---|---|---|
+| `/` | `Dashboard.vue` | Dashboard PPPK Paruh Waktu |
+| `/pns-dashboard` | `PnsDashboard.vue` | Dashboard PNS & PPPK |
+| `/employees` | `EmployeeList.vue` | Daftar pegawai PW |
+| `/employee-trace` | `EmployeeHistory.vue` | Trace riwayat gaji |
+| `/bpjs-rekon` | `BpjsRekon.vue` | Rekon BPJS 4% |
+| `/settings/pppk` | `PppkSettings.vue` | Estimasi JKK/JKM/JKN |
+| `/settings/sumber-dana` | `SumberDanaSetting.vue` | Sumber dana per SKPD |
+| `/settings/users` | `UserManagement.vue` | Manajemen user |
+
+## Fitur UI
+- ✅ Light & Dark mode
+- ✅ Responsive layout
+- ✅ Export CSV/Excel/PDF
+- ✅ Glassmorphism design
