@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\UploadJob;
+use App\Models\PayrollPosting;
 use App\Jobs\ProcessPayrollUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -30,6 +31,35 @@ class UploadJobController extends Controller
         }
 
         try {
+            // Check if posted
+            $month = (int) $request->input('month');
+            $year = (int) $request->input('year');
+            $triwulan = (int) $request->input('triwulan');
+            $tahun = (int) $request->input('tahun');
+
+            if ($type === 'pns' || $type === 'pppk') {
+                if (PayrollPosting::isLocked($year, $month, strtoupper($type))) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Data " . strtoupper($type) . " periode {$month}/{$year} sudah di-POSTING (Dikunci) dan tidak dapat diubah."
+                    ], 403);
+                }
+            } elseif ($type === 'tpp') {
+                if (PayrollPosting::isLocked($year, $month, 'TPP')) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Data TPP periode {$month}/{$year} sudah di-POSTING (Dikunci) dan tidak dapat diubah."
+                    ], 403);
+                }
+            } elseif ($type === 'tpg') {
+                if (PayrollPosting::isLocked($tahun, $triwulan, 'TPG')) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Data TPG periode Triwulan {$triwulan} Tahun {$tahun} sudah di-POSTING (Dikunci) dan tidak dapat diubah."
+                    ], 403);
+                }
+            }
+
             $file = $request->file('file');
             $originalName = $file->getClientOriginalName();
 

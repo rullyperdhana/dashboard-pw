@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\GajiPns;
+use App\Models\PayrollPosting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -137,6 +138,14 @@ class GajiPnsController extends Controller
             'jenis_gaji' => 'nullable|string',
         ]);
 
+        // Check if posted
+        if (PayrollPosting::isLocked($validated['tahun'], $validated['bulan'], 'PNS')) {
+            return response()->json([
+                'success' => false,
+                'message' => "Periode {$validated['bulan']}/{$validated['tahun']} sudah di-POSTING (Dikunci) dan tidak dapat diubah."
+            ], 403);
+        }
+
         $record = GajiPns::create($validated);
 
         return response()->json([
@@ -205,6 +214,23 @@ class GajiPnsController extends Controller
             'jenis_gaji' => 'nullable|string',
         ]);
 
+        // Check if posted (either current or new period)
+        if (PayrollPosting::isLocked($record->tahun, $record->bulan, 'PNS')) {
+            return response()->json([
+                'success' => false,
+                'message' => "Periode saat ini ({$record->bulan}/{$record->tahun}) sudah di-POSTING (Dikunci) dan tidak dapat diubah."
+            ], 403);
+        }
+
+        if (isset($validated['bulan']) && isset($validated['tahun'])) {
+            if (PayrollPosting::isLocked($validated['tahun'], $validated['bulan'], 'PNS')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Periode baru ({$validated['bulan']}/{$validated['tahun']}) sudah di-POSTING (Dikunci) dan tidak dapat digunakan."
+                ], 403);
+            }
+        }
+
         $record->update($validated);
 
         return response()->json([
@@ -217,6 +243,15 @@ class GajiPnsController extends Controller
     public function destroy($id)
     {
         $record = GajiPns::findOrFail($id);
+
+        // Check if posted
+        if (PayrollPosting::isLocked($record->tahun, $record->bulan, 'PNS')) {
+            return response()->json([
+                'success' => false,
+                'message' => "Periode {$record->bulan}/{$record->tahun} sudah di-POSTING (Dikunci) dan data tidak dapat dihapus."
+            ], 403);
+        }
+
         $record->delete();
 
         return response()->json([
