@@ -123,6 +123,12 @@ const router = createRouter({
             component: () => import('../views/SumberDanaSetting.vue'),
             meta: { requiresAuth: true },
         },
+        {
+            path: '/posting-data',
+            name: 'PostingData',
+            component: () => import('../views/PostingData.vue'),
+            meta: { requiresAuth: true },
+        },
     ],
 })
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Imports\TppImport;
+use App\Models\PayrollPosting;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Log;
@@ -27,6 +28,14 @@ class TppController extends Controller
             $month = $request->input('month');
             $year = $request->input('year');
             $type = $request->input('type');
+
+            // Check if posted
+            if (PayrollPosting::isLocked((int) $year, (int) $month, 'TPP')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Data TPP periode {$month}/{$year} sudah di-POSTING (Dikunci) dan tidak dapat diubah."
+                ], 403);
+            }
 
             Excel::import(new TppImport($month, $year, $type), $file);
 

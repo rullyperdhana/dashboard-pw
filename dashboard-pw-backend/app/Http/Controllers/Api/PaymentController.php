@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\PaymentDetail;
 use App\Models\Employee;
+use App\Models\PayrollPosting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -130,6 +131,14 @@ class PaymentController extends Controller
             'employee_payments.*.tunjangan' => 'nullable|numeric|min:0',
             'employee_payments.*.potongan' => 'nullable|numeric|min:0',
         ]);
+
+        // Check if posted
+        if (PayrollPosting::isLocked((int) $validated['payment_year'], (int) $validated['payment_month'], 'PPPK_PW')) {
+            return response()->json([
+                'success' => false,
+                'message' => "Data PPPK Paruh Waktu periode {$validated['payment_month']}/{$validated['payment_year']} sudah di-POSTING (Dikunci) dan tidak dapat diubah."
+            ], 403);
+        }
 
         DB::beginTransaction();
         try {

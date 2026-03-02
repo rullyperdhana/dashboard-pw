@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UploadJobController;
 use App\Http\Controllers\Api\BpjsRekonController;
 use App\Http\Controllers\Api\SumberDanaSettingController;
+use App\Http\Controllers\Api\PayrollPostingController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -135,4 +136,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sumber-dana', [SumberDanaSettingController::class, 'index']);
     Route::put('/sumber-dana', [SumberDanaSettingController::class, 'update']);
     Route::put('/sumber-dana/bulk', [SumberDanaSettingController::class, 'bulkUpdate']);
+
+    // Payroll Posting
+    Route::get('/payroll-postings', [PayrollPostingController::class, 'index']);
+    Route::post('/payroll-postings/post', [PayrollPostingController::class, 'post']);
+    Route::post('/payroll-postings/unpost', [PayrollPostingController::class, 'unpost']);
 });

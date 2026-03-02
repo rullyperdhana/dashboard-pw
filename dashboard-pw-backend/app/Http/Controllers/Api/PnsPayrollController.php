@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\GajiPns;
 use App\Models\GajiPppk;
+use App\Models\PayrollPosting;
 use App\Imports\PnsImport;
 use App\Imports\PppkImport;
 use Illuminate\Http\Request;
@@ -33,6 +34,14 @@ class PnsPayrollController extends Controller
                 'jenis_gaji' => $request->jenis_gaji,
                 'file_name' => $request->file('file')->getClientOriginalName()
             ]);
+
+            // Check if posted
+            if (PayrollPosting::isLocked((int) $request->year, (int) $request->month, 'PNS')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Data PNS periode {$request->month}/{$request->year} sudah di-POSTING (Dikunci) dan tidak dapat diubah."
+                ], 403);
+            }
 
             // Delete existing data for this period and salary type
             $deletedCount = GajiPns::where('bulan', $request->month)
@@ -252,6 +261,14 @@ class PnsPayrollController extends Controller
                 'jenis_gaji' => $request->jenis_gaji,
                 'file_name' => $request->file('file')->getClientOriginalName()
             ]);
+
+            // Check if posted
+            if (PayrollPosting::isLocked((int) $request->year, (int) $request->month, 'PPPK')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Data PPPK periode {$request->month}/{$request->year} sudah di-POSTING (Dikunci) dan tidak dapat diubah."
+                ], 403);
+            }
 
             // Delete existing data for this period and salary type
             $deletedCount = GajiPppk::where('bulan', $request->month)

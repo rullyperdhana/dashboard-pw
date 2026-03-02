@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\TpgData;
+use App\Models\PayrollPosting;
 use App\Imports\TpgImport;
 use App\Exports\TpgExport;
 use Illuminate\Http\Request;
@@ -31,6 +32,16 @@ class TpgController extends Controller
             $triwulan = $request->input('triwulan');
             $tahun = $request->input('tahun');
             $jenis = $request->input('jenis');
+
+            // Check if posted (TPG uses tahun but we need to map triwulan to months or just use a generic 'TPG' lock for the year/quarter)
+            // For TPG, we'll use month = triwulan for the lock entry to keep it simple, or use 0? 
+            // Better: use triwulan as month (1,2,3,4) for TPG type.
+            if (PayrollPosting::isLocked((int) $tahun, (int) $triwulan, 'TPG')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Data TPG periode Triwulan {$triwulan} Tahun {$tahun} sudah di-POSTING (Dikunci) dan tidak dapat diubah."
+                ], 403);
+            }
 
             // For INDUK: delete existing INDUK data for this triwulan+tahun before re-importing
             if ($jenis === 'INDUK') {
