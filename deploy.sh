@@ -30,6 +30,7 @@ php artisan migrate --force
 php artisan optimize:clear
 php artisan config:cache
 php artisan view:cache
+php artisan queue:restart
 
 # 3. Update Frontend (Vue.js)
 echo -e "${YELLOW}3. Memperbarui Frontend...${NC}"
