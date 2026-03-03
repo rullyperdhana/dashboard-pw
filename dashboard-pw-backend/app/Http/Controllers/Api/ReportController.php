@@ -393,7 +393,7 @@ class ReportController extends Controller
         $month = $request->month ?? date('n');
         $year = $request->year ?? date('Y');
         $viewBy = $request->view_by ?? 'skpd';
-        $format = $request->format ?? 'excel';
+        $format = $request->input('format') ?? 'excel';
 
         // Fetch the appropriate data based on viewBy
         switch ($viewBy) {
@@ -468,8 +468,8 @@ class ReportController extends Controller
 
             $rows = collect(DB::select("
                 SELECT
-                    COALESCE(sm.kode_skpd, g.kdskpd)  AS kode_skpd,
-                    COALESCE(sm.nama_skpd, g.skpd)    AS nama_skpd,
+                    COALESCE(s1.kdsatker, s2.kdskpd, g.kdskpd) AS kode_skpd,
+                    COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, g.skpd, g.satker) AS nama_skpd,
                     COUNT(*)                            AS jumlah_pegawai,
                     SUM(g.gaji_pokok)                  AS gapok,
                     SUM(g.tunj_istri)                  AS tj_istri,
@@ -489,15 +489,17 @@ class ReportController extends Controller
                     SUM(g.total_potongan)              AS total_potongan,
                     SUM(g.bersih)                      AS bersih
                 FROM {$table} g
+                LEFT JOIN satkers s1 ON g.kdskpd = s1.kdskpd AND g.kdsatker = s1.kdsatker
+                LEFT JOIN (SELECT DISTINCT kdskpd, nmskpd FROM satkers) s2 ON g.kdskpd = s2.kdskpd
                 LEFT JOIN (
-                    SELECT mp.source_name, s2.kode_skpd, s2.nama_skpd
+                    SELECT mp.source_code, s2.kode_skpd, s2.nama_skpd
                     FROM skpd_mapping mp
                     JOIN skpd s2 ON mp.skpd_id = s2.id_skpd
                     WHERE mp.type IN {$mapType}
-                ) sm ON g.skpd = sm.source_name
+                ) sm ON g.kdskpd = sm.source_code
                 WHERE g.bulan = ? AND g.tahun = ?
-                GROUP BY COALESCE(sm.kode_skpd, g.kdskpd), COALESCE(sm.nama_skpd, g.skpd)
-                ORDER BY COALESCE(sm.nama_skpd, g.skpd)
+                GROUP BY COALESCE(s1.kdsatker, s2.kdskpd, g.kdskpd), COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, g.skpd, g.satker)
+                ORDER BY nama_skpd
             ", [$month, $year]));
 
             return response()->json([
@@ -544,22 +546,24 @@ class ReportController extends Controller
         if (in_array($type, ['pns', 'all'])) {
             $parts[] = "
                 SELECT
-                    COALESCE(sm.kode_skpd, g.kdskpd) AS kode_skpd,
-                    COALESCE(sm.nama_skpd, g.skpd)   AS nama_skpd,
+                    COALESCE(s1.kdsatker, s2.kdskpd, g.kdskpd) AS kode_skpd,
+                    COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, g.skpd, g.satker) AS nama_skpd,
                     COUNT(*)                           AS employee_count,
                     SUM(g.gaji_pokok)                 AS total_gaji_pokok,
                     SUM(g.kotor - g.gaji_pokok)       AS total_tunjangan,
                     SUM(g.total_potongan)             AS total_potongan,
                     SUM(g.bersih)                     AS total_bersih
                 FROM gaji_pns g
+                LEFT JOIN satkers s1 ON g.kdskpd = s1.kdskpd AND g.kdsatker = s1.kdsatker
+                LEFT JOIN (SELECT DISTINCT kdskpd, nmskpd FROM satkers) s2 ON g.kdskpd = s2.kdskpd
                 LEFT JOIN (
-                    SELECT mp.source_name, s2.kode_skpd, s2.nama_skpd
+                    SELECT mp.source_code, s2.kode_skpd, s2.nama_skpd
                     FROM skpd_mapping mp
                     JOIN skpd s2 ON mp.skpd_id = s2.id_skpd
                     WHERE mp.type IN ('pns', 'all')
-                ) sm ON g.skpd = sm.source_name
+                ) sm ON g.kdskpd = sm.source_code
                 WHERE g.bulan = ? AND g.tahun = ?
-                GROUP BY COALESCE(sm.kode_skpd, g.kdskpd), COALESCE(sm.nama_skpd, g.skpd)";
+                GROUP BY COALESCE(s1.kdsatker, s2.kdskpd, g.kdskpd), COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, g.skpd, g.satker)";
             $params = array_merge($params, [$month, $year]);
         }
 
@@ -567,22 +571,24 @@ class ReportController extends Controller
         if (in_array($type, ['pppk', 'all'])) {
             $parts[] = "
                 SELECT
-                    COALESCE(sm.kode_skpd, g.kdskpd) AS kode_skpd,
-                    COALESCE(sm.nama_skpd, g.skpd)   AS nama_skpd,
+                    COALESCE(s1.kdsatker, s2.kdskpd, g.kdskpd) AS kode_skpd,
+                    COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, g.skpd, g.satker) AS nama_skpd,
                     COUNT(*)                           AS employee_count,
                     SUM(g.gaji_pokok)                 AS total_gaji_pokok,
                     SUM(g.kotor - g.gaji_pokok)       AS total_tunjangan,
                     SUM(g.total_potongan)             AS total_potongan,
                     SUM(g.bersih)                     AS total_bersih
                 FROM gaji_pppk g
+                LEFT JOIN satkers s1 ON g.kdskpd = s1.kdskpd AND g.kdsatker = s1.kdsatker
+                LEFT JOIN (SELECT DISTINCT kdskpd, nmskpd FROM satkers) s2 ON g.kdskpd = s2.kdskpd
                 LEFT JOIN (
-                    SELECT mp.source_name, s2.kode_skpd, s2.nama_skpd
+                    SELECT mp.source_code, s2.kode_skpd, s2.nama_skpd
                     FROM skpd_mapping mp
                     JOIN skpd s2 ON mp.skpd_id = s2.id_skpd
                     WHERE mp.type IN ('pppk', 'all')
-                ) sm ON g.skpd = sm.source_name
+                ) sm ON g.kdskpd = sm.source_code
                 WHERE g.bulan = ? AND g.tahun = ?
-                GROUP BY COALESCE(sm.kode_skpd, g.kdskpd), COALESCE(sm.nama_skpd, g.skpd)";
+                GROUP BY COALESCE(s1.kdsatker, s2.kdskpd, g.kdskpd), COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, g.skpd, g.satker)";
             $params = array_merge($params, [$month, $year]);
         }
 
@@ -622,7 +628,7 @@ class ReportController extends Controller
     {
         $month = $request->month ?? date('n');
         $year = $request->year ?? date('Y');
-        $format = $request->format ?? 'excel';
+        $format = $request->input('format') ?? 'excel';
         $type = $request->type ?? 'all';
 
         // Re-use paidSkpds logic (includes type-based mode selection)
@@ -749,7 +755,7 @@ class ReportController extends Controller
     {
         $month = $request->month ?? date('n');
         $year = $request->year ?? date('Y');
-        $format = $request->format ?? 'excel';
+        $format = $request->input('format') ?? 'excel';
 
         // Get the data
         $response = $this->paidEmployees($request);

@@ -98,7 +98,7 @@ class EmployeeController extends Controller
         }
 
         $employees = $query->orderBy('nama')->get()->toArray();
-        $format = $request->format ?? 'excel';
+        $format = $request->input('format', 'excel');
         $filename = 'data_pegawai_' . date('Ymd_His');
 
         if ($format === 'pdf') {
@@ -272,6 +272,24 @@ class EmployeeController extends Controller
         return response()->json([
             'success' => true,
             'employee' => $employee,
+            'data' => $history,
+        ]);
+    }
+
+    /**
+     * Get Gaji Pokok history for a specific employee (from HIS_GPOK)
+     */
+    public function gpokHistory($id)
+    {
+        $employee = Employee::findOrFail($id);
+
+        $history = \App\Models\HistoryGajiPokok::where('nip', $employee->nip)
+            ->orderBy('tahun', 'desc')
+            ->orderBy('bulan', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
             'data' => $history,
         ]);
     }

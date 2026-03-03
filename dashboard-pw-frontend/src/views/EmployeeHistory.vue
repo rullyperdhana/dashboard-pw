@@ -83,13 +83,20 @@
 
                 <v-divider class="mb-4 border-opacity-10"></v-divider>
 
-                <v-data-table
-                  :headers="headers"
-                  :items="history"
-                  :loading="loadingHistory"
-                  class="modern-table"
-                  hover
-                >
+                <v-tabs v-model="activeTab" color="primary" class="mb-4">
+                  <v-tab value="payment">Riwayat Penggajian (Processed)</v-tab>
+                  <v-tab value="gpok">Riwayat Gaji Pokok (HIS_GPOK)</v-tab>
+                </v-tabs>
+
+                <v-window v-model="activeTab">
+                  <v-window-item value="payment">
+                    <v-data-table
+                      :headers="headers"
+                      :items="history"
+                      :loading="loadingHistory"
+                      class="modern-table"
+                      hover
+                    >
                   <template v-slot:item.period="{ item }">
                     {{ getMonthName(item.month) }} {{ item.year }}
                   </template>
@@ -126,7 +133,35 @@
                       <div class="text-grey">Belum ada riwayat penggajian untuk pegawai ini di sistem.</div>
                     </div>
                   </template>
-                </v-data-table>
+                    </v-data-table>
+                  </v-window-item>
+
+                  <v-window-item value="gpok">
+                    <v-data-table
+                      :headers="gpokHeaders"
+                      :items="gpokHistory"
+                      :loading="loadingHistory"
+                      class="modern-table"
+                      hover
+                    >
+                      <template v-slot:item.gapok="{ item }">
+                        {{ formatCurrency(item.gapok) }}
+                      </template>
+                      <template v-slot:item.tmt_berlaku="{ item }">
+                        {{ item.tmt_berlaku || '-' }}
+                      </template>
+                      <template v-slot:item.tmt_sk="{ item }">
+                        {{ item.tmt_sk || '-' }}
+                      </template>
+                      <template v-slot:no-data>
+                        <div class="pa-10 text-center">
+                          <v-icon icon="mdi-database-off" size="48" color="grey-lighten-3" class="mb-2"></v-icon>
+                          <div class="text-grey">Belum ada riwayat gaji pokok (HIS_GPOK) untuk pegawai ini.</div>
+                        </div>
+                      </template>
+                    </v-data-table>
+                  </v-window-item>
+                </v-window>
               </v-card-text>
             </v-card>
             
@@ -228,8 +263,10 @@ import Sidebar from '../components/Sidebar.vue'
 const employees = ref([])
 const selectedEmployee = ref(null)
 const history = ref([])
+const gpokHistory = ref([])
 const searching = ref(false)
 const loadingHistory = ref(false)
+const activeTab = ref('payment')
 
 // Status & SK Management
 const statusDialog = ref(false)
@@ -251,6 +288,14 @@ const headers = [
   { title: 'IWP', key: 'iwp', align: 'end' },
   { title: 'Pajak', key: 'pajak', align: 'end' },
   { title: 'Total Bersih', key: 'total_bersih', align: 'end' },
+]
+
+const gpokHeaders = [
+  { title: 'TMT Berlaku', key: 'tmt_berlaku', align: 'start' },
+  { title: 'Gaji Pokok', key: 'gapok', align: 'end' },
+  { title: 'No. SK', key: 'no_sk', align: 'start' },
+  { title: 'TMT SK', key: 'tmt_sk', align: 'start' },
+  { title: 'Batch/Periode', key: 'upload_batch', align: 'start' },
 ]
 
 const onSearch = async (val) => {
@@ -280,8 +325,12 @@ watch(selectedEmployee, async (newVal) => {
 const fetchHistory = async (id) => {
   loadingHistory.value = true
   try {
-    const response = await api.get(`/employees/${id}/history`)
-    history.value = response.data.data
+    const [payrollRes, gpokRes] = await Promise.all([
+      api.get(`/employees/${id}/history`),
+      api.get(`/employees/${id}/gpok-history`)
+    ])
+    history.value = payrollRes.data.data
+    gpokHistory.value = gpokRes.data.data
   } catch (error) {
     console.error('Error fetching history:', error)
   } finally {

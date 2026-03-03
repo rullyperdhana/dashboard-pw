@@ -6,85 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\GajiPns;
 use App\Models\GajiPppk;
 use App\Models\PayrollPosting;
-use App\Imports\PnsImport;
-use App\Imports\PppkImport;
+// Removed PnsImport and PppkImport
 use Illuminate\Http\Request;
-use Maatwebsite\Excel\Facades\Excel;
+// Removed Excel import
 use Illuminate\Support\Facades\DB;
 
 class PnsPayrollController extends Controller
 {
-    /**
-     * Upload XLS file
-     */
-    public function upload(Request $request)
-    {
-        $request->validate([
-            'file' => 'required|file|mimes:xls,xlsx',
-            'month' => 'required|integer|min:1|max:12',
-            'year' => 'required|integer|min:2000',
-            'jenis_gaji' => 'required|in:Induk,Susulan,Kekurangan,Terusan'
-        ]);
 
-        try {
-            ini_set('memory_limit', '512M');
-            \Log::info('PNS Upload Started', [
-                'month' => $request->month,
-                'year' => $request->year,
-                'jenis_gaji' => $request->jenis_gaji,
-                'file_name' => $request->file('file')->getClientOriginalName()
-            ]);
-
-            // Check if posted
-            if (PayrollPosting::isLocked((int) $request->year, (int) $request->month, 'PNS')) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Data PNS periode {$request->month}/{$request->year} sudah di-POSTING (Dikunci) dan tidak dapat diubah."
-                ], 403);
-            }
-
-            // Delete existing data for this period and salary type
-            $deletedCount = GajiPns::where('bulan', $request->month)
-                ->where('tahun', $request->year)
-                ->where('jenis_gaji', $request->jenis_gaji)
-                ->delete();
-
-            \Log::info('PNS Upload - Deleted existing records', [
-                'count' => $deletedCount
-            ]);
-
-            Excel::import(new PnsImport($request->month, $request->year, $request->jenis_gaji), $request->file('file'));
-
-            $totalRecords = GajiPns::where('bulan', $request->month)->where('tahun', $request->year)->count();
-
-            \Log::info('PNS Upload Completed', [
-                'month' => $request->month,
-                'year' => $request->year,
-                'total_records' => $totalRecords
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'PNS Payroll data imported successfully',
-                'meta' => [
-                    'month' => $request->month,
-                    'year' => $request->year,
-                    'jenis_gaji' => $request->jenis_gaji,
-                    'total_records' => $totalRecords
-                ]
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('PNS Upload Failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Import failed: ' . $e->getMessage()
-            ], 500);
-        }
-    }
 
     /**
      * Common selectRaw for dashboard summary
@@ -165,17 +94,39 @@ class PnsPayrollController extends Controller
         $projectedBudget = ($stats->total_gross_salary ?? 0) * 14;
 
         // Top 5 Earners
-        $topEarners = GajiPns::where('tahun', $year)
-            ->where('bulan', $month)
-            ->orderByDesc('bersih')
+        $topEarners = GajiPns::where('gaji_pns.tahun', $year)
+            ->where('gaji_pns.bulan', $month)
+            ->leftJoin('satkers as s1', function ($join) {
+                $join->on('gaji_pns.kdskpd', '=', 's1.kdskpd')
+                    ->on('gaji_pns.kdsatker', '=', 's1.kdsatker');
+            })
+            ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as s2'), 'gaji_pns.kdskpd', '=', 's2.kdskpd')
+            ->leftJoin(DB::raw("(SELECT mp.source_code, s_ref.nama_skpd FROM skpd_mapping mp JOIN skpd s_ref ON mp.skpd_id = s_ref.id_skpd WHERE mp.type IN ('pns', 'all')) as sm"), 'gaji_pns.kdskpd', '=', 'sm.source_code')
+            ->orderByDesc('gaji_pns.bersih')
             ->limit(5)
-            ->get(['nama', 'nip', 'jabatan', 'bersih', 'skpd']);
+            ->get([
+                'gaji_pns.nama',
+                'gaji_pns.nip',
+                'gaji_pns.jabatan',
+                'gaji_pns.bersih',
+                DB::raw('COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, gaji_pns.satker, gaji_pns.skpd) as skpd')
+            ]);
 
         // SKPD Distribution
-        $skpdStats = GajiPns::where('tahun', $year)
-            ->where('bulan', $month)
-            ->select('skpd', DB::raw('COUNT(*) as total'), DB::raw('SUM(kotor) as cost'))
-            ->groupBy('skpd')
+        $skpdStats = GajiPns::where('gaji_pns.tahun', $year)
+            ->where('gaji_pns.bulan', $month)
+            ->leftJoin('satkers as s1', function ($join) {
+                $join->on('gaji_pns.kdskpd', '=', 's1.kdskpd')
+                    ->on('gaji_pns.kdsatker', '=', 's1.kdsatker');
+            })
+            ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as s2'), 'gaji_pns.kdskpd', '=', 's2.kdskpd')
+            ->leftJoin(DB::raw("(SELECT mp.source_code, s_ref.nama_skpd FROM skpd_mapping mp JOIN skpd s_ref ON mp.skpd_id = s_ref.id_skpd WHERE mp.type IN ('pns', 'all')) as sm"), 'gaji_pns.kdskpd', '=', 'sm.source_code')
+            ->select(
+                DB::raw('COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, gaji_pns.satker, gaji_pns.skpd) as skpd'),
+                DB::raw('COUNT(*) as total'),
+                DB::raw('SUM(gaji_pns.kotor) as cost')
+            )
+            ->groupBy(DB::raw('COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, gaji_pns.satker, gaji_pns.skpd)'))
             ->orderByDesc('cost')
             ->limit(10)
             ->get();
@@ -222,18 +173,35 @@ class PnsPayrollController extends Controller
         }
         $search = $request->search;
 
-        $query = GajiPns::where('tahun', $year)
-            ->where('bulan', $month);
+        $query = GajiPns::where('gaji_pns.tahun', $year)
+            ->where('gaji_pns.bulan', $month)
+            ->leftJoin('satkers as s1', function ($join) {
+                $join->on('gaji_pns.kdskpd', '=', 's1.kdskpd')
+                    ->on('gaji_pns.kdsatker', '=', 's1.kdsatker');
+            })
+            ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as s2'), 'gaji_pns.kdskpd', '=', 's2.kdskpd')
+            ->leftJoin(DB::raw("(SELECT mp.source_code, s_ref.nama_skpd FROM skpd_mapping mp JOIN skpd s_ref ON mp.skpd_id = s_ref.id_skpd WHERE mp.type IN ('pns', 'all')) as sm"), 'gaji_pns.kdskpd', '=', 'sm.source_code')
+            ->select('gaji_pns.*', DB::raw('COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, gaji_pns.satker, gaji_pns.skpd) as skpd_display'));
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('nama', 'LIKE', "%$search%")
-                    ->orWhere('nip', 'LIKE', "%$search%")
-                    ->orWhere('skpd', 'LIKE', "%$search%");
+                $q->where('gaji_pns.nama', 'LIKE', "%$search%")
+                    ->orWhere('gaji_pns.nip', 'LIKE', "%$search%")
+                    ->orWhere('gaji_pns.skpd', 'LIKE', "%$search%")
+                    ->orWhere('s1.nmsatker', 'LIKE', "%$search%")
+                    ->orWhere('s2.nmskpd', 'LIKE', "%$search%")
+                    ->orWhere('sm.nama_skpd', 'LIKE', "%$search%")
+                    ->orWhere('gaji_pns.kdskpd', 'LIKE', "%$search%");
             });
         }
 
         $data = $query->paginate(20);
+
+        // Map names if ref exists
+        $data->getCollection()->transform(function ($item) {
+            $item->skpd = $item->skpd_display;
+            return $item;
+        });
 
         return response()->json([
             'success' => true,
@@ -241,77 +209,7 @@ class PnsPayrollController extends Controller
         ]);
     }
 
-    /**
-     * Upload PPPK Payroll Data
-     */
-    public function uploadPppk(Request $request)
-    {
-        $request->validate([
-            'file' => 'required|file|mimes:xls,xlsx',
-            'month' => 'required|integer|min:1|max:12',
-            'year' => 'required|integer|min:2000',
-            'jenis_gaji' => 'required|in:Induk,Susulan,Kekurangan,Terusan'
-        ]);
 
-        try {
-            ini_set('memory_limit', '512M');
-            \Log::info('PPPK Upload Started', [
-                'month' => $request->month,
-                'year' => $request->year,
-                'jenis_gaji' => $request->jenis_gaji,
-                'file_name' => $request->file('file')->getClientOriginalName()
-            ]);
-
-            // Check if posted
-            if (PayrollPosting::isLocked((int) $request->year, (int) $request->month, 'PPPK')) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Data PPPK periode {$request->month}/{$request->year} sudah di-POSTING (Dikunci) dan tidak dapat diubah."
-                ], 403);
-            }
-
-            // Delete existing data for this period and salary type
-            $deletedCount = GajiPppk::where('bulan', $request->month)
-                ->where('tahun', $request->year)
-                ->where('jenis_gaji', $request->jenis_gaji)
-                ->delete();
-
-            \Log::info('PPPK Upload - Deleted existing records', [
-                'count' => $deletedCount
-            ]);
-
-            Excel::import(new PppkImport($request->month, $request->year, $request->jenis_gaji), $request->file('file'));
-
-            $totalRecords = GajiPppk::where('bulan', $request->month)->where('tahun', $request->year)->count();
-
-            \Log::info('PPPK Upload Completed', [
-                'month' => $request->month,
-                'year' => $request->year,
-                'total_records' => $totalRecords
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'PPPK Payroll data imported successfully',
-                'meta' => [
-                    'month' => $request->month,
-                    'year' => $request->year,
-                    'jenis_gaji' => $request->jenis_gaji,
-                    'total_records' => $totalRecords
-                ]
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('PPPK Upload Failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Import failed: ' . $e->getMessage()
-            ], 500);
-        }
-    }
 
     /**
      * PPPK Dashboard Summary
@@ -344,16 +242,40 @@ class PnsPayrollController extends Controller
 
         $projectedBudget = ($stats->total_gross_salary ?? 0) * 14;
 
-        $topEarners = GajiPppk::where('tahun', $year)
-            ->where('bulan', $month)
-            ->orderByDesc('bersih')
+        // Top 5 Earners
+        $topEarners = GajiPppk::where('gaji_pppk.tahun', $year)
+            ->where('gaji_pppk.bulan', $month)
+            ->leftJoin('satkers as s1', function ($join) {
+                $join->on('gaji_pppk.kdskpd', '=', 's1.kdskpd')
+                    ->on('gaji_pppk.kdsatker', '=', 's1.kdsatker');
+            })
+            ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as s2'), 'gaji_pppk.kdskpd', '=', 's2.kdskpd')
+            ->leftJoin(DB::raw("(SELECT mp.source_code, s_ref.nama_skpd FROM skpd_mapping mp JOIN skpd s_ref ON mp.skpd_id = s_ref.id_skpd WHERE mp.type IN ('pppk', 'all')) as sm"), 'gaji_pppk.kdskpd', '=', 'sm.source_code')
+            ->orderByDesc('gaji_pppk.bersih')
             ->limit(5)
-            ->get(['nama', 'nip', 'jabatan', 'bersih', 'skpd']);
+            ->get([
+                'gaji_pppk.nama',
+                'gaji_pppk.nip',
+                'gaji_pppk.jabatan',
+                'gaji_pppk.bersih',
+                DB::raw('COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, gaji_pppk.satker, gaji_pppk.skpd) as skpd')
+            ]);
 
-        $skpdStats = GajiPppk::where('tahun', $year)
-            ->where('bulan', $month)
-            ->select('skpd', DB::raw('COUNT(*) as total'), DB::raw('SUM(kotor) as cost'))
-            ->groupBy('skpd')
+        // SKPD Distribution
+        $skpdStats = GajiPppk::where('gaji_pppk.tahun', $year)
+            ->where('gaji_pppk.bulan', $month)
+            ->leftJoin('satkers as s1', function ($join) {
+                $join->on('gaji_pppk.kdskpd', '=', 's1.kdskpd')
+                    ->on('gaji_pppk.kdsatker', '=', 's1.kdsatker');
+            })
+            ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as s2'), 'gaji_pppk.kdskpd', '=', 's2.kdskpd')
+            ->leftJoin(DB::raw("(SELECT mp.source_code, s_ref.nama_skpd FROM skpd_mapping mp JOIN skpd s_ref ON mp.skpd_id = s_ref.id_skpd WHERE mp.type IN ('pppk', 'all')) as sm"), 'gaji_pppk.kdskpd', '=', 'sm.source_code')
+            ->select(
+                DB::raw('COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, gaji_pppk.satker, gaji_pppk.skpd) as skpd'),
+                DB::raw('COUNT(*) as total'),
+                DB::raw('SUM(gaji_pppk.kotor) as cost')
+            )
+            ->groupBy(DB::raw('COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, gaji_pppk.satker, gaji_pppk.skpd)'))
             ->orderByDesc('cost')
             ->limit(10)
             ->get();
@@ -503,9 +425,10 @@ class PnsPayrollController extends Controller
         ];
 
         // Single query with GROUP BY instead of 12 separate queries
-        $query = $model::where('tahun', $year);
+        $tableName = (new $model)->getTable();
+        $query = $model::where("$tableName.tahun", $year);
         if ($skpdFilter) {
-            $query->where('skpd', $skpdFilter);
+            $query->where("$tableName.kdskpd", $skpdFilter);
         }
 
         $results = $query->selectRaw($selectFields)
@@ -593,25 +516,23 @@ class PnsPayrollController extends Controller
         $avgEmployees = $monthsWithData > 0 ? $yearlyTotal['total_employees'] / $monthsWithData : 0;
         $avgSalaryPerEmployee = $yearlyTotal['total_employees'] > 0 ? $yearlyTotal['total_bersih'] / $yearlyTotal['total_employees'] : 0;
 
-        // Optimized SKPD list — single indexed query
-        $skpdList = $model::where('tahun', $year)
-            ->whereNotNull('skpd')
-            ->where('skpd', '!=', '')
-            ->select('skpd')
-            ->distinct()
-            ->orderBy('skpd')
-            ->pluck('skpd')
-            ->map(function ($rawName) use ($employeeType) {
-                $mapping = \App\Models\SkpdMapping::with('skpd')
-                    ->where('source_name', $rawName)
-                    ->whereIn('type', [$employeeType, 'all'])
-                    ->first();
-                return [
-                    'source_name' => $rawName,
-                    'display_name' => $mapping?->skpd?->nama_skpd ?? $rawName,
-                    'is_mapped' => $mapping !== null,
-                ];
+        // Optimized SKPD list — join with satkers for better default names
+        $tableName = (new $model)->getTable();
+        $skpdList = $model::where("$tableName.tahun", $year)
+            ->whereNotNull("$tableName.kdskpd")
+            ->leftJoin('satkers as s1', function ($join) use ($tableName) {
+                $join->on("$tableName.kdskpd", '=', 's1.kdskpd')
+                    ->on("$tableName.kdsatker", '=', 's1.kdsatker');
             })
+            ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as s2'), "$tableName.kdskpd", '=', 's2.kdskpd')
+            ->leftJoin(DB::raw("(SELECT mp.source_code, s_ref.nama_skpd FROM skpd_mapping mp JOIN skpd s_ref ON mp.skpd_id = s_ref.id_skpd WHERE mp.type IN ('$employeeType', 'all')) as sm"), "$tableName.kdskpd", '=', 'sm.source_code')
+            ->select(
+                DB::raw("$tableName.kdskpd as id_skpd"),
+                DB::raw("COALESCE(MAX(sm.nama_skpd), MAX(s1.nmsatker), MAX(s2.nmskpd), MAX($tableName.skpd)) as nama_skpd")
+            )
+            ->groupBy("$tableName.kdskpd")
+            ->orderBy('nama_skpd')
+            ->get()
             ->toArray();
 
         return response()->json([

@@ -18,6 +18,9 @@ use App\Http\Controllers\Api\UploadJobController;
 use App\Http\Controllers\Api\BpjsRekonController;
 use App\Http\Controllers\Api\SumberDanaSettingController;
 use App\Http\Controllers\Api\PayrollPostingController;
+use App\Http\Controllers\Api\MasterPegawaiController;
+use App\Http\Controllers\Api\DbfImportController;
+use App\Http\Controllers\Api\SatkerController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -63,14 +66,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/paid-employees-export', [ReportController::class, 'exportPaidEmployees']);
 
     // PNS Payroll
-    Route::post('/pns/upload', [PnsPayrollController::class, 'upload']);
     Route::get('/pns/dashboard', [PnsPayrollController::class, 'dashboard']);
     Route::get('/pns/list', [PnsPayrollController::class, 'list']);
     Route::get('/pns/trend', [PnsPayrollController::class, 'yearlyTrend']);
     Route::get('/pns/annual-report', [PnsPayrollController::class, 'annualReport']);
 
     // PPPK Payroll
-    Route::post('/pppk/upload', [PnsPayrollController::class, 'uploadPppk']);
     Route::get('/pppk/dashboard', [PnsPayrollController::class, 'dashboardPppk']);
     Route::get('/pppk/trend', [PnsPayrollController::class, 'yearlyTrendPppk']);
 
@@ -90,6 +91,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/employees/statuses', [EmployeeController::class, 'getStatuses']);
     Route::get('/employees/export', [EmployeeController::class, 'export']);
     Route::get('/employees/{id}/history', [EmployeeController::class, 'payrollHistory']);
+    Route::get('/employees/{id}/gpok-history', [EmployeeController::class, 'gpokHistory']);
     Route::get('/employees/{id}/history-export', [EmployeeController::class, 'exportIndividualPayroll']);
     Route::post('/employees/{id}/status', [EmployeeController::class, 'updateStatus']);
     Route::get('/employees/{id}/documents', [EmployeeController::class, 'getDocuments']);
@@ -107,6 +109,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/settings', [SettingController::class, 'update']);
     Route::get('/settings/pppk-estimation', [SettingController::class, 'pppkEstimation']);
     Route::get('/settings/pns-estimation', [SettingController::class, 'pnsEstimation']);
+    Route::post('/settings/clear-payroll', [SettingController::class, 'clearPayrollData']);
 
     // Payments
     Route::prefix('payments')->group(function () {
@@ -141,4 +144,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/payroll-postings', [PayrollPostingController::class, 'index']);
     Route::post('/payroll-postings/post', [PayrollPostingController::class, 'post']);
     Route::post('/payroll-postings/unpost', [PayrollPostingController::class, 'unpost']);
+
+    Route::get('/settings/satker-list', [SatkerController::class, 'index']);
+
+    // Master Pegawai & Keluarga (DBF)
+    Route::prefix('master')->group(function () {
+        Route::post('/pegawai/import', [DbfImportController::class, 'importMasterPegawai']);
+        Route::post('/keluarga/import', [DbfImportController::class, 'importMasterKeluarga']);
+        Route::get('/pegawai', [MasterPegawaiController::class, 'index']);
+        Route::get('/pegawai/{id}', [MasterPegawaiController::class, 'show']);
+        Route::get('/pegawai/nip/{nip}', [MasterPegawaiController::class, 'showByNip']);
+    });
 });

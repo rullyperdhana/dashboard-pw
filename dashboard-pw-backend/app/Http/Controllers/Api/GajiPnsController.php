@@ -30,11 +30,22 @@ class GajiPnsController extends Controller
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('nama', 'like', "%{$search}%")
-                    ->orWhere('nip', 'like', "%{$search}%")
-                    ->orWhere('skpd', 'like', "%{$search}%");
+                $q->where('gaji_pns.nama', 'like', "%{$search}%")
+                    ->orWhere('gaji_pns.nip', 'like', "%{$search}%")
+                    ->orWhere('gaji_pns.skpd', 'like', "%{$search}%")
+                    ->orWhere('s1.nmsatker', 'like', "%{$search}%")
+                    ->orWhere('s2.nmskpd', 'like', "%{$search}%")
+                    ->orWhere('sm.nama_skpd', 'like', "%{$search}%");
             });
         }
+
+        $query->leftJoin('satkers as s1', function ($join) {
+            $join->on('gaji_pns.kdskpd', '=', 's1.kdskpd')
+                ->on('gaji_pns.kdsatker', '=', 's1.kdsatker');
+        })
+            ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as s2'), 'gaji_pns.kdskpd', '=', 's2.kdskpd')
+            ->leftJoin(DB::raw("(SELECT mp.source_code, s_ref.nama_skpd FROM skpd_mapping mp JOIN skpd s_ref ON mp.skpd_id = s_ref.id_skpd WHERE mp.type IN ('pns', 'all')) as sm"), 'gaji_pns.kdskpd', '=', 'sm.source_code')
+            ->select('gaji_pns.*', DB::raw('COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, gaji_pns.satker, gaji_pns.skpd) as skpd_display'));
 
         // Stats
         $statsQuery = clone $query;
@@ -53,14 +64,28 @@ class GajiPnsController extends Controller
             ->get();
 
         // Available SKPDs for current filter
-        $skpdQuery = GajiPns::select('kdskpd', 'skpd')->distinct()->orderBy('skpd');
+        $skpdQuery = GajiPns::select('gaji_pns.kdskpd', DB::raw('COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, gaji_pns.skpd) as skpd'))
+            ->leftJoin('satkers as s1', function ($join) {
+                $join->on('gaji_pns.kdskpd', '=', 's1.kdskpd')
+                    ->on('gaji_pns.kdsatker', '=', 's1.kdsatker');
+            })
+            ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as s2'), 'gaji_pns.kdskpd', '=', 's2.kdskpd')
+            ->leftJoin(DB::raw("(SELECT mp.source_code, s_ref.nama_skpd FROM skpd_mapping mp JOIN skpd s_ref ON mp.skpd_id = s_ref.id_skpd WHERE mp.type IN ('pns', 'all')) as sm"), 'gaji_pns.kdskpd', '=', 'sm.source_code')
+            ->distinct()
+            ->orderBy('skpd');
+
         if ($request->has('bulan') && $request->has('tahun')) {
-            $skpdQuery->where('bulan', $request->bulan)->where('tahun', $request->tahun);
+            $skpdQuery->where('gaji_pns.bulan', $request->bulan)->where('gaji_pns.tahun', $request->tahun);
         }
         $skpds = $skpdQuery->get();
 
-        $data = $query->orderBy('skpd')->orderBy('nama')
+        $data = $query->orderBy('gaji_pns.skpd')->orderBy('gaji_pns.nama')
             ->paginate($request->per_page ?? 20);
+
+        $data->getCollection()->transform(function ($item) {
+            $item->skpd = $item->skpd_display;
+            return $item;
+        });
 
         return response()->json([
             'success' => true,

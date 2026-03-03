@@ -16,6 +16,7 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 | **Upload TPP** | Import data Tambahan Penghasilan Pegawai |
 | **Upload TPG** | Import data Tunjangan Profesi Guru (INDUK & SUSULAN) |
 | **Daftar Pegawai PW** | Data master pegawai PW dengan status, sumber dana, dokumen |
+| **Master Pegawai DBF** | Sinkronisasi data induk pegawai & keluarga dari file DBF |
 | **Laporan Bulanan per SKPD** | Laporan gaji per SKPD dengan tab PNS, PPPK, PW, Gabungan |
 | **Laporan Tahunan** | Rekapitulasi gaji 12 bulan per jenis kepegawaian |
 | **Laporan Individual** | Slip gaji per pegawai dengan export PDF |
@@ -23,13 +24,21 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 | **Estimasi JKK/JKM/JKN** | Estimasi iuran ketenagakerjaan per SKPD |
 | **Sumber Dana SKPD** | Setting APBD/BLUD per SKPD (bulk update) |
 | **Trace Gaji Pegawai** | Riwayat gaji per pegawai + kelola status & SK |
-| **SKPD Mapping** | Pemetaan nama SKPD dari Excel ke master SKPD |
+| **SKPD Mapping** | Pemetaan Kode & Nama SKPD untuk akurasi laporan |
 | **Manajemen User** | Akun admin & admin SKPD |
 | **Export Excel & PDF** | Export laporan sesuai tab yang aktif |
 
 ---
 
-## 🔧 Fitur Terbaru (v2.5)
+---
+ 
+## 🔧 Fitur Terbaru (v2.6)
+ 
+### integrasi Master Data DBF
+- **Import Langsung:** Mendukung import file `MST_PGW.DBF`, `KEL.DBF`, dan `GAJI.DBF`.
+- **Sinkronisasi Otomatis:** Pemutakhiran data pegawai dan keluarga secara massal.
+- **Riwayat Gaji Pokok:** Melacak perubahan gaji pokok pegawai dari waktu ke waktu.
+- **Pemetaan SKPD Berbasis Kode:** Menggunakan `kdskpd` untuk akurasi data antar modul.
 
 ### Sumber Dana APBD / BLUD
 - Kolom `sumber_dana` pada tabel `pegawai_pw` (default: APBD)
@@ -168,14 +177,17 @@ npm run dev
 ## 📦 Deploy ke VPS
 
 ```bash
-# 1. Push ke GitHub
+# 1. Push ke GitHub (Lokal)
 bash push.sh "deskripsi perubahan"
-
-# 2. Di VPS
+ 
+# 2. Update di VPS
 bash deploy.sh
 ```
-
-Lihat [README_DEPLOY.md](README_DEPLOY.md) untuk panduan lengkap.
+ 
+> [!IMPORTANT]
+> Untuk update database (migration baru) dan build ulang frontend, cukup jalankan `bash deploy.sh` di root folder VPS.
+ 
+Lihat [README_DEPLOY.md](README_DEPLOY.md) untuk panduan update mesin dan troubleshooting.
 
 ---
 

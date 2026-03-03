@@ -15,6 +15,7 @@ class GajiPns extends Model
         'skpd',
         'satker',
         'kdskpd',
+        'kdsatker',
         'kdjenkel',
         'pendidikan',
         'norek',

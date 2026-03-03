@@ -100,6 +100,12 @@ const router = createRouter({
             meta: { requiresAuth: true },
         },
         {
+            path: '/settings/satker',
+            name: 'SatkerSetting',
+            component: () => import('../views/Settings/SatkerSetting.vue'),
+            meta: { requiresAuth: true },
+        },
+        {
             path: '/employees/:id/history',
             name: 'EmployeeHistory',
             component: () => import('../views/EmployeeHistory.vue'),
@@ -127,6 +133,18 @@ const router = createRouter({
             path: '/posting-data',
             name: 'PostingData',
             component: () => import('../views/PostingData.vue'),
+            meta: { requiresAuth: true },
+        },
+        {
+            path: '/master-pegawai',
+            name: 'MasterPegawai',
+            component: () => import('../views/MasterPegawai.vue'),
+            meta: { requiresAuth: true },
+        },
+        {
+            path: '/settings/maintenance',
+            name: 'DataMaintenance',
+            component: () => import('../views/Settings/DataMaintenance.vue'),
             meta: { requiresAuth: true },
         },
     ],

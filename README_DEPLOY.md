@@ -19,28 +19,38 @@ bash push.sh "Pesan perubahan Anda di sini"
 2. Masuk ke folder project: `cd /www/wwwroot/dashboard-pw`
 3. Jalankan script `deploy.sh`:
 ```bash
+# Script ini otomatis menjalankan git pull, composer install, artisan migrate, dan npm build
 bash deploy.sh
 ```
-*Script ini akan melakukan: git pull, update database (migrate), clear cache, dan rebuild frontend.*
 
-## 3. Jika Ada Migration Baru
+> [!IMPORTANT]
+> Jika ada penambahan fitur besar (seperti Master Data DBF), script `deploy.sh` akan otomatis mendeteksi perubahan tabel dan menjalankan `php artisan migrate`. Pastikan koneksi database di `.env` VPS sudah benar.
 
-Setelah deploy, pastikan migration sudah jalan:
-```bash
-cd /www/wwwroot/sip-gaji/dashboard-pw-backend
-php artisan migrate
-```
+## 3. Daftar Migration Terbaru (Maret 2026)
 
-### Migration Terbaru:
+Berikut adalah tabel penambahan yang baru saja diimplementasikan. Pastikan semua migrate berhasil dijalankan di VPS.
+
 | Migration | Deskripsi |
 |---|---|
-| `add_sumber_dana_to_pegawai_pw` | Kolom `sumber_dana` (APBD/BLUD) di tabel `pegawai_pw` |
-| `create_app_settings_table` | Tabel `app_settings` (tidak terpakai, bisa diabaikan) |
+| `create_master_pegawai_table` | Tabel induk data pegawai dari DBF (`master_pegawai`) |
+| `create_master_keluarga_table` | Tabel induk data keluarga dari DBF (`master_keluarga`) |
+| `create_satkers_table` | Tabel referensi Satker/SKPD untuk pemetaan nama |
+| `add_source_code_to_skpd_mapping` | Penambahan kolom `source_code` (kdskpd) pada pemetaan SKPD |
+| `add_dbf_fields_to_gaji` | Kolom tambahan untuk dukungan import data DBF |
+| `create_payroll_postings` | Tabel log untuk posting/unposting penggajian |
 
-### Seed Data Manual (Jika Diperlukan):
-Jika UMP belum ada di tabel `settings`:
+### Perintah Manual Jika Diperlukan:
+Jika `deploy.sh` mengalami kendala saat migrasi:
 ```bash
-php artisan tinker --execute="App\Models\Setting::setValue('ump_kalsel', '3725000', 'UMP Kalsel');"
+cd dashboard-pw-backend
+php artisan migrate --force
+```
+
+### Seed Data Manual:
+Jika Anda perlu menambahkan mapping SKPD secara manual atau reset cache:
+```bash
+php artisan optimize:clear
+php artisan config:cache
 ```
 
 ---

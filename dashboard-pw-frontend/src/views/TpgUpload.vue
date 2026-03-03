@@ -166,19 +166,43 @@
           </v-col>
         </v-row>
 
-        <!-- Upload Result -->
-        <v-row v-if="uploadResult" class="mt-4">
+        <!-- Upload Result Tracker -->
+        <v-row v-if="activeJobId" class="mt-4">
           <v-col cols="12" md="7" lg="6">
-            <v-alert
-              :type="uploadResult.success ? 'success' : 'error'"
-              variant="tonal"
-              closable
-              @click:close="uploadResult = null"
-              class="rounded-lg"
-            >
-              <div class="font-weight-bold mb-1">{{ uploadResult.success ? 'Upload Berhasil!' : 'Upload Gagal' }}</div>
-              {{ uploadResult.message }}
-            </v-alert>
+            <v-card class="glass-card rounded-xl pa-6 border">
+              <div class="text-center mb-4">
+                <v-icon :color="jobStatusColor" size="48" class="mb-2">
+                  {{ jobStatusIcon }}
+                </v-icon>
+                <div class="text-h6 font-weight-bold">{{ jobStatusLabel }}</div>
+                <div class="text-caption text-grey">{{ activeJobFileName }}</div>
+              </div>
+
+              <v-progress-linear
+                :model-value="activeJobProgress"
+                :color="jobStatusColor"
+                height="10"
+                rounded
+                class="mb-4"
+                :indeterminate="activeJobStatus === 'processing' && activeJobProgress < 5"
+              ></v-progress-linear>
+              <div class="text-caption text-center text-grey mb-4">{{ activeJobProgress }}%</div>
+
+              <v-alert v-if="activeJobStatus === 'completed'" type="success" variant="tonal" class="mb-4">
+                <div class="font-weight-bold mb-1">Import Berhasil!</div>
+                <div class="text-body-2">{{ activeJobResult?.message || 'Data berhasil diproses.' }}</div>
+              </v-alert>
+
+              <v-alert v-if="activeJobStatus === 'failed'" type="error" variant="tonal" class="mb-4">
+                <div class="font-weight-bold mb-1">Gagal Import</div>
+                <div class="text-body-2">{{ activeJobError }}</div>
+              </v-alert>
+
+              <v-btn v-if="activeJobStatus === 'completed' || activeJobStatus === 'failed'"
+                block color="deep-purple" variant="tonal" @click="resetUpload">
+                Upload File Baru
+              </v-btn>
+            </v-card>
           </v-col>
         </v-row>
 
@@ -201,7 +225,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api'
 import Navbar from '../components/Navbar.vue'
@@ -211,7 +235,6 @@ const router = useRouter()
 const loading = ref(false)
 const valid = ref(false)
 const file = ref(null)
-const uploadResult = ref(null)
 
 const selectedTriwulan = ref(null)
 const selectedYear = ref(new Date().getFullYear())
@@ -233,46 +256,120 @@ const years = [2024, 2025, 2026, 2027]
 
 const snackbar = ref({ show: false, message: '', color: 'success' })
 
+// Queue Job Tracking
+const activeJobId = ref(null)
+const activeJobStatus = ref('')
+const activeJobProgress = ref(0)
+const activeJobFileName = ref('')
+const activeJobResult = ref(null)
+const activeJobError = ref('')
+let pollInterval = null
+
+const jobStatusColor = computed(() => {
+  switch (activeJobStatus.value) {
+    case 'pending': return 'grey'
+    case 'processing': return 'deep-purple'
+    case 'completed': return 'success'
+    case 'failed': return 'error'
+    default: return 'grey'
+  }
+})
+
+const jobStatusIcon = computed(() => {
+  switch (activeJobStatus.value) {
+    case 'pending': return 'mdi-clock-outline'
+    case 'processing': return 'mdi-loading mdi-spin'
+    case 'completed': return 'mdi-check-circle'
+    case 'failed': return 'mdi-alert-circle'
+    default: return 'mdi-clock-outline'
+  }
+})
+
+const jobStatusLabel = computed(() => {
+  switch (activeJobStatus.value) {
+    case 'pending': return 'Menunggu Antrian...'
+    case 'processing': return 'Sedang Memproses...'
+    case 'completed': return 'Selesai!'
+    case 'failed': return 'Gagal'
+    default: return 'Menunggu...'
+  }
+})
+
 const viewDashboard = () => {
   router.push('/tpg-dashboard')
 }
 
 const submitUpload = async () => {
-  if (!file.value) return
+  const fileToUpload = Array.isArray(file.value) ? file.value[0] : file.value
+  if (!fileToUpload) return
 
   loading.value = true
-  uploadResult.value = null
-
   try {
     const formData = new FormData()
-    const f = Array.isArray(file.value) ? file.value[0] : file.value
-    formData.append('file', f)
+    formData.append('file', fileToUpload)
+    formData.append('type', 'tpg')
     formData.append('triwulan', selectedTriwulan.value)
     formData.append('tahun', selectedYear.value)
     formData.append('jenis', selectedJenis.value)
 
-    const response = await api.post('/tpg/upload', formData, {
+    const response = await api.post('/upload-jobs', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
 
-    uploadResult.value = {
-      success: true,
-      message: response.data.message
-    }
-
-    showSnackbar(response.data.message, 'success')
-    file.value = null
+    activeJobId.value = response.data.data.job_id
+    activeJobFileName.value = response.data.data.file_name
+    activeJobStatus.value = 'pending'
+    activeJobProgress.value = 0
+    activeJobResult.value = null
+    activeJobError.value = ''
+    
+    startPolling()
+    showSnackbar('File diterima, sedang diproses di background...', 'info')
   } catch (error) {
     const msg = error.response?.data?.message || 'Terjadi kesalahan saat upload.'
-    uploadResult.value = {
-      success: false,
-      message: msg
-    }
     showSnackbar(msg, 'error')
   } finally {
     loading.value = false
   }
 }
+
+const startPolling = () => {
+  if (pollInterval) clearInterval(pollInterval)
+  pollInterval = setInterval(async () => {
+    try {
+      const res = await api.get(`/upload-jobs/${activeJobId.value}`)
+      const job = res.data.data
+      activeJobStatus.value = job.status
+      activeJobProgress.value = job.progress
+      
+      if (job.status === 'completed') {
+        clearInterval(pollInterval)
+        pollInterval = null
+        activeJobResult.value = job.result_summary
+      } else if (job.status === 'failed') {
+        clearInterval(pollInterval)
+        pollInterval = null
+        activeJobError.value = job.error_message || 'Proses gagal'
+      }
+    } catch (e) {
+      console.error('Polling error:', e)
+    }
+  }, 3000)
+}
+
+const resetUpload = () => {
+  activeJobId.value = null
+  activeJobStatus.value = ''
+  activeJobProgress.value = 0
+  activeJobFileName.value = ''
+  activeJobResult.value = null
+  activeJobError.value = ''
+  file.value = null
+}
+
+onUnmounted(() => {
+  if (pollInterval) clearInterval(pollInterval)
+})
 
 const showSnackbar = (msg, color = 'success') => {
   snackbar.value = { show: true, message: msg, color }

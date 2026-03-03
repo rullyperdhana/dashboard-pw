@@ -409,4 +409,58 @@ class SettingController extends Controller
             ]
         ]);
     }
+
+    public function clearPayrollData(Request $request)
+    {
+        $validated = $request->validate([
+            'target' => 'required|string|in:pns,pppk,both',
+            'month' => 'nullable|integer|between:1,12',
+            'year' => 'nullable|integer',
+            'jenis_gaji' => 'nullable|string'
+        ]);
+
+        $target = $validated['target'];
+        $month = $validated['month'] ?? null;
+        $year = $validated['year'] ?? null;
+        $jenisGaji = $validated['jenis_gaji'] ?? null;
+
+        $results = [];
+
+        if ($target === 'pns' || $target === 'both') {
+            $query = GajiPns::query();
+            if ($month)
+                $query->where('bulan', $month);
+            if ($year)
+                $query->where('tahun', $year);
+            if ($jenisGaji)
+                $query->where('jenis_gaji', $jenisGaji);
+
+            $count = $query->delete();
+            $results['pns'] = $count;
+        }
+
+        if ($target === 'pppk' || $target === 'both') {
+            $query = GajiPppk::query();
+            if ($month)
+                $query->where('bulan', $month);
+            if ($year)
+                $query->where('tahun', $year);
+            if ($jenisGaji)
+                $query->where('jenis_gaji', $jenisGaji);
+
+            $count = $query->delete();
+            $results['pppk'] = $count;
+        }
+
+        Log::info("User " . auth()->user()->username . " cleared payroll data", [
+            'results' => $results,
+            'params' => $validated
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data berhasil dihapus.',
+            'details' => $results
+        ]);
+    }
 }

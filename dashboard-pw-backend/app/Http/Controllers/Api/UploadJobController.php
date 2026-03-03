@@ -18,8 +18,8 @@ class UploadJobController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:xls,xlsx,csv',
-            'type' => 'required|in:pns,pppk,tpp,tpg',
+            'file' => 'required|file',
+            'type' => 'required|in:pns,pppk,tpp,tpg,master_pegawai,master_keluarga,satker_ref,payroll_dbf,history_gpok',
         ]);
 
         $type = $request->input('type');
@@ -190,7 +190,7 @@ class UploadJobController extends Controller
     private function getExtraValidationRules(string $type): array
     {
         return match ($type) {
-            'pns', 'pppk' => [
+            'pns', 'pppk', 'payroll_dbf' => [
                 'month' => 'required|integer|min:1|max:12',
                 'year' => 'required|integer|min:2000',
                 'jenis_gaji' => 'required|in:Induk,Susulan,Kekurangan,Terusan',
@@ -205,6 +205,9 @@ class UploadJobController extends Controller
                 'tahun' => 'required|integer|min:2020|max:2030',
                 'jenis' => 'required|in:INDUK,SUSULAN',
             ],
+            'master_pegawai', 'master_keluarga', 'satker_ref', 'history_gpok' => [
+                'batch' => 'nullable|string',
+            ],
             default => [],
         };
     }
@@ -215,7 +218,7 @@ class UploadJobController extends Controller
     private function buildParams(Request $request, string $type): array
     {
         return match ($type) {
-            'pns', 'pppk' => [
+            'pns', 'pppk', 'payroll_dbf' => [
                 'month' => (int) $request->input('month'),
                 'year' => (int) $request->input('year'),
                 'jenis_gaji' => $request->input('jenis_gaji'),
@@ -229,6 +232,9 @@ class UploadJobController extends Controller
                 'triwulan' => (int) $request->input('triwulan'),
                 'tahun' => (int) $request->input('tahun'),
                 'jenis' => $request->input('jenis'),
+            ],
+            'master_pegawai', 'master_keluarga', 'satker_ref', 'history_gpok' => [
+                'batch' => $request->input('batch'),
             ],
             default => [],
         };

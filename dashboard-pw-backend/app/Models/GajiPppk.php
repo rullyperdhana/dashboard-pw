@@ -20,6 +20,7 @@ class GajiPppk extends Model
         'skpd',
         'satker',
         'kdskpd',
+        'kdsatker',
         'kdjenkel',
         'pendidikan',
         'norek',

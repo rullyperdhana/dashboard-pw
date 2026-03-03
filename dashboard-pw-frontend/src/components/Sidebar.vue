@@ -178,6 +178,7 @@ const menuItems = ref([
   { title: 'Data Gaji PPPK', icon: 'mdi-account-check-outline', value: 'gaji-pppk', to: '/gaji-pppk' },
   { title: 'Instansi / SKPD', icon: 'mdi-office-building-outline', value: 'skpd', to: '/skpd' },
   { title: 'SKPD Mapping', icon: 'mdi-swap-horizontal', value: 'skpd-mapping', to: '/settings/skpd-mapping' },
+  { title: 'Master Pegawai (DBF)', icon: 'mdi-database-import', value: 'master-pegawai', to: '/master-pegawai' },
 
   { divider: true },
   { header: 'Keuangan' },
@@ -196,6 +197,8 @@ const menuItems = ref([
   { header: 'Pengaturan' },
   { title: 'Posting Data', icon: 'mdi-lock-check-outline', value: 'posting-data', to: '/posting-data' },
   { title: 'Sumber Dana SKPD', icon: 'mdi-cash-multiple', value: 'sumber-dana', to: '/settings/sumber-dana' },
+  { title: 'Referensi Satker', icon: 'mdi-office-building-cog', value: 'satker-setting', to: '/settings/satker' },
+  { title: 'Pemeliharaan Data', icon: 'mdi-database-wrench', value: 'data-maintenance', to: '/settings/maintenance' },
   { title: 'Manajemen User', icon: 'mdi-account-group-outline', value: 'users', to: '/settings/users' },
 ])
 </script>

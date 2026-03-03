@@ -107,7 +107,14 @@
                         <template v-slot:prepend>
                           <v-icon icon="mdi-office-building-remove-outline" color="warning" size="20"></v-icon>
                         </template>
-                        <v-list-item-title class="text-body-2 font-weight-medium">{{ item.source_name }}</v-list-item-title>
+                        <v-list-item-title class="text-body-2 font-weight-medium">
+                          <v-chip size="x-small" color="warning" class="mr-2">{{ item.source_code }}</v-chip>
+                          {{ item.source_name }}
+                        </v-list-item-title>
+                        <v-list-item-subtitle v-if="item.suggestion" class="text-caption text-primary">
+                          Saran: {{ item.suggestion }}
+                          <span v-if="item.kdskpd" class="text-grey ml-1">[{{ item.kdskpd }}]</span>
+                        </v-list-item-subtitle>
                         <template v-slot:append>
                           <v-btn size="small" color="primary" variant="tonal" @click="quickMap(item)">
                             <v-icon start icon="mdi-link-variant" size="16"></v-icon>
@@ -133,7 +140,14 @@
                         <template v-slot:prepend>
                           <v-icon icon="mdi-office-building-remove-outline" color="warning" size="20"></v-icon>
                         </template>
-                        <v-list-item-title class="text-body-2 font-weight-medium">{{ item.source_name }}</v-list-item-title>
+                        <v-list-item-title class="text-body-2 font-weight-medium">
+                          <v-chip size="x-small" color="warning" class="mr-2">{{ item.source_code }}</v-chip>
+                          {{ item.source_name }}
+                        </v-list-item-title>
+                        <v-list-item-subtitle v-if="item.suggestion" class="text-caption text-primary">
+                          Saran: {{ item.suggestion }}
+                          <span v-if="item.kdskpd" class="text-grey ml-1">[{{ item.kdskpd }}]</span>
+                        </v-list-item-subtitle>
                         <template v-slot:append>
                           <v-btn size="small" color="primary" variant="tonal" @click="quickMap(item)">
                             <v-icon start icon="mdi-link-variant" size="16"></v-icon>
@@ -192,6 +206,11 @@
               density="comfortable"
               hover
             >
+              <template v-slot:item.source_code="{ item }">
+                <v-chip size="small" variant="tonal" color="primary" class="font-weight-medium">
+                  {{ item.source_code || '—' }}
+                </v-chip>
+              </template>
               <template v-slot:item.type="{ item }">
                 <v-chip
                   :color="typeColor(item.type)"
@@ -248,16 +267,30 @@
             Petakan nama SKPD dari file Excel ke SKPD master yang sesuai.
           </v-alert>
 
-          <v-text-field
-            v-model="form.source_name"
-            label="Nama SKPD dari Excel"
-            variant="outlined"
-            placeholder="Contoh: DINAS PENDIDIKAN DAN KEBUDAYAAN PROVINSI KALSEL"
-            :hint="editMode ? 'Nama ini sesuai dengan kolom SKPD di file Excel' : ''"
-            persistent-hint
-            :readonly="editMode && !editSourceName"
-            class="mb-4"
-          ></v-text-field>
+          <v-row>
+            <v-col cols="12" md="4">
+              <v-text-field
+                v-model="form.source_code"
+                label="Kode Sumber"
+                variant="outlined"
+                readonly
+                persistent-hint
+                hint="Kode unik sumber"
+                class="mb-4"
+              ></v-text-field>
+            </v-col>
+            <v-col cols="12" md="8">
+              <v-text-field
+                v-model="form.source_name"
+                label="Nama Sumber"
+                variant="outlined"
+                readonly
+                persistent-hint
+                hint="Nama asli sumber"
+                class="mb-4"
+              ></v-text-field>
+            </v-col>
+          </v-row>
 
           <v-autocomplete
             v-model="form.skpd_id"
@@ -359,6 +392,7 @@ const deletingItem = ref(null)
 const form = ref({
   id: null,
   source_name: '',
+  source_code: '',
   skpd_id: null,
   type: 'all',
 })
@@ -372,8 +406,9 @@ const typeOptions = [
 ]
 
 const tableHeaders = [
-  { title: 'Nama SKPD di Excel (Source)', key: 'source_name', minWidth: '260px' },
-  { title: 'SKPD Master (Tujuan)', key: 'nama_skpd', minWidth: '260px' },
+  { title: 'Kode', key: 'source_code', width: '100px' },
+  { title: 'Nama SKPD di Excel', key: 'source_name', minWidth: '220px' },
+  { title: 'SKPD Master (Tujuan)', key: 'nama_skpd', minWidth: '220px' },
   { title: 'Tipe', key: 'type', align: 'center', width: '100px' },
   { title: 'Aksi', key: 'actions', sortable: false, align: 'center', width: '100px' },
 ]
@@ -445,7 +480,7 @@ const loadSkpd = async () => {
 
 // Dialogs
 const openAddDialog = () => {
-  form.value = { id: null, source_name: '', skpd_id: null, type: 'all' }
+  form.value = { id: null, source_name: '', source_code: '', skpd_id: null, type: 'all' }
   editMode.value = false
   editSourceName.value = false
   loadSkpd()
@@ -456,6 +491,7 @@ const openEditDialog = (item) => {
   form.value = {
     id: item.id,
     source_name: item.source_name,
+    source_code: item.source_code,
     skpd_id: item.skpd_id,
     type: item.type,
   }
@@ -466,7 +502,7 @@ const openEditDialog = (item) => {
 }
 
 const quickMap = (item) => {
-  form.value = { id: null, source_name: item.source_name, skpd_id: null, type: item.type }
+  form.value = { id: null, source_name: item.source_name, source_code: item.source_code, skpd_id: null, type: item.type }
   editMode.value = false
   editSourceName.value = true
   loadSkpd()
@@ -486,6 +522,7 @@ const saveMapping = async () => {
   try {
     await api.post('/skpd-mapping', {
       source_name: form.value.source_name,
+      source_code: form.value.source_code,
       skpd_id: form.value.skpd_id,
       type: form.value.type,
     })
