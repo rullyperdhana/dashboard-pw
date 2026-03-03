@@ -105,8 +105,8 @@
             <v-select
               v-model="uploadType"
               :items="[
-                { title: 'Master Pegawai (MST_PGW.DBF)', value: 'pegawai' },
-                { title: 'Data Keluarga (KEL.DBF)', value: 'keluarga' },
+                { title: 'Master Pegawai (MST_PGW.DBF)', value: 'master_pegawai' },
+                { title: 'Data Keluarga (KEL.DBF)', value: 'master_keluarga' },
                 { title: 'Riwayat Gaji Pokok (HIS_GPOK.DBF)', value: 'history_gpok' }
               ]"
               label="Jenis File"
@@ -363,7 +363,7 @@ const headers = [
 
 const uploadDialog = ref(false)
 const uploading = ref(false)
-const uploadType = ref('pegawai')
+const uploadType = ref('master_pegawai')
 const uploadBatch = ref('2026-3')
 const uploadFile = ref(null)
 const uploadError = ref(null)
@@ -448,15 +448,9 @@ const handleUpload = async () => {
   const formData = new FormData()
   formData.append('file', uploadFile.value)
   formData.append('batch', uploadBatch.value)
+  formData.append('type', uploadType.value)
   
-  const endpoint = uploadType.value === 'pegawai' 
-    ? '/master/pegawai/import' 
-    : (uploadType.value === 'keluarga' ? '/master/keluarga/import' : '/upload-jobs');
-
-  const finalType = uploadType.value === 'history_gpok' ? 'history_gpok' : uploadType.value;
-  if (uploadType.value === 'history_gpok') {
-      formData.append('type', 'history_gpok');
-  }
+  const endpoint = '/upload-jobs';
 
   try {
     const response = await api.post(endpoint, formData, {
