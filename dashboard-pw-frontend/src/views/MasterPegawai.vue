@@ -87,6 +87,12 @@
           {{ item.kdpangkat }}
           <span class="text-caption text-grey ml-1">({{ item.blgolt }}/{{ item.mkgolt }})</span>
         </template>
+        <template v-slot:item.kdstapeg="{ item }">
+          <v-chip v-if="item.nmstapeg" size="small" :color="getStapegColor(item.kdstapeg)" variant="tonal">
+            {{ item.nmstapeg }}
+          </v-chip>
+          <span v-else class="text-grey">{{ item.kdstapeg || '-' }}</span>
+        </template>
         <template v-slot:item.actions="{ item }">
           <v-btn icon size="small" variant="text" color="primary" @click="showDetail(item)">
             <v-icon>mdi-eye-outline</v-icon>
@@ -321,6 +327,14 @@
                   <div class="text-body-1 font-weight-bold mb-1" v-if="selectedItem.nmsatker">{{ selectedItem.nmsatker }}</div>
                   <div class="text-body-2 text-grey mb-4">{{ selectedItem.kdsatker }}</div>
                   
+                  <div class="text-subtitle-2 text-grey mb-1">Status Pegawai</div>
+                  <div class="text-body-1 mb-4">
+                    <v-chip v-if="selectedItem.nmstapeg" size="small" :color="getStapegColor(selectedItem.kdstapeg)" variant="tonal">
+                      {{ selectedItem.nmstapeg }}
+                    </v-chip>
+                    <span v-else>{{ selectedItem.kdstapeg || '-' }}</span>
+                  </div>
+
                   <div class="text-subtitle-2 text-grey mb-1">TMT Capeg</div>
                   <div class="text-body-1 mb-4">{{ selectedItem.tmtcapeg || '-' }}</div>
                 </v-col>
@@ -351,13 +365,11 @@ const filterJenis = ref(null)
 const headers = [
   { title: 'Nama / NIP', key: 'nama', align: 'start', width: '250', sortable: false },
   { title: 'Tipe', key: 'kd_jns_peg', align: 'center', sortable: false },
+  { title: 'Status', key: 'kdstapeg', align: 'start', sortable: false },
   { title: 'SKPD', key: 'kdskpd', align: 'start', sortable: false },
   { title: 'Satker', key: 'kdsatker', align: 'start', sortable: false },
   { title: 'Golongan', key: 'kdpangkat', align: 'start', sortable: false },
-  { title: 'NIK', key: 'noktp', align: 'start', sortable: false },
-  { title: 'No. HP', key: 'nohandphon', align: 'start', sortable: false },
   { title: 'Gaji Pokok', key: 'gapok', align: 'end', sortable: false },
-  { title: 'Tj. Eselon', key: 'tjeselon', align: 'end', sortable: false },
   { title: 'Aksi', key: 'actions', align: 'center', sortable: false },
 ]
 
@@ -527,6 +539,18 @@ const getHubungan = (code) => {
     '03': 'Anak Angkat'
   }
   return map[code] || code || 'Lainnya'
+}
+
+const getStapegColor = (code) => {
+  const activeStatuses = [1, 2, 3, 4, 5, 11, 12]
+  const inactiveStatuses = [6, 7, 8, 9, 10, 22]
+  const terminatedStatuses = [23, 24, 27, 28, 30]
+  
+  const numCode = parseInt(code)
+  if (activeStatuses.includes(numCode)) return 'success'
+  if (inactiveStatuses.includes(numCode)) return 'warning'
+  if (terminatedStatuses.includes(numCode)) return 'error'
+  return 'grey'
 }
 
 const formatCurrency = (value) => {

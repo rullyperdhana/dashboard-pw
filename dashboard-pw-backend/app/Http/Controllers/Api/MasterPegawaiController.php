@@ -15,7 +15,8 @@ class MasterPegawaiController extends Controller
                 $join->on('master_pegawai.kdskpd', '=', 'satkers.kdskpd')
                     ->on('master_pegawai.kdsatker', '=', 'satkers.kdsatker');
             })
-            ->select('master_pegawai.*', 'satkers.nmskpd', 'satkers.nmsatker');
+            ->leftJoin('ref_stapeg', 'master_pegawai.kdstapeg', '=', 'ref_stapeg.kdstapeg')
+            ->select('master_pegawai.*', 'satkers.nmskpd', 'satkers.nmsatker', 'ref_stapeg.nmstapeg');
 
         if ($request->has('search')) {
             $query->search($request->search);
@@ -44,7 +45,8 @@ class MasterPegawaiController extends Controller
                 $join->on('master_pegawai.kdskpd', '=', 'satkers.kdskpd')
                     ->on('master_pegawai.kdsatker', '=', 'satkers.kdsatker');
             })
-            ->select('master_pegawai.*', 'satkers.nmskpd', 'satkers.nmsatker')
+            ->leftJoin('ref_stapeg', 'master_pegawai.kdstapeg', '=', 'ref_stapeg.kdstapeg')
+            ->select('master_pegawai.*', 'satkers.nmskpd', 'satkers.nmsatker', 'ref_stapeg.nmstapeg')
             ->with('keluarga')
             ->findOrFail($id);
 
@@ -61,7 +63,8 @@ class MasterPegawaiController extends Controller
                 $join->on('master_pegawai.kdskpd', '=', 'satkers.kdskpd')
                     ->on('master_pegawai.kdsatker', '=', 'satkers.kdsatker');
             })
-            ->select('master_pegawai.*', 'satkers.nmskpd', 'satkers.nmsatker')
+            ->leftJoin('ref_stapeg', 'master_pegawai.kdstapeg', '=', 'ref_stapeg.kdstapeg')
+            ->select('master_pegawai.*', 'satkers.nmskpd', 'satkers.nmsatker', 'ref_stapeg.nmstapeg')
             ->with('keluarga')
             ->where('nip', $nip)
             ->firstOrFail();
