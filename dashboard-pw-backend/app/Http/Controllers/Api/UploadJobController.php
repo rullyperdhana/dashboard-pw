@@ -19,7 +19,7 @@ class UploadJobController extends Controller
     {
         $request->validate([
             'file' => 'required|file',
-            'type' => 'required|in:pns,pppk,tpp,tpg,master_pegawai,master_keluarga,satker_ref,payroll_dbf,history_gpok',
+            'type' => 'required|in:pns,pppk,tpp,tpg,master_pegawai,master_keluarga,satker_ref,payroll_dbf,history_gpok,jabfung_ref',
         ]);
 
         $type = $request->input('type');
@@ -205,7 +205,7 @@ class UploadJobController extends Controller
                 'tahun' => 'required|integer|min:2020|max:2030',
                 'jenis' => 'required|in:INDUK,SUSULAN',
             ],
-            'master_pegawai', 'master_keluarga', 'satker_ref', 'history_gpok' => [
+            'master_pegawai', 'master_keluarga', 'satker_ref', 'history_gpok', 'jabfung_ref' => [
                 'batch' => 'nullable|string',
             ],
             default => [],
@@ -233,7 +233,7 @@ class UploadJobController extends Controller
                 'tahun' => (int) $request->input('tahun'),
                 'jenis' => $request->input('jenis'),
             ],
-            'master_pegawai', 'master_keluarga', 'satker_ref', 'history_gpok' => [
+            'master_pegawai', 'master_keluarga', 'satker_ref', 'history_gpok', 'jabfung_ref' => [
                 'batch' => $request->input('batch'),
             ],
             default => [],

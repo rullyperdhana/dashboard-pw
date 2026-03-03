@@ -16,6 +16,7 @@ use App\Models\MasterKeluarga;
 use App\Models\Satker;
 use App\Models\TpgData;
 use App\Models\HistoryGajiPokok;
+use App\Models\RefJabatanFungsional;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -85,6 +86,9 @@ class ProcessPayrollUpload implements ShouldQueue
                     break;
                 case 'history_gpok':
                     $this->processHistoryGPok($uploadJob, $filePath, $params);
+                    break;
+                case 'jabfung_ref':
+                    $this->processJabfungRef($uploadJob, $filePath, $params);
                     break;
                 default:
                     $uploadJob->markFailed("Tipe upload tidak dikenal: {$uploadJob->type}");
@@ -684,5 +688,30 @@ class ProcessPayrollUpload implements ShouldQueue
                 $exception->getTraceAsString()
             );
         }
+    }
+
+    private function processJabfungRef(UploadJob $job, string $filePath, array $params): void
+    {
+        $job->updateProgress(0, 100);
+        $start = microtime(true);
+
+        // Truncate existing data and re-import
+        RefJabatanFungsional::truncate();
+        $job->updateProgress(10, 100);
+
+        Excel::import(new \App\Imports\JabatanFungsionalImport(), $filePath);
+
+        $end = microtime(true);
+        $duration = round($end - $start, 2);
+        $count = RefJabatanFungsional::count();
+
+        $job->updateProgress(100, 100);
+
+        Log::info("Upload Job #{$this->uploadJobId}: Jabatan Fungsional reference update took {$duration} seconds. Total records: {$count}");
+
+        $job->markCompleted([
+            'total_records' => $count,
+            'message' => "Berhasil mengupdate {$count} data referensi Jabatan Fungsional dalam {$duration} detik.",
+        ]);
     }
 }

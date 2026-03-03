@@ -16,7 +16,14 @@ class MasterPegawaiController extends Controller
                     ->on('master_pegawai.kdsatker', '=', 'satkers.kdsatker');
             })
             ->leftJoin('ref_stapeg', 'master_pegawai.kdstapeg', '=', 'ref_stapeg.kdstapeg')
-            ->select('master_pegawai.*', 'satkers.nmskpd', 'satkers.nmsatker', 'ref_stapeg.nmstapeg');
+            ->leftJoin('ref_jabatan_fungsional', 'master_pegawai.kdfungsi', '=', 'ref_jabatan_fungsional.kdfungsi')
+            ->select(
+                'master_pegawai.*',
+                'satkers.nmskpd',
+                'satkers.nmsatker',
+                'ref_stapeg.nmstapeg',
+                'ref_jabatan_fungsional.nama_jabatan'
+            );
 
         if ($request->has('search')) {
             $query->search($request->search);
@@ -46,7 +53,14 @@ class MasterPegawaiController extends Controller
                     ->on('master_pegawai.kdsatker', '=', 'satkers.kdsatker');
             })
             ->leftJoin('ref_stapeg', 'master_pegawai.kdstapeg', '=', 'ref_stapeg.kdstapeg')
-            ->select('master_pegawai.*', 'satkers.nmskpd', 'satkers.nmsatker', 'ref_stapeg.nmstapeg')
+            ->leftJoin('ref_jabatan_fungsional', 'master_pegawai.kdfungsi', '=', 'ref_jabatan_fungsional.kdfungsi')
+            ->select(
+                'master_pegawai.*',
+                'satkers.nmskpd',
+                'satkers.nmsatker',
+                'ref_stapeg.nmstapeg',
+                'ref_jabatan_fungsional.nama_jabatan'
+            )
             ->with('keluarga')
             ->findOrFail($id);
 
@@ -64,7 +78,14 @@ class MasterPegawaiController extends Controller
                     ->on('master_pegawai.kdsatker', '=', 'satkers.kdsatker');
             })
             ->leftJoin('ref_stapeg', 'master_pegawai.kdstapeg', '=', 'ref_stapeg.kdstapeg')
-            ->select('master_pegawai.*', 'satkers.nmskpd', 'satkers.nmsatker', 'ref_stapeg.nmstapeg')
+            ->leftJoin('ref_jabatan_fungsional', 'master_pegawai.kdfungsi', '=', 'ref_jabatan_fungsional.kdfungsi')
+            ->select(
+                'master_pegawai.*',
+                'satkers.nmskpd',
+                'satkers.nmsatker',
+                'ref_stapeg.nmstapeg',
+                'ref_jabatan_fungsional.nama_jabatan'
+            )
             ->with('keluarga')
             ->where('nip', $nip)
             ->firstOrFail();

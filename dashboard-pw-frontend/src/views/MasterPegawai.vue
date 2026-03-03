@@ -113,7 +113,8 @@
               :items="[
                 { title: 'Master Pegawai (MST_PGW.DBF)', value: 'master_pegawai' },
                 { title: 'Data Keluarga (KEL.DBF)', value: 'master_keluarga' },
-                { title: 'Riwayat Gaji Pokok (HIS_GPOK.DBF)', value: 'history_gpok' }
+                { title: 'Riwayat Gaji Pokok (HIS_GPOK.DBF)', value: 'history_gpok' },
+                { title: 'Jabatan Fungsional Ref (Excel)', value: 'jabfung_ref' }
               ]"
               label="Jenis File"
               variant="outlined"
@@ -335,6 +336,10 @@
                     <span v-else>{{ selectedItem.kdstapeg || '-' }}</span>
                   </div>
 
+                  <div class="text-subtitle-2 text-grey mb-1">Jabatan</div>
+                  <div class="text-body-1 mb-1" v-if="selectedItem.nama_jabatan">{{ selectedItem.nama_jabatan }}</div>
+                  <div class="text-body-2 text-grey mb-4" v-else>{{ selectedItem.kdfungsi || '-' }}</div>
+
                   <div class="text-subtitle-2 text-grey mb-1">TMT Capeg</div>
                   <div class="text-body-1 mb-4">{{ selectedItem.tmtcapeg || '-' }}</div>
                 </v-col>
@@ -368,6 +373,7 @@ const headers = [
   { title: 'Status', key: 'kdstapeg', align: 'start', sortable: false },
   { title: 'SKPD', key: 'kdskpd', align: 'start', sortable: false },
   { title: 'Satker', key: 'kdsatker', align: 'start', sortable: false },
+  { title: 'Jabatan', key: 'nama_jabatan', align: 'start', sortable: false },
   { title: 'Golongan', key: 'kdpangkat', align: 'start', sortable: false },
   { title: 'Gaji Pokok', key: 'gapok', align: 'end', sortable: false },
   { title: 'Aksi', key: 'actions', align: 'center', sortable: false },
