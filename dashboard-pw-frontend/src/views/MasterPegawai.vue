@@ -20,97 +20,76 @@
           </v-col>
         </v-row>
 
-    <!-- Summary Cards -->
-    <v-row class="mb-2">
-      <v-col cols="12" sm="4" md="2">
-        <v-card :class="['rounded-xl stat-card total-gradient', { 'active-filter': activeFilter === 'all' }]" elevation="0" @click="applyCardFilter('all', 'Semua Pegawai')">
-          <v-card-text class="pa-4">
-            <div class="d-flex align-center justify-space-between mb-1">
-              <v-icon color="white" size="24">mdi-account-group</v-icon>
-              <v-chip size="x-small" color="white" variant="flat" class="text-primary font-weight-bold">TOTAL</v-chip>
+    <!-- Status Distribution Ribbon -->
+    <v-card class="mb-6 rounded-xl overflow-hidden stat-ribbon-card" elevation="0" border>
+      <v-card-text class="pa-6">
+        <v-row align="center">
+          <v-col cols="12" md="3" class="border-md-right">
+            <div class="text-overline text-grey-darken-1 mb-1">TOTAL PEGAWAI</div>
+            <div class="d-flex align-baseline">
+              <span class="text-h3 font-weight-black primary--text">{{ (stats.summary?.total || 0).toLocaleString() }}</span>
+              <span class="text-caption text-grey ml-2">Orang</span>
             </div>
-            <div class="text-h5 font-weight-bold text-white mb-0">{{ stats.total || 0 }}</div>
-            <div class="text-caption text-white opacity-70">Seluruh Pegawai</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="4" md="2">
-        <v-card :class="['rounded-xl stat-card pns-gradient', { 'active-filter': activeFilter === 'pns_aktif' }]" elevation="0" @click="applyCardFilter('pns_aktif', 'PNS Aktif')">
-          <v-card-text class="pa-4">
-            <div class="d-flex align-center justify-space-between mb-1">
-              <v-icon color="white" size="24">mdi-account-star</v-icon>
-              <v-chip size="x-small" color="white" variant="flat" class="text-primary font-weight-bold">PNS</v-chip>
+            <div class="mt-2 d-flex align-center cursor-pointer" @click="clearCardFilter">
+              <v-icon size="small" :color="activeFilter === 'all' ? 'primary' : 'grey'">
+                {{ activeFilter === 'all' ? 'mdi-filter-check' : 'mdi-filter-off-outline' }}
+              </v-icon>
+              <span class="text-caption ml-1" :class="activeFilter === 'all' ? 'text-primary font-weight-bold' : 'text-grey'">
+                {{ activeFilter === 'all' ? 'Semua Data Terpilih' : 'Klik untuk Reset Filter' }}
+              </span>
             </div>
-            <div class="text-h5 font-weight-bold text-white mb-0">{{ stats.pns_aktif || 0 }}</div>
-            <div class="text-caption text-white opacity-70">PNS Aktif</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="4" md="2">
-        <v-card :class="['rounded-xl stat-card pppk-gradient', { 'active-filter': activeFilter === 'pppk_aktif' }]" elevation="0" @click="applyCardFilter('pppk_aktif', 'PPPK Aktif')">
-          <v-card-text class="pa-4">
-            <div class="d-flex align-center justify-space-between mb-1">
-              <v-icon color="white" size="24">mdi-account-details</v-icon>
-              <v-chip size="x-small" color="white" variant="flat" class="text-purple font-weight-bold">PPPK</v-chip>
+          </v-col>
+          
+          <v-col cols="12" md="9" class="pl-md-8">
+            <div class="text-overline text-grey-darken-1 mb-4 d-flex justify-space-between align-center">
+              <span>DISTRIBUSI STATUS PEGAWAI</span>
+              <span v-if="activeFilter !== 'all'" class="text-primary font-weight-bold">
+                Filter Aktif: {{ activeFilterLabel }}
+              </span>
             </div>
-            <div class="text-h5 font-weight-bold text-white mb-0">{{ stats.pppk_aktif || 0 }}</div>
-            <div class="text-caption text-white opacity-70">PPPK Aktif</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="4" md="2">
-        <v-card :class="['rounded-xl stat-card warning-gradient', { 'active-filter': activeFilter === 'pensiun' }]" elevation="0" @click="applyCardFilter('pensiun', 'Pensiun')">
-          <v-card-text class="pa-4">
-            <div class="d-flex align-center justify-space-between mb-1">
-              <v-icon color="white" size="24">mdi-briefcase-variant-off</v-icon>
-              <v-chip size="x-small" color="white" variant="flat" class="text-warning font-weight-bold">PENSIUN</v-chip>
+            
+            <!-- The Ribbon Bar -->
+            <div class="ribbon-container mb-6">
+              <div 
+                v-for="(seg, idx) in ribbonSegments" 
+                :key="idx"
+                class="ribbon-segment"
+                :style="{ 
+                  width: seg.percent + '%', 
+                  backgroundColor: seg.color,
+                  opacity: activeFilter === 'all' || activeFilter === seg.filter ? 1 : 0.3
+                }"
+                @click="applyCardFilter(seg.filter, seg.label)"
+              >
+                <v-tooltip activator="parent" location="top">
+                  <div class="text-center pa-1">
+                    <div class="font-weight-bold">{{ seg.label }}</div>
+                    <div>{{ seg.count }} Orang ({{ seg.percent }}%)</div>
+                  </div>
+                </v-tooltip>
+              </div>
             </div>
-            <div class="text-h5 font-weight-bold text-white mb-0">{{ stats.pensiun || 0 }}</div>
-            <div class="text-caption text-white opacity-70">Pegawai Pensiun</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="4" md="2">
-        <v-card :class="['rounded-xl stat-card error-gradient', { 'active-filter': activeFilter === 'meninggal' }]" elevation="0" @click="applyCardFilter('meninggal', 'Meninggal')">
-          <v-card-text class="pa-4">
-            <div class="d-flex align-center justify-space-between mb-1">
-              <v-icon color="white" size="24">mdi-heart-off</v-icon>
-              <v-chip size="x-small" color="white" variant="flat" class="text-error font-weight-bold">MENINGGAL</v-chip>
-            </div>
-            <div class="text-h5 font-weight-bold text-white mb-0">{{ stats.meninggal || 0 }}</div>
-            <div class="text-caption text-white opacity-70">Meninggal Dunia</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="4" md="2">
-        <v-card :class="['rounded-xl stat-card info-gradient', { 'active-filter': activeFilter === 'mutasi' }]" elevation="0" @click="applyCardFilter('mutasi', 'Mutasi')">
-          <v-card-text class="pa-4">
-            <div class="d-flex align-center justify-space-between mb-1">
-              <v-icon color="white" size="24">mdi-account-convert</v-icon>
-              <v-chip size="x-small" color="white" variant="flat" class="text-info font-weight-bold">MUTASI</v-chip>
-            </div>
-            <div class="text-h5 font-weight-bold text-white mb-0">{{ stats.mutasi || 0 }}</div>
-            <div class="text-caption text-white opacity-70">Mutasi / Keluar</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
 
-    <!-- Active Filter Indicator -->
-    <v-row v-if="activeFilter !== 'all'" class="mb-4">
-      <v-col cols="12">
-        <v-chip
-          color="primary"
-          closable
-          @click:close="clearCardFilter"
-          variant="tonal"
-          class="font-weight-bold"
-        >
-          <v-icon start size="small">mdi-filter-variant</v-icon>
-          Menampilkan: {{ activeFilterLabel }}
-        </v-chip>
-      </v-col>
-    </v-row>
+            <!-- Legend Grid -->
+            <div class="legend-grid">
+              <div 
+                v-for="(seg, idx) in ribbonSegments" 
+                :key="'leg-'+idx"
+                class="legend-item"
+                :class="{ 'legend-active': activeFilter === seg.filter }"
+                @click="applyCardFilter(seg.filter, seg.label)"
+              >
+                <div class="legend-dot" :style="{ backgroundColor: seg.color }"></div>
+                <div class="legend-info">
+                  <div class="legend-label">{{ seg.label }}</div>
+                  <div class="legend-count text-grey">{{ seg.count }}</div>
+                </div>
+              </div>
+            </div>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
 
     <!-- Search and Filter -->
     <v-row class="mb-6">
@@ -447,7 +426,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import api from '../api'
 import Sidebar from '../components/Sidebar.vue'
 import Navbar from '../components/Navbar.vue'
@@ -458,10 +437,33 @@ const totalItems = ref(0)
 const itemsPerPage = ref(20)
 const search = ref('')
 const filterJenis = ref(null)
-const stats = ref({})
+const stats = ref({
+    summary: {},
+    by_code: []
+})
 const activeFilter = ref('all')
 const activeFilterLabel = ref('')
 const statusGroup = ref(null)
+const statusCode = ref(null)
+
+const ribbonSegments = computed(() => {
+  const total = stats.value.summary?.total || 0
+  if (total === 0) return []
+  
+  const colors = [
+    '#1e40af', '#7e22ce', '#d97706', '#dc2626', '#ea580c', '#0284c7', '#64748b',
+    '#059669', '#0891b2', '#4f46e5', '#7c3aed', '#c026d3', '#db2777', '#dc2626',
+    '#facc15', '#4ade80', '#22d3ee', '#818cf8', '#fb7185', '#a78bfa'
+  ]
+  
+  return stats.value.by_code.map((s, idx) => ({
+    label: s.nmstapeg || `Status ${s.kdstapeg}`,
+    count: s.count,
+    color: colors[idx % colors.length],
+    filter: s.kdstapeg,
+    percent: ((s.count / total) * 100).toFixed(1)
+  })).sort((a, b) => b.count - a.count)
+})
 
 const headers = [
   { title: 'Nama / NIP', key: 'nama', align: 'start', width: '250', sortable: false },
@@ -503,16 +505,8 @@ const fetchData = async (page = 1, limit = itemsPerPage.value) => {
       per_page: limit,
       search: search.value,
       kd_jns_peg: filterJenis.value,
-      status_group: statusGroup.value
-    }
-
-    // Special handling for pns_aktif / pppk_aktif combinations
-    if (activeFilter.value === 'pns_aktif') {
-        params.kd_jns_peg = 2
-        params.status_group = 'aktif'
-    } else if (activeFilter.value === 'pppk_aktif') {
-        params.kd_jns_peg = 4
-        params.status_group = 'aktif'
+      status_group: statusGroup.value,
+      status_code: statusCode.value
     }
 
     const response = await api.get('/master/pegawai', { params })
@@ -541,12 +535,12 @@ const applyCardFilter = (filter, label) => {
     // Map card filter to params
     if (filter === 'all') {
         statusGroup.value = null
+        statusCode.value = null
         filterJenis.value = null
-    } else if (filter === 'pns_aktif' || filter === 'pppk_aktif') {
-        // Handled specifically in fetchData
-        statusGroup.value = 'aktif'
     } else {
-        statusGroup.value = filter
+        // Individual status code
+        statusCode.value = filter
+        statusGroup.value = null
         filterJenis.value = null
     }
     
@@ -719,40 +713,92 @@ onMounted(() => {
   border-radius: 12px;
 }
 
-.stat-card {
-  transition: transform 0.2s;
-}
-.stat-card:hover {
-  transform: translateY(-4px);
+.stat-ribbon-card {
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(10px);
 }
 
-.pns-gradient {
-  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-}
-.pppk-gradient {
-  background: linear-gradient(135deg, #7e22ce 0%, #a855f7 100%);
-}
-.success-gradient {
-  background: linear-gradient(135deg, #065e3c 0%, #10b981 100%);
-}
-.warning-gradient {
-  background: linear-gradient(135deg, #b45309 0%, #f59e0b 100%);
-}
-.error-gradient {
-  background: linear-gradient(135deg, #991b1b 0%, #ef4444 100%);
-}
-.info-gradient {
-  background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%);
-}
-.total-gradient {
-  background: linear-gradient(135deg, #334155 0%, #64748b 100%);
+.border-md-right {
+  border-right: 1px solid rgba(0,0,0,0.05);
 }
 
-.active-filter {
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.5) !important;
-  transform: translateY(-8px) scale(1.02);
+@media (max-width: 960px) {
+  .border-md-right {
+    border-right: none;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding-bottom: 24px;
+    margin-bottom: 24px;
+  }
 }
 
-.opacity-70 { opacity: 0.7; }
-.gap-2 { gap: 8px; }
+.ribbon-container {
+  display: flex;
+  height: 40px;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f1f5f9;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.ribbon-segment {
+  height: 100%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+}
+
+.ribbon-segment:hover {
+  transform: scaleY(1.15);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 2;
+  filter: brightness(1.1);
+}
+
+.legend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.legend-item:hover {
+  background: rgba(0,0,0,0.03);
+}
+
+.legend-active {
+  background: rgba(var(--v-theme-primary), 0.08) !important;
+  border: 1px solid rgba(var(--v-theme-primary), 0.2);
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.legend-count {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
 </style>

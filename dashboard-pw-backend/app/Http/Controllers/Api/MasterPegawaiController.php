@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\MasterPegawai;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class MasterPegawaiController extends Controller
 {
@@ -53,13 +54,24 @@ class MasterPegawaiController extends Controller
                 case 'meninggal':
                     $query->where('master_pegawai.kdstapeg', 27);
                     break;
+                case 'cuti':
+                    $query->where('master_pegawai.kdstapeg', 6);
+                    break;
                 case 'mutasi':
                     $query->whereIn('master_pegawai.kdstapeg', [24, 28]);
                     break;
                 case 'non_aktif_temp':
-                    $query->whereIn('master_pegawai.kdstapeg', [6, 7, 8, 9, 10, 22]);
+                    $query->whereIn('master_pegawai.kdstapeg', [7, 8, 9, 10, 22]);
                     break;
             }
+        }
+
+        if ($statusCode = $request->get('status_code')) {
+            $query->where('master_pegawai.kdstapeg', $statusCode);
+        }
+
+        if ($request->has('kd_jns_peg')) {
+            $query->where('master_pegawai.kd_jns_peg', $request->get('kd_jns_peg'));
         }
 
         $data = $query->paginate($request->per_page ?? 20);
@@ -125,7 +137,7 @@ class MasterPegawaiController extends Controller
 
     public function stats()
     {
-        $stats = \Illuminate\Support\Facades\DB::table('master_pegawai')
+        $summary = \Illuminate\Support\Facades\DB::table('master_pegawai')
             ->selectRaw('
                 COUNT(*) as total,
                 SUM(CASE WHEN kdstapeg IN (1, 2, 3, 4, 5, 11, 12) AND kd_jns_peg = 2 THEN 1 ELSE 0 END) as pns_aktif,
@@ -133,14 +145,23 @@ class MasterPegawaiController extends Controller
                 SUM(CASE WHEN kdstapeg IN (1, 2, 3, 4, 5, 11, 12) THEN 1 ELSE 0 END) as aktif,
                 SUM(CASE WHEN kdstapeg IN (23, 30) THEN 1 ELSE 0 END) as pensiun,
                 SUM(CASE WHEN kdstapeg = 27 THEN 1 ELSE 0 END) as meninggal,
+                SUM(CASE WHEN kdstapeg = 6 THEN 1 ELSE 0 END) as cuti,
                 SUM(CASE WHEN kdstapeg IN (24, 28) THEN 1 ELSE 0 END) as mutasi,
-                SUM(CASE WHEN kdstapeg IN (6, 7, 8, 9, 10, 22) THEN 1 ELSE 0 END) as non_aktif_temp
+                SUM(CASE WHEN kdstapeg IN (7, 8, 9, 10, 22) THEN 1 ELSE 0 END) as non_aktif_temp
             ')
             ->first();
 
+        $byCode = MasterPegawai::select('master_pegawai.kdstapeg', 'ref_stapeg.nmstapeg', DB::raw('count(*) as count'))
+            ->leftJoin('ref_stapeg', 'master_pegawai.kdstapeg', '=', 'ref_stapeg.kdstapeg')
+            ->groupBy('master_pegawai.kdstapeg', 'ref_stapeg.nmstapeg')
+            ->get();
+
         return response()->json([
             'success' => true,
-            'data' => $stats
+            'data' => [
+                'summary' => $summary,
+                'by_code' => $byCode
+            ]
         ]);
     }
 }
