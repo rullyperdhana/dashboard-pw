@@ -200,6 +200,8 @@ class SettingController extends Controller
         $jkkPercent = (float) Setting::where('key', 'pppk_jkk_percentage')->value('value') ?? 0.24;
         $jkmPercent = (float) Setting::where('key', 'pppk_jkm_percentage')->value('value') ?? 0.72;
         $bpjsPercent = 4.0; // BPJS Kesehatan employer share: 4%
+        $umpValue = (float) Setting::where('key', 'ump_kalsel')->value('value') ?? 3725000;
+        $bpjsCap = 12000000;
 
         // Base Query with Retirement Filter
         $query = PegawaiPw::whereDate('tgl_lahir', '>=', $cutoffBirthDate->format('Y-m-d'));
@@ -208,9 +210,9 @@ class SettingController extends Controller
         $totalGajiPokok = (clone $query)->sum('gapok');
         $totalTunjangan = (clone $query)->sum('tunjangan');
         $totalPegawai = (clone $query)->count();
-        // BPJS base: LEAST(gapok + tunjangan, 12000000) per employee
-        $bpjsCap = 12000000;
-        $totalBpjsBase = (clone $query)->sum(DB::raw("LEAST(IFNULL(gapok, 0) + IFNULL(tunjangan, 0), $bpjsCap)"));
+
+        // BPJS base for PW: GREATEST(gapok, UMP) capped at 12M
+        $totalBpjsBase = (clone $query)->sum(DB::raw("LEAST(GREATEST(IFNULL(gapok, 0), $umpValue), $bpjsCap)"));
 
         // 4. Get Breakdown by SKPD
         $details = PegawaiPw::select(
@@ -219,7 +221,7 @@ class SettingController extends Controller
             DB::raw('COUNT(pegawai_pw.id) as employee_count'),
             DB::raw('SUM(pegawai_pw.gapok) as total_gapok'),
             DB::raw('SUM(pegawai_pw.tunjangan) as total_tunjangan'),
-            DB::raw("SUM(LEAST(IFNULL(pegawai_pw.gapok, 0) + IFNULL(pegawai_pw.tunjangan, 0), $bpjsCap)) as total_bpjs_base")
+            DB::raw("SUM(LEAST(GREATEST(IFNULL(pegawai_pw.gapok, 0), $umpValue), $bpjsCap)) as total_bpjs_base")
         )
             ->whereDate('pegawai_pw.tgl_lahir', '>=', $cutoffBirthDate->format('Y-m-d'))
             ->leftJoin('skpd', 'pegawai_pw.idskpd', '=', 'skpd.id_skpd')
@@ -589,6 +591,7 @@ class SettingController extends Controller
         $jkkPercent = (float) Setting::where('key', 'pppk_jkk_percentage')->value('value') ?? 0.24;
         $jkmPercent = (float) Setting::where('key', 'pppk_jkm_percentage')->value('value') ?? 0.72;
         $bpjsPercent = 4.0;
+        $umpValue = (float) Setting::where('key', 'ump_kalsel')->value('value') ?? 3725000;
         $bpjsCap = 12000000;
 
         $month = $request->month ?? date('n');
@@ -609,10 +612,10 @@ class SettingController extends Controller
             ->orderBy('pegawai_pw.nama')
             ->get();
 
-        $data = $employees->map(function ($emp) use ($jkkPercent, $jkmPercent, $bpjsPercent, $bpjsCap) {
+        $data = $employees->map(function ($emp) use ($jkkPercent, $jkmPercent, $bpjsPercent, $bpjsCap, $umpValue) {
             $gapok = (float) $emp->gapok;
             $tunj = (float) $emp->tunjangan;
-            $bpjsBase = min($gapok + $tunj, $bpjsCap);
+            $bpjsBase = min(max($gapok, $umpValue), $bpjsCap);
             $jkk = round($gapok * ($jkkPercent / 100), 2);
             $jkm = round($gapok * ($jkmPercent / 100), 2);
             $bpjs = round($bpjsBase * ($bpjsPercent / 100), 2);
