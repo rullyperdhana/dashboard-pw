@@ -109,6 +109,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/settings', [SettingController::class, 'update']);
     Route::get('/settings/pppk-estimation', [SettingController::class, 'pppkEstimation']);
     Route::get('/settings/pns-estimation', [SettingController::class, 'pnsEstimation']);
+    Route::get('/settings/pppk-estimation-detail', [SettingController::class, 'pppkEstimationDetail']);
+    Route::get('/settings/pns-estimation-detail', [SettingController::class, 'pnsEstimationDetail']);
+    Route::get('/settings/pppk-pw-estimation-detail', [SettingController::class, 'pppkPwEstimationDetail']);
+    Route::get('/settings/pppk-estimation-export', [SettingController::class, 'pppkEstimationExport']);
+    Route::get('/settings/pns-estimation-export', [SettingController::class, 'pnsEstimationExport']);
+    Route::get('/settings/pppk-pw-estimation-export', [SettingController::class, 'pppkPwEstimationExport']);
     Route::post('/settings/clear-payroll', [SettingController::class, 'clearPayrollData']);
 
     // Payments
