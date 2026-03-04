@@ -158,6 +158,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/pegawai/import', [DbfImportController::class, 'importMasterPegawai']);
         Route::post('/keluarga/import', [DbfImportController::class, 'importMasterKeluarga']);
         Route::get('/pegawai', [MasterPegawaiController::class, 'index']);
+        Route::get('/pegawai/stats', [MasterPegawaiController::class, 'stats']);
         Route::get('/pegawai/{id}', [MasterPegawaiController::class, 'show']);
         Route::get('/pegawai/nip/{nip}', [MasterPegawaiController::class, 'showByNip']);
     });

@@ -45,7 +45,13 @@ class GajiPppkController extends Controller
         })
             ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as s2'), 'gaji_pppk.kdskpd', '=', 's2.kdskpd')
             ->leftJoin(DB::raw("(SELECT mp.source_code, s_ref.nama_skpd FROM skpd_mapping mp JOIN skpd s_ref ON mp.skpd_id = s_ref.id_skpd WHERE mp.type IN ('pppk', 'all')) as sm"), 'gaji_pppk.kdskpd', '=', 'sm.source_code')
-            ->select('gaji_pppk.*', DB::raw('COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, gaji_pppk.satker, gaji_pppk.skpd) as skpd_display'));
+            ->leftJoin('master_pegawai as mp', 'gaji_pppk.nip', '=', 'mp.nip')
+            ->leftJoin('ref_eselon as re', 'mp.kdeselon', '=', 're.kd_eselon')
+            ->select(
+                'gaji_pppk.*',
+                DB::raw('COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, gaji_pppk.satker, gaji_pppk.skpd) as skpd_display'),
+                DB::raw('CASE WHEN mp.kdfungsi = "00000" THEN re.uraian ELSE gaji_pppk.jabatan END as resolved_jabatan_name')
+            );
 
         // Stats
         $statsQuery = clone $query;
@@ -84,6 +90,7 @@ class GajiPppkController extends Controller
 
         $data->getCollection()->transform(function ($item) {
             $item->skpd = $item->skpd_display;
+            $item->jabatan = $item->resolved_jabatan_name ?? $item->jabatan;
             return $item;
         });
 

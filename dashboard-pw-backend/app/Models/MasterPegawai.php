@@ -17,6 +17,11 @@ class MasterPegawai extends Model
         return $this->hasMany(MasterKeluarga::class, 'nip', 'nip');
     }
 
+    public function echelon()
+    {
+        return $this->belongsTo(RefEselon::class, 'kdeselon', 'kd_eselon');
+    }
+
     public function scopeSearch($query, $search)
     {
         return $query->where('nama', 'like', "%{$search}%")

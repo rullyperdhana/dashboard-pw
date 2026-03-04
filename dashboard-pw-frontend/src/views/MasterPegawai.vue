@@ -20,6 +20,98 @@
           </v-col>
         </v-row>
 
+    <!-- Summary Cards -->
+    <v-row class="mb-2">
+      <v-col cols="12" sm="4" md="2">
+        <v-card :class="['rounded-xl stat-card total-gradient', { 'active-filter': activeFilter === 'all' }]" elevation="0" @click="applyCardFilter('all', 'Semua Pegawai')">
+          <v-card-text class="pa-4">
+            <div class="d-flex align-center justify-space-between mb-1">
+              <v-icon color="white" size="24">mdi-account-group</v-icon>
+              <v-chip size="x-small" color="white" variant="flat" class="text-primary font-weight-bold">TOTAL</v-chip>
+            </div>
+            <div class="text-h5 font-weight-bold text-white mb-0">{{ stats.total || 0 }}</div>
+            <div class="text-caption text-white opacity-70">Seluruh Pegawai</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" sm="4" md="2">
+        <v-card :class="['rounded-xl stat-card pns-gradient', { 'active-filter': activeFilter === 'pns_aktif' }]" elevation="0" @click="applyCardFilter('pns_aktif', 'PNS Aktif')">
+          <v-card-text class="pa-4">
+            <div class="d-flex align-center justify-space-between mb-1">
+              <v-icon color="white" size="24">mdi-account-star</v-icon>
+              <v-chip size="x-small" color="white" variant="flat" class="text-primary font-weight-bold">PNS</v-chip>
+            </div>
+            <div class="text-h5 font-weight-bold text-white mb-0">{{ stats.pns_aktif || 0 }}</div>
+            <div class="text-caption text-white opacity-70">PNS Aktif</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" sm="4" md="2">
+        <v-card :class="['rounded-xl stat-card pppk-gradient', { 'active-filter': activeFilter === 'pppk_aktif' }]" elevation="0" @click="applyCardFilter('pppk_aktif', 'PPPK Aktif')">
+          <v-card-text class="pa-4">
+            <div class="d-flex align-center justify-space-between mb-1">
+              <v-icon color="white" size="24">mdi-account-details</v-icon>
+              <v-chip size="x-small" color="white" variant="flat" class="text-purple font-weight-bold">PPPK</v-chip>
+            </div>
+            <div class="text-h5 font-weight-bold text-white mb-0">{{ stats.pppk_aktif || 0 }}</div>
+            <div class="text-caption text-white opacity-70">PPPK Aktif</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" sm="4" md="2">
+        <v-card :class="['rounded-xl stat-card warning-gradient', { 'active-filter': activeFilter === 'pensiun' }]" elevation="0" @click="applyCardFilter('pensiun', 'Pensiun')">
+          <v-card-text class="pa-4">
+            <div class="d-flex align-center justify-space-between mb-1">
+              <v-icon color="white" size="24">mdi-briefcase-variant-off</v-icon>
+              <v-chip size="x-small" color="white" variant="flat" class="text-warning font-weight-bold">PENSIUN</v-chip>
+            </div>
+            <div class="text-h5 font-weight-bold text-white mb-0">{{ stats.pensiun || 0 }}</div>
+            <div class="text-caption text-white opacity-70">Pegawai Pensiun</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" sm="4" md="2">
+        <v-card :class="['rounded-xl stat-card error-gradient', { 'active-filter': activeFilter === 'meninggal' }]" elevation="0" @click="applyCardFilter('meninggal', 'Meninggal')">
+          <v-card-text class="pa-4">
+            <div class="d-flex align-center justify-space-between mb-1">
+              <v-icon color="white" size="24">mdi-heart-off</v-icon>
+              <v-chip size="x-small" color="white" variant="flat" class="text-error font-weight-bold">MENINGGAL</v-chip>
+            </div>
+            <div class="text-h5 font-weight-bold text-white mb-0">{{ stats.meninggal || 0 }}</div>
+            <div class="text-caption text-white opacity-70">Meninggal Dunia</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" sm="4" md="2">
+        <v-card :class="['rounded-xl stat-card info-gradient', { 'active-filter': activeFilter === 'mutasi' }]" elevation="0" @click="applyCardFilter('mutasi', 'Mutasi')">
+          <v-card-text class="pa-4">
+            <div class="d-flex align-center justify-space-between mb-1">
+              <v-icon color="white" size="24">mdi-account-convert</v-icon>
+              <v-chip size="x-small" color="white" variant="flat" class="text-info font-weight-bold">MUTASI</v-chip>
+            </div>
+            <div class="text-h5 font-weight-bold text-white mb-0">{{ stats.mutasi || 0 }}</div>
+            <div class="text-caption text-white opacity-70">Mutasi / Keluar</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- Active Filter Indicator -->
+    <v-row v-if="activeFilter !== 'all'" class="mb-4">
+      <v-col cols="12">
+        <v-chip
+          color="primary"
+          closable
+          @click:close="clearCardFilter"
+          variant="tonal"
+          class="font-weight-bold"
+        >
+          <v-icon start size="small">mdi-filter-variant</v-icon>
+          Menampilkan: {{ activeFilterLabel }}
+        </v-chip>
+      </v-col>
+    </v-row>
+
     <!-- Search and Filter -->
     <v-row class="mb-6">
       <v-col cols="12" md="8">
@@ -366,6 +458,10 @@ const totalItems = ref(0)
 const itemsPerPage = ref(20)
 const search = ref('')
 const filterJenis = ref(null)
+const stats = ref({})
+const activeFilter = ref('all')
+const activeFilterLabel = ref('')
+const statusGroup = ref(null)
 
 const headers = [
   { title: 'Nama / NIP', key: 'nama', align: 'start', width: '250', sortable: false },
@@ -406,8 +502,19 @@ const fetchData = async (page = 1, limit = itemsPerPage.value) => {
       page,
       per_page: limit,
       search: search.value,
-      kd_jns_peg: filterJenis.value
+      kd_jns_peg: filterJenis.value,
+      status_group: statusGroup.value
     }
+
+    // Special handling for pns_aktif / pppk_aktif combinations
+    if (activeFilter.value === 'pns_aktif') {
+        params.kd_jns_peg = 2
+        params.status_group = 'aktif'
+    } else if (activeFilter.value === 'pppk_aktif') {
+        params.kd_jns_peg = 4
+        params.status_group = 'aktif'
+    }
+
     const response = await api.get('/master/pegawai', { params })
     items.value = response.data.data.data
     totalItems.value = response.data.data.total
@@ -416,6 +523,38 @@ const fetchData = async (page = 1, limit = itemsPerPage.value) => {
   } finally {
     loading.value = false
   }
+}
+
+const fetchStats = async () => {
+    try {
+        const response = await api.get('/master/pegawai/stats')
+        stats.value = response.data.data
+    } catch (e) {
+        console.error('Failed to fetch stats', e)
+    }
+}
+
+const applyCardFilter = (filter, label) => {
+    activeFilter.value = filter
+    activeFilterLabel.value = label
+    
+    // Map card filter to params
+    if (filter === 'all') {
+        statusGroup.value = null
+        filterJenis.value = null
+    } else if (filter === 'pns_aktif' || filter === 'pppk_aktif') {
+        // Handled specifically in fetchData
+        statusGroup.value = 'aktif'
+    } else {
+        statusGroup.value = filter
+        filterJenis.value = null
+    }
+    
+    fetchData(1)
+}
+
+const clearCardFilter = () => {
+    applyCardFilter('all', '')
 }
 
 const fetchRecentJobs = async () => {
@@ -571,6 +710,7 @@ const formatCurrency = (value) => {
 onMounted(() => {
   fetchData()
   fetchRecentJobs()
+  fetchStats()
 })
 </script>
 
@@ -578,4 +718,41 @@ onMounted(() => {
 .v-data-table-server {
   border-radius: 12px;
 }
+
+.stat-card {
+  transition: transform 0.2s;
+}
+.stat-card:hover {
+  transform: translateY(-4px);
+}
+
+.pns-gradient {
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+}
+.pppk-gradient {
+  background: linear-gradient(135deg, #7e22ce 0%, #a855f7 100%);
+}
+.success-gradient {
+  background: linear-gradient(135deg, #065e3c 0%, #10b981 100%);
+}
+.warning-gradient {
+  background: linear-gradient(135deg, #b45309 0%, #f59e0b 100%);
+}
+.error-gradient {
+  background: linear-gradient(135deg, #991b1b 0%, #ef4444 100%);
+}
+.info-gradient {
+  background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%);
+}
+.total-gradient {
+  background: linear-gradient(135deg, #334155 0%, #64748b 100%);
+}
+
+.active-filter {
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.5) !important;
+  transform: translateY(-8px) scale(1.02);
+}
+
+.opacity-70 { opacity: 0.7; }
+.gap-2 { gap: 8px; }
 </style>

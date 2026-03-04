@@ -102,12 +102,14 @@ class PnsPayrollController extends Controller
             })
             ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as s2'), 'gaji_pns.kdskpd', '=', 's2.kdskpd')
             ->leftJoin(DB::raw("(SELECT mp.source_code, s_ref.nama_skpd FROM skpd_mapping mp JOIN skpd s_ref ON mp.skpd_id = s_ref.id_skpd WHERE mp.type IN ('pns', 'all')) as sm"), 'gaji_pns.kdskpd', '=', 'sm.source_code')
+            ->leftJoin('master_pegawai as mp', 'gaji_pns.nip', '=', 'mp.nip')
+            ->leftJoin('ref_eselon as re', 'mp.kdeselon', '=', 're.kd_eselon')
             ->orderByDesc('gaji_pns.bersih')
             ->limit(5)
             ->get([
                 'gaji_pns.nama',
                 'gaji_pns.nip',
-                'gaji_pns.jabatan',
+                DB::raw('CASE WHEN mp.kdfungsi = "00000" THEN re.uraian ELSE gaji_pns.jabatan END as jabatan'),
                 'gaji_pns.bersih',
                 DB::raw('COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, gaji_pns.satker, gaji_pns.skpd) as skpd')
             ]);
@@ -181,7 +183,13 @@ class PnsPayrollController extends Controller
             })
             ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as s2'), 'gaji_pns.kdskpd', '=', 's2.kdskpd')
             ->leftJoin(DB::raw("(SELECT mp.source_code, s_ref.nama_skpd FROM skpd_mapping mp JOIN skpd s_ref ON mp.skpd_id = s_ref.id_skpd WHERE mp.type IN ('pns', 'all')) as sm"), 'gaji_pns.kdskpd', '=', 'sm.source_code')
-            ->select('gaji_pns.*', DB::raw('COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, gaji_pns.satker, gaji_pns.skpd) as skpd_display'));
+            ->leftJoin('master_pegawai as mp', 'gaji_pns.nip', '=', 'mp.nip')
+            ->leftJoin('ref_eselon as re', 'mp.kdeselon', '=', 're.kd_eselon')
+            ->select(
+                'gaji_pns.*',
+                DB::raw('COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, gaji_pns.satker, gaji_pns.skpd) as skpd_display'),
+                DB::raw('CASE WHEN mp.kdfungsi = "00000" THEN re.uraian ELSE gaji_pns.jabatan END as resolved_jabatan')
+            );
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -200,6 +208,7 @@ class PnsPayrollController extends Controller
         // Map names if ref exists
         $data->getCollection()->transform(function ($item) {
             $item->skpd = $item->skpd_display;
+            $item->jabatan = $item->resolved_jabatan ?? $item->jabatan;
             return $item;
         });
 
@@ -251,12 +260,14 @@ class PnsPayrollController extends Controller
             })
             ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as s2'), 'gaji_pppk.kdskpd', '=', 's2.kdskpd')
             ->leftJoin(DB::raw("(SELECT mp.source_code, s_ref.nama_skpd FROM skpd_mapping mp JOIN skpd s_ref ON mp.skpd_id = s_ref.id_skpd WHERE mp.type IN ('pppk', 'all')) as sm"), 'gaji_pppk.kdskpd', '=', 'sm.source_code')
+            ->leftJoin('master_pegawai as mp', 'gaji_pppk.nip', '=', 'mp.nip')
+            ->leftJoin('ref_eselon as re', 'mp.kdeselon', '=', 're.kd_eselon')
             ->orderByDesc('gaji_pppk.bersih')
             ->limit(5)
             ->get([
                 'gaji_pppk.nama',
                 'gaji_pppk.nip',
-                'gaji_pppk.jabatan',
+                DB::raw('CASE WHEN mp.kdfungsi = "00000" THEN re.uraian ELSE gaji_pppk.jabatan END as jabatan'),
                 'gaji_pppk.bersih',
                 DB::raw('COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, gaji_pppk.satker, gaji_pppk.skpd) as skpd')
             ]);

@@ -508,7 +508,13 @@ class SettingController extends Controller
         })
             ->leftJoin('skpd', 'skpd_mapping.skpd_id', '=', 'skpd.id_skpd')
             ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as sat'), $modelTable . '.kdskpd', '=', 'sat.kdskpd')
-            ->select($modelTable . '.*', DB::raw('COALESCE(skpd.nama_skpd, sat.nmskpd, ' . $modelTable . '.skpd) as resolved_skpd_name'));
+            ->leftJoin('master_pegawai', $modelTable . '.nip', '=', 'master_pegawai.nip')
+            ->leftJoin('ref_eselon', 'master_pegawai.kdeselon', '=', 'ref_eselon.kd_eselon')
+            ->select(
+                $modelTable . '.*',
+                DB::raw('COALESCE(skpd.nama_skpd, sat.nmskpd, ' . $modelTable . '.skpd) as resolved_skpd_name'),
+                DB::raw('CASE WHEN master_pegawai.kdfungsi = "00000" THEN ref_eselon.uraian ELSE ' . $modelTable . '.jabatan END as resolved_jabatan_name')
+            );
 
         // If kdskpd looks like a Real SKPD ID (numeric and exists in skpd table)
         // we should fetch all raw codes mapped to it.
@@ -545,7 +551,7 @@ class SettingController extends Controller
             return [
                 'nip' => $item->nip,
                 'nama' => $item->nama,
-                'jabatan' => $item->jabatan,
+                'jabatan' => $item->resolved_jabatan_name ?? $item->jabatan,
                 'skpd' => $item->resolved_skpd_name,
                 'gaji_pokok' => $gapok,
                 'tunj_keluarga' => $tunjKeluarga,
@@ -607,7 +613,13 @@ class SettingController extends Controller
         }
 
         $employees = $query->leftJoin('skpd', 'pegawai_pw.idskpd', '=', 'skpd.id_skpd')
-            ->select('pegawai_pw.*', DB::raw('COALESCE(skpd.nama_skpd, pegawai_pw.skpd) as resolved_skpd_name'))
+            ->leftJoin('master_pegawai as mp', 'pegawai_pw.nip', '=', 'mp.nip')
+            ->leftJoin('ref_eselon as re', 'mp.kdeselon', '=', 're.kd_eselon')
+            ->select(
+                'pegawai_pw.*',
+                DB::raw('COALESCE(skpd.nama_skpd, pegawai_pw.skpd) as resolved_skpd_name'),
+                DB::raw('CASE WHEN mp.kdfungsi = "00000" THEN re.uraian ELSE pegawai_pw.jabatan END as resolved_jabatan_name')
+            )
             ->orderBy('resolved_skpd_name')
             ->orderBy('pegawai_pw.nama')
             ->get();
@@ -623,7 +635,7 @@ class SettingController extends Controller
             return [
                 'nip' => $emp->nip,
                 'nama' => $emp->nama,
-                'jabatan' => $emp->jabatan,
+                'jabatan' => $emp->resolved_jabatan_name ?? $emp->jabatan,
                 'skpd' => $emp->resolved_skpd_name ?? '',
                 'gaji_pokok' => $gapok,
                 'tunjangan' => $tunj,
