@@ -115,19 +115,26 @@ class SettingController extends Controller
         $estBpjs = $totalBpjsBase * ($bpjsPercent / 100);
         $totalEstimation = $totalGajiPokok + $totalTunjangan + $estJkk + $estJkm;
 
-        // 4. Get Breakdown by SKPD
+        // 4. Get Breakdown by SKPD (Aggregated by mapping)
         $details = GajiPppk::select(
-            'kdskpd as id_skpd',
-            'skpd as nama_skpd',
-            DB::raw('COUNT(id) as employee_count'),
-            DB::raw('SUM(gaji_pokok) as total_gaji_pokok'),
+            DB::raw('CASE WHEN skpd.id_skpd IS NOT NULL THEN CAST(skpd.id_skpd AS CHAR) ELSE gaji_pppk.kdskpd END as group_id'),
+            DB::raw('MAX(CASE WHEN skpd.id_skpd IS NOT NULL THEN 1 ELSE 0 END) as is_mapped'),
+            DB::raw('COALESCE(skpd.nama_skpd, sat.nmskpd, gaji_pppk.skpd) as mapped_nama_skpd'),
+            DB::raw('COUNT(gaji_pppk.id) as employee_count'),
+            DB::raw('SUM(gaji_pppk.gaji_pokok) as total_gaji_pokok'),
             DB::raw("SUM($tunjanganExpression) as total_tunjangan"),
             DB::raw("SUM($bpjsBaseExpression) as total_bpjs_base")
         )
-            ->where('bulan', $month)
-            ->where('tahun', $year)
-            ->groupBy('kdskpd', 'skpd')
-            ->orderBy('skpd')
+            ->leftJoin('skpd_mapping', function ($join) {
+                $join->on('gaji_pppk.kdskpd', '=', 'skpd_mapping.source_code')
+                    ->whereIn('skpd_mapping.type', ['pppk', 'all']);
+            })
+            ->leftJoin('skpd', 'skpd_mapping.skpd_id', '=', 'skpd.id_skpd')
+            ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as sat'), 'gaji_pppk.kdskpd', '=', 'sat.kdskpd')
+            ->where('gaji_pppk.bulan', $month)
+            ->where('gaji_pppk.tahun', $year)
+            ->groupBy('group_id', 'mapped_nama_skpd')
+            ->orderBy('mapped_nama_skpd')
             ->get()
             ->map(function ($item) use ($jkkPercent, $jkmPercent, $bpjsPercent) {
                 $gapok = (float) $item->total_gaji_pokok;
@@ -138,8 +145,9 @@ class SettingController extends Controller
                 $bpjs = $bpjsBase * ($bpjsPercent / 100);
 
                 return [
-                    'id_skpd' => $item->id_skpd,
-                    'nama_skpd' => $item->nama_skpd,
+                    'id_skpd' => $item->group_id,
+                    'is_mapped' => (bool) $item->is_mapped,
+                    'nama_skpd' => $item->mapped_nama_skpd,
                     'employee_count' => (int) $item->employee_count,
                     'total_gaji_pokok' => $gapok,
                     'total_tunjangan' => $tunj,
@@ -207,7 +215,7 @@ class SettingController extends Controller
         // 4. Get Breakdown by SKPD
         $details = PegawaiPw::select(
             'pegawai_pw.idskpd',
-            'skpd.nama_skpd',
+            DB::raw('COALESCE(skpd.nama_skpd, pegawai_pw.skpd) as nama_skpd'),
             DB::raw('COUNT(pegawai_pw.id) as employee_count'),
             DB::raw('SUM(pegawai_pw.gapok) as total_gapok'),
             DB::raw('SUM(pegawai_pw.tunjangan) as total_tunjangan'),
@@ -344,19 +352,26 @@ class SettingController extends Controller
         $bpjsBaseExpression = "LEAST(IFNULL(gaji_pokok, 0) + IFNULL(tunj_istri, 0) + IFNULL(tunj_anak, 0) + IFNULL(tunj_fungsional, 0) + IFNULL(tunj_struktural, 0) + IFNULL(tunj_umum, 0) + IFNULL(tunj_tpp, 0), $bpjsCap)";
         $totalBpjsBase = (clone $query)->sum(DB::raw($bpjsBaseExpression));
 
-        // 4. Get Breakdown by SKPD
+        // 4. Get Breakdown by SKPD (Aggregated by mapping)
         $details = GajiPns::select(
-            'kdskpd as id_skpd',
-            'skpd as nama_skpd',
-            DB::raw('COUNT(id) as employee_count'),
-            DB::raw('SUM(gaji_pokok) as total_gaji_pokok'),
+            DB::raw('CASE WHEN skpd.id_skpd IS NOT NULL THEN CAST(skpd.id_skpd AS CHAR) ELSE gaji_pns.kdskpd END as group_id'),
+            DB::raw('MAX(CASE WHEN skpd.id_skpd IS NOT NULL THEN 1 ELSE 0 END) as is_mapped'),
+            DB::raw('COALESCE(skpd.nama_skpd, sat.nmskpd, gaji_pns.skpd) as mapped_nama_skpd'),
+            DB::raw('COUNT(gaji_pns.id) as employee_count'),
+            DB::raw('SUM(gaji_pns.gaji_pokok) as total_gaji_pokok'),
             DB::raw("SUM($tunjanganExpression) as total_tunjangan"),
             DB::raw("SUM($bpjsBaseExpression) as total_bpjs_base")
         )
-            ->where('bulan', $month)
-            ->where('tahun', $year)
-            ->groupBy('kdskpd', 'skpd')
-            ->orderBy('skpd')
+            ->leftJoin('skpd_mapping', function ($join) {
+                $join->on('gaji_pns.kdskpd', '=', 'skpd_mapping.source_code')
+                    ->whereIn('skpd_mapping.type', ['pns', 'all']);
+            })
+            ->leftJoin('skpd', 'skpd_mapping.skpd_id', '=', 'skpd.id_skpd')
+            ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as sat'), 'gaji_pns.kdskpd', '=', 'sat.kdskpd')
+            ->where('gaji_pns.bulan', $month)
+            ->where('gaji_pns.tahun', $year)
+            ->groupBy('group_id', 'mapped_nama_skpd')
+            ->orderBy('mapped_nama_skpd')
             ->get()
             ->map(function ($item) use ($jkkPercent, $jkmPercent, $bpjsPercent) {
                 $gapok = (float) $item->total_gaji_pokok;
@@ -367,8 +382,9 @@ class SettingController extends Controller
                 $bpjs = $bpjsBase * ($bpjsPercent / 100);
 
                 return [
-                    'id_skpd' => $item->id_skpd,
-                    'nama_skpd' => $item->nama_skpd,
+                    'id_skpd' => $item->group_id,
+                    'is_mapped' => (bool) $item->is_mapped,
+                    'nama_skpd' => $item->mapped_nama_skpd,
                     'employee_count' => (int) $item->employee_count,
                     'total_gaji_pokok' => $gapok,
                     'total_tunjangan' => $tunj,
@@ -468,71 +484,104 @@ class SettingController extends Controller
 
     // ========== PER-EMPLOYEE DETAIL METHODS ==========
 
-    private function getEmployeeDetailPnsOrPppk($model, Request $request, string $type)
+    private function getEmployeeDetailPnsOrPppk($request, $modelClass, $type)
     {
-        $jkkPercent = (float) Setting::where('key', 'pppk_jkk_percentage')->value('value') ?? 0.24;
-        $jkmPercent = (float) Setting::where('key', 'pppk_jkm_percentage')->value('value') ?? 0.72;
+        $month = $request->month;
+        $year = $request->year;
+        $kdskpd = $request->kdskpd; // This could be Real SKPD ID or Raw Code
+        $modelTable = (new $modelClass)->getTable();
+
+        // Get percentages from settings
+        $jkkPercent = (float) (\App\Models\Setting::where('key', 'pppk_jkk_percentage')->first()?->value ?? 0.24);
+        $jkmPercent = (float) (\App\Models\Setting::where('key', 'pppk_jkm_percentage')->first()?->value ?? 0.72);
         $bpjsPercent = 4.0;
         $bpjsCap = 12000000;
 
-        $month = $request->month;
-        $year = $request->year;
-        $kdskpd = $request->kdskpd;
+        $query = $modelClass::where($modelTable . '.bulan', $month)->where($modelTable . '.tahun', $year);
 
-        $query = $model::where('bulan', $month)->where('tahun', $year);
-        if ($kdskpd) {
-            $query->where('kdskpd', $kdskpd);
+        // Add joins for Name Resolution
+        $query->leftJoin('skpd_mapping', function ($join) use ($modelTable, $type) {
+            $join->on($modelTable . '.kdskpd', '=', 'skpd_mapping.source_code')
+                ->whereIn('skpd_mapping.type', [$type, 'all']);
+        })
+            ->leftJoin('skpd', 'skpd_mapping.skpd_id', '=', 'skpd.id_skpd')
+            ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as sat'), $modelTable . '.kdskpd', '=', 'sat.kdskpd')
+            ->select($modelTable . '.*', DB::raw('COALESCE(skpd.nama_skpd, sat.nmskpd, ' . $modelTable . '.skpd) as resolved_skpd_name'));
+
+        // If kdskpd looks like a Real SKPD ID (numeric and exists in skpd table)
+        // we should fetch all raw codes mapped to it.
+        if (is_numeric($kdskpd)) {
+            $mappedCodes = \App\Models\SkpdMapping::where('skpd_id', $kdskpd)
+                ->whereIn('type', [$type, 'all'])
+                ->pluck('source_code')
+                ->toArray();
+
+            if (!empty($mappedCodes)) {
+                $query->whereIn($modelTable . '.kdskpd', $mappedCodes);
+            } else {
+                // Fallback: maybe it's actually a raw code that just happens to be numeric
+                $query->where($modelTable . '.kdskpd', $kdskpd);
+            }
+        } elseif ($kdskpd) {
+            $query->where($modelTable . '.kdskpd', $kdskpd);
         }
 
-        $employees = $query->orderBy('skpd')->orderBy('nama')->get();
+        $data = $query->get()->map(function ($item) use ($jkkPercent, $jkmPercent, $bpjsPercent, $bpjsCap) {
+            $gapok = (float) $item->gaji_pokok;
 
-        $data = $employees->map(function ($emp) use ($jkkPercent, $jkmPercent, $bpjsPercent, $bpjsCap) {
-            $gapok = (float) $emp->gaji_pokok;
-            $tunjKeluarga = (float) ($emp->tunj_istri ?? 0) + (float) ($emp->tunj_anak ?? 0);
-            $tunjJabatan = (float) ($emp->tunj_fungsional ?? 0) + (float) ($emp->tunj_struktural ?? 0) + (float) ($emp->tunj_umum ?? 0);
-            $tpp = (float) ($emp->tunj_tpp ?? 0);
+            // Allowances for BPJS base
+            $tunjKeluarga = (float) ($item->tunj_istri + $item->tunj_anak);
+            $tunjJabatan = (float) ($item->tunj_fungsional + $item->tunj_struktural + $item->tunj_umum);
+            $tpp = (float) $item->tunj_tpp;
+
             $bpjsBase = min($gapok + $tunjKeluarga + $tunjJabatan + $tpp, $bpjsCap);
-            $jkk = round($gapok * ($jkkPercent / 100), 2);
-            $jkm = round($gapok * ($jkmPercent / 100), 2);
-            $bpjs = round($bpjsBase * ($bpjsPercent / 100), 2);
+
+            $jkk = $gapok * ($jkkPercent / 100);
+            $jkm = $gapok * ($jkmPercent / 100);
+            $bpjs = $bpjsBase * ($bpjsPercent / 100);
 
             return [
-                'nip' => $emp->nip,
-                'nama' => $emp->nama,
-                'jabatan' => $emp->jabatan,
-                'skpd' => $emp->skpd,
+                'nip' => $item->nip,
+                'nama' => $item->nama,
+                'jabatan' => $item->jabatan,
+                'skpd' => $item->resolved_skpd_name,
                 'gaji_pokok' => $gapok,
                 'tunj_keluarga' => $tunjKeluarga,
                 'tunj_jabatan' => $tunjJabatan,
                 'tunj_tpp' => $tpp,
                 'bpjs_base' => $bpjsBase,
-                'jkk' => $jkk,
-                'jkm' => $jkm,
-                'bpjs_kesehatan' => $bpjs,
+                'jkk' => round($jkk, 2),
+                'jkm' => round($jkm, 2),
+                'bpjs_kesehatan' => round($bpjs, 2),
                 'total_estimation' => round($gapok + $jkk + $jkm, 2)
             ];
-        })->toArray();
+        });
 
-        return [
-            'data' => $data,
-            'settings' => [
-                'jkk_percent' => $jkkPercent,
-                'jkm_percent' => $jkmPercent,
-                'bpjs_percent' => $bpjsPercent,
-            ]
-        ];
+        return $data;
     }
 
     public function pppkEstimationDetail(Request $request)
     {
-        $result = $this->getEmployeeDetailPnsOrPppk(GajiPppk::class, $request, 'pppk');
-        return response()->json(['success' => true, 'data' => $result['data'], 'settings' => $result['settings']]);
+        $data = $this->getEmployeeDetailPnsOrPppk($request, GajiPppk::class, 'pppk');
+        // Get percentages from settings for the response
+        $settings = [
+            'jkk_percent' => (float) (\App\Models\Setting::where('key', 'pppk_jkk_percentage')->first()?->value ?? 0.24),
+            'jkm_percent' => (float) (\App\Models\Setting::where('key', 'pppk_jkm_percentage')->first()?->value ?? 0.72),
+            'bpjs_percent' => 4.0
+        ];
+        return response()->json(['success' => true, 'data' => $data, 'settings' => $settings]);
     }
 
     public function pnsEstimationDetail(Request $request)
     {
-        $result = $this->getEmployeeDetailPnsOrPppk(GajiPns::class, $request, 'pns');
-        return response()->json(['success' => true, 'data' => $result['data'], 'settings' => $result['settings']]);
+        $data = $this->getEmployeeDetailPnsOrPppk($request, GajiPns::class, 'pns');
+        // Get percentages from settings for the response
+        $settings = [
+            'jkk_percent' => (float) (\App\Models\Setting::where('key', 'pppk_jkk_percentage')->first()?->value ?? 0.24),
+            'jkm_percent' => (float) (\App\Models\Setting::where('key', 'pppk_jkm_percentage')->first()?->value ?? 0.72),
+            'bpjs_percent' => 4.0
+        ];
+        return response()->json(['success' => true, 'data' => $data, 'settings' => $settings]);
     }
 
     public function pppkPwEstimationDetail(Request $request)
@@ -555,8 +604,8 @@ class SettingController extends Controller
         }
 
         $employees = $query->leftJoin('skpd', 'pegawai_pw.idskpd', '=', 'skpd.id_skpd')
-            ->select('pegawai_pw.*', 'skpd.nama_skpd')
-            ->orderBy('skpd.nama_skpd')
+            ->select('pegawai_pw.*', DB::raw('COALESCE(skpd.nama_skpd, pegawai_pw.skpd) as resolved_skpd_name'))
+            ->orderBy('resolved_skpd_name')
             ->orderBy('pegawai_pw.nama')
             ->get();
 
@@ -572,7 +621,7 @@ class SettingController extends Controller
                 'nip' => $emp->nip,
                 'nama' => $emp->nama,
                 'jabatan' => $emp->jabatan,
-                'skpd' => $emp->nama_skpd ?? $emp->skpd ?? '',
+                'skpd' => $emp->resolved_skpd_name ?? '',
                 'gaji_pokok' => $gapok,
                 'tunjangan' => $tunj,
                 'bpjs_base' => $bpjsBase,
@@ -598,24 +647,24 @@ class SettingController extends Controller
 
     public function pppkEstimationExport(Request $request)
     {
-        $result = $this->getEmployeeDetailPnsOrPppk(GajiPppk::class, $request, 'pppk');
+        $data = $this->getEmployeeDetailPnsOrPppk($request, GajiPppk::class, 'pppk');
         $month = (int) $request->month;
         $year = (int) $request->year;
         $skpdName = $request->skpd_name ?? '';
         $filename = "estimasi_pppk_{$month}_{$year}.xlsx";
 
-        return Excel::download(new EstimationExport($result['data'], $month, $year, 'pppk', $skpdName), $filename);
+        return Excel::download(new EstimationExport($data->toArray(), $month, $year, 'pppk', $skpdName), $filename);
     }
 
     public function pnsEstimationExport(Request $request)
     {
-        $result = $this->getEmployeeDetailPnsOrPppk(GajiPns::class, $request, 'pns');
+        $data = $this->getEmployeeDetailPnsOrPppk($request, GajiPns::class, 'pns');
         $month = (int) $request->month;
         $year = (int) $request->year;
         $skpdName = $request->skpd_name ?? '';
         $filename = "estimasi_pns_{$month}_{$year}.xlsx";
 
-        return Excel::download(new EstimationExport($result['data'], $month, $year, 'pns', $skpdName), $filename);
+        return Excel::download(new EstimationExport($data->toArray(), $month, $year, 'pns', $skpdName), $filename);
     }
 
     public function pppkPwEstimationExport(Request $request)
