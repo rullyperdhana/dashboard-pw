@@ -24,20 +24,27 @@ class ThrController extends Controller
         // n = months from Jan 2026 to thrMonth
         $nMonths = $thrMonth;
 
-        $employees = PegawaiPw::leftJoin('skpd', 'pegawai_pw.idskpd', '=', 'skpd.id_skpd')
+        // Query tb_payment and tb_payment_detail for month 2, joined with pegawai_pw
+        $employees = DB::table('tb_payment_detail as pd')
+            ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
+            ->join('pegawai_pw as e', 'pd.employee_id', '=', 'e.id')
+            ->leftJoin('skpd as s', 'e.idskpd', '=', 's.id_skpd')
+            ->where('p.month', 2)
+            ->where('p.year', $year) // Assuming THR is based on the current year's Feb salary
             ->select(
-                'pegawai_pw.nip',
-                'pegawai_pw.nama',
-                'pegawai_pw.jabatan',
-                'pegawai_pw.gapok as gapok_basis',
-                DB::raw('COALESCE(skpd.nama_skpd, pegawai_pw.skpd) as skpd_name')
+                'e.nip',
+                'e.nama',
+                'e.jabatan',
+                'pd.gaji_pokok as gapok_basis',
+                DB::raw('COALESCE(s.nama_skpd, e.skpd) as skpd_name')
             )
             ->orderBy('skpd_name')
-            ->orderBy('pegawai_pw.nama')
+            ->orderBy('e.nama')
             ->get();
 
         $grouped = $employees->groupBy('skpd_name')->map(function ($items, $skpdName) use ($nMonths) {
             $mappedItems = $items->map(function ($emp) use ($nMonths) {
+                // Ensure gapok is treated as float from payment detail
                 $gapok = (float) $emp->gapok_basis;
                 return [
                     'nip' => $emp->nip,

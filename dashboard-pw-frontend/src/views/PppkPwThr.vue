@@ -1,5 +1,9 @@
 <template>
-  <v-container fluid class="pa-6">
+  <v-app class="modern-dashboard">
+    <Navbar />
+    <Sidebar />
+    <v-main class="bg-light">
+      <v-container fluid class="pa-6">
     <!-- Header Section -->
     <div class="d-flex align-center mb-6">
       <div class="icon-box mr-4">
@@ -116,12 +120,16 @@
       <strong>Rumus THR:</strong> Gaji Pokok (Data Pebruari 2026) × (n / 12). 
       Dimana <strong>n</strong> adalah jumlah bulan bekerja terhitung sejak 1 Januari 2026 sampai dengan bulan pembayaran THR yang dipilih.
     </v-alert>
-  </v-container>
+      </v-container>
+    </v-main>
+  </v-app>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '../api'
+import Sidebar from '../components/Sidebar.vue'
+import Navbar from '../components/Navbar.vue'
 
 const loading = ref(false)
 const exportLoading = ref(false)
