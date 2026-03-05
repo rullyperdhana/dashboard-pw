@@ -102,7 +102,7 @@ class SimgajiController extends Controller
             'm.induk_bank',
             'm.norek',
             'm.jistri',
-            'g.jabatan as nama_jabatan',
+            DB::raw('CASE WHEN m.kdfungsi = "00000" THEN re.uraian ELSE rjf.nama_jabatan END as nama_jabatan'),
             'g.gaji_pokok',
             'g.tunj_istri as tk_tunjangan_istri',
             'g.tunj_anak as tk_tunjangan_anak',
@@ -112,18 +112,22 @@ class SimgajiController extends Controller
             'g.tunj_umum as tunjangan_umum',
         ];
 
-        // Query PNS (separate to avoid UNION collation issues)
+        // Query PNS - gaji_pns sebagai sumber utama, master_pegawai & skpd sebagai pelengkap
         $queryPns = DB::table('gaji_pns as g')
-            ->join('master_pegawai as m', DB::raw('g.nip COLLATE utf8mb4_unicode_ci'), '=', DB::raw('m.nip COLLATE utf8mb4_unicode_ci'))
+            ->leftJoin('master_pegawai as m', DB::raw('g.nip COLLATE utf8mb4_unicode_ci'), '=', DB::raw('m.nip COLLATE utf8mb4_unicode_ci'))
             ->leftJoin('skpd as s', DB::raw('m.kdskpd COLLATE utf8mb4_unicode_ci'), '=', DB::raw('s.kode_skpd COLLATE utf8mb4_unicode_ci'))
+            ->leftJoin('ref_jabatan_fungsional as rjf', 'm.kdfungsi', '=', 'rjf.kdfungsi')
+            ->leftJoin('ref_eselon as re', 'm.kdeselon', '=', 're.kd_eselon')
             ->select(array_merge($selectColumns, [DB::raw("'1' as status_asn")]));
         $applyFilters($queryPns);
         $pnsResults = $queryPns->get();
 
-        // Query PPPK (separate to avoid UNION collation issues)
+        // Query PPPK - gaji_pppk sebagai sumber utama, master_pegawai & skpd sebagai pelengkap
         $queryPpk = DB::table('gaji_pppk as g')
-            ->join('master_pegawai as m', DB::raw('g.nip COLLATE utf8mb4_unicode_ci'), '=', DB::raw('m.nip COLLATE utf8mb4_unicode_ci'))
+            ->leftJoin('master_pegawai as m', DB::raw('g.nip COLLATE utf8mb4_unicode_ci'), '=', DB::raw('m.nip COLLATE utf8mb4_unicode_ci'))
             ->leftJoin('skpd as s', DB::raw('m.kdskpd COLLATE utf8mb4_unicode_ci'), '=', DB::raw('s.kode_skpd COLLATE utf8mb4_unicode_ci'))
+            ->leftJoin('ref_jabatan_fungsional as rjf', 'm.kdfungsi', '=', 'rjf.kdfungsi')
+            ->leftJoin('ref_eselon as re', 'm.kdeselon', '=', 're.kd_eselon')
             ->select(array_merge($selectColumns, [DB::raw("'2' as status_asn")]));
         $applyFilters($queryPpk);
         $ppkResults = $queryPpk->get();
