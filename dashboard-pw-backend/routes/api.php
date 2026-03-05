@@ -170,3 +170,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pegawai/nip/{nip}', [MasterPegawaiController::class, 'showByNip']);
     });
 });
+
+// Simgaji Integration API
+Route::get('/listinstansi', [App\Http\Controllers\Api\SimgajiController::class, 'listInstansi']);
+Route::get('/listpegawai', [App\Http\Controllers\Api\SimgajiController::class, 'listPegawai']);
+Route::get('/listgaji', [App\Http\Controllers\Api\SimgajiController::class, 'listGaji']);
+
