@@ -8,8 +8,8 @@
         <!-- Header Section -->
         <v-row class="mb-6 align-center">
           <v-col cols="12" md="6">
-            <h1 class="text-h4 font-weight-bold">Analytics Hub</h1>
-            <p class="text-grey-darken-1">Deep insights into payroll trends and institutional performance.</p>
+            <h1 class="text-h4 font-weight-bold">Pusat Analitik</h1>
+            <p class="text-grey-darken-1">Wawasan mendalam tentang tren penggajian dan kinerja instansi.</p>
           </v-col>
           <v-col cols="12" md="6" class="text-md-right">
              <v-btn color="primary" variant="flat" prepend-icon="mdi-export-variant" class="rounded-lg mr-2" @click="showComingSoon('Full Report Export')">EXPORT PDF</v-btn>
@@ -41,14 +41,14 @@
                       <v-icon color="blue">mdi-currency-usd</v-icon>
                     </v-avatar>
                     <v-spacer></v-spacer>
-                    <v-chip color="blue" size="x-small" variant="flat">ANNUAL BUDGET</v-chip>
+                    <v-chip color="blue" size="x-small" variant="flat">ANGGARAN TAHUNAN</v-chip>
                   </div>
                   <div class="text-h4 font-weight-black mb-1">{{ formatCurrencyShort(reportData.summary.annual_budget) }}</div>
-                  <div class="text-caption text-grey">Total disbursed in {{ currentYear }}</div>
+                  <div class="text-caption text-grey">Total dicairkan tahun {{ currentYear }}</div>
                 </v-card-text>
               </v-card>
             </v-col>
-
+ 
             <v-col cols="12" md="4">
               <v-card class="glass-card rounded-xl pa-4 stat-card-premium purple-glow" elevation="0">
                 <v-card-text>
@@ -57,14 +57,14 @@
                       <v-icon color="purple">mdi-account-cash-outline</v-icon>
                     </v-avatar>
                     <v-spacer></v-spacer>
-                    <v-chip color="purple" size="x-small" variant="flat">AVG PER PERSON</v-chip>
+                    <v-chip color="purple" size="x-small" variant="flat">RATA-RATA/PEGAWAI</v-chip>
                   </div>
                   <div class="text-h4 font-weight-black mb-1">{{ formatCurrency(reportData.summary.avg_per_employee) }}</div>
-                  <div class="text-caption text-grey">Average monthly payroll cost per staff</div>
+                  <div class="text-caption text-grey">Rata-rata biaya gaji bulanan per staf</div>
                 </v-card-text>
               </v-card>
             </v-col>
-
+ 
             <v-col cols="12" md="4">
               <v-card class="glass-card rounded-xl pa-4 stat-card-premium teal-glow" elevation="0">
                 <v-card-text>
@@ -73,10 +73,10 @@
                       <v-icon color="teal">mdi-office-building-marker-outline</v-icon>
                     </v-avatar>
                     <v-spacer></v-spacer>
-                    <v-chip color="teal" size="x-small" variant="flat">ACTIVE UNITS</v-chip>
+                    <v-chip color="teal" size="x-small" variant="flat">UNIT AKTIF</v-chip>
                   </div>
                   <div class="text-h4 font-weight-black mb-1">{{ reportData.summary.active_units }}</div>
-                  <div class="text-caption text-grey">Institutions with active payroll entries</div>
+                  <div class="text-caption text-grey">Instansi dengan data gaji aktif</div>
                 </v-card-text>
               </v-card>
             </v-col>
@@ -87,7 +87,7 @@
             <v-col cols="12" md="8">
               <v-card class="glass-card rounded-xl pa-6 shadow-premium" elevation="0">
                 <div class="d-flex align-center mb-6">
-                   <h2 class="text-h6 font-weight-bold">Payroll Growth Trend</h2>
+                   <h2 class="text-h6 font-weight-bold">Tren Pertumbuhan Gaji</h2>
                    <v-spacer></v-spacer>
                    <v-chip color="success" size="small" variant="tonal" prepend-icon="mdi-trending-up">Live</v-chip>
                 </div>
@@ -97,15 +97,15 @@
             <v-col cols="12" md="4">
               <v-card class="glass-card rounded-xl pa-6 shadow-premium h-100" elevation="0">
                 <div class="d-flex align-center mb-6">
-                  <h2 class="text-h6 font-weight-bold">Budget Distribution</h2>
+                  <h2 class="text-h6 font-weight-bold">Distribusi Anggaran</h2>
                   <v-spacer></v-spacer>
                   <v-chip color="primary" size="x-small" variant="flat">TOP 5</v-chip>
                 </div>
                 <v-table density="comfortable" class="modern-report-table">
                   <thead>
                     <tr>
-                      <th class="text-left py-2 font-weight-bold">INSTITUTION</th>
-                      <th class="text-right py-2 font-weight-bold">BUDGET</th>
+                      <th class="text-left py-2 font-weight-bold">INSTANSI</th>
+                      <th class="text-right py-2 font-weight-bold">ANGGARAN</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -130,7 +130,7 @@
               <v-card class="glass-card rounded-xl pa-6 shadow-premium" elevation="0">
                 <div class="d-flex align-center mb-4">
                   <v-icon class="mr-2" color="primary">mdi-chart-multiline</v-icon>
-                  <h2 class="text-h6 font-weight-bold">Payroll Expenditure Trend</h2>
+                  <h2 class="text-h6 font-weight-bold">Tren Pengeluaran Gaji Bulanan</h2>
                   <v-spacer></v-spacer>
                   <v-chip color="info" size="small" variant="tonal">{{ currentYear }}</v-chip>
                 </div>
@@ -145,7 +145,7 @@
                 </v-row>
                 <div v-else class="text-center py-8 text-grey">
                   <v-icon size="48" color="grey-lighten-2" class="mb-2">mdi-chart-line-variant</v-icon>
-                  <div>No historical payroll data available</div>
+                  <div>Data historis pengeluaran gaji tidak tersedia</div>
                 </div>
               </v-card>
             </v-col>
@@ -159,7 +159,7 @@
                 <v-toolbar color="error-lighten-5" flat class="px-6 py-4">
                   <v-toolbar-title class="font-weight-bold text-h6 text-error">
                     <v-icon start color="error" size="28">mdi-alert-circle-outline</v-icon>
-                    Missing Payrolls
+                    Gaji Belum Masuk
                   </v-toolbar-title>
                   <v-spacer></v-spacer>
                   <v-btn color="success" variant="tonal" size="small" class="mr-2" prepend-icon="mdi-microsoft-excel" @click="exportUnpaid('excel')" :loading="exportLoading === 'excel'">EXCEL</v-btn>
@@ -412,9 +412,9 @@
             <v-col cols="12">
               <v-card class="glass-card rounded-xl overflow-hidden shadow-premium" elevation="0">
                 <v-toolbar color="transparent" flat class="px-6 py-4">
-                  <v-toolbar-title class="font-weight-bold text-subtitle-1">Top Staff Earnings (Historical Peak)</v-toolbar-title>
+                  <v-toolbar-title class="font-weight-bold text-subtitle-1">Penghasilan Staf Tertinggi (Historis)</v-toolbar-title>
                   <v-spacer></v-spacer>
-                  <v-chip color="amber-darken-2" variant="flat" size="small" prepend-icon="mdi-medal-outline">TOP 10 RANKING</v-chip>
+                  <v-chip color="amber-darken-2" variant="flat" size="small" prepend-icon="mdi-medal-outline">PERINGKAT TOP 10</v-chip>
                 </v-toolbar>
                 <v-data-table
                   :headers="topEarnersHeaders"
@@ -455,9 +455,9 @@
             <v-col cols="12">
               <v-card class="glass-card rounded-xl overflow-hidden shadow-premium" elevation="0">
                 <v-toolbar color="transparent" flat class="px-6 py-4">
-                  <v-toolbar-title class="font-weight-bold text-subtitle-1">Retirement Monitor (Threshold: 58 Years)</v-toolbar-title>
+                  <v-toolbar-title class="font-weight-bold text-subtitle-1">Monitoring Pensiun (Ambang Batas: 58 Tahun)</v-toolbar-title>
                   <v-spacer></v-spacer>
-                  <v-chip color="error" variant="flat" size="small" prepend-icon="mdi-clock-alert-outline">CRITICAL PLANNING</v-chip>
+                  <v-chip color="error" variant="flat" size="small" prepend-icon="mdi-clock-alert-outline">PERENCANAAN KRITIS</v-chip>
                 </v-toolbar>
                 <v-data-table
                   :headers="retirementHeaders"
@@ -478,7 +478,7 @@
                       size="small" 
                       class="font-weight-bold"
                     >
-                      {{ item.age }} Years
+                      {{ item.age }} Tahun
                     </v-chip>
                   </template>
                   <template v-slot:item.retirement_date="{ item }">
@@ -491,13 +491,13 @@
                       size="x-small" 
                       variant="flat" 
                       class="font-weight-bold"
-                    >PROCESS NOW</v-btn>
+                    >PROSES SEKARANG</v-btn>
                     <v-chip 
                       v-else-if="item.is_critical" 
                       color="warning" 
                       size="x-small" 
                       variant="flat"
-                    >APPROACHING</v-chip>
+                    >MENDEKATI</v-chip>
                     <v-chip 
                       v-else 
                       color="info" 
@@ -522,11 +522,11 @@
         <v-icon class="mr-3">mdi-chart-bell-curve</v-icon>
         <div>
           <div class="font-weight-bold">{{ snackbarTitle }}</div>
-          <div class="text-caption">This feature is coming soon in the next update.</div>
+          <div class="text-caption">Fitur ini akan segera tersedia pada pembaruan berikutnya.</div>
         </div>
       </div>
       <template v-slot:actions>
-        <v-btn variant="text" @click="snackbar = false">CLOSE</v-btn>
+        <v-btn variant="text" @click="snackbar = false">TUTUP</v-btn>
       </template>
     </v-snackbar>
   </v-app>
@@ -695,10 +695,10 @@ const viewBy = ref('skpd') // 'skpd' or 'upt'
 const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedYear = ref(new Date().getFullYear())
 const months = [
-  { title: 'January', value: 1 }, { title: 'February', value: 2 }, { title: 'March', value: 3 },
-  { title: 'April', value: 4 }, { title: 'May', value: 5 }, { title: 'June', value: 6 },
-  { title: 'July', value: 7 }, { title: 'August', value: 8 }, { title: 'September', value: 9 },
-  { title: 'October', value: 10 }, { title: 'November', value: 11 }, { title: 'December', value: 12 }
+  { title: 'Januari', value: 1 }, { title: 'Februari', value: 2 }, { title: 'Maret', value: 3 },
+  { title: 'April', value: 4 }, { title: 'Mei', value: 5 }, { title: 'Juni', value: 6 },
+  { title: 'Juli', value: 7 }, { title: 'Agustus', value: 8 }, { title: 'September', value: 9 },
+  { title: 'Oktober', value: 10 }, { title: 'November', value: 11 }, { title: 'Desember', value: 12 }
 ]
 const years = computed(() => {
   const current = new Date().getFullYear()

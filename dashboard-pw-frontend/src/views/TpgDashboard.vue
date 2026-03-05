@@ -118,9 +118,9 @@
                   <v-col v-for="tw in [1,2,3,4]" :key="tw" cols="6">
                     <v-card
                       class="rounded-xl pa-4 text-center tw-card"
-                      :class="getTriwulanData(tw) ? 'glass-card' : 'bg-grey-lighten-4'"
+                      :class="getTriwulanData(tw) ? 'glass-card' : 'bg-transparent border-dashed'"
                       elevation="0"
-                      :style="getTriwulanData(tw) ? 'border-left: 4px solid ' + twColors[tw-1] : 'opacity: 0.6'"
+                      :style="getTriwulanData(tw) ? 'border-left: 4px solid ' + twColors[tw-1] : 'opacity: 0.4'"
                     >
                       <div class="text-overline font-weight-bold" :style="{ color: twColors[tw-1] }">TW {{ tw }}</div>
                       <template v-if="getTriwulanData(tw)">
@@ -562,6 +562,9 @@ onMounted(() => {
 }
 .tw-card {
   transition: transform 0.15s ease;
+}
+.border-dashed {
+  border: 1px dashed rgba(var(--v-border-color), 0.2) !important;
 }
 .tw-card:hover {
   transform: scale(1.03);

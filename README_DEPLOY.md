@@ -32,6 +32,7 @@ Berikut adalah tabel penambahan yang baru saja diimplementasikan. Pastikan semua
 
 | Migration | Deskripsi |
 |---|---|
+| `create_audit_logs_table` | **[NEW]** Tabel pencatatan aktivitas sensitif (Audit Trail) |
 | `create_master_pegawai_table` | Tabel induk data pegawai dari DBF (`master_pegawai`) |
 | `create_master_keluarga_table` | Tabel induk data keluarga dari DBF (`master_keluarga`) |
 | `create_satkers_table` | Tabel referensi Satker/SKPD untuk pemetaan nama |
@@ -52,6 +53,16 @@ Jika Anda perlu menambahkan mapping SKPD secara manual atau reset cache:
 php artisan optimize:clear
 php artisan config:cache
 ```
+
+---
+## 5. Keamanan & Perawatan
+- **Audit Logs:** Cek tabel `audit_logs` secara berkala untuk memantau aktivitas admin.
+- **Database Backup:** Pastikan script `backup_db.sh` telah dikonfigurasi di `crontab` VPS untuk backup otomatis.
+  ```bash
+  # Contoh setup crontab (setiap jam 01:00 pagi)
+  0 1 * * * /www/wwwroot/dashboard-pw/backup_db.sh >> /www/wwwroot/dashboard-pw/backup.log 2>&1
+  ```
+- **Cache Management:** Jika data tidak berubah setelah update, jalankan `php artisan optimize:clear`.
 
 ---
 

@@ -627,6 +627,14 @@ const fetchEmployees = async () => {
   }
 }
 
+// Watch for search query from Navbar
+watch(() => route.query.search, (newSearch) => {
+  if (newSearch !== undefined) {
+    search.value = newSearch
+    fetchEmployees()
+  }
+}, { immediate: true })
+
 const exportEmployees = async (format) => {
   exportLoading.value = format
   try {

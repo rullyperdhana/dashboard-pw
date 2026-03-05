@@ -8,7 +8,7 @@
         <v-row>
           <v-col cols="12">
             <v-card class="glass-card rounded-xl mb-4" elevation="0">
-              <v-card-title class="d-flex align-center py-4 bg-primary text-white">
+              <v-card-title class="d-flex align-center py-4 bg-primary-gradient text-white">
                 <v-icon start icon="mdi-account-search" class="mr-2"></v-icon>
                 Trace Daftar Penggajian Per Orang
               </v-card-title>
@@ -222,7 +222,7 @@
 
             <div v-if="selectedEmployee?.documents?.length" class="mt-4">
               <div class="text-subtitle-2 mb-2 grey--text">Dokumen Terkait:</div>
-              <v-list density="compact" class="bg-grey-lighten-4 rounded-lg">
+              <v-list density="compact" class="rounded-lg border">
                 <v-list-item
                   v-for="doc in selectedEmployee.documents"
                   :key="doc.id"
@@ -431,8 +431,8 @@ const getMonthName = (month) => {
   border: 1px solid rgba(var(--v-border-color), 0.08) !important;
 }
 
-.bg-primary {
-  background-color: #4338ca !important;
+.bg-primary-gradient {
+  background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%) !important;
 }
 
 :deep(.modern-table) {

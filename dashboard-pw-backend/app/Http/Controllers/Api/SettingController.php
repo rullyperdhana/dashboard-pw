@@ -17,7 +17,10 @@ class SettingController extends Controller
 {
     public function index()
     {
-        $settings = Setting::all()->keyBy('key');
+        $settings = \Illuminate\Support\Facades\Cache::remember('app_settings', 3600, function () {
+            return Setting::all()->keyBy('key');
+        });
+
         return response()->json([
             'success' => true,
             'data' => $settings
@@ -38,6 +41,8 @@ class SettingController extends Controller
                 ['value' => $item['value']]
             );
         }
+
+        \Illuminate\Support\Facades\Cache::forget('app_settings');
 
         return response()->json([
             'success' => true,
@@ -485,6 +490,12 @@ class SettingController extends Controller
         Log::info("User " . auth()->user()->username . " cleared payroll data", [
             'results' => $results,
             'params' => $validated
+        ]);
+
+        \App\Models\AuditLog::log('clear_data', 'Hapus data gaji', [
+            'table_name' => $target === 'both' ? 'gaji_pns, gaji_pppk' : 'gaji_' . $target,
+            'new_values' => $results,
+            'old_values' => ['params' => $validated],
         ]);
 
         return response()->json([

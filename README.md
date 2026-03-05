@@ -32,31 +32,35 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
 ---
  
-## 🔧 Fitur Terbaru (v2.6)
- 
-### integrasi Master Data DBF
+## 🔧 Fitur Terbaru (v3.0)
+
+### 🔐 Keamanan & Audit (Fase 1)
+- **Session Timeout:** Sesi otomatis berakhir setelah 30 menit tidak aktif.
+- **Audit Logging:** Pencatatan aktivitas sensitif (hapus data, upload, posting) ke database.
+- **Rate Limiting:** Pembatasan percobaan login (5 kali per 15 menit) untuk mencegah brute-force.
+- **Konfirmasi Password:** Validasi password admin untuk aksi penghapusan data masal.
+
+### 🌟 UX & Antarmuka (Fase 2)
+- **Global Search:** Pencarian cepat data pegawai langsung dari Navbar.
+- **Breadcrumbs:** Navigasi jalur halaman untuk kemudahan penelusuran status.
+- **Notifikasi Upload:** Indikator real-time untuk status proses background job (import Excel).
+- **Sparkline Charts:** Visualisasi tren mini pada kartu ringkasan dashboard.
+
+### ⚡ Optimalisasi Teknis (Fase 3)
+- **Response Caching:** Caching data referensi (SKPD, Satker, Settings) selama 60 menit.
+- **Automated Backup:** Script backup database harian otomatis dengan retensi 7 hari (`backup_db.sh`).
+- **Optimization:** Pembersihan cache otomatis saat ada perubahan data master atau setting.
+
+### 🛠️ Integrasi Master Data DBF (v2.6)
 - **Import Langsung:** Mendukung import file `MST_PGW.DBF`, `KEL.DBF`, dan `GAJI.DBF`.
 - **Sinkronisasi Otomatis:** Pemutakhiran data pegawai dan keluarga secara massal.
 - **Riwayat Gaji Pokok:** Melacak perubahan gaji pokok pegawai dari waktu ke waktu.
 - **Pemetaan SKPD Berbasis Kode:** Menggunakan `kdskpd` untuk akurasi data antar modul.
 
-### Sumber Dana APBD / BLUD
-- Kolom `sumber_dana` pada tabel `pegawai_pw` (default: APBD)
-- Halaman setting bulk per SKPD: `/settings/sumber-dana`
-- Filter sumber dana pada Rekon BPJS 4%
-
-### Rekon BPJS 4% dengan Rumus UMP
-- **Rumus:** Jika gaji pokok ≥ UMP → BPJS = Gaji × 4%. Jika gaji < UMP → BPJS = UMP × 4%
-- UMP default: **Rp 3.725.000** (Prov. Kalsel), dapat diubah via Setting UMP
-- Kolom basis hitung (UMP/GAJI) dan statistik per SKPD
-
-### Status Pegawai "Meninggal"
-- Ditambahkan ke daftar status: Aktif, Pensiun, Keluar, Diberhentikan, **Meninggal**
-- Tersedia di filter, form edit, dan trace gaji
-
-### Dark Mode Fix
-- Semua halaman mendukung mode gelap (dark mode) dengan benar
-- Menggunakan CSS variable Vuetify (`--v-theme-surface`, `text-medium-emphasis`)
+### 💳 Sumber Dana & BPJS
+- **Sumber Dana APBD / BLUD:** Kolom `sumber_dana` khusus untuk pegawai PPPK-PW.
+- **Rekon BPJS 4%:** Rumus cerdas berbasis UMP (Gaji Pokok vs Ambang Batas UMP).
+- **Status "Meninggal":** Penanganan khusus untuk pelaporan pegawai yang wafat.
 
 ---
 

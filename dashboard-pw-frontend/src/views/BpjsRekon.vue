@@ -128,7 +128,7 @@
         </v-row>
 
         <!-- View Mode Toggle -->
-        <v-row v-if="grandTotal" class="mt-4">
+        <v-row v-if="!loading && grandTotal" class="mt-4">
           <v-col cols="12">
             <v-btn-toggle v-model="viewMode" mandatory color="teal" density="compact" class="rounded-lg">
               <v-btn value="skpd" variant="outlined">
@@ -172,7 +172,7 @@
                 </template>
 
                 <template v-slot:body.append>
-                  <tr class="font-weight-bold bg-grey-lighten-4">
+                  <tr class="font-weight-black total-row">
                     <td></td>
                     <td>TOTAL</td>
                     <td class="text-end">{{ grandTotal.jumlah_pegawai?.toLocaleString() }}</td>
@@ -454,5 +454,8 @@ onMounted(fetchUmp)
   text-transform: uppercase;
   font-size: 0.7rem !important;
   letter-spacing: 0.05em;
+}
+.total-row {
+  background-color: rgba(var(--v-border-color), 0.1) !important;
 }
 </style>

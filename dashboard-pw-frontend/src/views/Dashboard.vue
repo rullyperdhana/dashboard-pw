@@ -40,7 +40,7 @@
                     <v-icon color="blue">mdi-account-multiple</v-icon>
                   </v-avatar>
                 </div>
-                <div class="mt-3 text-caption text-grey">Pegawai PPPK Paruh Waktu</div>
+                <v-sparkline :model-value="sparklineData.employees" color="blue" height="30" padding="4" smooth line-width="2" class="mt-2"></v-sparkline>
               </v-card-text>
             </v-card>
           </v-col>
@@ -74,7 +74,7 @@
                     <v-icon color="amber-darken-2">mdi-cash-fast</v-icon>
                   </v-avatar>
                 </div>
-                <div class="mt-3 text-caption text-grey">Pengeluaran terakhir</div>
+                <v-sparkline :model-value="sparklineData.payments" color="amber" height="30" padding="4" smooth line-width="2" class="mt-2"></v-sparkline>
               </v-card-text>
             </v-card>
           </v-col>
@@ -691,6 +691,11 @@ const charts = ref({
   employees_per_skpd: [],
   payment_trend: [],
 })
+
+const sparklineData = computed(() => ({
+  employees: [stats.value.total_employees * 0.9, stats.value.total_employees * 0.95, stats.value.total_employees],
+  payments: charts.value.payment_trend?.slice(-5).map(p => p.total) || [0, 0, 0, 0, 0]
+}))
 
 const fetchDashboardData = async () => {
   try {

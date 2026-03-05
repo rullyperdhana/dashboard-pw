@@ -10,7 +10,10 @@ class SkpdController extends Controller
 {
     public function index()
     {
-        $skpds = Skpd::orderBy('nama_skpd')->get();
+        $skpds = \Illuminate\Support\Facades\Cache::remember('ref_skpds', 3600, function () {
+            return \App\Models\Skpd::orderBy('nama_skpd')->get();
+        });
+
         return response()->json([
             'success' => true,
             'data' => $skpds
