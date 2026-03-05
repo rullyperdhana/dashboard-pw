@@ -1,5 +1,5 @@
 <template>
-  <v-app class="modern-bg">
+  <v-app>
     <Navbar />
     <Sidebar />
 
@@ -180,23 +180,19 @@ onMounted(fetchPostings)
 </script>
 
 <style scoped>
-.modern-bg {
-  background-color: #f8f9fa !important;
-}
 .glass-card {
-  background: white !important;
-  border: 1px solid rgba(0,0,0,0.05) !important;
+  background: rgba(var(--v-theme-surface), 0.95) !important;
+  border: 1px solid rgba(var(--v-border-color), 0.08) !important;
 }
 :deep(.modern-table) {
   background: transparent !important;
 }
 :deep(.v-data-table-header) {
-  background: #f1f3f5 !important;
+  background: rgba(var(--v-border-color), 0.04) !important;
 }
 :deep(.v-data-table-header th) {
   font-weight: 700 !important;
   text-transform: uppercase;
   font-size: 0.75rem !important;
-  color: #495057 !important;
 }
 </style>

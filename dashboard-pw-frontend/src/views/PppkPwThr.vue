@@ -224,9 +224,9 @@ onMounted(() => {
 
 <style scoped>
 .glass-card {
-  background: rgba(255, 255, 255, 0.7) !important;
+  background: rgba(var(--v-theme-surface), 0.85) !important;
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid rgba(var(--v-border-color), 0.08) !important;
   border-radius: 20px !important;
 }
 

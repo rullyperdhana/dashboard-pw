@@ -436,8 +436,18 @@ class SettingController extends Controller
             'target' => 'required|string|in:pns,pppk,both',
             'month' => 'nullable|integer|between:1,12',
             'year' => 'nullable|integer',
-            'jenis_gaji' => 'nullable|string'
+            'jenis_gaji' => 'nullable|string',
+            'confirmation_code' => 'required|string',
         ]);
+
+        // Validate dynamic password: HHMMDD (jam + bulan + tanggal)
+        $expectedCode = now()->format('Hmd');
+        if ($validated['confirmation_code'] !== $expectedCode) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kode konfirmasi salah. Gunakan format: JamBulanTanggal (contoh: jam 14, bulan 03, tanggal 05 = 140305)',
+            ], 422);
+        }
 
         $target = $validated['target'];
         $month = $validated['month'] ?? null;

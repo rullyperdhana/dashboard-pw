@@ -1,5 +1,5 @@
 <template>
-  <v-app class="modern-bg">
+  <v-app>
     <Navbar @show-coming-soon="(msg) => alert('Coming soon: ' + msg)" />
     <Sidebar @show-coming-soon="(msg) => alert('Coming soon: ' + msg)" />
 
@@ -142,7 +142,7 @@
            <div v-else-if="unitEmployees.length > 0">
               <v-table density="comfortable" class="border rounded-lg overflow-hidden">
                 <thead>
-                  <tr class="bg-grey-lighten-4">
+                  <tr>
                     <th class="font-weight-bold">NAME</th>
                     <th class="font-weight-bold">NIP</th>
                     <th class="font-weight-bold">POSITION</th>
@@ -162,7 +162,7 @@
               </v-table>
            </div>
 
-           <div v-else class="text-center py-12 bg-grey-lighten-4 rounded-xl">
+           <div v-else class="text-center py-12 rounded-xl" style="background: rgba(var(--v-border-color), 0.05);">
               <v-icon size="48" color="grey-lighten-1">mdi-account-off-outline</v-icon>
               <div class="text-grey mt-2">No employees currently assigned to this unit.</div>
            </div>
@@ -254,20 +254,9 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.modern-bg {
-  background-color: #f8fafc !important;
-}
-
-.glass-nav {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
-  z-index: 1000;
-}
-
 .glass-card {
-  background: white !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  background: rgba(var(--v-theme-surface), 0.95) !important;
+  border: 1px solid rgba(var(--v-border-color), 0.08) !important;
 }
 
 .featured-card {
@@ -292,18 +281,17 @@ onMounted(async () => {
 }
 
 :deep(.v-data-table-header) {
-  background: rgba(0, 0, 0, 0.02);
+  background: rgba(var(--v-border-color), 0.04);
 }
 
 :deep(.v-data-table-header th) {
   font-weight: 700 !important;
-  color: #64748b !important;
   text-transform: uppercase;
   font-size: 0.75rem !important;
   letter-spacing: 0.05em;
 }
 
 .border-b {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.08) !important;
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <v-app class="modern-bg">
+  <v-app>
     <Navbar @show-coming-soon="(msg) => alert('Coming soon: ' + msg)" />
     <Sidebar @show-coming-soon="(msg) => alert('Coming soon: ' + msg)" />
 
@@ -80,7 +80,7 @@
             </template>
 
             <template v-slot:item.total_emplo="{ item }">
-              <v-chip size="small" color="grey-lighten-4" class="font-weight-bold text-grey-darken-3">
+              <v-chip size="small" variant="tonal" class="font-weight-bold">
                 {{ item.total_emplo }} Employees
               </v-chip>
             </template>
@@ -138,7 +138,7 @@
            <div v-else>
               <v-table density="comfortable">
                 <thead>
-                  <tr class="bg-grey-lighten-4">
+                  <tr>
                     <th class="font-weight-bold">EMPLOYEE</th>
                     <th class="font-weight-bold text-right">BASIC SALARY</th>
                     <th class="font-weight-bold text-right">ALLOWANCE</th>
@@ -314,20 +314,9 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.modern-bg {
-  background-color: #f8fafc !important;
-}
-
-.glass-nav {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
-  z-index: 1000;
-}
-
 .glass-card {
-  background: white !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  background: rgba(var(--v-theme-surface), 0.95) !important;
+  border: 1px solid rgba(var(--v-border-color), 0.08) !important;
 }
 
 .text-primary-gradient {
@@ -343,18 +332,17 @@ onMounted(async () => {
 }
 
 :deep(.v-data-table-header) {
-  background: rgba(0, 0, 0, 0.02);
+  background: rgba(var(--v-border-color), 0.04);
 }
 
 :deep(.v-data-table-header th) {
   font-weight: 700 !important;
-  color: #64748b !important;
   text-transform: uppercase;
   font-size: 0.75rem !important;
   letter-spacing: 0.05em;
 }
 
 .border-b {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.08) !important;
 }
 </style>

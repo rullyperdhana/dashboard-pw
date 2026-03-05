@@ -33,7 +33,7 @@
                 :disabled="uploading || activeJobStatus === 'processing'"
               ></v-file-input>
 
-              <div v-if="activeJobId" class="mt-4 pa-4 bg-blue-lighten-5 rounded-lg border">
+              <div v-if="activeJobId" class="mt-4 pa-4 rounded-lg border" style="background: rgba(var(--v-theme-primary), 0.08);">
                 <div class="d-flex align-center mb-2">
                   <v-icon :color="jobStatusColor" class="mr-2">{{ jobStatusIcon }}</v-icon>
                   <span class="text-caption font-weight-bold">{{ jobStatusLabel }}</span>
@@ -232,8 +232,8 @@ const startPolling = (jobId) => {
 
 <style scoped>
 .glass-card {
-  background: rgba(255, 255, 255, 0.9) !important;
+  background: rgba(var(--v-theme-surface), 0.95) !important;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(var(--v-border-color), 0.05) !important;
+  border: 1px solid rgba(var(--v-border-color), 0.08) !important;
 }
 </style>

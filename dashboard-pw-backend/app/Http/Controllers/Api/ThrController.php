@@ -52,7 +52,7 @@ class ThrController extends Controller
                     'jabatan' => $emp->jabatan,
                     'gapok_basis' => $gapok,
                     'n_months' => $nMonths,
-                    'thr_amount' => round($gapok * ($nMonths / 12), 2)
+                    'thr_amount' => round($gapok * ($nMonths / 12))
                 ];
             });
 

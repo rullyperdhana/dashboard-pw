@@ -257,7 +257,7 @@
             <!-- Recent Jobs List -->
             <div v-if="recentJobs.length > 0" class="mt-6">
               <div class="text-subtitle-2 mb-2 text-grey">Pekerjaan Terakhir:</div>
-              <v-list density="compact" class="bg-grey-lighten-4 rounded-lg">
+              <v-list density="compact" class="rounded-lg" style="background: rgba(var(--v-border-color), 0.05);">
                 <v-list-item v-for="job in recentJobs" :key="job.id" class="px-2">
                   <template v-slot:prepend>
                     <v-icon :color="getStatusColor(job.status)" size="small">
@@ -714,18 +714,18 @@ onMounted(() => {
 }
 
 .stat-ribbon-card {
-  background: rgba(255, 255, 255, 0.8) !important;
+  background: rgba(var(--v-theme-surface), 0.9) !important;
   backdrop-filter: blur(10px);
 }
 
 .border-md-right {
-  border-right: 1px solid rgba(0,0,0,0.05);
+  border-right: 1px solid rgba(var(--v-border-color), 0.1);
 }
 
 @media (max-width: 960px) {
   .border-md-right {
     border-right: none;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
+    border-bottom: 1px solid rgba(var(--v-border-color), 0.1);
     padding-bottom: 24px;
     margin-bottom: 24px;
   }
@@ -737,7 +737,7 @@ onMounted(() => {
   width: 100%;
   border-radius: 12px;
   overflow: hidden;
-  background: #f1f5f9;
+  background: rgba(var(--v-border-color), 0.08);
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
 }
 
@@ -772,7 +772,7 @@ onMounted(() => {
 }
 
 .legend-item:hover {
-  background: rgba(0,0,0,0.03);
+  background: rgba(var(--v-border-color), 0.08);
 }
 
 .legend-active {

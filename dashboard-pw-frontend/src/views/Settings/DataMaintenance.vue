@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <Sidebar />
-    <v-main class="bg-grey-lighten-4">
+    <v-main class="bg-light">
       <Navbar />
       <v-container fluid class="pa-6">
         <div class="d-flex align-center mb-6">
@@ -86,7 +86,7 @@
                       size="large"
                       prepend-icon="mdi-trash-can"
                       :disabled="!isValid"
-                      @click="confirmDialog = true"
+                      @click="confirmationCode = ''; confirmDialog = true"
                     >
                       KOSONGKAN DATA
                     </v-btn>
@@ -125,11 +125,21 @@
               <span v-else>seluruhnya (tanpa batasan waktu)</span>?
               <br><br>
               Tindakan ini <strong>TIDAK DAPAT DIBATALKAN</strong>.
+
+              <v-text-field
+                v-model="confirmationCode"
+                label="Kode Konfirmasi"
+                placeholder="Format: JamBulanTanggal (contoh: 140305)"
+                variant="outlined"
+                density="compact"
+                class="mt-4"
+                prepend-inner-icon="mdi-lock-outline"
+              ></v-text-field>
             </v-card-text>
             <v-card-actions class="pa-4">
               <v-spacer></v-spacer>
               <v-btn color="grey" variant="text" @click="confirmDialog = false">BATAL</v-btn>
-              <v-btn color="error" variant="flat" :loading="isSubmitting" @click="handleClearData">YA, HAPUS PERMANEN</v-btn>
+              <v-btn color="error" variant="flat" :loading="isSubmitting" :disabled="!confirmationCode" @click="handleClearData">YA, HAPUS PERMANEN</v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
@@ -155,6 +165,7 @@ import api from '../../api'
 const isValid = ref(false)
 const isSubmitting = ref(false)
 const confirmDialog = ref(false)
+const confirmationCode = ref('')
 const scopeType = ref('all')
 
 const clearParams = reactive({
@@ -206,6 +217,8 @@ const handleClearData = async () => {
       payload.month = clearParams.month
       payload.year = clearParams.year
     }
+
+    payload.confirmation_code = confirmationCode.value
 
     const response = await api.post('/settings/clear-payroll', payload)
     
