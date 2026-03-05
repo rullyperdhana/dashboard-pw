@@ -1,9 +1,6 @@
 <template>
   <v-app-bar flat class="glass-nav px-4">
-    <v-app-bar-title class="font-weight-bold primary--text">
-      <v-icon color="primary" class="mr-2">mdi-view-dashboard-outline</v-icon>
-      Payroll<span class="text-primary-gradient">PPPK</span>
-    </v-app-bar-title>
+    <v-app-bar-title></v-app-bar-title>
     
     <v-spacer></v-spacer>
     
@@ -98,12 +95,5 @@ defineEmits(['show-coming-soon'])
   background-color: rgba(var(--v-theme-surface), 0.8) !important;
   border-bottom: 1px solid rgba(var(--v-border-color), 0.05) !important;
   z-index: 1000;
-}
-
-.text-primary-gradient {
-  background: linear-gradient(45deg, #1867C0, #5CBBF6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-weight: 800;
 }
 </style>
