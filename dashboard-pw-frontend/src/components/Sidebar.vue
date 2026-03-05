@@ -201,6 +201,7 @@ const menuItems = ref([
   { title: 'Referensi Satker', icon: 'mdi-office-building-cog', value: 'satker-setting', to: '/settings/satker' },
   { title: 'Pemeliharaan Data', icon: 'mdi-database-wrench', value: 'data-maintenance', to: '/settings/maintenance' },
   { title: 'Manajemen User', icon: 'mdi-account-group-outline', value: 'users', to: '/settings/users' },
+  { title: 'API Keys', icon: 'mdi-key-chain', value: 'api-keys', to: '/settings/api-keys' },
 ])
 </script>
 

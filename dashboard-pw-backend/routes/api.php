@@ -169,10 +169,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pegawai/{id}', [MasterPegawaiController::class, 'show']);
         Route::get('/pegawai/nip/{nip}', [MasterPegawaiController::class, 'showByNip']);
     });
+
+    // API Key Management
+    Route::prefix('api-keys')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\ApiKeyController::class, 'index']);
+        Route::post('/', [App\Http\Controllers\Api\ApiKeyController::class, 'store']);
+        Route::put('/{id}/toggle', [App\Http\Controllers\Api\ApiKeyController::class, 'toggleActive']);
+        Route::delete('/{id}', [App\Http\Controllers\Api\ApiKeyController::class, 'destroy']);
+    });
 });
 
-// Simgaji Integration API
-Route::get('/listinstansi', [App\Http\Controllers\Api\SimgajiController::class, 'listInstansi']);
-Route::get('/listpegawai', [App\Http\Controllers\Api\SimgajiController::class, 'listPegawai']);
-Route::get('/listgaji', [App\Http\Controllers\Api\SimgajiController::class, 'listGaji']);
+// Simgaji Integration API (protected by API Key)
+Route::middleware('api.key')->group(function () {
+    Route::get('/listinstansi', [App\Http\Controllers\Api\SimgajiController::class, 'listInstansi']);
+    Route::get('/listpegawai', [App\Http\Controllers\Api\SimgajiController::class, 'listPegawai']);
+    Route::get('/listgaji', [App\Http\Controllers\Api\SimgajiController::class, 'listGaji']);
+});
 

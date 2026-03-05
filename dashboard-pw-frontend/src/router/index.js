@@ -153,6 +153,12 @@ const router = createRouter({
             component: () => import('../views/Settings/DataMaintenance.vue'),
             meta: { requiresAuth: true },
         },
+        {
+            path: '/settings/api-keys',
+            name: 'ApiKeyManagement',
+            component: () => import('../views/Settings/ApiKeyManagement.vue'),
+            meta: { requiresAuth: true },
+        },
     ],
 })
 
