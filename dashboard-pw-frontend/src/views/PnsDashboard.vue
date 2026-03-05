@@ -560,7 +560,8 @@
                         <th class="text-right">Gaji Pokok</th>
                         <th class="text-right">Tunj. Istri</th>
                         <th class="text-right">Tunj. Anak</th>
-                        <th class="text-right">Tunj. Jabatan</th>
+                        <th class="text-right">Tunj. Fungsional</th>
+                        <th class="text-right">Tunj. Struktural</th>
                         <th class="text-right">Tunj. Umum</th>
                         <th class="text-right">Tunj. Beras</th>
                         <th class="text-right">Tunj. PPh</th>
@@ -580,7 +581,8 @@
                           <td class="text-right">{{ (pnsAnnual.monthly[mIdx]?.total_employees || 0) > 0 ? formatCurrencyShort(pnsAnnual.monthly[mIdx].total_gaji_pokok) : '-' }}</td>
                           <td class="text-right">{{ (pnsAnnual.monthly[mIdx]?.total_employees || 0) > 0 ? formatCurrencyShort(pnsAnnual.monthly[mIdx].total_tunj_istri) : '-' }}</td>
                           <td class="text-right">{{ (pnsAnnual.monthly[mIdx]?.total_employees || 0) > 0 ? formatCurrencyShort(pnsAnnual.monthly[mIdx].total_tunj_anak) : '-' }}</td>
-                          <td class="text-right">{{ (pnsAnnual.monthly[mIdx]?.total_employees || 0) > 0 ? formatCurrencyShort((pnsAnnual.monthly[mIdx].total_tunj_fungsional || 0) + (pnsAnnual.monthly[mIdx].total_tunj_struktural || 0) + (pnsAnnual.monthly[mIdx].total_tunj_eselon || 0)) : '-' }}</td>
+                          <td class="text-right">{{ (pnsAnnual.monthly[mIdx]?.total_employees || 0) > 0 ? formatCurrencyShort(pnsAnnual.monthly[mIdx].total_tunj_fungsional) : '-' }}</td>
+                          <td class="text-right">{{ (pnsAnnual.monthly[mIdx]?.total_employees || 0) > 0 ? formatCurrencyShort((pnsAnnual.monthly[mIdx].total_tunj_struktural || 0) + (pnsAnnual.monthly[mIdx].total_tunj_eselon || 0)) : '-' }}</td>
                           <td class="text-right">{{ (pnsAnnual.monthly[mIdx]?.total_employees || 0) > 0 ? formatCurrencyShort(pnsAnnual.monthly[mIdx].total_tunj_umum) : '-' }}</td>
                           <td class="text-right">{{ (pnsAnnual.monthly[mIdx]?.total_employees || 0) > 0 ? formatCurrencyShort(pnsAnnual.monthly[mIdx].total_tunj_beras) : '-' }}</td>
                           <td class="text-right">{{ (pnsAnnual.monthly[mIdx]?.total_employees || 0) > 0 ? formatCurrencyShort(pnsAnnual.monthly[mIdx].total_tunj_pph) : '-' }}</td>
@@ -596,7 +598,8 @@
                           <td class="text-right">{{ (pppkAnnual.monthly[mIdx]?.total_employees || 0) > 0 ? formatCurrencyShort(pppkAnnual.monthly[mIdx].total_gaji_pokok) : '-' }}</td>
                           <td class="text-right">{{ (pppkAnnual.monthly[mIdx]?.total_employees || 0) > 0 ? formatCurrencyShort(pppkAnnual.monthly[mIdx].total_tunj_istri) : '-' }}</td>
                           <td class="text-right">{{ (pppkAnnual.monthly[mIdx]?.total_employees || 0) > 0 ? formatCurrencyShort(pppkAnnual.monthly[mIdx].total_tunj_anak) : '-' }}</td>
-                          <td class="text-right">{{ (pppkAnnual.monthly[mIdx]?.total_employees || 0) > 0 ? formatCurrencyShort((pppkAnnual.monthly[mIdx].total_tunj_fungsional || 0) + (pppkAnnual.monthly[mIdx].total_tunj_struktural || 0) + (pppkAnnual.monthly[mIdx].total_tunj_eselon || 0)) : '-' }}</td>
+                          <td class="text-right">{{ (pppkAnnual.monthly[mIdx]?.total_employees || 0) > 0 ? formatCurrencyShort(pppkAnnual.monthly[mIdx].total_tunj_fungsional) : '-' }}</td>
+                          <td class="text-right">{{ (pppkAnnual.monthly[mIdx]?.total_employees || 0) > 0 ? formatCurrencyShort((pppkAnnual.monthly[mIdx].total_tunj_struktural || 0) + (pppkAnnual.monthly[mIdx].total_tunj_eselon || 0)) : '-' }}</td>
                           <td class="text-right">{{ (pppkAnnual.monthly[mIdx]?.total_employees || 0) > 0 ? formatCurrencyShort(pppkAnnual.monthly[mIdx].total_tunj_umum) : '-' }}</td>
                           <td class="text-right">{{ (pppkAnnual.monthly[mIdx]?.total_employees || 0) > 0 ? formatCurrencyShort(pppkAnnual.monthly[mIdx].total_tunj_beras) : '-' }}</td>
                           <td class="text-right">{{ (pppkAnnual.monthly[mIdx]?.total_employees || 0) > 0 ? formatCurrencyShort(pppkAnnual.monthly[mIdx].total_tunj_pph) : '-' }}</td>
@@ -612,7 +615,8 @@
                           <td class="text-right">{{ month.total_employees > 0 ? formatCurrencyShort(month.total_gaji_pokok) : '-' }}</td>
                           <td class="text-right">{{ month.total_employees > 0 ? formatCurrencyShort(month.total_tunj_istri) : '-' }}</td>
                           <td class="text-right">{{ month.total_employees > 0 ? formatCurrencyShort(month.total_tunj_anak) : '-' }}</td>
-                          <td class="text-right">{{ month.total_employees > 0 ? formatCurrencyShort((month.total_tunj_fungsional || 0) + (month.total_tunj_struktural || 0) + (month.total_tunj_eselon || 0)) : '-' }}</td>
+                          <td class="text-right">{{ month.total_employees > 0 ? formatCurrencyShort(month.total_tunj_fungsional) : '-' }}</td>
+                          <td class="text-right">{{ month.total_employees > 0 ? formatCurrencyShort((month.total_tunj_struktural || 0) + (month.total_tunj_eselon || 0)) : '-' }}</td>
                           <td class="text-right">{{ month.total_employees > 0 ? formatCurrencyShort(month.total_tunj_umum) : '-' }}</td>
                           <td class="text-right">{{ month.total_employees > 0 ? formatCurrencyShort(month.total_tunj_beras) : '-' }}</td>
                           <td class="text-right">{{ month.total_employees > 0 ? formatCurrencyShort(month.total_tunj_pph) : '-' }}</td>
@@ -630,7 +634,8 @@
                         <td class="text-right font-weight-bold">{{ formatCurrencyShort(pnsAnnual?.yearly_total?.total_gaji_pokok) }}</td>
                         <td class="text-right font-weight-bold">{{ formatCurrencyShort(pnsAnnual?.yearly_total?.total_tunj_istri) }}</td>
                         <td class="text-right font-weight-bold">{{ formatCurrencyShort(pnsAnnual?.yearly_total?.total_tunj_anak) }}</td>
-                        <td class="text-right font-weight-bold">{{ formatCurrencyShort((pnsAnnual?.yearly_total?.total_tunj_fungsional || 0) + (pnsAnnual?.yearly_total?.total_tunj_struktural || 0) + (pnsAnnual?.yearly_total?.total_tunj_eselon || 0)) }}</td>
+                        <td class="text-right font-weight-bold">{{ formatCurrencyShort(pnsAnnual?.yearly_total?.total_tunj_fungsional) }}</td>
+                        <td class="text-right font-weight-bold">{{ formatCurrencyShort((pnsAnnual?.yearly_total?.total_tunj_struktural || 0) + (pnsAnnual?.yearly_total?.total_tunj_eselon || 0)) }}</td>
                         <td class="text-right font-weight-bold">{{ formatCurrencyShort(pnsAnnual?.yearly_total?.total_tunj_umum) }}</td>
                         <td class="text-right font-weight-bold">{{ formatCurrencyShort(pnsAnnual?.yearly_total?.total_tunj_beras) }}</td>
                         <td class="text-right font-weight-bold">{{ formatCurrencyShort(pnsAnnual?.yearly_total?.total_tunj_pph) }}</td>
@@ -645,7 +650,8 @@
                         <td class="text-right font-weight-bold">{{ formatCurrencyShort(pppkAnnual?.yearly_total?.total_gaji_pokok) }}</td>
                         <td class="text-right font-weight-bold">{{ formatCurrencyShort(pppkAnnual?.yearly_total?.total_tunj_istri) }}</td>
                         <td class="text-right font-weight-bold">{{ formatCurrencyShort(pppkAnnual?.yearly_total?.total_tunj_anak) }}</td>
-                        <td class="text-right font-weight-bold">{{ formatCurrencyShort((pppkAnnual?.yearly_total?.total_tunj_fungsional || 0) + (pppkAnnual?.yearly_total?.total_tunj_struktural || 0) + (pppkAnnual?.yearly_total?.total_tunj_eselon || 0)) }}</td>
+                        <td class="text-right font-weight-bold">{{ formatCurrencyShort(pppkAnnual?.yearly_total?.total_tunj_fungsional) }}</td>
+                        <td class="text-right font-weight-bold">{{ formatCurrencyShort((pppkAnnual?.yearly_total?.total_tunj_struktural || 0) + (pppkAnnual?.yearly_total?.total_tunj_eselon || 0)) }}</td>
                         <td class="text-right font-weight-bold">{{ formatCurrencyShort(pppkAnnual?.yearly_total?.total_tunj_umum) }}</td>
                         <td class="text-right font-weight-bold">{{ formatCurrencyShort(pppkAnnual?.yearly_total?.total_tunj_beras) }}</td>
                         <td class="text-right font-weight-bold">{{ formatCurrencyShort(pppkAnnual?.yearly_total?.total_tunj_pph) }}</td>
@@ -660,7 +666,8 @@
                         <td class="text-right font-weight-black">{{ formatCurrencyShort(annualReport.yearly_total.total_gaji_pokok) }}</td>
                         <td class="text-right font-weight-black">{{ formatCurrencyShort(annualReport.yearly_total.total_tunj_istri) }}</td>
                         <td class="text-right font-weight-black">{{ formatCurrencyShort(annualReport.yearly_total.total_tunj_anak) }}</td>
-                        <td class="text-right font-weight-black">{{ formatCurrencyShort((annualReport.yearly_total.total_tunj_fungsional || 0) + (annualReport.yearly_total.total_tunj_struktural || 0) + (annualReport.yearly_total.total_tunj_eselon || 0)) }}</td>
+                        <td class="text-right font-weight-black">{{ formatCurrencyShort(annualReport.yearly_total.total_tunj_fungsional) }}</td>
+                        <td class="text-right font-weight-black">{{ formatCurrencyShort((annualReport.yearly_total.total_tunj_struktural || 0) + (annualReport.yearly_total.total_tunj_eselon || 0)) }}</td>
                         <td class="text-right font-weight-black">{{ formatCurrencyShort(annualReport.yearly_total.total_tunj_umum) }}</td>
                         <td class="text-right font-weight-black">{{ formatCurrencyShort(annualReport.yearly_total.total_tunj_beras) }}</td>
                         <td class="text-right font-weight-black">{{ formatCurrencyShort(annualReport.yearly_total.total_tunj_pph) }}</td>
@@ -1065,8 +1072,8 @@ const fetchData = async () => {
         const combined = { ...s1 }
         
         Object.keys(s1).forEach(key => {
-          if (typeof s1[key] === 'number') {
-            combined[key] = (s1[key] || 0) + (s2[key] || 0)
+          if (typeof s1[key] === 'number' || !isNaN(parseFloat(s1[key]))) {
+            combined[key] = (Number(s1[key]) || 0) + (Number(s2[key]) || 0)
           }
         })
         
