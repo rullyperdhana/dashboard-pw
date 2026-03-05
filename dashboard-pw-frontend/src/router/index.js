@@ -142,6 +142,12 @@ const router = createRouter({
             meta: { requiresAuth: true },
         },
         {
+            path: '/reports/thr-pppk-pw',
+            name: 'ThrPppkPw',
+            component: () => import('../views/PppkPwThr.vue'),
+            meta: { requiresAuth: true },
+        },
+        {
             path: '/settings/maintenance',
             name: 'DataMaintenance',
             component: () => import('../views/Settings/DataMaintenance.vue'),

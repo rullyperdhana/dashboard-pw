@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\PayrollPostingController;
 use App\Http\Controllers\Api\MasterPegawaiController;
 use App\Http\Controllers\Api\DbfImportController;
 use App\Http\Controllers\Api\SatkerController;
+use App\Http\Controllers\Api\ThrController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -65,6 +66,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/paid-employees', [ReportController::class, 'paidEmployees']);
     Route::get('/reports/paid-employees-export', [ReportController::class, 'exportPaidEmployees']);
     Route::get('/reports/combined-allowance-export', [ReportController::class, 'exportCombinedAllowance']);
+
+    // THR (PPPK Paruh Waktu)
+    Route::get('/thr/pppk-pw', [ThrController::class, 'pppkPwThr']);
+    Route::get('/thr/pppk-pw/excel', [ThrController::class, 'exportExcel']);
+    Route::get('/thr/pppk-pw/pdf', [ThrController::class, 'exportPdf']);
 
     // PNS Payroll
     Route::get('/pns/dashboard', [PnsPayrollController::class, 'dashboard']);
