@@ -64,6 +64,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/paid-export', [ReportController::class, 'exportPaidSkpds']);
     Route::get('/reports/paid-employees', [ReportController::class, 'paidEmployees']);
     Route::get('/reports/paid-employees-export', [ReportController::class, 'exportPaidEmployees']);
+    Route::get('/reports/combined-allowance-export', [ReportController::class, 'exportCombinedAllowance']);
 
     // PNS Payroll
     Route::get('/pns/dashboard', [PnsPayrollController::class, 'dashboard']);

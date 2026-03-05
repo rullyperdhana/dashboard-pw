@@ -37,6 +37,9 @@
               </v-card>
             </v-menu>
             
+            <v-btn color="success" variant="tonal" class="ml-2" prepend-icon="mdi-microsoft-excel" @click="exportCombinedAllowance" :loading="exporting">
+              Ekspor Laporan Gabungan
+            </v-btn>
             <v-btn color="primary" class="ml-2" prepend-icon="mdi-upload" @click="uploadDialog = true">
               Upload Data
             </v-btn>
@@ -942,12 +945,36 @@ const potonganFields = [
 
 const combinedAllowanceBreakdown = computed(() => {
   if (!pnsStats.value && !pppkStats.value) return []
-  return tunjanganFields.map(f => ({
-    label: f.label,
-    pns: pnsStats.value?.[f.key] || 0,
-    pppk: pppkStats.value?.[f.key] || 0,
-    total: (pnsStats.value?.[f.key] || 0) + (pppkStats.value?.[f.key] || 0),
-  }))
+  
+  const results = []
+  
+  // Add Gaji Pokok
+  results.push({
+    label: 'Gaji Pokok',
+    pns: pnsStats.value?.total_gaji_pokok || 0,
+    pppk: pppkStats.value?.total_gaji_pokok || 0,
+    total: (pnsStats.value?.total_gaji_pokok || 0) + (pppkStats.value?.total_gaji_pokok || 0)
+  })
+  
+  // Add Tunjangan Fields
+  tunjanganFields.forEach(f => {
+    results.push({
+      label: f.label,
+      pns: pnsStats.value?.[f.key] || 0,
+      pppk: pppkStats.value?.[f.key] || 0,
+      total: (pnsStats.value?.[f.key] || 0) + (pppkStats.value?.[f.key] || 0),
+    })
+  })
+  
+  // Add Pembulatan
+  results.push({
+    label: 'Pembulatan',
+    pns: pnsStats.value?.total_pembulatan || 0,
+    pppk: pppkStats.value?.total_pembulatan || 0,
+    total: (pnsStats.value?.total_pembulatan || 0) + (pppkStats.value?.total_pembulatan || 0)
+  })
+  
+  return results
 })
 
 const combinedDeductionBreakdown = computed(() => {
@@ -1030,6 +1057,22 @@ const fetchData = async () => {
       if (pppkResponse.data.success) {
         pppkStats.value = pppkResponse.data.data.summary
       }
+
+      // Aggregate into stats for components that depend on it (like Budget Intelligence)
+      if (pnsStats.value && pppkStats.value) {
+        const s1 = pnsStats.value
+        const s2 = pppkStats.value
+        const combined = { ...s1 }
+        
+        Object.keys(s1).forEach(key => {
+          if (typeof s1[key] === 'number') {
+            combined[key] = (s1[key] || 0) + (s2[key] || 0)
+          }
+        })
+        
+        // Handle special cumulative fields if any, or just ensure all SUM fields are added
+        stats.value = combined
+      }
     } else {
       // Fetch single type data
       const endpoint = employeeType.value === 'pns' ? '/pns/dashboard' : '/pppk/dashboard'
@@ -1048,6 +1091,34 @@ const fetchData = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const exporting = ref(false)
+const exportCombinedAllowance = async () => {
+    exporting.value = true
+    try {
+        const response = await api.get('/reports/combined-allowance-export', {
+            params: { 
+                month: selectedMonth.value, 
+                year: selectedYear.value 
+            },
+            responseType: 'blob'
+        })
+        
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `rincian_tunjangan_gabungan_${selectedMonth.value}_${selectedYear.value}.xlsx`)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+    } catch (err) {
+        console.error('Export failed', err)
+        alert('Gagal mengekspor laporan')
+    } finally {
+        exporting.value = false
+    }
 }
 
 const fetchYearlyTrend = async () => {

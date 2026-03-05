@@ -13,6 +13,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\CombinedAllowanceExport;
 
 
 class ReportController extends Controller
@@ -808,4 +809,211 @@ class ReportController extends Controller
             $filename . '.xlsx'
         );
     }
+    public function exportCombinedAllowance(Request $request)
+    {
+        $month = $request->month ?? date('n');
+        $year = $request->year ?? date('Y');
+
+        $pns = DB::table('gaji_pns')
+            ->where('bulan', $month)
+            ->where('tahun', $year)
+            ->selectRaw('
+                SUM(gaji_pokok) as total_gaji_pokok,
+                SUM(tunj_istri) as total_tunj_istri,
+                SUM(tunj_anak) as total_tunj_anak,
+                SUM(tunj_fungsional) as total_tunj_fungsional,
+                SUM(tunj_struktural) as total_tunj_struktural,
+                SUM(tunj_umum) as total_tunj_umum,
+                SUM(tunj_beras) as total_tunj_beras,
+                SUM(tunj_pph) as total_tunj_pph,
+                SUM(tunj_tpp) as total_tunj_tpp,
+                SUM(tunj_eselon) as total_tunj_eselon,
+                SUM(tunj_guru) as total_tunj_guru,
+                SUM(tunj_langka) as total_tunj_langka,
+                SUM(tunj_tkd) as total_tunj_tkd,
+                SUM(tunj_terpencil) as total_tunj_terpencil,
+                SUM(tunj_khusus) as total_tunj_khusus,
+                SUM(tunj_askes) as total_tunj_askes,
+                SUM(tunj_kk) as total_tunj_kk,
+                SUM(tunj_km) as total_tunj_km,
+                SUM(pembulatan) as total_pembulatan,
+                SUM(kotor) as total_kotor,
+                SUM(pot_iwp) as total_pot_iwp,
+                SUM(pot_iwp1) as total_pot_iwp1,
+                SUM(pot_iwp8) as total_pot_iwp8,
+                SUM(pot_askes) as total_pot_askes,
+                SUM(pot_pph) as total_pot_pph,
+                SUM(pot_bulog) as total_pot_bulog,
+                SUM(pot_taperum) as total_pot_taperum,
+                SUM(pot_sewa) as total_pot_sewa,
+                SUM(pot_hutang) as total_pot_hutang,
+                SUM(pot_korpri) as total_pot_korpri,
+                SUM(pot_irdhata) as total_pot_irdhata,
+                SUM(pot_koperasi) as total_pot_koperasi,
+                SUM(pot_jkk) as total_pot_jkk,
+                SUM(pot_jkm) as total_pot_jkm,
+                SUM(total_potongan) as total_potongan,
+                SUM(bersih) as total_bersih
+            ')->first();
+
+        $pppk = DB::table('gaji_pppk')
+            ->where('bulan', $month)
+            ->where('tahun', $year)
+            ->selectRaw('
+                SUM(gaji_pokok) as total_gaji_pokok,
+                SUM(tunj_istri) as total_tunj_istri,
+                SUM(tunj_anak) as total_tunj_anak,
+                SUM(tunj_fungsional) as total_tunj_fungsional,
+                SUM(tunj_struktural) as total_tunj_struktural,
+                SUM(tunj_umum) as total_tunj_umum,
+                SUM(tunj_beras) as total_tunj_beras,
+                SUM(tunj_pph) as total_tunj_pph,
+                SUM(tunj_tpp) as total_tunj_tpp,
+                SUM(tunj_eselon) as total_tunj_eselon,
+                SUM(tunj_guru) as total_tunj_guru,
+                SUM(tunj_langka) as total_tunj_langka,
+                SUM(tunj_tkd) as total_tunj_tkd,
+                SUM(tunj_terpencil) as total_tunj_terpencil,
+                SUM(tunj_khusus) as total_tunj_khusus,
+                SUM(tunj_askes) as total_tunj_askes,
+                SUM(tunj_kk) as total_tunj_kk,
+                SUM(tunj_km) as total_tunj_km,
+                SUM(pembulatan) as total_pembulatan,
+                SUM(kotor) as total_kotor,
+                SUM(pot_iwp) as total_pot_iwp,
+                SUM(pot_iwp1) as total_pot_iwp1,
+                SUM(pot_iwp8) as total_pot_iwp8,
+                SUM(pot_askes) as total_pot_askes,
+                SUM(pot_pph) as total_pot_pph,
+                SUM(pot_bulog) as total_pot_bulog,
+                SUM(pot_taperum) as total_pot_taperum,
+                SUM(pot_sewa) as total_pot_sewa,
+                SUM(pot_hutang) as total_pot_hutang,
+                SUM(pot_korpri) as total_pot_korpri,
+                SUM(pot_irdhata) as total_pot_irdhata,
+                SUM(pot_koperasi) as total_pot_koperasi,
+                SUM(pot_jkk) as total_pot_jkk,
+                SUM(pot_jkm) as total_pot_jkm,
+                SUM(total_potongan) as total_potongan,
+                SUM(bersih) as total_bersih
+            ')->first();
+
+        $combined = [];
+
+        // --- SECTION: TUNJANGAN ---
+        $combined[] = ['label' => 'A. GAJI POKOK & TUNJANGAN', 'pns' => null, 'pppk' => null, 'total' => null];
+
+        // 1. Gaji Pokok
+        $pGaji = $pns->total_gaji_pokok ?? 0;
+        $ppGaji = $pppk->total_gaji_pokok ?? 0;
+        $combined[] = ['label' => 'Gaji Pokok', 'pns' => (float) $pGaji, 'pppk' => (float) $ppGaji, 'total' => (float) ($pGaji + $ppGaji)];
+
+        $tunjanganFields = [
+            ['key' => 'total_tunj_istri', 'label' => 'Tunjangan Istri'],
+            ['key' => 'total_tunj_anak', 'label' => 'Tunjangan Anak'],
+            ['key' => 'total_tunj_fungsional', 'label' => 'Tunjangan Fungsional'],
+            ['key' => 'total_tunj_struktural', 'label' => 'Tunjangan Struktural'],
+            ['key' => 'total_tunj_umum', 'label' => 'Tunjangan Umum'],
+            ['key' => 'total_tunj_beras', 'label' => 'Tunjangan Beras'],
+            ['key' => 'total_tunj_pph', 'label' => 'Tunjangan PPh'],
+            ['key' => 'total_tunj_tpp', 'label' => 'Tunjangan TPP'],
+            ['key' => 'total_tunj_eselon', 'label' => 'Tunjangan Eselon'],
+            ['key' => 'total_tunj_guru', 'label' => 'Tunjangan Guru'],
+            ['key' => 'total_tunj_langka', 'label' => 'Tunjangan Langka'],
+            ['key' => 'total_tunj_tkd', 'label' => 'Tunjangan TKD'],
+            ['key' => 'total_tunj_terpencil', 'label' => 'Tunjangan Terpencil'],
+            ['key' => 'total_tunj_khusus', 'label' => 'Tunjangan Khusus'],
+            ['key' => 'total_tunj_askes', 'label' => 'Tunjangan Askes'],
+            ['key' => 'total_tunj_kk', 'label' => 'Tunjangan JKK'],
+            ['key' => 'total_tunj_km', 'label' => 'Tunjangan JKM'],
+        ];
+
+        foreach ($tunjanganFields as $f) {
+            $pVal = $pns->{$f['key']} ?? 0;
+            $ppVal = $pppk->{$f['key']} ?? 0;
+            $combined[] = [
+                'label' => $f['label'],
+                'pns' => (float) $pVal,
+                'pppk' => (float) $ppVal,
+                'total' => (float) ($pVal + $ppVal)
+            ];
+        }
+
+        // 2. Pembulatan
+        $pBulat = $pns->total_pembulatan ?? 0;
+        $ppBulat = $pppk->total_pembulatan ?? 0;
+        $combined[] = ['label' => 'Pembulatan', 'pns' => (float) $pBulat, 'pppk' => (float) $ppBulat, 'total' => (float) ($pBulat + $ppBulat)];
+
+        // Total Kotor Row
+        $pKotor = $pns->total_kotor ?? 0;
+        $ppKotor = $pppk->total_kotor ?? 0;
+        $combined[] = ['label' => 'TOTAL GAJI KOTOR', 'pns' => (float) $pKotor, 'pppk' => (float) $ppKotor, 'total' => (float) ($pKotor + $ppKotor)];
+
+        $combined[] = ['label' => '', 'pns' => null, 'pppk' => null, 'total' => null];
+
+        // --- SECTION: POTONGAN ---
+        $combined[] = ['label' => 'B. POTONGAN', 'pns' => null, 'pppk' => null, 'total' => null];
+
+        $potonganFields = [
+            ['key' => 'total_pot_iwp', 'label' => 'IWP (Total)'],
+            ['key' => 'total_pot_iwp1', 'label' => 'IWP 1%'],
+            ['key' => 'total_pot_iwp8', 'label' => 'IWP 8%'],
+            ['key' => 'total_pot_askes', 'label' => 'Askes/BPJS'],
+            ['key' => 'total_pot_pph', 'label' => 'PPh 21'],
+            ['key' => 'total_pot_bulog', 'label' => 'Bulog'],
+            ['key' => 'total_pot_taperum', 'label' => 'Taperum'],
+            ['key' => 'total_pot_sewa', 'label' => 'Sewa Rumah'],
+            ['key' => 'total_pot_hutang', 'label' => 'Hutang'],
+            ['key' => 'total_pot_korpri', 'label' => 'Korpri'],
+            ['key' => 'total_pot_irdhata', 'label' => 'Irdhata'],
+            ['key' => 'total_pot_koperasi', 'label' => 'Koperasi'],
+            ['key' => 'total_pot_jkk', 'label' => 'JKK'],
+            ['key' => 'total_pot_jkm', 'label' => 'JKM'],
+        ];
+
+        foreach ($potonganFields as $f) {
+            $pVal = $pns->{$f['key']} ?? 0;
+            $ppVal = $pppk->{$f['key']} ?? 0;
+            $combined[] = [
+                'label' => $f['label'],
+                'pns' => (float) $pVal,
+                'pppk' => (float) $ppVal,
+                'total' => (float) ($pVal + $ppVal)
+            ];
+        }
+
+        // Total Potongan Row
+        $pPot = $pns->total_potongan ?? 0;
+        $ppPot = $pppk->total_potongan ?? 0;
+        $combined[] = ['label' => 'TOTAL POTONGAN', 'pns' => (float) $pPot, 'pppk' => (float) $ppPot, 'total' => (float) ($pPot + $ppPot)];
+
+        $combined[] = ['label' => '', 'pns' => null, 'pppk' => null, 'total' => null];
+
+        // --- SECTION: SUMMARY ---
+        $pBersih = $pns->total_bersih ?? 0;
+        $ppBersih = $pppk->total_bersih ?? 0;
+        $combined[] = ['label' => 'C. GAJI BERSIH (A - B)', 'pns' => (float) $pBersih, 'pppk' => (float) $ppBersih, 'total' => (float) ($pBersih + $ppBersih)];
+
+        $monthNames = [
+            1 => 'Januari',
+            2 => 'Februari',
+            3 => 'Maret',
+            4 => 'April',
+            5 => 'Mei',
+            6 => 'Juni',
+            7 => 'Juli',
+            8 => 'Agustus',
+            9 => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember'
+        ];
+        $monthName = $monthNames[(int) $month] ?? 'Unknown';
+
+        return Excel::download(
+            new CombinedAllowanceExport($combined, $month, $year, $monthName),
+            "rincian_tunjangan_gabungan_{$month}_{$year}.xlsx"
+        );
+    }
 }
+
