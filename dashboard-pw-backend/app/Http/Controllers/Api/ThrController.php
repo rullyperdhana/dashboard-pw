@@ -24,20 +24,28 @@ class ThrController extends Controller
         // n = months from Jan 2026 to thrMonth
         $nMonths = $thrMonth;
 
+        $user = auth()->user();
+
         // Query tb_payment and tb_payment_detail for month 2, joined with pegawai_pw
-        $employees = DB::table('tb_payment_detail as pd')
+        $query = DB::table('tb_payment_detail as pd')
             ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
             ->join('pegawai_pw as e', 'pd.employee_id', '=', 'e.id')
             ->leftJoin('skpd as s', 'e.idskpd', '=', 's.id_skpd')
             ->where('p.month', 2)
-            ->where('p.year', $year) // Assuming THR is based on the current year's Feb salary
-            ->select(
-                'e.nip',
-                'e.nama',
-                'e.jabatan',
-                'pd.gaji_pokok as gapok_basis',
-                DB::raw('COALESCE(s.nama_skpd, e.skpd) as skpd_name')
-            )
+            ->where('p.year', $year);
+
+        // Filter by SKPD if user is operator
+        if ($user && $user->role === 'operator' && !empty($user->institution)) {
+            $query->where('e.idskpd', $user->institution);
+        }
+
+        $employees = $query->select(
+            'e.nip',
+            'e.nama',
+            'e.jabatan',
+            'pd.gaji_pokok as gapok_basis',
+            DB::raw('COALESCE(s.nama_skpd, e.skpd) as skpd_name')
+        )
             ->orderBy('skpd_name')
             ->orderBy('e.nama')
             ->get();
