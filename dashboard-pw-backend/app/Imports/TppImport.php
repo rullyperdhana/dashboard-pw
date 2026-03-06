@@ -49,55 +49,8 @@ class TppImport implements ToCollection, WithHeadingRow
                     ->first();
 
                 if ($employee) {
-                    // Update TPP
-                    $oldTpp = $employee->tunj_tpp;
+                    // Update TPP only, do not change kotor or bersih totals
                     $employee->tunj_tpp = $nilai;
-
-                    // Recalculate Totals
-                    // total_tunjangan = istri + anak + fungsional + struktural + umum + beras + pph + TPP + others...
-                    // Simpler approach: Calculate delta and adjust totals
-                    $delta = $nilai - $oldTpp;
-
-                    $employee->kotor += $delta;
-
-                    // Recalculate total_tunjangan explicitly to be safe
-                    $tunjanganFields = [
-                        'tunj_istri',
-                        'tunj_anak',
-                        'tunj_fungsional',
-                        'tunj_struktural',
-                        'tunj_umum',
-                        'tunj_beras',
-                        'tunj_pph',
-                        'tunj_tpp',
-                        'tunj_eselon',
-                        'tunj_guru',
-                        'tunj_langka',
-                        'tunj_tkd',
-                        'tunj_terpencil',
-                        'tunj_khusus',
-                        'tunj_askes',
-                        'tunj_kk',
-                        'tunj_km',
-                        'pembulatan'
-                    ];
-
-                    $totalTunjangan = 0;
-                    foreach ($tunjanganFields as $field) {
-                        $totalTunjangan += $employee->$field;
-                    }
-
-                    // We don't have a 'total_tunjangan' column in the database schema shown in tools,
-                    // but we do have 'kotor' (Gross) and 'bersih' (Net).
-                    // Gross = Gaji Pokok + Total Tunjangan
-                    // Net = Gross - Total Potongan
-
-                    // Re-calculate Gross (Kotor)
-                    $employee->kotor = $employee->gaji_pokok + $totalTunjangan;
-
-                    // Re-calculate Net (Bersih)
-                    $employee->bersih = $employee->kotor - $employee->total_potongan;
-
                     $employee->save();
                     $updatedCount++;
                 } else {
