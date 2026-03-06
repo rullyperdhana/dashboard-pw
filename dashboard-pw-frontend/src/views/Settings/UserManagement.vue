@@ -185,6 +185,7 @@ const loading = ref(false)
 const users = ref([])
 const skpdList = ref([])
 const search = ref('')
+const filterRole = ref('Semua Role')
 const roles = ['Semua Role', 'superadmin', 'operator']
 
 const availableModules = [
