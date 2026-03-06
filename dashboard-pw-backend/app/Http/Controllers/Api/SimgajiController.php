@@ -55,7 +55,7 @@ class SimgajiController extends Controller
     public function listGaji(Request $request)
     {
         // Parameter parsing
-        $period = $request->period; // e.g., 2025-03
+        $period = $request->periode ?? $request->period; // Support both for compatibility
         $kode_instansi = $request->kode_instansi;
         $nip = $request->nip;
         $tahun = $request->tahun;
