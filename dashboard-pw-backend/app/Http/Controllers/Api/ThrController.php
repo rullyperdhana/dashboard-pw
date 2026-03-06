@@ -156,8 +156,8 @@ class ThrController extends Controller
         $printDate = now()->format('d/m/Y H:i');
         $totalFormatted = number_format($response->getData()->meta->total_thr_amount, 0, ',', '.');
 
-        // Generate Verification URL
-        $verifyUrl = "https://simgajitaspen.my.id/verify-thr?" . http_build_query([
+        // Generate Verification URL - Using /api prefix for more reliable routing on VPS
+        $verifyUrl = "https://simgajitaspen.my.id/api/verify-thr?" . http_build_query([
             'total' => $totalFormatted,
             'period' => $thrMonthName . ' ' . $year,
             'date' => $printDate

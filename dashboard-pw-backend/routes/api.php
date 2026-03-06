@@ -34,6 +34,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/captcha', [AuthController::class, 'getCaptcha']);
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::get('/settings/pppk-pw-estimation', [SettingController::class, 'pppkPwEstimation']);
+Route::get('/verify-thr', [ThrController::class, 'verifyThr']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
