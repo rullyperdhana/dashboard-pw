@@ -115,8 +115,26 @@
         </table>
     </div>
 
-    <div class="footer">
-        Dicetak pada: {{ $printDate }}
+    <div style="margin-top: 40px;">
+        <table style="border: none;">
+            <tr style="border: none;">
+                <td style="border: none; width: 60%; vertical-align: bottom;">
+                    <div class="footer">
+                        Dokumen ini dihasilkan secara otomatis oleh Sistem PPPK Payroll Dashboard.<br>
+                        Keaslian dokumen dapat diverifikasi melalui kode QR di samping.<br>
+                        Dicetak pada: {{ $printDate }}
+                    </div>
+                </td>
+                <td style="border: none; width: 40%; text-align: right;">
+                    <div
+                        style="display: inline-block; text-align: center; border: 1px solid #ddd; padding: 5px; background: white;">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ urlencode('PPPK Payroll Verification | Total: Rp ' . number_format($totalAmount, 0, ',', '.') . ' | Period: ' . $thrMonthName . ' ' . $year . ' | Date: ' . $printDate) }}"
+                            alt="QR Code Verification" width="100" height="100">
+                        <div style="font-size: 8px; margin-top: 5px;">VERIFIKASI SISTEM</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
     </div>
 </body>
 
