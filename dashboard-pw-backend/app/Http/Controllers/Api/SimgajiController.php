@@ -93,7 +93,7 @@ class SimgajiController extends Controller
                 $query->where('g.nip', $nip);
             }
             if ($kode_instansi) {
-                $query->where('s.kode_skpd', $kode_instansi);
+                $query->where('g.kdskpd', $kode_instansi);
             }
             return $query;
         };
