@@ -117,16 +117,23 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import api from '../api'
 
 const router = useRouter()
+const route = useRoute()
 const user = ref(JSON.parse(localStorage.getItem('user') || '{}'))
 
+// Re-sync user data whenever route changes (to catch login updates)
+watch(() => route.path, () => {
+  user.value = JSON.parse(localStorage.getItem('user') || '{}')
+})
+
 const userInitials = computed(() => {
-  if (!user.value.name) return 'U'
-  return user.value.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+  if (!user.value.name && !user.value.username) return 'U'
+  const nameToUse = user.value.name || user.value.username
+  return nameToUse.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
 })
 
 const passwordDialog = ref(false)
@@ -205,9 +212,22 @@ const menuItems = ref([
 ])
 
 const filteredMenuItems = computed(() => {
-  return menuItems.value.filter(item => {
-    if (!item.roles) return true
-    return item.roles.includes(user.value.role)
+  const filtered = menuItems.value.filter(item => {
+    if (item.divider || item.header) return true
+    if (user.value.role === 'superadmin') return true
+    if (item.roles && !item.roles.includes(user.value.role)) return false
+    if (user.value.app_access && Array.isArray(user.value.app_access)) {
+      return user.value.app_access.includes(item.value)
+    }
+    return false
+  })
+
+  return filtered.filter((item, index) => {
+    if (item.header || item.divider) {
+      const nextItem = filtered.slice(index + 1).find(i => !i.header && !i.divider)
+      return !!nextItem
+    }
+    return true
   })
 })
 </script>

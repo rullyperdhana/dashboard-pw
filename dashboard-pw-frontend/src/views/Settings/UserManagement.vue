@@ -111,8 +111,26 @@
                     item-value="id_skpd"
                     label="SKPD"
                     variant="outlined"
-                    :rules="[v => editedItem.role === 'superadmin' || !!v || 'SKPD wajib diisi untuk operator']"
+                    :rules="[v => editedItem.role === 'superadmin' || !!v || 'SKPD wajib diisi for operator']"
                   ></v-autocomplete>
+                </v-col>
+
+                <!-- Menu Access Selection -->
+                <v-col cols="12">
+                  <v-divider class="mb-4"></v-divider>
+                  <div class="text-subtitle-2 font-weight-bold mb-2">Hak Akses Menu</div>
+                  <v-row dense>
+                    <v-col v-for="module in availableModules" :key="module.value" cols="12" md="6">
+                      <v-checkbox
+                        v-model="editedItem.app_access"
+                        :label="module.title"
+                        :value="module.value"
+                        hide-details
+                        density="compact"
+                        color="primary"
+                      ></v-checkbox>
+                    </v-col>
+                  </v-row>
                 </v-col>
               </v-row>
             </v-form>
@@ -167,8 +185,28 @@ const loading = ref(false)
 const users = ref([])
 const skpdList = ref([])
 const search = ref('')
-const filterRole = ref('Semua Role')
 const roles = ['Semua Role', 'superadmin', 'operator']
+
+const availableModules = [
+  { title: 'Dashboard & Analitik', value: 'dashboard' },
+  { title: 'Pegawai PW', value: 'employees' },
+  { title: 'Data Gaji PNS', value: 'gaji-pns' },
+  { title: 'Data Gaji PPPK', value: 'gaji-pppk' },
+  { title: 'Instansi / SKPD', value: 'skpd' },
+  { title: 'SKPD Mapping', value: 'skpd-mapping' },
+  { title: 'Master Pegawai (DBF)', value: 'master-pegawai' },
+  { title: 'Payroll', value: 'payments' },
+  { title: 'Trace Gaji', value: 'employee-trace' },
+  { title: 'Upload TPP', value: 'tpp-upload' },
+  { title: 'THR PPPK-PW', value: 'pppk-pw-thr' },
+  { title: 'Rekon BPJS 4%', value: 'bpjs-rekon' },
+  { title: 'Laporan SKPD', value: 'skpd-monthly' },
+  { title: 'Upload TPG', value: 'tpg-upload' },
+  { title: 'Dashboard TPG', value: 'tpg-dashboard' },
+  { title: 'Posting Data', value: 'posting-data' },
+  { title: 'Sumber Dana SKPD', value: 'sumber-dana' },
+  { title: 'Referensi Satker', value: 'satker-setting' },
+]
 
 const headers = [
   { title: 'Nama', key: 'name', align: 'start' },
@@ -203,13 +241,15 @@ const editedItem = ref({
   password: '',
   role: 'operator',
   status: 'approved',
-  institution: null
+  institution: null,
+  app_access: []
 })
 
 const openDialog = (item = null) => {
   if (item) {
     editedIndex.value = users.value.indexOf(item)
     editedItem.value = JSON.parse(JSON.stringify(item))
+    if (!editedItem.value.app_access) editedItem.value.app_access = []
     editedItem.value.password = '' // Don't show hashed password
   } else {
     editedIndex.value = -1
@@ -220,7 +260,8 @@ const openDialog = (item = null) => {
       password: '',
       role: 'operator',
       status: 'approved',
-      institution: null
+      institution: null,
+      app_access: []
     }
   }
   dialog.value = true
