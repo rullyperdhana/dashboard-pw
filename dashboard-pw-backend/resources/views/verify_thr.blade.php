@@ -104,12 +104,12 @@
                 <div class="mt-4 p-3 bg-light rounded text-center">
                     <small class="text-muted">
                         Dokumen ini adalah salinan digital resmi yang dihasilkan oleh
-                        <strong>Sistem Payroll Dashboard PPPK</strong>.
+                        <strong>Sistem Payroll BPKAD Provinsi Kalimantan Selatan</strong>.
                     </small>
                 </div>
             </div>
             <div class="card-footer text-center py-3 bg-white border-0">
-                <p class="text-muted small mb-0">&copy; {{ date('Y') }} BPKAD Kab. Seruyan - Sistem Gaji Taspen</p>
+                <p class="text-muted small mb-0">&copy; {{ date('Y') }} BPKAD PROVINSI KALIMANTAN SELATAN</p>
             </div>
         </div>
     </div>
