@@ -94,14 +94,14 @@ class SimgajiController extends Controller
             }
             if ($kode_instansi) {
                 $query->where(function ($q) use ($kode_instansi) {
-                    // Cek di kdskpd (format 3 digit) atau kode_skpd (format panjang)
-                    $q->where('g.kdskpd', $kode_instansi)
-                        ->orWhere('s.kode_skpd', $kode_instansi);
+                    $val = trim($kode_instansi);
+                    $q->where('g.kdskpd', $val)
+                        ->orWhere('s.kdskpd', $val);
 
-                    // Handle padding nol di depan jika input angka satu/dua digit
-                    if (is_numeric($kode_instansi) && strlen($kode_instansi) < 3) {
-                        $padded = str_pad($kode_instansi, 3, '0', STR_PAD_LEFT);
-                        $q->orWhere('g.kdskpd', $padded);
+                    // Handle padding nol di depan jika input angka
+                    if (is_numeric($val)) {
+                        $q->orWhere('g.kdskpd', (int) $val)
+                            ->orWhere('g.kdskpd', str_pad($val, 3, '0', STR_PAD_LEFT));
                     }
                 });
             }
@@ -149,27 +149,28 @@ class SimgajiController extends Controller
             'g.pot_taperum',
             'g.total_potongan as jlh_potongan',
             'g.bersih as jlh_bersih',
+            's.nmskpd as nama_skpd'
         ];
 
-        // Query PNS - gaji_pns sebagai sumber utama, master_pegawai & skpd sebagai pelengkap
+        // Query PNS - Join dengan satkers untuk kode short (kdskpd)
         $queryPns = DB::table('gaji_pns as g')
-            ->leftJoin('master_pegawai as m', DB::raw('g.nip COLLATE utf8mb4_unicode_ci'), '=', DB::raw('m.nip COLLATE utf8mb4_unicode_ci'))
-            ->leftJoin('skpd as s', DB::raw('m.kdskpd COLLATE utf8mb4_unicode_ci'), '=', DB::raw('s.kode_skpd COLLATE utf8mb4_unicode_ci'))
+            ->leftJoin('master_pegawai as m', 'g.nip', '=', 'm.nip')
+            ->leftJoin('satkers as s', 'g.kdskpd', '=', 's.kdskpd')
             ->leftJoin('ref_jabatan_fungsional as rjf', 'm.kdfungsi', '=', 'rjf.kdfungsi')
             ->leftJoin('ref_eselon as re', 'm.kdeselon', '=', 're.kd_eselon')
             ->select(array_merge($selectColumns, [DB::raw("'1' as status_asn")]));
         $applyFilters($queryPns);
-        $pnsResults = $queryPns->get();
+        $pnsResults = $queryPns->distinct()->get();
 
-        // Query PPPK - gaji_pppk sebagai sumber utama, master_pegawai & skpd sebagai pelengkap
+        // Query PPPK - Join dengan satkers untuk kode short (kdskpd)
         $queryPpk = DB::table('gaji_pppk as g')
-            ->leftJoin('master_pegawai as m', DB::raw('g.nip COLLATE utf8mb4_unicode_ci'), '=', DB::raw('m.nip COLLATE utf8mb4_unicode_ci'))
-            ->leftJoin('skpd as s', DB::raw('m.kdskpd COLLATE utf8mb4_unicode_ci'), '=', DB::raw('s.kode_skpd COLLATE utf8mb4_unicode_ci'))
+            ->leftJoin('master_pegawai as m', 'g.nip', '=', 'm.nip')
+            ->leftJoin('satkers as s', 'g.kdskpd', '=', 's.kdskpd')
             ->leftJoin('ref_jabatan_fungsional as rjf', 'm.kdfungsi', '=', 'rjf.kdfungsi')
             ->leftJoin('ref_eselon as re', 'm.kdeselon', '=', 're.kd_eselon')
             ->select(array_merge($selectColumns, [DB::raw("'2' as status_asn")]));
         $applyFilters($queryPpk);
-        $ppkResults = $queryPpk->get();
+        $ppkResults = $queryPpk->distinct()->get();
 
         // Merge results
         $results = $pnsResults->merge($ppkResults);
