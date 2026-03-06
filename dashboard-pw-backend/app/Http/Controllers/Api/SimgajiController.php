@@ -93,7 +93,17 @@ class SimgajiController extends Controller
                 $query->where('g.nip', $nip);
             }
             if ($kode_instansi) {
-                $query->where('g.kdskpd', $kode_instansi);
+                $query->where(function ($q) use ($kode_instansi) {
+                    // Cek di kdskpd (format 3 digit) atau kode_skpd (format panjang)
+                    $q->where('g.kdskpd', $kode_instansi)
+                        ->orWhere('s.kode_skpd', $kode_instansi);
+
+                    // Handle padding nol di depan jika input angka satu/dua digit
+                    if (is_numeric($kode_instansi) && strlen($kode_instansi) < 3) {
+                        $padded = str_pad($kode_instansi, 3, '0', STR_PAD_LEFT);
+                        $q->orWhere('g.kdskpd', $padded);
+                    }
+                });
             }
             return $query;
         };
