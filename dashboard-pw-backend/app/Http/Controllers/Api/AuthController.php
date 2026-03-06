@@ -78,7 +78,7 @@ class AuthController extends Controller
         Cache::forget($request->captcha_key);
 
         // 3. Authenticate
-        $user = User::where('name', $request->username)
+        $user = User::where('username', $request->username)
             ->orWhere('email', $request->username)
             ->first();
 
