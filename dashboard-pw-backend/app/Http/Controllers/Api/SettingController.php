@@ -492,11 +492,26 @@ class SettingController extends Controller
             'params' => $validated
         ]);
 
-        \App\Models\AuditLog::log('clear_data', 'Hapus data gaji', [
-            'table_name' => $target === 'both' ? 'gaji_pns, gaji_pppk' : 'gaji_' . $target,
-            'new_values' => $results,
-            'old_values' => ['params' => $validated],
-        ]);
+        try {
+            \App\Models\AuditLog::log('clear_data', 'Hapus data gaji', [
+                'table_name' => $target === 'both' ? 'gaji_pns, gaji_pppk' : 'gaji_' . $target,
+                'new_values' => $results,
+                'old_values' => ['params' => $validated],
+            ]);
+        } catch (\Exception $e) {
+            // Fallback: if foreign key fails (e.g. user_id mismatch on VPS), log without user_id relation
+            DB::table('audit_logs')->insert([
+                'user_id' => null, // Set null to bypass FK
+                'username' => auth()->user()->username ?? 'system',
+                'action' => 'clear_data',
+                'description' => 'Hapus data gaji (FK Fallback)',
+                'table_name' => $target === 'both' ? 'gaji_pns, gaji_pppk' : 'gaji_' . $target,
+                'new_values' => json_encode($results),
+                'old_values' => json_encode(['params' => $validated]),
+                'ip_address' => request()->ip(),
+                'created_at' => now(),
+            ]);
+        }
 
         return response()->json([
             'success' => true,
