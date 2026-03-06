@@ -86,6 +86,15 @@ class ThrController extends Controller
         ]);
     }
 
+    public function verifyThr(Request $request)
+    {
+        return view('verify_thr', [
+            'total' => $request->total,
+            'period' => $request->period,
+            'date' => $request->date
+        ]);
+    }
+
     public function exportExcel(Request $request)
     {
         $year = $request->year ?? 2026;
@@ -145,8 +154,16 @@ class ThrController extends Controller
         $dataArray = json_decode(json_encode($data), true);
 
         $printDate = now()->format('d/m/Y H:i');
-        $qrData = 'PPPK Payroll Verification | Total: Rp ' . number_format($response->getData()->meta->total_thr_amount, 0, ',', '.') . ' | Period: ' . $thrMonthName . ' ' . $year . ' | Date: ' . $printDate;
-        $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=' . urlencode($qrData);
+        $totalFormatted = number_format($response->getData()->meta->total_thr_amount, 0, ',', '.');
+
+        // Generate Verification URL
+        $verifyUrl = "https://simgajitaspen.my.id/verify-thr?" . http_build_query([
+            'total' => $totalFormatted,
+            'period' => $thrMonthName . ' ' . $year,
+            'date' => $printDate
+        ]);
+
+        $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' . urlencode($verifyUrl);
 
         // Fetch QR code and convert to base64 for dompdf compatibility
         try {
