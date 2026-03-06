@@ -122,7 +122,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/settings/pppk-estimation-export', [SettingController::class, 'pppkEstimationExport']);
     Route::get('/settings/pns-estimation-export', [SettingController::class, 'pnsEstimationExport']);
     Route::get('/settings/pppk-pw-estimation-export', [SettingController::class, 'pppkPwEstimationExport']);
-    Route::post('/settings/clear-payroll', [SettingController::class, 'clearPayrollData']);
+    // Route::post('/settings/clear-payroll', [SettingController::class, 'clearPayrollData']); // Moved to superadmin group below
 
     // Payments
     Route::prefix('payments')->group(function () {
@@ -133,9 +133,22 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{id}/approve', [PaymentController::class, 'approve']);
     });
 
-    // User Management
-    Route::apiResource('users', UserController::class);
-    Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword']);
+    // User Management (Superadmin Only)
+    Route::middleware('role:superadmin')->group(function () {
+        Route::apiResource('users', UserController::class);
+        Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword']);
+
+        // Data Maintenance
+        Route::post('/settings/clear-payroll', [SettingController::class, 'clearPayrollData']);
+
+        // API Key Management
+        Route::prefix('api-keys')->group(function () {
+            Route::get('/', [App\Http\Controllers\Api\ApiKeyController::class, 'index']);
+            Route::post('/', [App\Http\Controllers\Api\ApiKeyController::class, 'store']);
+            Route::put('/{id}/toggle', [App\Http\Controllers\Api\ApiKeyController::class, 'toggleActive']);
+            Route::delete('/{id}', [App\Http\Controllers\Api\ApiKeyController::class, 'destroy']);
+        });
+    });
 
     // Upload Jobs (Queue-based)
     Route::post('/upload-jobs', [UploadJobController::class, 'store']);
@@ -170,13 +183,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pegawai/nip/{nip}', [MasterPegawaiController::class, 'showByNip']);
     });
 
-    // API Key Management
-    Route::prefix('api-keys')->group(function () {
-        Route::get('/', [App\Http\Controllers\Api\ApiKeyController::class, 'index']);
-        Route::post('/', [App\Http\Controllers\Api\ApiKeyController::class, 'store']);
-        Route::put('/{id}/toggle', [App\Http\Controllers\Api\ApiKeyController::class, 'toggleActive']);
-        Route::delete('/{id}', [App\Http\Controllers\Api\ApiKeyController::class, 'destroy']);
-    });
+    // Route::prefix('api-keys')->group(...) // Moved to superadmin group above
 });
 
 // Simgaji Integration API (protected by API Key)

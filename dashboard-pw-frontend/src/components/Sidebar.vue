@@ -13,7 +13,7 @@
     <v-divider class="mx-4 mb-4 border-opacity-10"></v-divider>
 
     <v-list nav class="px-3">
-      <template v-for="(item, i) in menuItems" :key="i">
+      <template v-for="(item, i) in filteredMenuItems" :key="i">
         <v-divider v-if="item.divider" class="my-4 mx-1 border-opacity-10"></v-divider>
         
         <v-list-subheader v-else-if="item.header" class="text-uppercase text-caption font-weight-bold mb-1 mt-2 text-disabled">
@@ -199,10 +199,17 @@ const menuItems = ref([
   { title: 'Posting Data', icon: 'mdi-lock-check-outline', value: 'posting-data', to: '/posting-data' },
   { title: 'Sumber Dana SKPD', icon: 'mdi-cash-multiple', value: 'sumber-dana', to: '/settings/sumber-dana' },
   { title: 'Referensi Satker', icon: 'mdi-office-building-cog', value: 'satker-setting', to: '/settings/satker' },
-  { title: 'Pemeliharaan Data', icon: 'mdi-database-wrench', value: 'data-maintenance', to: '/settings/maintenance' },
-  { title: 'Manajemen User', icon: 'mdi-account-group-outline', value: 'users', to: '/settings/users' },
-  { title: 'API Keys', icon: 'mdi-key-chain', value: 'api-keys', to: '/settings/api-keys' },
+  { title: 'Pemeliharaan Data', icon: 'mdi-database-wrench', value: 'data-maintenance', to: '/settings/maintenance', roles: ['superadmin'] },
+  { title: 'Manajemen User', icon: 'mdi-account-group-outline', value: 'users', to: '/settings/users', roles: ['superadmin'] },
+  { title: 'API Keys', icon: 'mdi-key-chain', value: 'api-keys', to: '/settings/api-keys', roles: ['superadmin'] },
 ])
+
+const filteredMenuItems = computed(() => {
+  return menuItems.value.filter(item => {
+    if (!item.roles) return true
+    return item.roles.includes(user.value.role)
+  })
+})
 </script>
 
 <style scoped>
