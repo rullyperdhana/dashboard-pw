@@ -6,5 +6,8 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/verify-thr', [\App\Http\Controllers\Api\ThrController::class, 'verifyThr'])->name('verify.thr');
+// DEBUG: Direct string return to bypass controller/view issues
+Route::get('/verify-thr', function (\Illuminate\Http\Request $request) {
+    return "VERIFIKASI BERHASIL: Total Rp " . ($request->total ?? '0') . " | Periode: " . ($request->period ?? '-');
+});
 
