@@ -126,12 +126,13 @@
                     </div>
                 </td>
                 <td style="border: none; width: 40%; text-align: right;">
-                    <div
-                        style="display: inline-block; text-align: center; border: 1px solid #ddd; padding: 5px; background: white;">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ urlencode('PPPK Payroll Verification | Total: Rp ' . number_format($totalAmount, 0, ',', '.') . ' | Period: ' . $thrMonthName . ' ' . $year . ' | Date: ' . $printDate) }}"
-                            alt="QR Code Verification" width="100" height="100">
-                        <div style="font-size: 8px; margin-top: 5px;">VERIFIKASI SISTEM</div>
-                    </div>
+                    @if(isset($qrCode))
+                        <div
+                            style="display: inline-block; text-align: center; border: 1px solid #ddd; padding: 5px; background: white;">
+                            <img src="{{ $qrCode }}" alt="QR Code Verification" width="100" height="100">
+                            <div style="font-size: 8px; margin-top: 5px;">VERIFIKASI SISTEM</div>
+                        </div>
+                    @endif
                 </td>
             </tr>
         </table>

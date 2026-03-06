@@ -144,13 +144,25 @@ class ThrController extends Controller
         $data = $response->getData()->data;
         $dataArray = json_decode(json_encode($data), true);
 
+        $printDate = now()->format('d/m/Y H:i');
+        $qrData = 'PPPK Payroll Verification | Total: Rp ' . number_format($response->getData()->meta->total_thr_amount, 0, ',', '.') . ' | Period: ' . $thrMonthName . ' ' . $year . ' | Date: ' . $printDate;
+        $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=' . urlencode($qrData);
+
+        // Fetch QR code and convert to base64 for dompdf compatibility
+        try {
+            $qrCodeBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($qrUrl));
+        } catch (\Exception $e) {
+            $qrCodeBase64 = null;
+        }
+
         $pdf = Pdf::loadView('reports.thr_pppk_pw', [
             'data' => $dataArray,
             'year' => $year,
             'nMonths' => $nMonths,
             'thrMonthName' => $thrMonthName,
             'totalAmount' => $response->getData()->meta->total_thr_amount,
-            'printDate' => now()->format('d/m/Y H:i')
+            'printDate' => $printDate,
+            'qrCode' => $qrCodeBase64
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download("THR_PPPK_PW_{$year}_{$thrMonth}.pdf");
