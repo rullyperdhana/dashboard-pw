@@ -114,6 +114,7 @@ class AuthController extends Controller
                     'role' => $user->role,
                     'skpd_id' => $user->institution,
                     'skpd' => $user->skpd,
+                    'app_access' => $user->app_access,
                 ],
                 'token' => $token,
             ],

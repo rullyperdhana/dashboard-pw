@@ -354,6 +354,17 @@ const save = async () => {
       await api.post('/users', editedItem.value)
     }
     await fetchUsers()
+    
+    // If editing own profile, update local session
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
+    if (editedItem.value.id === currentUser.id) {
+      // Merge changes into current user session
+      const updatedUser = { ...currentUser, ...editedItem.value }
+      localStorage.setItem('user', JSON.stringify(updatedUser))
+      // Force refreshing the user state if broadcast channel or global state exists
+      // For now, Sidebar.vue has a route watcher that will catch this on next navigation
+    }
+
     closeDialog()
   } catch (error) {
     console.error('Error saving user:', error)
