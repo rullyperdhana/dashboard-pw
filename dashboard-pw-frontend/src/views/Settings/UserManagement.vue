@@ -118,19 +118,38 @@
                 <!-- Menu Access Selection -->
                 <v-col cols="12">
                   <v-divider class="mb-4"></v-divider>
-                  <div class="text-subtitle-2 font-weight-bold mb-2">Hak Akses Menu</div>
-                  <v-row dense>
-                    <v-col v-for="module in availableModules" :key="module.value" cols="12" md="6">
+                  <div class="text-subtitle-1 font-weight-bold mb-4">Hak Akses Menu</div>
+                  
+                  <div v-for="group in moduleGroups" :key="group.name" class="mb-6">
+                    <div class="d-flex align-center bg-grey-lighten-4 pa-2 rounded-lg mb-2">
                       <v-checkbox
-                        v-model="editedItem.app_access"
-                        :label="module.title"
-                        :value="module.value"
+                        :model-value="isGroupSelected(group.items)"
+                        :indeterminate="isGroupPartial(group.items)"
+                        @click.stop="toggleGroup(group.items, $event)"
                         hide-details
                         density="compact"
                         color="primary"
-                      ></v-checkbox>
-                    </v-col>
-                  </v-row>
+                        class="mt-0 pt-0"
+                      >
+                        <template v-slot:label>
+                           <span class="text-subtitle-2 font-weight-bold text-primary">{{ group.name }}</span>
+                        </template>
+                      </v-checkbox>
+                    </div>
+                    
+                    <v-row dense class="px-2">
+                      <v-col v-for="module in group.items" :key="module.value" cols="12" md="6">
+                        <v-checkbox
+                          v-model="editedItem.app_access"
+                          :label="module.title"
+                          :value="module.value"
+                          hide-details
+                          density="compact"
+                          color="primary"
+                        ></v-checkbox>
+                      </v-col>
+                    </v-row>
+                  </div>
                 </v-col>
               </v-row>
             </v-form>
@@ -188,26 +207,79 @@ const search = ref('')
 const filterRole = ref('Semua Role')
 const roles = ['Semua Role', 'superadmin', 'operator']
 
-const availableModules = [
-  { title: 'Dashboard & Analitik', value: 'dashboard' },
-  { title: 'Pegawai PW', value: 'employees' },
-  { title: 'Data Gaji PNS', value: 'gaji-pns' },
-  { title: 'Data Gaji PPPK', value: 'gaji-pppk' },
-  { title: 'Instansi / SKPD', value: 'skpd' },
-  { title: 'SKPD Mapping', value: 'skpd-mapping' },
-  { title: 'Master Pegawai (DBF)', value: 'master-pegawai' },
-  { title: 'Payroll', value: 'payments' },
-  { title: 'Trace Gaji', value: 'employee-trace' },
-  { title: 'Upload TPP', value: 'tpp-upload' },
-  { title: 'THR PPPK-PW', value: 'pppk-pw-thr' },
-  { title: 'Rekon BPJS 4%', value: 'bpjs-rekon' },
-  { title: 'Laporan SKPD', value: 'skpd-monthly' },
-  { title: 'Upload TPG', value: 'tpg-upload' },
-  { title: 'Dashboard TPG', value: 'tpg-dashboard' },
-  { title: 'Posting Data', value: 'posting-data' },
-  { title: 'Sumber Dana SKPD', value: 'sumber-dana' },
-  { title: 'Referensi Satker', value: 'satker-setting' },
+const moduleGroups = [
+  {
+    name: 'Dashboard & Analitik',
+    items: [
+      { title: 'Dashboard PPPK-PW', value: 'dashboard' },
+      { title: 'Dashboard PNS', value: 'pns' },
+      { title: 'Estimasi JKK/JKM/JKN', value: 'pppk-settings' },
+    ]
+  },
+  {
+    name: 'Data Master',
+    items: [
+      { title: 'Pegawai PW', value: 'employees' },
+      { title: 'Data Gaji PNS', value: 'gaji-pns' },
+      { title: 'Data Gaji PPPK', value: 'gaji-pppk' },
+      { title: 'Instansi / SKPD', value: 'skpd' },
+      { title: 'SKPD Mapping', value: 'skpd-mapping' },
+      { title: 'Master Pegawai (DBF)', value: 'master-pegawai' },
+    ]
+  },
+  {
+    name: 'Keuangan',
+    items: [
+      { title: 'Payroll', value: 'payments' },
+      { title: 'Trace Gaji', value: 'employee-trace' },
+      { title: 'Upload TPP', value: 'tpp-upload' },
+      { title: 'THR PPPK-PW', value: 'pppk-pw-thr' },
+      { title: 'Rekon BPJS 4%', value: 'bpjs-rekon' },
+      { title: 'Laporan SKPD', value: 'skpd-monthly' },
+    ]
+  },
+  {
+    name: 'TPG (Tunjangan Profesi Guru)',
+    items: [
+      { title: 'Upload TPG', value: 'tpg-upload' },
+      { title: 'Dashboard TPG', value: 'tpg-dashboard' },
+    ]
+  },
+  {
+    name: 'Pengaturan',
+    items: [
+      { title: 'Posting Data', value: 'posting-data' },
+      { title: 'Sumber Dana SKPD', value: 'sumber-dana' },
+      { title: 'Referensi Satker', value: 'satker-setting' },
+      { title: 'Pemeliharaan Data', value: 'data-maintenance' },
+      { title: 'Manajemen User', value: 'users' },
+      { title: 'API Keys', value: 'api-keys' },
+    ]
+  }
 ]
+
+const toggleGroup = (groupItems, event) => {
+  const isChecked = event.target.checked || event.target.parentElement?.getAttribute('aria-checked') === 'true'
+  const values = groupItems.map(i => i.value)
+  
+  if (isGroupSelected(groupItems)) {
+    // Unselect all in this group
+    editedItem.value.app_access = editedItem.value.app_access.filter(val => !values.includes(val))
+  } else {
+    // Select all in this group
+    const newAccess = new Set([...editedItem.value.app_access, ...values])
+    editedItem.value.app_access = Array.from(newAccess)
+  }
+}
+
+const isGroupSelected = (groupItems) => {
+  return groupItems.every(i => editedItem.value.app_access.includes(i.value))
+}
+
+const isGroupPartial = (groupItems) => {
+  const selectedCount = groupItems.filter(i => editedItem.value.app_access.includes(i.value)).length
+  return selectedCount > 0 && selectedCount < groupItems.length
+}
 
 const headers = [
   { title: 'Nama', key: 'name', align: 'start' },
