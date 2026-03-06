@@ -10,13 +10,25 @@ class SimgajiController extends Controller
 {
     public function listInstansi(Request $request)
     {
-        $query = DB::table('skpd')->select('kode_skpd as kode_instansi', 'nama_skpd as nama_instansi');
+        // Get unique kdskpd from both salary tables
+        $pnsSkpd = DB::table('gaji_pns')->select('kdskpd')->distinct();
+        $ppkSkpd = DB::table('gaji_pppk')->select('kdskpd')->distinct();
+
+        $activeSkpdCodes = $pnsSkpd->union($ppkSkpd);
+
+        // Join with satkers to get names
+        $query = DB::table('satkers as s')
+            ->joinSub($activeSkpdCodes, 'active_skpd', function ($join) {
+                $join->on('s.kdskpd', '=', 'active_skpd.kdskpd');
+            })
+            ->select('s.kdskpd as kode_instansi', 's.nmskpd as nama_instansi')
+            ->distinct();
 
         if ($request->has('kode_instansi')) {
-            $query->where('kode_skpd', $request->kode_instansi);
+            $query->where('s.kdskpd', $request->kode_instansi);
         }
 
-        $data = $query->get();
+        $data = $query->orderBy('s.nmskpd')->get();
 
         return response()->json([
             'status' => true,
