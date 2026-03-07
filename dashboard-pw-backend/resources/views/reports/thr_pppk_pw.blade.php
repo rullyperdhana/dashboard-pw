@@ -144,62 +144,53 @@
                                 </tr>
                             </tbody>
                         </table>
+
+                        {{-- Signature and System Verification per Sub-Activity --}}
+                        <div style="page-break-inside: avoid; margin-top: 20px;">
+                            <table style="border: none; margin-top: 0; margin-bottom: 20px;">
+                                <tr style="border: none; background: none;">
+                                    <td style="border: none; width: 50%; text-align: center; padding: 0;">
+                                        <p style="margin-bottom: 50px; font-weight: bold;">
+                                            Mengetahui/Menyetujui,<br>
+                                            {{ $reportSettings->jabatan_kepala ?? 'Pengguna Anggaran' }}
+                                        </p>
+                                        <p style="margin-bottom: 0;">
+                                            <span
+                                                style="text-decoration: underline; font-weight: bold;">{{ $reportSettings->nama_kepala ?? '..................................' }}</span><br>
+                                            NIP. {{ $reportSettings->nip_kepala ?? '..................................' }}
+                                        </p>
+                                    </td>
+                                    <td style="border: none; width: 50%;"></td>
+                                </tr>
+                            </table>
+
+                            <table style="border: none;">
+                                <tr style="border: none;">
+                                    <td style="border: none; width: 60%; vertical-align: bottom;">
+                                        <div class="footer" style="font-size: 10px; color: #555;">
+                                            <strong>KEABSAHAN DOKUMEN:</strong><br>
+                                            Dokumen ini dihasilkan secara otomatis oleh Sistem PPPK Payroll Dashboard.<br>
+                                            Keaslian dokumen dapat diverifikasi melalui kode QR di samping.<br>
+                                            Dicetak pada: {{ $printDate }}
+                                        </div>
+                                    </td>
+                                    <td style="border: none; width: 40%; text-align: right;">
+                                        @if(isset($qrCode))
+                                            <div
+                                                style="display: inline-block; text-align: center; border: 1px solid #ddd; padding: 5px; background: white;">
+                                                <img src="{{ $qrCode }}" alt="QR Code Verification" width="80" height="80">
+                                                <div style="font-size: 8px; margin-top: 5px;">VERIFIKASI SISTEM</div>
+                                            </div>
+                                        @endif
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
                     </div>
+                    <div style="page-break-after: always;"></div>
                 @endforeach
             </div>
         @endforeach
-
-        {{-- Wrap Total, Signature, and System Verification into one non-breaking block --}}
-        <div style="page-break-inside: avoid; margin-top: 20px;">
-            <div style="border: 2px solid #000; padding: 10px; background-color: #f9f9f9; margin-bottom: 30px;">
-                <table style="margin-top: 0; border: none;">
-                    <tr style="border: none; background: none;">
-                        <td style="border: none; font-size: 14px; font-weight: bold;">TOTAL KESELURUHAN THR</td>
-                        <td style="border: none; font-size: 14px; font-weight: bold;" class="text-right">
-                            Rp {{ number_format($totalAmount, 0, ',', '.') }}
-                        </td>
-                    </tr>
-                </table>
-            </div>
-
-            <table style="border: none; margin-top: 0; margin-bottom: 40px;">
-                <tr style="border: none; background: none;">
-                    <td style="border: none; width: 50%; text-align: center; padding: 0;">
-                        <p style="margin-bottom: 60px; font-weight: bold;">
-                            Mengetahui/Menyetujui,<br>
-                            {{ $reportSettings->jabatan_kepala ?? 'Pengguna Anggaran' }}
-                        </p>
-                        <p style="margin-bottom: 0;">
-                            <span
-                                style="text-decoration: underline; font-weight: bold;">{{ $reportSettings->nama_kepala ?? '..................................' }}</span><br>
-                            NIP. {{ $reportSettings->nip_kepala ?? '..................................' }}
-                        </p>
-                    </td>
-                    <td style="border: none; width: 50%;"></td>
-                </tr>
-            </table>
-
-            <table style="border: none;">
-                <tr style="border: none;">
-                    <td style="border: none; width: 60%; vertical-align: bottom;">
-                        <div class="footer" style="font-size: 10px; color: #555;">
-                            <strong>KEABSAHAN DOKUMEN:</strong><br>
-                            Dokumen ini dihasilkan secara otomatis oleh Sistem PPPK Payroll Dashboard.<br>
-                            Keaslian dokumen dapat diverifikasi melalui kode QR di samping.<br>
-                            Dicetak pada: {{ $printDate }}
-                        </div>
-                    </td>
-                    <td style="border: none; width: 40%; text-align: right;">
-                        @if(isset($qrCode))
-                            <div
-                                style="display: inline-block; text-align: center; border: 1px solid #ddd; padding: 5px; background: white;">
-                                <img src="{{ $qrCode }}" alt="QR Code Verification" width="100" height="100">
-                                <div style="font-size: 8px; margin-top: 5px;">VERIFIKASI SISTEM</div>
-                            </div>
-                        @endif
-                    </td>
-                </tr>
-            </table>
     </main>
 </body>
 
