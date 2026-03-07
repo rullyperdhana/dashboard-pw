@@ -187,6 +187,15 @@ class ThrController extends Controller
         }
         $reportSettings = $querySettings->first() ?: DB::table('report_settings')->first();
 
+        // Ensure reportSettings is never null to avoid 500 error in view
+        if (!$reportSettings) {
+            $reportSettings = (object) [
+                'nama_kepala' => null,
+                'nip_kepala' => null,
+                'jabatan_kepala' => null
+            ];
+        }
+
         // Fetch QR code and convert to base64 for dompdf compatibility
         try {
             $qrCodeBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($qrUrl));

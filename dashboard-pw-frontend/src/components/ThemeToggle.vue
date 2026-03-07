@@ -20,14 +20,23 @@ import { onMounted } from 'vue'
 const theme = useTheme()
 
 const toggleTheme = () => {
-  theme.global.name.value = theme.global.name.value === 'dark' ? 'light' : 'dark'
-  localStorage.setItem('theme', theme.global.name.value)
+  const newTheme = theme.global.name.value === 'dark' ? 'light' : 'dark'
+  if (typeof theme.change === 'function') {
+    theme.change(newTheme)
+  } else {
+    theme.global.name.value = newTheme
+  }
+  localStorage.setItem('theme', newTheme)
 }
 
 onMounted(() => {
   const savedTheme = localStorage.getItem('theme')
   if (savedTheme) {
-    theme.global.name.value = savedTheme
+    if (typeof theme.change === 'function') {
+      theme.change(savedTheme)
+    } else {
+      theme.global.name.value = savedTheme
+    }
   }
 })
 </script>
