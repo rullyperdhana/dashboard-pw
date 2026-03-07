@@ -214,6 +214,11 @@ class ThrController extends Controller
             'reportSettings' => $reportSettings
         ])->setPaper('a4', 'landscape')->setOption('isPhpEnabled', true);
 
+        // Standard DOMPDF way to add Page X of Y on every page
+        $canvas = $pdf->getCanvas();
+        $font = $pdf->getDomPDF()->getFontMetrics()->get_font("sans-serif", "normal");
+        $canvas->page_text(380, 565, "Halaman {PAGE_NUM} dari {PAGE_COUNT}", $font, 10, array(0.46, 0.46, 0.46));
+
         return $pdf->download("THR_PPPK_PW_{$year}_{$thrMonth}.pdf");
     }
 }

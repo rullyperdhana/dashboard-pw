@@ -81,10 +81,6 @@
             font-weight: bold;
             background-color: #eee;
         }
-
-        .page-number:after {
-            content: "Halaman " counter(page) " dari " counter(pages);
-        }
     </style>
 </head>
 
@@ -96,10 +92,6 @@
         <p style="margin:5px 0 0 0; padding:0; font-size: 10px;">Dasar Perhitungan: Gaji Pokok Pebruari
             ({{ $nMonths }}/12)</p>
     </header>
-
-    <footer>
-        <span class="page-number"></span>
-    </footer>
 
     <main>
 
