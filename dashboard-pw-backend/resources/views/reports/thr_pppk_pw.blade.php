@@ -56,6 +56,25 @@
             font-weight: bold;
             background-color: #eee;
         }
+
+        .page-number:after {
+            content: counter(page);
+        }
+
+        .page-count:after {
+            content: counter(pages);
+        }
+
+        .pdf-footer {
+            position: fixed;
+            bottom: -20px;
+            left: 0px;
+            right: 0px;
+            height: 20px;
+            font-size: 10px;
+            text-align: center;
+            color: #777;
+        }
     </style>
 </head>
 
@@ -111,27 +130,6 @@
             @endforeach
         </div>
     @endforeach
-
-    <style>
-        .page-number:after {
-            content: counter(page);
-        }
-
-        .page-count:after {
-            content: counter(pages);
-        }
-
-        .pdf-footer {
-            position: fixed;
-            bottom: -20px;
-            left: 0p;
-            right: 0px;
-            height: 20px;
-            font-size: 10px;
-            text-align: center;
-            color: #777;
-        }
-    </style>
 
     <div class="pdf-footer">
         Halaman <span class="page-number"></span> dari <span class="page-count"></span>
