@@ -210,6 +210,7 @@ class ThrController extends Controller
             'thrMonthName' => $thrMonthName,
             'totalAmount' => $response->getData()->meta->total_thr_amount,
             'printDate' => $printDate,
+            'qrCode' => $qrCodeBase64,
             'reportSettings' => $reportSettings
         ])->setPaper('a4', 'landscape')->setOption('isPhpEnabled', true);
 
