@@ -128,47 +128,47 @@
         </table>
     </div>
 
-    <div style="margin-top: 50px; page-break-inside: avoid;">
+    <div style="page-break-inside: avoid; margin-top: 50px;">
         <table style="border: none; margin-top: 0;">
             <tr style="border: none; background: none;">
                 <td style="border: none; width: 50%; text-align: center; padding: 0;">
                     <p style="margin-bottom: 60px; font-weight: bold;">
                         Mengetahui/Menyetujui,<br>
-                        Pengguna Anggaran/ Kuasa Pengguna Anggaran
+                        {{ $reportSettings->jabatan_kepala ?? 'Pengguna Anggaran' }}<br>
+                        {{ $data[0]['skpd_name'] ?? '' }}
                     </p>
                     <p style="margin-bottom: 0;">
                         <span
                             style="text-decoration: underline; font-weight: bold;">{{ $reportSettings->nama_kepala ?? '..................................' }}</span><br>
-                        NIP. {{ $reportSettings->nip_kepala ?? '..................................' }}<br>
-                        {{ $reportSettings->jabatan_kepala ?? '' }}
+                        NIP. {{ $reportSettings->nip_kepala ?? '..................................' }}
                     </p>
                 </td>
                 <td style="border: none; width: 50%;"></td>
             </tr>
         </table>
-    </div>
 
-    <div style="margin-top: 40px;">
-        <table style="border: none;">
-            <tr style="border: none;">
-                <td style="border: none; width: 60%; vertical-align: bottom;">
-                    <div class="footer">
-                        Dokumen ini dihasilkan secara otomatis oleh Sistem PPPK Payroll Dashboard.<br>
-                        Keaslian dokumen dapat diverifikasi melalui kode QR di samping.<br>
-                        Dicetak pada: {{ $printDate }}
-                    </div>
-                </td>
-                <td style="border: none; width: 40%; text-align: right;">
-                    @if(isset($qrCode))
-                        <div
-                            style="display: inline-block; text-align: center; border: 1px solid #ddd; padding: 5px; background: white;">
-                            <img src="{{ $qrCode }}" alt="QR Code Verification" width="100" height="100">
-                            <div style="font-size: 8px; margin-top: 5px;">VERIFIKASI SISTEM</div>
+        <div style="margin-top: 40px;">
+            <table style="border: none;">
+                <tr style="border: none;">
+                    <td style="border: none; width: 60%; vertical-align: bottom;">
+                        <div class="footer">
+                            Dokumen ini dihasilkan secara otomatis oleh Sistem PPPK Payroll Dashboard.<br>
+                            Keaslian dokumen dapat diverifikasi melalui kode QR di samping.<br>
+                            Dicetak pada: {{ $printDate }}
                         </div>
-                    @endif
-                </td>
-            </tr>
-        </table>
+                    </td>
+                    <td style="border: none; width: 40%; text-align: right;">
+                        @if(isset($qrCode))
+                            <div
+                                style="display: inline-block; text-align: center; border: 1px solid #ddd; padding: 5px; background: white;">
+                                <img src="{{ $qrCode }}" alt="QR Code Verification" width="100" height="100">
+                                <div style="font-size: 8px; margin-top: 5px;">VERIFIKASI SISTEM</div>
+                            </div>
+                        @endif
+                    </td>
+                </tr>
+            </table>
+        </div>
     </div>
 </body>
 

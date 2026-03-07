@@ -179,8 +179,13 @@ class ThrController extends Controller
 
         $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' . urlencode($verifyUrl);
 
-        // Fetch Signature Data from report_settings
-        $reportSettings = DB::table('report_settings')->first();
+        // Fetch Signature Data from report_settings linked to user's SKPD
+        $user = auth()->user();
+        $querySettings = DB::table('report_settings');
+        if ($user && !empty($user->institution)) {
+            $querySettings->where('skpdid', $user->institution);
+        }
+        $reportSettings = $querySettings->first() ?: DB::table('report_settings')->first();
 
         // Fetch QR code and convert to base64 for dompdf compatibility
         try {
