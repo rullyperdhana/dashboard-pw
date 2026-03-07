@@ -35,6 +35,7 @@ Route::get('/captcha', [AuthController::class, 'getCaptcha']);
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::get('/settings/pppk-pw-estimation', [SettingController::class, 'pppkPwEstimation']);
 Route::get('/verify-thr', [ThrController::class, 'verifyThr']);
+Route::get('/verify-payment', [PaymentController::class, 'verifyPayment']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {

@@ -156,7 +156,7 @@ const headers = [
   { title: 'Nama Pegawai', key: 'nama', align: 'start', sortable: true },
   { title: 'NIP', key: 'nip', align: 'start' },
   { title: 'Jabatan', key: 'jabatan', align: 'start' },
-  { title: 'SKPD', key: 'skpd', align: 'start' },
+  { title: 'Sub Kegiatan', key: 'sub_giat', align: 'start' },
   { title: 'Gapok (Basis)', key: 'gapok_basis', align: 'end' },
   { title: 'Masa Kerja', key: 'n_months', align: 'center' },
   { title: 'Besaran THR', key: 'thr_amount', align: 'end' },
@@ -169,13 +169,16 @@ const fetchData = async () => {
       params: { month: selectedMonth.value }
     })
     
-    // Flatten the grouped data for the simple table view
+    // Flatten the nested grouped data (SKPD -> Sub Giat -> Employees)
     const allEmployees = []
-    response.data.data.forEach(group => {
-      group.employees.forEach(emp => {
-        allEmployees.push({
-          ...emp,
-          skpd: group.skpd_name
+    response.data.data.forEach(skpdGroup => {
+      skpdGroup.sub_giat_groups.forEach(subGiat => {
+        subGiat.employees.forEach(emp => {
+          allEmployees.push({
+            ...emp,
+            skpd: skpdGroup.skpd_name,
+            sub_giat: subGiat.sub_giat_name
+          })
         })
       })
     })

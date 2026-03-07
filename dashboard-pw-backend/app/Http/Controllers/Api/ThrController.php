@@ -26,9 +26,10 @@ class ThrController extends Controller
 
         $user = auth()->user();
 
-        // Query tb_payment and tb_payment_detail for month 2, joined with pegawai_pw
+        // Query tb_payment and tb_payment_detail for month 2, joined with pegawai_pw and rka_settings
         $query = DB::table('tb_payment_detail as pd')
             ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
+            ->join('rka_settings as rs', 'p.rka_id', '=', 'rs.id')
             ->join('pegawai_pw as e', 'pd.employee_id', '=', 'e.id')
             ->leftJoin('skpd as s', 'e.idskpd', '=', 's.id_skpd')
             ->where('p.month', 2)
@@ -44,31 +45,44 @@ class ThrController extends Controller
             'e.nama',
             'e.jabatan',
             'pd.gaji_pokok as gapok_basis',
-            DB::raw('COALESCE(s.nama_skpd, e.skpd) as skpd_name')
+            DB::raw('COALESCE(s.nama_skpd, e.skpd) as skpd_name'),
+            'rs.kode_sub_giat',
+            'rs.nama_sub_giat'
         )
             ->orderBy('skpd_name')
+            ->orderBy('rs.kode_sub_giat')
             ->orderBy('e.nama')
             ->get();
 
-        $grouped = $employees->groupBy('skpd_name')->map(function ($items, $skpdName) use ($nMonths) {
-            $mappedItems = $items->map(function ($emp) use ($nMonths) {
-                // Ensure gapok is treated as float from payment detail
-                $gapok = (float) $emp->gapok_basis;
+        $grouped = $employees->groupBy('skpd_name')->map(function ($skpdItems, $skpdName) use ($nMonths) {
+            $subGiatGroups = $skpdItems->groupBy(function ($item) {
+                return '[' . $item->kode_sub_giat . '] ' . $item->nama_sub_giat;
+            })->map(function ($subGiatItems, $subGiatName) use ($nMonths) {
+                $mappedEmployees = $subGiatItems->map(function ($emp) use ($nMonths) {
+                    $gapok = (float) $emp->gapok_basis;
+                    return [
+                        'nip' => $emp->nip,
+                        'nama' => $emp->nama,
+                        'jabatan' => $emp->jabatan,
+                        'gapok_basis' => $gapok,
+                        'n_months' => $nMonths,
+                        'thr_amount' => round($gapok * ($nMonths / 12))
+                    ];
+                });
+
                 return [
-                    'nip' => $emp->nip,
-                    'nama' => $emp->nama,
-                    'jabatan' => $emp->jabatan,
-                    'gapok_basis' => $gapok,
-                    'n_months' => $nMonths,
-                    'thr_amount' => round($gapok * ($nMonths / 12))
+                    'sub_giat_name' => $subGiatName,
+                    'employees' => $mappedEmployees,
+                    'subtotal_thr' => $mappedEmployees->sum('thr_amount'),
+                    'employee_count' => $mappedEmployees->count()
                 ];
-            });
+            })->values();
 
             return [
                 'skpd_name' => $skpdName,
-                'employees' => $mappedItems,
-                'subtotal_thr' => $mappedItems->sum('thr_amount'),
-                'employee_count' => $mappedItems->count()
+                'sub_giat_groups' => $subGiatGroups,
+                'total_employees_skpd' => $skpdItems->count(),
+                'total_thr_skpd' => $subGiatGroups->sum('subtotal_thr')
             ];
         })->values();
 
@@ -81,7 +95,7 @@ class ThrController extends Controller
                 'n_months' => (int) $nMonths,
                 'calculation_basis' => 'Gaji Pokok Pebruari',
                 'total_employees' => $employees->count(),
-                'total_thr_amount' => $grouped->sum('subtotal_thr')
+                'total_thr_amount' => $grouped->sum('total_thr_skpd')
             ]
         ]);
     }

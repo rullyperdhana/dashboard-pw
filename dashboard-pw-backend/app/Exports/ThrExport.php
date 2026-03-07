@@ -47,36 +47,54 @@ class ThrExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
         $rows = [];
         $grandTotal = 0;
 
-        foreach ($this->data as $group) {
-            // Group Header
-            $rows[] = ['SKPD: ' . $group['skpd_name'], '', '', '', '', '', ''];
+        foreach ($this->data as $skpd) {
+            // Level 1: SKPD Header
+            $rows[] = ['SKPD: ' . $skpd['skpd_name'], '', '', '', '', '', ''];
 
-            $no = 1;
-            foreach ($group['employees'] as $item) {
+            foreach ($skpd['sub_giat_groups'] as $subGiat) {
+                // Level 2: Sub Kegiatan Header
+                $rows[] = ['', 'Sub Kegiatan: ' . $subGiat['sub_giat_name'], '', '', '', '', ''];
+
+                $no = 1;
+                foreach ($subGiat['employees'] as $item) {
+                    $rows[] = [
+                        $no++,
+                        "'" . ($item['nip'] ?? ''),
+                        $item['nama'] ?? '',
+                        $item['jabatan'] ?? '',
+                        $item['gapok_basis'] ?? 0,
+                        $item['n_months'] ?? 0,
+                        $item['thr_amount'] ?? 0,
+                    ];
+                }
+
+                // Subtotal Sub Kegiatan
                 $rows[] = [
-                    $no++,
-                    "'" . ($item['nip'] ?? ''),
-                    $item['nama'] ?? '',
-                    $item['jabatan'] ?? '',
-                    $item['gapok_basis'] ?? 0,
-                    $item['n_months'] ?? 0,
-                    $item['thr_amount'] ?? 0,
+                    '',
+                    'SUBTOTAL SUB KEGIATAN',
+                    '',
+                    '',
+                    '',
+                    '',
+                    $subGiat['subtotal_thr']
                 ];
+                $rows[] = ['']; // Spacer
             }
 
-            // Subtotal row
+            // Total SKPD
             $rows[] = [
-                'SUBTOTAL',
+                'TOTAL SKPD: ' . $skpd['skpd_name'],
                 '',
                 '',
                 '',
                 '',
                 '',
-                $group['subtotal_thr']
+                $skpd['total_thr_skpd']
             ];
-            $rows[] = ['']; // Spacer
+            $rows[] = ['']; // Big Spacer
+            $rows[] = [''];
 
-            $grandTotal += $group['subtotal_thr'];
+            $grandTotal += $skpd['total_thr_skpd'];
         }
 
         // Grand Total row

@@ -29,6 +29,7 @@ class PaymentController extends Controller
 
             // We need to load details filtered by SKPD to recalculate totals
             $query->with([
+                'rkaSetting.pptkSetting.skpd',
                 'details' => function ($q) use ($user) {
                     $q->whereHas('employee', function ($eq) use ($user) {
                         $eq->where('idskpd', $user->institution);
@@ -36,7 +37,7 @@ class PaymentController extends Controller
                 }
             ]);
         } else {
-            $query->with('details');
+            $query->with(['details', 'rkaSetting.pptkSetting.skpd']);
         }
 
         // Filter berdasarkan tahun
@@ -204,12 +205,26 @@ class PaymentController extends Controller
     }
 
     /**
+     * Verifikasi pembayaran (Public)
+     */
+    public function verifyPayment(Request $request)
+    {
+        return view('reports.verify_payment', [
+            'total' => $request->total,
+            'period' => $request->period,
+            'date' => $request->date,
+            'kegiatan' => $request->kegiatan,
+            'sub_kegiatan' => $request->sub_kegiatan,
+        ]);
+    }
+
+    /**
      * Download PDF
      */
     public function downloadPdf($id, Request $request)
     {
         $user = $request->user();
-        $query = Payment::query();
+        $query = Payment::with(['rkaSetting.pptkSetting.skpd', 'details.employee']);
 
         if ($user->isAdminSkpd()) {
             $query->with([
@@ -217,16 +232,40 @@ class PaymentController extends Controller
                     $q->whereHas('employee', function ($eq) use ($user) {
                         $eq->where('idskpd', $user->institution);
                     });
-                },
-                'details.employee'
+                }
             ]);
-        } else {
-            $query->with(['details.employee']);
         }
 
         $payment = $query->findOrFail($id);
 
-        $pdf = Pdf::loadView('reports.payroll', compact('payment'));
+        $printDate = now()->format('d/m/Y H:i');
+        $totalFormatted = number_format($payment->total_amoun, 0, ',', '.');
+        $monthName = $payment->month_name;
+
+        // Generate Verification URL
+        $verifyUrl = "https://simgajitaspen.my.id/api/verify-payment?" . http_build_query([
+            'total' => $totalFormatted,
+            'period' => $monthName . ' ' . $payment->year,
+            'date' => $printDate,
+            'kegiatan' => "[{$payment->rkaSetting->kode_giat}] {$payment->rkaSetting->nama_giat}",
+            'sub_kegiatan' => "[{$payment->rkaSetting->kode_sub_giat}] {$payment->rkaSetting->nama_sub_giat}",
+        ]);
+
+        $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' . urlencode($verifyUrl);
+
+        // Fetch QR code and convert to base64 for dompdf compatibility
+        try {
+            $qrCodeBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($qrUrl));
+        } catch (\Exception $e) {
+            $qrCodeBase64 = null;
+        }
+
+        $pdf = Pdf::loadView('reports.payroll', [
+            'payment' => $payment,
+            'qrCode' => $qrCodeBase64,
+            'printDate' => $printDate,
+            'monthName' => $monthName
+        ]);
 
         return $pdf->download("payroll-{$payment->month}-{$payment->year}.pdf");
     }

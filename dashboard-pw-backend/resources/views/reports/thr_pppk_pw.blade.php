@@ -66,41 +66,54 @@
         <p>Dasar Perhitungan: Gaji Pokok Pebruari ({{ $nMonths }}/12)</p>
     </div>
 
-    @foreach($data as $group)
-        <div style="page-break-inside: avoid; margin-bottom: 20px;">
-            <h3 style="margin-bottom: 5px; color: #333; border-bottom: 2px solid #primary;">
-                SKPD: {{ $group['skpd_name'] }}
-            </h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th width="30">No</th>
-                        <th width="120">NIP</th>
-                        <th>Nama</th>
-                        <th>Jabatan</th>
-                        <th width="100">Gapok Basis</th>
-                        <th width="80">Masa Kerja</th>
-                        <th width="110">Besaran THR</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($group['employees'] as $index => $item)
-                        <tr>
-                            <td class="text-center">{{ $index + 1 }}</td>
-                            <td>{{ $item['nip'] }}</td>
-                            <td>{{ $item['nama'] }}</td>
-                            <td>{{ $item['jabatan'] }}</td>
-                            <td class="text-right">{{ number_format($item['gapok_basis'], 0, ',', '.') }}</td>
-                            <td class="text-center">{{ $item['n_months'] }} Bln</td>
-                            <td class="text-right">{{ number_format($item['thr_amount'], 0, ',', '.') }}</td>
-                        </tr>
-                    @endforeach
-                    <tr class="total-row">
-                        <td colspan="6" class="text-right">SUBTOTAL {{ $group['skpd_name'] }} &nbsp;</td>
-                        <td class="text-right">{{ number_format($group['subtotal_thr'], 0, ',', '.') }}</td>
-                    </tr>
-                </tbody>
-            </table>
+    @foreach($data as $skpd)
+        <div style="page-break-inside: avoid; margin-bottom: 30px;">
+            <h2 style="margin-bottom: 10px; color: #000; border-bottom: 2px solid #333; padding-bottom: 5px;">
+                SKPD: {{ $skpd['skpd_name'] }}
+            </h2>
+
+            @foreach($skpd['sub_giat_groups'] as $subGiat)
+                <div style="margin-bottom: 15px; margin-left: 10px;">
+                    <h4 style="margin-bottom: 5px; color: #444;">
+                        Sub Kegiatan: {{ $subGiat['sub_giat_name'] }}
+                    </h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="30">No</th>
+                                <th width="120">NIP</th>
+                                <th>Nama</th>
+                                <th>Jabatan</th>
+                                <th width="100">Gapok Basis</th>
+                                <th width="80">Masa Kerja</th>
+                                <th width="110">Besaran THR</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($subGiat['employees'] as $index => $item)
+                                <tr>
+                                    <td class="text-center">{{ $index + 1 }}</td>
+                                    <td>{{ $item['nip'] }}</td>
+                                    <td>{{ $item['nama'] }}</td>
+                                    <td>{{ $item['jabatan'] }}</td>
+                                    <td class="text-right">{{ number_format($item['gapok_basis'], 0, ',', '.') }}</td>
+                                    <td class="text-center">{{ $item['n_months'] }} Bln</td>
+                                    <td class="text-right">{{ number_format($item['thr_amount'], 0, ',', '.') }}</td>
+                                </tr>
+                            @endforeach
+                            <tr class="total-row">
+                                <td colspan="6" class="text-right">SUBTOTAL SUB KEGIATAN &nbsp;</td>
+                                <td class="text-right">{{ number_format($subGiat['subtotal_thr'], 0, ',', '.') }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            @endforeach
+
+            <div
+                style="margin-top: 10px; text-align: right; padding: 8px; background-color: #f0f0f0; border: 1px solid #ccc; font-weight: bold;">
+                TOTAL THR SKPD {{ $skpd['skpd_name'] }}: Rp {{ number_format($skpd['total_thr_skpd'], 0, ',', '.') }}
+            </div>
         </div>
     @endforeach
 
