@@ -128,6 +128,26 @@
         </table>
     </div>
 
+    <div style="margin-top: 50px; page-break-inside: avoid;">
+        <table style="border: none; margin-top: 0;">
+            <tr style="border: none; background: none;">
+                <td style="border: none; width: 50%; text-align: center; padding: 0;">
+                    <p style="margin-bottom: 60px; font-weight: bold;">
+                        Mengetahui/Menyetujui,<br>
+                        Pengguna Anggaran/ Kuasa Pengguna Anggaran
+                    </p>
+                    <p style="margin-bottom: 0;">
+                        <span
+                            style="text-decoration: underline; font-weight: bold;">{{ $reportSettings->nama_kepala ?? '..................................' }}</span><br>
+                        NIP. {{ $reportSettings->nip_kepala ?? '..................................' }}<br>
+                        {{ $reportSettings->jabatan_kepala ?? '' }}
+                    </p>
+                </td>
+                <td style="border: none; width: 50%;"></td>
+            </tr>
+        </table>
+    </div>
+
     <div style="margin-top: 40px;">
         <table style="border: none;">
             <tr style="border: none;">

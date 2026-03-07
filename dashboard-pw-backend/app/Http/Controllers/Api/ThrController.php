@@ -179,6 +179,9 @@ class ThrController extends Controller
 
         $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' . urlencode($verifyUrl);
 
+        // Fetch Signature Data from report_settings
+        $reportSettings = DB::table('report_settings')->first();
+
         // Fetch QR code and convert to base64 for dompdf compatibility
         try {
             $qrCodeBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($qrUrl));
@@ -193,7 +196,8 @@ class ThrController extends Controller
             'thrMonthName' => $thrMonthName,
             'totalAmount' => $response->getData()->meta->total_thr_amount,
             'printDate' => $printDate,
-            'qrCode' => $qrCodeBase64
+            'qrCode' => $qrCodeBase64,
+            'reportSettings' => $reportSettings
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download("THR_PPPK_PW_{$year}_{$thrMonth}.pdf");
