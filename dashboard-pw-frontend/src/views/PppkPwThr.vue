@@ -118,7 +118,7 @@
       icon="mdi-calculator-variant"
     >
       <strong>Rumus THR:</strong> Gaji Pokok (Data Pebruari 2026) × (n / 12). 
-      Dimana <strong>n</strong> adalah jumlah bulan bekerja terhitung sejak 1 Januari 2026 sampai dengan bulan pembayaran THR yang dipilih.
+      Dimana <strong>n</strong> adalah jumlah bulan bekerja terhitung sejak 1 Januari 2026 sampai dengan bulan pembayaran THR yang dipilih (maksimal 2 bulan).
     </v-alert>
       </v-container>
     </v-main>

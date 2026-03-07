@@ -21,8 +21,8 @@ class ThrController extends Controller
         $year = $request->year ?? 2026;
         $thrMonth = $request->month ?? 4; // Default to April (4)
 
-        // n = months from Jan 2026 to thrMonth
-        $nMonths = $thrMonth;
+        // n = months from Jan 2026 to thrMonth, max 2 months
+        $nMonths = min((int) $thrMonth, 2);
 
         $user = auth()->user();
 
@@ -113,7 +113,7 @@ class ThrController extends Controller
     {
         $year = $request->year ?? 2026;
         $thrMonth = $request->month ?? 4;
-        $nMonths = $thrMonth;
+        $nMonths = min((int) $thrMonth, 2);
 
         $monthNames = [
             1 => 'Januari',
@@ -145,7 +145,7 @@ class ThrController extends Controller
     {
         $year = $request->year ?? 2026;
         $thrMonth = $request->month ?? 4;
-        $nMonths = $thrMonth;
+        $nMonths = min((int) $thrMonth, 2);
 
         $monthNames = [
             1 => 'Januari',
