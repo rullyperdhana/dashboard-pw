@@ -144,6 +144,10 @@ class ThrController extends Controller
 
     public function exportPdf(Request $request)
     {
+        // Increase limits for large SKPD like Dinas Pendidikan
+        ini_set('max_execution_time', 300);
+        ini_set('memory_limit', '512M');
+
         $year = $request->year ?? 2026;
         $thrMonth = $request->month ?? 4;
         $nMonths = min((int) $thrMonth, 2);
@@ -187,11 +191,11 @@ class ThrController extends Controller
             ];
         }
 
-        // Generate QR codes per sub-activity
-        foreach ($dataArray as &$skpd) {
-            foreach ($skpd['sub_giat_groups'] as &$subGiat) {
+        // Prepare pool requests for parallel QR code fetching
+        $qrRequests = [];
+        foreach ($dataArray as $sIndex => $skpd) {
+            foreach ($skpd['sub_giat_groups'] as $gIndex => $subGiat) {
                 $subTotalFormatted = number_format($subGiat['subtotal_thr'], 0, ',', '.');
-
                 $verifyUrl = "https://simgajitaspen.my.id/api/verify-thr?" . http_build_query([
                     'total' => $subTotalFormatted,
                     'period' => $thrMonthName . ' ' . $year,
@@ -199,12 +203,23 @@ class ThrController extends Controller
                     'sub_giat' => $subGiat['sub_giat_name']
                 ]);
 
-                $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' . urlencode($verifyUrl);
+                // Key format: skpdIndex_giatIndex
+                $qrRequests["{$sIndex}_{$gIndex}"] = 'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=' . urlencode($verifyUrl);
+            }
+        }
 
-                try {
-                    $subGiat['qr_code'] = 'data:image/png;base64,' . base64_encode(file_get_contents($qrUrl));
-                } catch (\Exception $e) {
-                    $subGiat['qr_code'] = null;
+        // Execute parallel requests if there are any
+        if (!empty($qrRequests)) {
+            $responses = \Illuminate\Support\Facades\Http::pool(
+                fn($pool) =>
+                collect($qrRequests)->map(fn($url, $key) => $pool->as($key)->get($url))
+            );
+
+            // Assign base64 results back to dataArray
+            foreach ($responses as $key => $res) {
+                if ($res->successful()) {
+                    [$sIndex, $gIndex] = explode('_', $key);
+                    $dataArray[$sIndex]['sub_giat_groups'][$gIndex]['qr_code'] = 'data:image/png;base64,' . base64_encode($res->body());
                 }
             }
         }
