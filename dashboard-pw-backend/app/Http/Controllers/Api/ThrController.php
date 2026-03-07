@@ -144,9 +144,9 @@ class ThrController extends Controller
 
     public function exportPdf(Request $request)
     {
-        // Increase limits for large SKPD like Dinas Pendidikan
-        ini_set('max_execution_time', 300);
-        ini_set('memory_limit', '512M');
+        // Drastically increase limits for massive datasets
+        ini_set('max_execution_time', 600);
+        ini_set('memory_limit', '2048M');
 
         $year = $request->year ?? 2026;
         $thrMonth = $request->month ?? 4;
@@ -174,7 +174,7 @@ class ThrController extends Controller
 
         $printDate = now()->format('d/m/Y H:i');
 
-        // Fetch Signature Data from report_settings linked to user's SKPD
+        // Fetch Signature Data
         $user = auth()->user();
         $querySettings = DB::table('report_settings');
         if ($user && !empty($user->institution)) {
@@ -182,7 +182,6 @@ class ThrController extends Controller
         }
         $reportSettings = $querySettings->first() ?: DB::table('report_settings')->first();
 
-        // Ensure reportSettings is never null to avoid 500 error in view
         if (!$reportSettings) {
             $reportSettings = (object) [
                 'nama_kepala' => null,
@@ -191,49 +190,84 @@ class ThrController extends Controller
             ];
         }
 
-        // Prepare pool requests for parallel QR code fetching
+        // Prepare pool requests for parallel QR code fetching with Caching
         $qrRequests = [];
+        $qrCache = [];
+
         foreach ($dataArray as $sIndex => $skpd) {
             foreach ($skpd['sub_giat_groups'] as $gIndex => $subGiat) {
                 $subTotalFormatted = number_format($subGiat['subtotal_thr'], 0, ',', '.');
-                $verifyUrl = "https://simgajitaspen.my.id/api/verify-thr?" . http_build_query([
+                $params = [
                     'total' => $subTotalFormatted,
                     'period' => $thrMonthName . ' ' . $year,
                     'date' => $printDate,
                     'sub_giat' => $subGiat['sub_giat_name']
-                ]);
+                ];
+                $verifyUrl = "https://simgajitaspen.my.id/api/verify-thr?" . http_build_query($params);
+                $cacheKey = md5($verifyUrl);
 
-                // Key format: skpdIndex_giatIndex
-                $qrRequests["{$sIndex}_{$gIndex}"] = 'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=' . urlencode($verifyUrl);
-            }
-        }
-
-        // Execute parallel requests if there are any
-        if (!empty($qrRequests)) {
-            $responses = \Illuminate\Support\Facades\Http::pool(
-                fn($pool) =>
-                collect($qrRequests)->map(fn($url, $key) => $pool->as($key)->get($url))
-            );
-
-            // Assign base64 results back to dataArray
-            foreach ($responses as $key => $res) {
-                if ($res->successful()) {
-                    [$sIndex, $gIndex] = explode('_', $key);
-                    $dataArray[$sIndex]['sub_giat_groups'][$gIndex]['qr_code'] = 'data:image/png;base64,' . base64_encode($res->body());
+                if (isset($qrCache[$cacheKey])) {
+                    $dataArray[$sIndex]['sub_giat_groups'][$gIndex]['qr_code'] = $qrCache[$cacheKey];
+                    continue;
                 }
+
+                // Use a smaller size (80x80) for faster fetch and render
+                $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=' . urlencode($verifyUrl);
+                $qrRequests["{$sIndex}_{$gIndex}"] = $qrUrl;
             }
         }
 
-        $pdf = Pdf::loadView('reports.thr_pppk_pw', [
-            'data' => $dataArray,
-            'year' => $year,
-            'nMonths' => $nMonths,
-            'thrMonthName' => $thrMonthName,
-            'totalAmount' => $response->getData()->meta->total_thr_amount,
-            'printDate' => $printDate,
-            'reportSettings' => $reportSettings
-        ])->setPaper('a4', 'landscape')->setOption('isPhpEnabled', true);
+        // Execute parallel requests in CHUNKS to prevent connection exhaustion
+        if (!empty($qrRequests)) {
+            $chunks = array_chunk($qrRequests, 15, true); // Process 15 at a time
 
-        return $pdf->download("THR_PPPK_PW_{$year}_{$thrMonth}.pdf");
+            foreach ($chunks as $chunk) {
+                $responses = \Illuminate\Support\Facades\Http::pool(
+                    fn($pool) =>
+                    collect($chunk)->map(fn($url, $key) => $pool->as($key)->timeout(10)->get($url))
+                );
+
+                foreach ($responses as $key => $res) {
+                    if ($res->successful()) {
+                        [$sIndex, $gIndex] = explode('_', $key);
+                        $base64 = 'data:image/png;base64,' . base64_encode($res->body());
+                        $dataArray[$sIndex]['sub_giat_groups'][$gIndex]['qr_code'] = $base64;
+
+                        $subGiat = $dataArray[$sIndex]['sub_giat_groups'][$gIndex];
+                        $verifyUrl = "https://simgajitaspen.my.id/api/verify-thr?" . http_build_query([
+                            'total' => number_format($subGiat['subtotal_thr'], 0, ',', '.'),
+                            'period' => $thrMonthName . ' ' . $year,
+                            'date' => $printDate,
+                            'sub_giat' => $subGiat['sub_giat_name']
+                        ]);
+                        $qrCache[md5($verifyUrl)] = $base64;
+                    }
+                }
+                usleep(100000); // Small 100ms delay between chunks to be nice to the API
+            }
+        }
+
+        try {
+            $pdfContent = Pdf::loadView('reports.thr_pppk_pw', [
+                'data' => $dataArray,
+                'year' => $year,
+                'nMonths' => $nMonths,
+                'thrMonthName' => $thrMonthName,
+                'totalAmount' => $response->getData()->meta->total_thr_amount,
+                'printDate' => $printDate,
+                'reportSettings' => $reportSettings
+            ])->setPaper('a4', 'landscape')->setOption('isPhpEnabled', true)->output();
+
+            return response()->streamDownload(
+                fn() => print ($pdfContent),
+                "THR_PPPK_PW_{$year}_{$thrMonth}.pdf",
+                ['Content-Type' => 'application/pdf']
+            );
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal merender PDF: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
