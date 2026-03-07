@@ -188,6 +188,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // SP2D Realization
     Route::post('/sp2d/import', [App\Http\Controllers\Api\Sp2dController::class, 'import']);
     Route::get('/sp2d/status', [App\Http\Controllers\Api\Sp2dController::class, 'getStatus']);
+    Route::get('/sp2d/transactions', [App\Http\Controllers\Api\Sp2dController::class, 'getTransactions']);
 });
 
 // Simgaji Integration API (protected by API Key)

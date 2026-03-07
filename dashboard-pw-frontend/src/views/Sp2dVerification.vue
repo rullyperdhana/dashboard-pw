@@ -26,7 +26,7 @@
                 density="comfortable"
                 variant="outlined"
                 rounded="lg"
-                @update:model-value="fetchStatus"
+                @update:model-value="fetchData"
               ></v-select>
             </v-col>
             <v-col cols="5">
@@ -37,7 +37,7 @@
                 density="comfortable"
                 variant="outlined"
                 rounded="lg"
-                @update:model-value="fetchStatus"
+                @update:model-value="fetchData"
               ></v-select>
             </v-col>
           </v-row>
@@ -68,25 +68,37 @@
         </v-card>
 
         <v-card class="glass-card rounded-xl pa-6" elevation="0">
-          <h2 class="text-h6 font-weight-bold mb-4">Informasi</h2>
+          <div class="d-flex align-center justify-space-between mb-4">
+            <h2 class="text-h6 font-weight-bold mb-0">Tampilan</h2>
+            <v-btn-toggle
+              v-model="viewMode"
+              mandatory
+              color="primary"
+              density="compact"
+              rounded="pill"
+            >
+              <v-btn value="summary" size="small">Ringkasan</v-btn>
+              <v-btn value="details" size="small">Detail Data</v-btn>
+            </v-btn-toggle>
+          </div>
           <v-list density="compact" class="bg-transparent pa-0">
             <v-list-item class="px-0">
               <template v-slot:prepend>
                 <v-icon color="success" size="20">mdi-check-circle</v-icon>
               </template>
-              <v-list-item-title class="text-body-2">Keterangan "Gaji Induk" -> Kategori PNS</v-list-item-title>
+              <v-list-item-title class="text-body-2">Grup "PNS" -> Gaji Induk/PNS</v-list-item-title>
             </v-list-item>
             <v-list-item class="px-0">
               <template v-slot:prepend>
                 <v-icon color="success" size="20">mdi-check-circle</v-icon>
               </template>
-              <v-list-item-title class="text-body-2">Keterangan "PPPK" -> Kategori PPPK</v-list-item-title>
+              <v-list-item-title class="text-body-2">Grup "PPPK" -> Gaji PPPK</v-list-item-title>
             </v-list-item>
             <v-list-item class="px-0">
               <template v-slot:prepend>
                 <v-icon color="success" size="20">mdi-check-circle</v-icon>
               </template>
-              <v-list-item-title class="text-body-2">Keterangan "TPP/Tambahan" -> Kategori TPP</v-list-item-title>
+              <v-list-item-title class="text-body-2">Grup "TPP" -> Tambahan Penghasilan</v-list-item-title>
             </v-list-item>
           </v-list>
         </v-card>
@@ -94,7 +106,8 @@
 
       <!-- Results Table -->
       <v-col cols="12" lg="8">
-        <v-card class="glass-card rounded-xl overflow-hidden" elevation="0">
+        <!-- Summary View -->
+        <v-card v-if="viewMode === 'summary'" class="glass-card rounded-xl overflow-hidden" elevation="0">
           <div class="pa-6 border-bottom d-flex align-center justify-space-between bg-surface-variant-light">
             <h2 class="text-h6 font-weight-bold mb-0">Status Realisasi per SKPD</h2>
             <v-text-field
@@ -137,6 +150,57 @@
             </template>
           </v-data-table>
         </v-card>
+
+        <!-- Detailed View (Raw Transactions) -->
+        <v-card v-else class="glass-card rounded-xl overflow-hidden" elevation="0">
+          <div class="pa-6 border-bottom d-flex align-center justify-space-between bg-surface-variant-light">
+            <h2 class="text-h6 font-weight-bold mb-0">Daftar Transaksi Hasil Impor</h2>
+            <div class="d-flex align-center gap-2">
+              <v-text-field
+                v-model="searchDetail"
+                prepend-inner-icon="mdi-magnify"
+                label="Cari..."
+                single-line
+                hide-details
+                density="compact"
+                variant="outlined"
+                rounded="pill"
+                class="max-width-200"
+              ></v-text-field>
+            </div>
+          </div>
+          
+          <v-data-table
+            :headers="detailHeaders"
+            :items="transactions"
+            :loading="loading"
+            :search="searchDetail"
+            class="bg-transparent"
+            hover
+          >
+            <template v-slot:item.nomor_sp2d="{ item }">
+              <div class="text-caption font-weight-bold">{{ item.nomor_sp2d }}</div>
+            </template>
+            
+            <template v-slot:item.tanggal_sp2d="{ item }">
+              {{ formatDate(item.tanggal_sp2d) }}
+            </template>
+
+            <template v-slot:item.jenis_data="{ item }">
+              <v-chip size="x-small" :color="getTypeColor(item.jenis_data)" variant="flat">
+                {{ item.jenis_data }}
+              </v-chip>
+            </template>
+
+            <template v-slot:item.netto="{ item }">
+              <div class="text-right font-weight-bold">{{ formatCurrency(item.netto) }}</div>
+            </template>
+            
+            <template v-slot:item.nama_skpd_sipd="{ item }">
+              <div class="text-caption" style="max-width: 150px;">{{ item.nama_skpd_sipd }}</div>
+            </template>
+          </v-data-table>
+        </v-card>
       </v-col>
     </v-row>
 
@@ -148,17 +212,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import api from '../api'
 import StatusChip from '../components/Sp2dStatusChip.vue'
 
 const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedYear = ref(new Date().getFullYear())
 const search = ref('')
+const searchDetail = ref('')
 const loading = ref(false)
 const uploading = ref(false)
 const isDragging = ref(false)
+const viewMode = ref('summary')
 const items = ref([])
+const transactions = ref([])
 const snackbar = ref(false)
 const snackbarText = ref('')
 const snackbarColor = ref('success')
@@ -180,6 +247,26 @@ const headers = [
   { title: 'TPP', key: 'tpp', align: 'center', sortable: false },
 ]
 
+const detailHeaders = [
+  { title: 'No. SP2D', key: 'nomor_sp2d', width: '200px' },
+  { title: 'Tanggal', key: 'tanggal_sp2d' },
+  { title: 'SKPD (SIPD)', key: 'nama_skpd_sipd' },
+  { title: 'Kategori', key: 'jenis_data', align: 'center' },
+  { title: 'Nilai Netto', key: 'netto', align: 'end' },
+]
+
+const fetchData = async () => {
+  if (viewMode.value === 'summary') {
+    await fetchStatus()
+  } else {
+    await fetchTransactions()
+  }
+}
+
+watch(viewMode, () => {
+  fetchData()
+})
+
 const fetchStatus = async () => {
   loading.value = true
   try {
@@ -190,6 +277,21 @@ const fetchStatus = async () => {
   } catch (err) {
     console.error(err)
     showSnackbar('Gagal mengambil data status', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+const fetchTransactions = async () => {
+  loading.value = true
+  try {
+    const response = await api.get('/sp2d/transactions', {
+      params: { bulan: selectedMonth.value, tahun: selectedYear.value }
+    })
+    transactions.value = response.data.data
+  } catch (err) {
+    console.error(err)
+    showSnackbar('Gagal mengambil data transaksi', 'error')
   } finally {
     loading.value = false
   }
@@ -216,12 +318,35 @@ const uploadFile = async (file) => {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
     showSnackbar(response.data.message || 'Data berhasil diimpor')
-    fetchStatus()
+    fetchData()
   } catch (err) {
     showSnackbar(err.response?.data?.message || 'Gagal mengunggah file', 'error')
   } finally {
     uploading.value = false
     if (this.$refs.fileInput) this.$refs.fileInput.value = ''
+  }
+}
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-'
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+const formatCurrency = (val) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0
+  }).format(val || 0)
+}
+
+const getTypeColor = (type) => {
+  switch (type) {
+    case 'PNS': return 'blue'
+    case 'PPPK': return 'orange'
+    case 'TPP': return 'teal'
+    default: return 'grey'
   }
 }
 
@@ -232,7 +357,7 @@ const showSnackbar = (text, color = 'success') => {
 }
 
 onMounted(() => {
-  fetchStatus()
+  fetchData()
 })
 </script>
 
@@ -260,6 +385,14 @@ onMounted(() => {
 
 .max-width-300 {
   max-width: 300px;
+}
+
+.max-width-200 {
+  max-width: 200px;
+}
+
+.gap-2 {
+  gap: 8px;
 }
 
 .border-bottom {

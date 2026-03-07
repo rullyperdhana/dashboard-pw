@@ -61,6 +61,27 @@ class Sp2dController extends Controller
         ]);
     }
 
+    public function getTransactions(Request $request)
+    {
+        $bulan = $request->query('bulan', date('n'));
+        $tahun = $request->query('tahun', date('Y'));
+        $idSkpd = $request->query('id_skpd');
+
+        $query = Sp2dRealization::where('bulan', $bulan)
+            ->where('tahun', $tahun);
+
+        if ($idSkpd) {
+            $query->where('skpd_id', $idSkpd);
+        }
+
+        $data = $query->orderBy('tanggal_sp2d', 'desc')->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $data
+        ]);
+    }
+
     private function formatStatus($collection)
     {
         if ($collection->isEmpty()) {
