@@ -260,6 +260,7 @@ class SimgajiController extends Controller
                 "jlh_potongan" => (string) (int) $row->jlh_potongan,
                 "jlh_bersih" => (string) (int) $row->jlh_bersih,
                 "status_pajak" => $statusPajak,
+                "nama_skpd" => $row->nama_skpd ?? "",
             ];
         }
 
