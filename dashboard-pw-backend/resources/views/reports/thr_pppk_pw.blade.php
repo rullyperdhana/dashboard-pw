@@ -109,10 +109,18 @@
                     </table>
                 </div>
             @endforeach
+        </div>
+    @endforeach
 
     <style>
-        .page-number:after { content: counter(page); }
-        .page-count:after { content: counter(pages); }
+        .page-number:after {
+            content: counter(page);
+        }
+
+        .page-count:after {
+            content: counter(pages);
+        }
+
         .pdf-footer {
             position: fixed;
             bottom: -20px;
@@ -128,10 +136,6 @@
     <div class="pdf-footer">
         Halaman <span class="page-number"></span> dari <span class="page-count"></span>
     </div>
-
-    @foreach($data as $skpd)
-        {{-- ... (existing skpd loop) ... --}}
-    @endforeach
 
     {{-- Wrap Total, Signature, and System Verification into one non-breaking block --}}
     <div style="page-break-inside: avoid; margin-top: 20px;">

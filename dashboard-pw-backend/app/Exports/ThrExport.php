@@ -132,26 +132,44 @@ class ThrExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
             3 => ['font' => ['italic' => true]],
         ];
 
-        foreach ($this->data as $group) {
-            // Group Header Row
+        foreach ($this->data as $skpd) {
+            // SKPD Header
             $sheet->mergeCells("A{$rowIdx}:G{$rowIdx}");
             $sheet->getStyle("A{$rowIdx}")->getFont()->setBold(true);
             $sheet->getStyle("A{$rowIdx}")->getFill()->setFillType('solid')->getStartColor()->setRGB('D1ECF1');
             $rowIdx++;
 
-            // Data rows
-            $dataCount = count($group['employees']);
-            $sheet->getStyle("E{$rowIdx}:G" . ($rowIdx + $dataCount - 1))
-                ->getNumberFormat()->setFormatCode('#,##0');
-            $rowIdx += $dataCount;
+            foreach ($skpd['sub_giat_groups'] as $subGiat) {
+                // Sub Giat Header
+                $sheet->mergeCells("B{$rowIdx}:G{$rowIdx}");
+                $sheet->getStyle("B{$rowIdx}")->getFont()->setBold(true);
+                $rowIdx++;
 
-            // Subtotal Row
+                // Data rows
+                $dataCount = count($subGiat['employees']);
+                if ($dataCount > 0) {
+                    $sheet->getStyle("E{$rowIdx}:G" . ($rowIdx + $dataCount - 1))
+                        ->getNumberFormat()->setFormatCode('#,##0');
+                    $rowIdx += $dataCount;
+                }
+
+                // Subtotal Row
+                $sheet->getStyle("A{$rowIdx}:G{$rowIdx}")->getFont()->setBold(true);
+                $sheet->getStyle("G{$rowIdx}")->getNumberFormat()->setFormatCode('#,##0');
+                $rowIdx++;
+
+                // Spacer Row
+                $rowIdx++;
+            }
+
+            // Total SKPD Row
             $sheet->getStyle("A{$rowIdx}:G{$rowIdx}")->getFont()->setBold(true);
             $sheet->getStyle("G{$rowIdx}")->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle("A{$rowIdx}:G{$rowIdx}")->getFill()->setFillType('solid')->getStartColor()->setRGB('E2E3E5');
             $rowIdx++;
 
-            // Spacer Row
-            $rowIdx++;
+            // Big Spacers
+            $rowIdx += 2;
         }
 
         // Grand Total Row
