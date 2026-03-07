@@ -212,7 +212,7 @@ class ThrController extends Controller
             'printDate' => $printDate,
             'qrCode' => $qrCodeBase64,
             'reportSettings' => $reportSettings
-        ])->setPaper('a4', 'landscape');
+        ])->setPaper('a4', 'landscape')->setOption('isPhpEnabled', true);
 
         return $pdf->download("THR_PPPK_PW_{$year}_{$thrMonth}.pdf");
     }
