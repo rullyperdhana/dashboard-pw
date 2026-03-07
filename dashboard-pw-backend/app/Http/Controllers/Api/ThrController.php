@@ -210,14 +210,8 @@ class ThrController extends Controller
             'thrMonthName' => $thrMonthName,
             'totalAmount' => $response->getData()->meta->total_thr_amount,
             'printDate' => $printDate,
-            'qrCode' => $qrCodeBase64,
             'reportSettings' => $reportSettings
         ])->setPaper('a4', 'landscape')->setOption('isPhpEnabled', true);
-
-        // Standard DOMPDF way to add Page X on every page
-        $canvas = $pdf->getCanvas();
-        $font = $pdf->getDomPDF()->getFontMetrics()->get_font("sans-serif", "normal");
-        $canvas->page_text(380, 565, "Halaman {PAGE_NUM}", $font, 10, array(0.46, 0.46, 0.46));
 
         return $pdf->download("THR_PPPK_PW_{$year}_{$thrMonth}.pdf");
     }

@@ -81,10 +81,18 @@
             font-weight: bold;
             background-color: #eee;
         }
+
+        .page-number:after {
+            content: "Halaman " counter(page);
+        }
     </style>
 </head>
 
 <body>
+    <footer>
+        <span class="page-number"></span>
+    </footer>
+
     <header>
         <h2 style="margin:0; padding:0;">DAFTAR PEMBAYARAN THR PEGAWAI PPPK PARUH WAKTU</h2>
         <h3 style="margin:5px 0 0 0; padding:0;">TAHUN {{ $year }} (PEMBAYARAN BULAN {{ strtoupper($thrMonthName) }})
