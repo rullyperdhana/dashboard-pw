@@ -95,7 +95,7 @@
                 ></v-text-field>
                 <v-btn color="success" variant="tonal" size="small" class="mr-2" prepend-icon="mdi-microsoft-excel" @click="exportEmployees('excel')" :loading="exportLoading === 'excel'">EXCEL</v-btn>
                 <v-btn color="error" variant="tonal" size="small" class="mr-2" prepend-icon="mdi-file-pdf-box" @click="exportEmployees('pdf')" :loading="exportLoading === 'pdf'">PDF</v-btn>
-                <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
+                <v-btn v-if="user.role !== 'operator'" color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
                   TAMBAH
                 </v-btn>
               </v-toolbar>
@@ -161,10 +161,10 @@
                   <v-btn icon size="small" variant="text" color="primary" @click.stop="showDetails(item)">
                     <v-icon size="18">mdi-eye</v-icon>
                   </v-btn>
-                  <v-btn icon size="small" variant="text" color="warning" @click.stop="openEditDialog(item)">
+                  <v-btn v-if="user.role !== 'operator'" icon size="small" variant="text" color="warning" @click.stop="openEditDialog(item)">
                     <v-icon size="18">mdi-pencil</v-icon>
                   </v-btn>
-                  <v-btn icon size="small" variant="text" color="error" @click.stop="confirmDelete(item)">
+                  <v-btn v-if="user.role !== 'operator'" icon size="small" variant="text" color="error" @click.stop="confirmDelete(item)">
                     <v-icon size="18">mdi-delete</v-icon>
                   </v-btn>
                 </template>
@@ -387,7 +387,7 @@
           <v-divider class="my-4"></v-divider>
           <div class="d-flex align-center justify-space-between mb-3">
             <div class="text-overline text-primary">Dokumen SK</div>
-            <v-btn size="small" color="primary" variant="tonal" prepend-icon="mdi-upload" @click="showUploadForm = !showUploadForm">
+            <v-btn v-if="user.role !== 'operator'" size="small" color="primary" variant="tonal" prepend-icon="mdi-upload" @click="showUploadForm = !showUploadForm">
               Upload SK
             </v-btn>
           </div>
@@ -450,7 +450,7 @@
                 <v-btn icon size="x-small" variant="text" color="primary" @click="previewDoc(doc)" title="Lihat">
                   <v-icon size="18">mdi-eye</v-icon>
                 </v-btn>
-                <v-btn icon size="x-small" variant="text" color="error" @click="deleteDoc(doc)" title="Hapus">
+                <v-btn v-if="user.role !== 'operator'" icon size="x-small" variant="text" color="error" @click="deleteDoc(doc)" title="Hapus">
                   <v-icon size="18">mdi-delete</v-icon>
                 </v-btn>
               </template>
@@ -521,6 +521,7 @@ import Navbar from '../components/Navbar.vue'
 import Sidebar from '../components/Sidebar.vue'
 
 const route = useRoute()
+const user = ref(JSON.parse(localStorage.getItem('user') || '{}'))
 const loading = ref(true)
 const search = ref('')
 const employees = ref([])

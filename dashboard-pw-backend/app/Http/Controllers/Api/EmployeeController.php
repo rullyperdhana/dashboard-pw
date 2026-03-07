@@ -134,6 +134,10 @@ class EmployeeController extends Controller
      */
     public function store(Request $request)
     {
+        if ($request->user() && $request->user()->isOperator()) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak memiliki hak akses untuk menambah pegawai.'], 403);
+        }
+
         $validated = $request->validate([
             'idskpd' => 'required|exists:skpd,id_skpd',
             'nip' => 'required|string|unique:pegawai_pw,nip',
@@ -181,6 +185,10 @@ class EmployeeController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if ($request->user() && $request->user()->isOperator()) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak memiliki hak akses untuk mengubah data pegawai.'], 403);
+        }
+
         $employee = Employee::findOrFail($id);
 
         $validated = $request->validate([
@@ -228,8 +236,12 @@ class EmployeeController extends Controller
     /**
      * Hapus pegawai
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
+        if ($request->user() && $request->user()->isOperator()) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak memiliki hak akses untuk menghapus pegawai.'], 403);
+        }
+
         $employee = Employee::findOrFail($id);
         $employee->delete();
 
@@ -336,6 +348,10 @@ class EmployeeController extends Controller
      */
     public function uploadDocument(Request $request, $id)
     {
+        if ($request->user() && $request->user()->isOperator()) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak memiliki hak akses untuk mengunggah dokumen.'], 403);
+        }
+
         $employee = Employee::findOrFail($id);
 
         $request->validate([
@@ -383,6 +399,10 @@ class EmployeeController extends Controller
      */
     public function updateStatus(Request $request, $id)
     {
+        if ($request->user() && $request->user()->isOperator()) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak memiliki hak akses untuk mengubah status pegawai.'], 403);
+        }
+
         $employee = Employee::findOrFail($id);
 
         $request->validate([
@@ -422,8 +442,12 @@ class EmployeeController extends Controller
     /**
      * Delete a document
      */
-    public function deleteDocument($id, $documentId)
+    public function deleteDocument(Request $request, $id, $documentId)
     {
+        if ($request->user() && $request->user()->isOperator()) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak memiliki hak akses untuk menghapus dokumen.'], 403);
+        }
+
         $document = EmployeeDocument::where('employee_id', $id)
             ->where('id', $documentId)
             ->firstOrFail();
