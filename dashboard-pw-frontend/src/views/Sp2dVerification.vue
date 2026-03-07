@@ -149,7 +149,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import api from '@/api'
 import StatusChip from '../components/Sp2dStatusChip.vue'
 
 const selectedMonth = ref(new Date().getMonth() + 1)
@@ -183,7 +183,7 @@ const headers = [
 const fetchStatus = async () => {
   loading.value = true
   try {
-    const response = await axios.get('/api/sp2d/status', {
+    const response = await api.get('/sp2d/status', {
       params: { bulan: selectedMonth.value, tahun: selectedYear.value }
     })
     items.value = response.data.data
@@ -212,7 +212,7 @@ const uploadFile = async (file) => {
   
   uploading.value = true
   try {
-    const response = await axios.post('/api/sp2d/import', formData, {
+    const response = await api.post('/sp2d/import', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
     showSnackbar(response.data.message || 'Data berhasil diimpor')
