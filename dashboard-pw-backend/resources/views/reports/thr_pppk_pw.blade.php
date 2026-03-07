@@ -79,6 +79,10 @@
 </head>
 
 <body>
+    <div class="pdf-footer">
+        Halaman <span class="page-number"></span> dari <span class="page-count"></span>
+    </div>
+
     <div class="header">
         <h2>DAFTAR PEMBAYARAN THR PEGAWAI PPPK PARUH WAKTU</h2>
         <h3>TAHUN {{ $year }} (PEMBAYARAN BULAN {{ strtoupper($thrMonthName) }})</h3>
@@ -130,18 +134,6 @@
             @endforeach
         </div>
     @endforeach
-
-    <script type="text/php">
-        if (isset($pdf)) {
-            $text = "Halaman {PAGE_NUM} dari {PAGE_COUNT}";
-            $size = 10;
-            $font = $fontMetrics->getFont("sans-serif");
-            $width = $fontMetrics->get_text_width($text, $font, $size) / 2;
-            $x = ($pdf->get_width() - $width) / 2 - 20;
-            $y = $pdf->get_height() - 35;
-            $pdf->page_text($x, $y, $text, $font, $size, array(0.46, 0.46, 0.46));
-        }
-    </script>
 
     {{-- Wrap Total, Signature, and System Verification into one non-breaking block --}}
     <div style="page-break-inside: avoid; margin-top: 20px;">
