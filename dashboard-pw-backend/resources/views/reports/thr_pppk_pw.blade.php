@@ -110,32 +110,48 @@
                 </div>
             @endforeach
 
-            <div
-                style="margin-top: 10px; text-align: right; padding: 8px; background-color: #f0f0f0; border: 1px solid #ccc; font-weight: bold;">
-                TOTAL THR SKPD {{ $skpd['skpd_name'] }}: Rp {{ number_format($skpd['total_thr_skpd'], 0, ',', '.') }}
-            </div>
-        </div>
-    @endforeach
+    <style>
+        .page-number:after { content: counter(page); }
+        .page-count:after { content: counter(pages); }
+        .pdf-footer {
+            position: fixed;
+            bottom: -20px;
+            left: 0p;
+            right: 0px;
+            height: 20px;
+            font-size: 10px;
+            text-align: center;
+            color: #777;
+        }
+    </style>
 
-    <div style="margin-top: 30px; border: 2px solid #000; padding: 10px; background-color: #f9f9f9;">
-        <table style="margin-top: 0; border: none;">
-            <tr style="border: none; background: none;">
-                <td style="border: none; font-size: 14px; font-weight: bold;">TOTAL KESELURUHAN THR</td>
-                <td style="border: none; font-size: 14px; font-weight: bold;" class="text-right">
-                    Rp {{ number_format($totalAmount, 0, ',', '.') }}
-                </td>
-            </tr>
-        </table>
+    <div class="pdf-footer">
+        Halaman <span class="page-number"></span> dari <span class="page-count"></span>
     </div>
 
-    <div style="page-break-inside: avoid; margin-top: 50px;">
-        <table style="border: none; margin-top: 0;">
+    @foreach($data as $skpd)
+        {{-- ... (existing skpd loop) ... --}}
+    @endforeach
+
+    {{-- Wrap Total, Signature, and System Verification into one non-breaking block --}}
+    <div style="page-break-inside: avoid; margin-top: 20px;">
+        <div style="border: 2px solid #000; padding: 10px; background-color: #f9f9f9; margin-bottom: 30px;">
+            <table style="margin-top: 0; border: none;">
+                <tr style="border: none; background: none;">
+                    <td style="border: none; font-size: 14px; font-weight: bold;">TOTAL KESELURUHAN THR</td>
+                    <td style="border: none; font-size: 14px; font-weight: bold;" class="text-right">
+                        Rp {{ number_format($totalAmount, 0, ',', '.') }}
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <table style="border: none; margin-top: 0; margin-bottom: 40px;">
             <tr style="border: none; background: none;">
                 <td style="border: none; width: 50%; text-align: center; padding: 0;">
                     <p style="margin-bottom: 60px; font-weight: bold;">
                         Mengetahui/Menyetujui,<br>
-                        {{ $reportSettings->jabatan_kepala ?? 'Pengguna Anggaran' }}<br>
-                        {{ $data[0]['skpd_name'] ?? '' }}
+                        {{ $reportSettings->jabatan_kepala ?? 'Pengguna Anggaran' }}
                     </p>
                     <p style="margin-bottom: 0;">
                         <span
@@ -147,28 +163,27 @@
             </tr>
         </table>
 
-        <div style="margin-top: 40px;">
-            <table style="border: none;">
-                <tr style="border: none;">
-                    <td style="border: none; width: 60%; vertical-align: bottom;">
-                        <div class="footer">
-                            Dokumen ini dihasilkan secara otomatis oleh Sistem PPPK Payroll Dashboard.<br>
-                            Keaslian dokumen dapat diverifikasi melalui kode QR di samping.<br>
-                            Dicetak pada: {{ $printDate }}
+        <table style="border: none;">
+            <tr style="border: none;">
+                <td style="border: none; width: 60%; vertical-align: bottom;">
+                    <div class="footer" style="font-size: 10px; color: #555;">
+                        <strong>KEABSAHAN DOKUMEN:</strong><br>
+                        Dokumen ini dihasilkan secara otomatis oleh Sistem PPPK Payroll Dashboard.<br>
+                        Keaslian dokumen dapat diverifikasi melalui kode QR di samping.<br>
+                        Dicetak pada: {{ $printDate }}
+                    </div>
+                </td>
+                <td style="border: none; width: 40%; text-align: right;">
+                    @if(isset($qrCode))
+                        <div
+                            style="display: inline-block; text-align: center; border: 1px solid #ddd; padding: 5px; background: white;">
+                            <img src="{{ $qrCode }}" alt="QR Code Verification" width="100" height="100">
+                            <div style="font-size: 8px; margin-top: 5px;">VERIFIKASI SISTEM</div>
                         </div>
-                    </td>
-                    <td style="border: none; width: 40%; text-align: right;">
-                        @if(isset($qrCode))
-                            <div
-                                style="display: inline-block; text-align: center; border: 1px solid #ddd; padding: 5px; background: white;">
-                                <img src="{{ $qrCode }}" alt="QR Code Verification" width="100" height="100">
-                                <div style="font-size: 8px; margin-top: 5px;">VERIFIKASI SISTEM</div>
-                            </div>
-                        @endif
-                    </td>
-                </tr>
-            </table>
-        </div>
+                    @endif
+                </td>
+            </tr>
+        </table>
     </div>
 </body>
 
