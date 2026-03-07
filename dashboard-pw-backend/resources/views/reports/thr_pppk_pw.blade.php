@@ -81,13 +81,16 @@
 <body>
     <script type="text/php">
         if (isset($pdf)) {
-            $text = "Halaman {PAGE_NUM} dari {PAGE_COUNT}";
-            $size = 10;
-            $font = $fontMetrics->getFont("sans-serif");
-            $width = $fontMetrics->get_text_width($text, $font, $size) / 2;
-            $x = ($pdf->get_width() - $width) / 2 - 20;
-            $y = $pdf->get_height() - 35;
-            $pdf->page_text($x, $y, $text, $font, $size, array(0.46, 0.46, 0.46));
+            $script = '
+                $text = "Halaman " . $PAGE_NUM . " dari " . $PAGE_COUNT;
+                $size = 10;
+                $font = $fontMetrics->get_font("sans-serif", "normal");
+                $width = $fontMetrics->get_text_width($text, $font, $size) / 2;
+                $x = ($pdf->get_width() - $width) / 2 - 20;
+                $y = $pdf->get_height() - 35;
+                $pdf->text($x, $y, $text, $font, $size, array(0.46, 0.46, 0.46));
+            ';
+            $pdf->page_script($script);
         }
     </script>
 
