@@ -223,6 +223,7 @@ class SimgajiController extends Controller
                 "periode" => $row->tahun . "-" . str_pad($row->bulan, 2, '0', STR_PAD_LEFT) . "-01",
                 "sertifikat_fasilitas" => "",
                 "nip" => $row->nip,
+                "nama_skpd" => $row->nama_skpd ?? "",
                 "tipe_jabatan" => $tipeJabatan,
                 "nama_jabatan" => $row->nama_jabatan ?? "",
                 "eselon" => $eselon,
@@ -260,7 +261,6 @@ class SimgajiController extends Controller
                 "jlh_potongan" => (string) (int) $row->jlh_potongan,
                 "jlh_bersih" => (string) (int) $row->jlh_bersih,
                 "status_pajak" => $statusPajak,
-                "nama_skpd" => $row->nama_skpd ?? "",
             ];
         }
 
