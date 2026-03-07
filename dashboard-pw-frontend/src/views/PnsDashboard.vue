@@ -177,39 +177,59 @@
           <template v-else>
           <!-- Stats Cards -->
           <v-row>
-            <v-col cols="12" sm="6" md="3">
-              <v-card class="glass-card rounded-xl pa-4" elevation="0">
-                <div class="text-overline text-medium-emphasis">Total {{ employeeType === 'pns' ? 'PNS' : 'PPPK' }}</div>
-                <div class="text-h4 font-weight-bold">{{ stats?.total_employees?.toLocaleString() || 0 }}</div>
-                <v-icon color="teal" class="float-right mt-n8" size="48">mdi-account-group</v-icon>
+            <v-col cols="12" sm="6" md="4" lg>
+              <v-card class="glass-card rounded-xl pa-5 h-100" elevation="0">
+                <div class="d-flex justify-space-between align-center">
+                  <div>
+                    <div class="text-overline text-medium-emphasis mb-1">Total {{ employeeType === 'pns' ? 'PNS' : 'PPPK' }}</div>
+                    <div class="text-h4 font-weight-bold">{{ stats?.total_employees?.toLocaleString() || 0 }}</div>
+                  </div>
+                  <v-icon color="teal" size="48" class="opacity-80">mdi-account-group</v-icon>
+                </div>
               </v-card>
             </v-col>
-            <v-col cols="12" sm="6" md="3">
-              <v-card class="glass-card rounded-xl pa-4" elevation="0">
-                <div class="text-overline text-medium-emphasis">Net Payroll</div>
-                <div class="text-h5 font-weight-bold">{{ formatCurrencyShort(stats?.total_net_salary) }}</div>
-                <v-icon color="success" class="float-right mt-n8" size="48">mdi-cash-multiple</v-icon>
+            <v-col cols="12" sm="6" md="4" lg>
+              <v-card class="glass-card rounded-xl pa-5 h-100" elevation="0">
+                <div class="d-flex justify-space-between align-center">
+                  <div>
+                    <div class="text-overline text-medium-emphasis mb-1">Net Payroll</div>
+                    <div class="text-h5 font-weight-bold">{{ formatCurrencyShort(stats?.total_net_salary) }}</div>
+                  </div>
+                  <v-icon color="success" size="48" class="opacity-80">mdi-cash-multiple</v-icon>
+                </div>
               </v-card>
             </v-col>
-            <v-col cols="12" sm="6" md="3">
-              <v-card class="glass-card rounded-xl pa-4" elevation="0">
-                <div class="text-overline text-medium-emphasis">Total Deductions</div>
-                <div class="text-h5 font-weight-bold">{{ formatCurrencyShort(stats?.total_deductions) }}</div>
-                <v-icon color="warning" class="float-right mt-n8" size="48">mdi-content-cut</v-icon>
+            <v-col cols="12" sm="6" md="4" lg>
+              <v-card class="glass-card rounded-xl pa-5 h-100" elevation="0">
+                <div class="d-flex justify-space-between align-center">
+                  <div>
+                    <div class="text-overline text-medium-emphasis mb-1">Total Deductions</div>
+                    <div class="text-h5 font-weight-bold">{{ formatCurrencyShort(stats?.total_deductions) }}</div>
+                  </div>
+                  <v-icon color="warning" size="48" class="opacity-80">mdi-content-cut</v-icon>
+                </div>
               </v-card>
             </v-col>
-            <v-col cols="12" sm="6" md>
-              <v-card class="glass-card rounded-xl pa-4" elevation="0">
-                <div class="text-overline text-medium-emphasis">Gross Total</div>
-                <div class="text-h5 font-weight-bold">{{ formatCurrencyShort(stats?.total_gross_salary) }}</div>
-                <v-icon color="grey" class="float-right mt-n8" size="48">mdi-chart-line</v-icon>
+            <v-col cols="12" sm="6" md="6" lg>
+              <v-card class="glass-card rounded-xl pa-5 h-100" elevation="0">
+                <div class="d-flex justify-space-between align-center">
+                  <div>
+                    <div class="text-overline text-medium-emphasis mb-1">Gross Total</div>
+                    <div class="text-h5 font-weight-bold">{{ formatCurrencyShort(stats?.total_gross_salary) }}</div>
+                  </div>
+                  <v-icon color="grey" size="48" class="opacity-80">mdi-chart-line</v-icon>
+                </div>
               </v-card>
             </v-col>
-            <v-col cols="12" sm="6" md>
-              <v-card class="glass-card rounded-xl pa-4" elevation="0">
-                <div class="text-overline text-medium-emphasis">Total TPP</div>
-                <div class="text-h5 font-weight-bold text-info">{{ formatCurrencyShort(stats?.total_tunj_tpp) }}</div>
-                <v-icon color="info" class="float-right mt-n8" size="48">mdi-cash-plus</v-icon>
+            <v-col cols="12" sm="6" md="6" lg>
+              <v-card class="glass-card rounded-xl pa-5 h-100" elevation="0">
+                <div class="d-flex justify-space-between align-center">
+                  <div>
+                    <div class="text-overline text-medium-emphasis mb-1">Total TPP</div>
+                    <div class="text-h5 font-weight-bold text-info">{{ formatCurrencyShort(stats?.total_tunj_tpp) }}</div>
+                  </div>
+                  <v-icon color="info" size="48" class="opacity-80">mdi-cash-plus</v-icon>
+                </div>
               </v-card>
             </v-col>
           </v-row>
