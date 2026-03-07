@@ -32,24 +32,19 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
 ---
  
-## 🔧 Fitur Terbaru (v3.0)
+## 🔧 Fitur Terbaru (v3.1)
 
-### 🔐 Keamanan & Audit (Fase 1)
+### 📄 Laporan & Transparansi (v3.1)
+- **Professional PDF Export:** Redesain total template slip gaji dan payroll dengan layout profesional, border rapi, dan summary box.
+- **Digital QR Verification:** Setiap PDF memiliki QR Code unik yang terhubung ke halaman verifikasi publik untuk validasi keaslian dokumen.
+- **Nested THR Reporting:** Laporan THR PPPK-PW kini dikelompokkan secara hierarkis: **SKPD -> Sub Kegiatan -> Daftar Pegawai**.
+- **Struktur Gaji PW Akurat:** Penyesuaian kolom detail (Pajak, IWP, dan tanpa Tunjangan) khusus untuk skema PPPK-PW.
+
+### 🔐 Keamanan & Audit (v3.0)
 - **Session Timeout:** Sesi otomatis berakhir setelah 30 menit tidak aktif.
 - **Audit Logging:** Pencatatan aktivitas sensitif (hapus data, upload, posting) ke database.
 - **Rate Limiting:** Pembatasan percobaan login (5 kali per 15 menit) untuk mencegah brute-force.
 - **Konfirmasi Password:** Validasi password admin untuk aksi penghapusan data masal.
-
-### 🌟 UX & Antarmuka (Fase 2)
-- **Global Search:** Pencarian cepat data pegawai langsung dari Navbar.
-- **Breadcrumbs:** Navigasi jalur halaman untuk kemudahan penelusuran status.
-- **Notifikasi Upload:** Indikator real-time untuk status proses background job (import Excel).
-- **Sparkline Charts:** Visualisasi tren mini pada kartu ringkasan dashboard.
-
-### ⚡ Optimalisasi Teknis (Fase 3)
-- **Response Caching:** Caching data referensi (SKPD, Satker, Settings) selama 60 menit.
-- **Automated Backup:** Script backup database harian otomatis dengan retensi 7 hari (`backup_db.sh`).
-- **Optimization:** Pembersihan cache otomatis saat ada perubahan data master atau setting.
 
 ### 🛠️ Integrasi Master Data DBF (v2.6)
 - **Import Langsung:** Mendukung import file `MST_PGW.DBF`, `KEL.DBF`, dan `GAJI.DBF`.
