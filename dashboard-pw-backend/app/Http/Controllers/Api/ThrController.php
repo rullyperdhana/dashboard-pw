@@ -211,8 +211,8 @@ class ThrController extends Controller
                     continue;
                 }
 
-                // Use a smaller size (80x80) for faster fetch and render
-                $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=' . urlencode($verifyUrl);
+                // Use a larger size (200x200) for better scanability with long URLs
+                $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode($verifyUrl);
                 $qrRequests["{$sIndex}_{$gIndex}"] = $qrUrl;
             }
         }
