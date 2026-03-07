@@ -220,7 +220,11 @@ const filteredMenuItems = computed(() => {
     if (user.value.app_access && Array.isArray(user.value.app_access)) {
       return user.value.app_access.includes(item.value)
     }
-    return false
+    
+    // Fallback: Show by default if no app_access array is found (to prevent empty sidebar)
+    // but only for basic items
+    const basicItems = ['dashboard', 'pns', 'employees', 'payments']
+    return basicItems.includes(item.value)
   })
 
   return filtered.filter((item, index) => {

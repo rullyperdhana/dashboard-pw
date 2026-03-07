@@ -149,7 +149,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import api from '@/api'
+import api from '../api'
 import StatusChip from '../components/Sp2dStatusChip.vue'
 
 const selectedMonth = ref(new Date().getMonth() + 1)
