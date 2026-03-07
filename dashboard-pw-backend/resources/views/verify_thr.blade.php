@@ -88,6 +88,12 @@
                     <span class="detail-label">Jenis Dokumen</span>
                     <span class="detail-value">THR PPPK Paruh Waktu</span>
                 </div>
+                @if(isset($sub_giat))
+                    <div class="detail-row">
+                        <span class="detail-label">Sub Kegiatan</span>
+                        <span class="detail-value">{{ $sub_giat }}</span>
+                    </div>
+                @endif
                 <div class="detail-row">
                     <span class="detail-label">Periode Pembayaran</span>
                     <span class="detail-value">{{ $period ?? '-' }}</span>

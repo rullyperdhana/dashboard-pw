@@ -175,10 +175,11 @@
                                         </div>
                                     </td>
                                     <td style="border: none; width: 40%; text-align: right;">
-                                        @if(isset($qrCode))
+                                        @if(isset($subGiat['qr_code']))
                                             <div
                                                 style="display: inline-block; text-align: center; border: 1px solid #ddd; padding: 5px; background: white;">
-                                                <img src="{{ $qrCode }}" alt="QR Code Verification" width="80" height="80">
+                                                <img src="{{ $subGiat['qr_code'] }}" alt="QR Code Verification" width="80"
+                                                    height="80">
                                                 <div style="font-size: 8px; margin-top: 5px;">VERIFIKASI SISTEM</div>
                                             </div>
                                         @endif

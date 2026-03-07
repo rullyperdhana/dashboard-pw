@@ -105,7 +105,8 @@ class ThrController extends Controller
         return view('verify_thr', [
             'total' => $request->total,
             'period' => $request->period,
-            'date' => $request->date
+            'date' => $request->date,
+            'sub_giat' => $request->sub_giat
         ]);
     }
 
@@ -168,16 +169,6 @@ class ThrController extends Controller
         $dataArray = json_decode(json_encode($data), true);
 
         $printDate = now()->format('d/m/Y H:i');
-        $totalFormatted = number_format($response->getData()->meta->total_thr_amount, 0, ',', '.');
-
-        // Generate Verification URL - Using /api prefix for more reliable routing on VPS
-        $verifyUrl = "https://simgajitaspen.my.id/api/verify-thr?" . http_build_query([
-            'total' => $totalFormatted,
-            'period' => $thrMonthName . ' ' . $year,
-            'date' => $printDate
-        ]);
-
-        $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' . urlencode($verifyUrl);
 
         // Fetch Signature Data from report_settings linked to user's SKPD
         $user = auth()->user();
@@ -196,11 +187,26 @@ class ThrController extends Controller
             ];
         }
 
-        // Fetch QR code and convert to base64 for dompdf compatibility
-        try {
-            $qrCodeBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($qrUrl));
-        } catch (\Exception $e) {
-            $qrCodeBase64 = null;
+        // Generate QR codes per sub-activity
+        foreach ($dataArray as &$skpd) {
+            foreach ($skpd['sub_giat_groups'] as &$subGiat) {
+                $subTotalFormatted = number_format($subGiat['subtotal_thr'], 0, ',', '.');
+
+                $verifyUrl = "https://simgajitaspen.my.id/api/verify-thr?" . http_build_query([
+                    'total' => $subTotalFormatted,
+                    'period' => $thrMonthName . ' ' . $year,
+                    'date' => $printDate,
+                    'sub_giat' => $subGiat['sub_giat_name']
+                ]);
+
+                $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' . urlencode($verifyUrl);
+
+                try {
+                    $subGiat['qr_code'] = 'data:image/png;base64,' . base64_encode(file_get_contents($qrUrl));
+                } catch (\Exception $e) {
+                    $subGiat['qr_code'] = null;
+                }
+            }
         }
 
         $pdf = Pdf::loadView('reports.thr_pppk_pw', [
@@ -210,7 +216,6 @@ class ThrController extends Controller
             'thrMonthName' => $thrMonthName,
             'totalAmount' => $response->getData()->meta->total_thr_amount,
             'printDate' => $printDate,
-            'qrCode' => $qrCodeBase64,
             'reportSettings' => $reportSettings
         ])->setPaper('a4', 'landscape')->setOption('isPhpEnabled', true);
 
