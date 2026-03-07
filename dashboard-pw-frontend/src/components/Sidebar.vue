@@ -195,6 +195,7 @@ const menuItems = ref([
   { title: 'THR PPPK-PW', icon: 'mdi-cash-fast', value: 'pppk-pw-thr', to: '/reports/thr-pppk-pw' },
   { title: 'Rekon BPJS 4%', icon: 'mdi-hospital-box-outline', value: 'bpjs-rekon', to: '/bpjs-rekon' },
   { title: 'Laporan SKPD', icon: 'mdi-file-table-outline', value: 'skpd-monthly', to: '/reports/skpd-monthly' },
+  { title: 'Verifikasi SP2D', icon: 'mdi-file-check-outline', value: 'sp2d-verification', to: '/sp2d-verification' },
 
   { divider: true },
   { header: 'TPG (Tunjangan Profesi Guru)' },

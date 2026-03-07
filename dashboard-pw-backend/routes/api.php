@@ -185,7 +185,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pegawai/nip/{nip}', [MasterPegawaiController::class, 'showByNip']);
     });
 
-    // Route::prefix('api-keys')->group(...) // Moved to superadmin group above
+    // SP2D Realization
+    Route::post('/sp2d/import', [App\Http\Controllers\Api\Sp2dController::class, 'import']);
+    Route::get('/sp2d/status', [App\Http\Controllers\Api\Sp2dController::class, 'getStatus']);
 });
 
 // Simgaji Integration API (protected by API Key)

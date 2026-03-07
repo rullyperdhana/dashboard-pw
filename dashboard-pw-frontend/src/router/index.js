@@ -158,6 +158,12 @@ const router = createRouter({
             component: () => import('../views/Settings/ApiKeyManagement.vue'),
             meta: { requiresAuth: true, breadcrumb: 'Manajemen API Key', roles: ['superadmin'] },
         },
+        {
+            path: '/sp2d-verification',
+            name: 'Sp2dVerification',
+            component: () => import('../views/Sp2dVerification.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Verifikasi SP2D', app_access: 'sp2d-verification' },
+        },
     ],
 })
 
