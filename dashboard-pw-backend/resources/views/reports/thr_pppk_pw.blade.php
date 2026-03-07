@@ -104,92 +104,90 @@
     <main>
 
         @foreach($data as $skpd)
-            <div style="page-break-inside: avoid; margin-bottom: 30px;">
-                <h2 style="margin-bottom: 10px; color: #000; border-bottom: 2px solid #333; padding-bottom: 5px;">
-                    SKPD: {{ $skpd['skpd_name'] }}
-                </h2>
-
-                @foreach($skpd['sub_giat_groups'] as $subGiat)
-                    <div style="margin-bottom: 15px; margin-left: 10px;">
-                        <h4 style="margin-bottom: 5px; color: #444;">
-                            Sub Kegiatan: {{ $subGiat['sub_giat_name'] }}
-                        </h4>
-                        <table>
-                            <thead>
+            @foreach($skpd['sub_giat_groups'] as $subGiat)
+                <div style="margin-bottom: 15px;">
+                    <h2
+                        style="margin-bottom: 5px; color: #000; border-bottom: 2px solid #333; padding-bottom: 5px; font-size: 14px;">
+                        SKPD: {{ $skpd['skpd_name'] }}
+                    </h2>
+                    <h4 style="margin-bottom: 10px; color: #444;">
+                        Sub Kegiatan: {{ $subGiat['sub_giat_name'] }}
+                    </h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="30">No</th>
+                                <th width="120">NIP</th>
+                                <th>Nama</th>
+                                <th>Jabatan</th>
+                                <th width="100">Gapok Basis</th>
+                                <th width="80">Masa Kerja</th>
+                                <th width="110">Besaran THR</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($subGiat['employees'] as $index => $item)
                                 <tr>
-                                    <th width="30">No</th>
-                                    <th width="120">NIP</th>
-                                    <th>Nama</th>
-                                    <th>Jabatan</th>
-                                    <th width="100">Gapok Basis</th>
-                                    <th width="80">Masa Kerja</th>
-                                    <th width="110">Besaran THR</th>
+                                    <td class="text-center">{{ $index + 1 }}</td>
+                                    <td>{{ $item['nip'] }}</td>
+                                    <td>{{ $item['nama'] }}</td>
+                                    <td>{{ $item['jabatan'] }}</td>
+                                    <td class="text-right">{{ number_format($item['gapok_basis'], 0, ',', '.') }}</td>
+                                    <td class="text-center">{{ $item['n_months'] }} Bln</td>
+                                    <td class="text-right">{{ number_format($item['thr_amount'], 0, ',', '.') }}</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($subGiat['employees'] as $index => $item)
-                                    <tr>
-                                        <td class="text-center">{{ $index + 1 }}</td>
-                                        <td>{{ $item['nip'] }}</td>
-                                        <td>{{ $item['nama'] }}</td>
-                                        <td>{{ $item['jabatan'] }}</td>
-                                        <td class="text-right">{{ number_format($item['gapok_basis'], 0, ',', '.') }}</td>
-                                        <td class="text-center">{{ $item['n_months'] }} Bln</td>
-                                        <td class="text-right">{{ number_format($item['thr_amount'], 0, ',', '.') }}</td>
-                                    </tr>
-                                @endforeach
-                                <tr class="total-row">
-                                    <td colspan="6" class="text-right">SUBTOTAL SUB KEGIATAN &nbsp;</td>
-                                    <td class="text-right">{{ number_format($subGiat['subtotal_thr'], 0, ',', '.') }}</td>
-                                </tr>
-                            </tbody>
+                            @endforeach
+                            <tr class="total-row">
+                                <td colspan="6" class="text-right">SUBTOTAL SUB KEGIATAN &nbsp;</td>
+                                <td class="text-right">{{ number_format($subGiat['subtotal_thr'], 0, ',', '.') }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    {{-- Signature and System Verification per Sub-Activity --}}
+                    <div style="page-break-inside: avoid; margin-top: 20px;">
+                        <table style="border: none; margin-top: 0; margin-bottom: 20px;">
+                            <tr style="border: none; background: none;">
+                                <td style="border: none; width: 50%; text-align: center; padding: 0;">
+                                    <p style="margin-bottom: 50px; font-weight: bold;">
+                                        Mengetahui/Menyetujui,<br>
+                                        {{ $reportSettings->jabatan_kepala ?? 'Pengguna Anggaran' }}
+                                    </p>
+                                    <p style="margin-bottom: 0;">
+                                        <span
+                                            style="text-decoration: underline; font-weight: bold;">{{ $reportSettings->nama_kepala ?? '..................................' }}</span><br>
+                                        NIP. {{ $reportSettings->nip_kepala ?? '..................................' }}
+                                    </p>
+                                </td>
+                                <td style="border: none; width: 50%;"></td>
+                            </tr>
                         </table>
 
-                        {{-- Signature and System Verification per Sub-Activity --}}
-                        <div style="page-break-inside: avoid; margin-top: 20px;">
-                            <table style="border: none; margin-top: 0; margin-bottom: 20px;">
-                                <tr style="border: none; background: none;">
-                                    <td style="border: none; width: 50%; text-align: center; padding: 0;">
-                                        <p style="margin-bottom: 50px; font-weight: bold;">
-                                            Mengetahui/Menyetujui,<br>
-                                            {{ $reportSettings->jabatan_kepala ?? 'Pengguna Anggaran' }}
-                                        </p>
-                                        <p style="margin-bottom: 0;">
-                                            <span
-                                                style="text-decoration: underline; font-weight: bold;">{{ $reportSettings->nama_kepala ?? '..................................' }}</span><br>
-                                            NIP. {{ $reportSettings->nip_kepala ?? '..................................' }}
-                                        </p>
-                                    </td>
-                                    <td style="border: none; width: 50%;"></td>
-                                </tr>
-                            </table>
-
-                            <table style="border: none;">
-                                <tr style="border: none;">
-                                    <td style="border: none; width: 60%; vertical-align: bottom;">
-                                        <div class="footer" style="font-size: 10px; color: #555;">
-                                            <strong>KEABSAHAN DOKUMEN:</strong><br>
-                                            Dokumen ini dihasilkan secara otomatis oleh Sistem PPPK Payroll Dashboard.<br>
-                                            Keaslian dokumen dapat diverifikasi melalui kode QR di samping.<br>
-                                            Dicetak pada: {{ $printDate }}
+                        <table style="border: none;">
+                            <tr style="border: none;">
+                                <td style="border: none; width: 60%; vertical-align: bottom;">
+                                    <div class="footer" style="font-size: 10px; color: #555;">
+                                        <strong>KEABSAHAN DOKUMEN:</strong><br>
+                                        Dokumen ini dihasilkan secara otomatis oleh Sistem PPPK Payroll Dashboard.<br>
+                                        Keaslian dokumen dapat diverifikasi melalui kode QR di samping.<br>
+                                        Dicetak pada: {{ $printDate }}
+                                    </div>
+                                </td>
+                                <td style="border: none; width: 40%; text-align: right;">
+                                    @if(isset($subGiat['qr_code']))
+                                        <div
+                                            style="display: inline-block; text-align: center; border: 1px solid #ddd; padding: 5px; background: white;">
+                                            <img src="{{ $subGiat['qr_code'] }}" alt="QR Code Verification" width="80" height="80">
+                                            <div style="font-size: 8px; margin-top: 5px;">VERIFIKASI SISTEM</div>
                                         </div>
-                                    </td>
-                                    <td style="border: none; width: 40%; text-align: right;">
-                                        @if(isset($subGiat['qr_code']))
-                                            <div
-                                                style="display: inline-block; text-align: center; border: 1px solid #ddd; padding: 5px; background: white;">
-                                                <img src="{{ $subGiat['qr_code'] }}" alt="QR Code Verification" width="80"
-                                                    height="80">
-                                                <div style="font-size: 8px; margin-top: 5px;">VERIFIKASI SISTEM</div>
-                                            </div>
-                                        @endif
-                                    </td>
-                                </tr>
-                            </table>
-                        </div>
+                                    @endif
+                                </td>
+                            </tr>
+                        </table>
                     </div>
-                    <div style="page-break-after: always;"></div>
-                @endforeach
+                </div>
+                <div style="page-break-after: always;"></div>
+            @endforeach
             </div>
         @endforeach
     </main>
