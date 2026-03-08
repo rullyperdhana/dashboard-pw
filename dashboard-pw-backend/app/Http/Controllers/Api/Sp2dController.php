@@ -89,12 +89,34 @@ class Sp2dController extends Controller
             })
             ->groupBy('nmskpd');
 
-        $data = $skpds->map(function ($skpd) use ($realizations, $pnsInternal, $pppkInternal, $satkerMapping) {
+        $manualMappings = \DB::table('skpd_mapping')
+            ->get()
+            ->groupBy('skpd_id');
+
+        $data = $skpds->map(function ($skpd) use ($realizations, $pnsInternal, $pppkInternal, $satkerMapping, $manualMappings) {
             $skpdRealizations = $realizations->where('skpd_id', $skpd->id_skpd);
 
-            // Mapping: Find short codes (kdskpd) in satkers table by official name
-            $shortCodes = $satkerMapping->get(trim($skpd->nama_skpd));
-            $kdskpds = $shortCodes ? $shortCodes->pluck('kdskpd')->unique()->toArray() : [];
+            // Mapping: Find short codes (kdskpd) in satkers table
+            // 1. Try official name
+            $searchNames = [trim($skpd->nama_skpd)];
+
+            // 2. Try manual mappings
+            if (isset($manualMappings[$skpd->id_skpd])) {
+                foreach ($manualMappings[$skpd->id_skpd] as $m) {
+                    $searchNames[] = trim($m->source_name);
+                }
+            }
+
+            $kdskpds = [];
+            foreach ($searchNames as $name) {
+                $shortCodes = $satkerMapping->get($name);
+                if ($shortCodes) {
+                    foreach ($shortCodes as $sc) {
+                        $kdskpds[] = $sc->kdskpd;
+                    }
+                }
+            }
+            $kdskpds = array_unique($kdskpds);
 
             // Sum up internal data for all matching short codes
             $pnsGaji = 0;
@@ -257,8 +279,12 @@ class Sp2dController extends Controller
             })
             ->groupBy('nmskpd');
 
+        $manualMappings = \DB::table('skpd_mapping')
+            ->get()
+            ->groupBy('skpd_id');
+
         // 5. Build rows
-        $data = $realizations->map(function ($real) use ($skpds, $pnsInternal, $pppkInternal, $satkerMapping) {
+        $data = $realizations->map(function ($real) use ($skpds, $pnsInternal, $pppkInternal, $satkerMapping, $manualMappings) {
             $skpd = $skpds->where('id_skpd', $real->skpd_id)->first();
 
             $internalCtx = [
@@ -273,8 +299,23 @@ class Sp2dController extends Controller
             ];
 
             if ($skpd) {
-                $shortCodes = $satkerMapping->get(trim($skpd->nama_skpd));
-                $kdskpds = $shortCodes ? $shortCodes->pluck('kdskpd')->unique()->toArray() : [];
+                $searchNames = [trim($skpd->nama_skpd)];
+                if (isset($manualMappings[$skpd->id_skpd])) {
+                    foreach ($manualMappings[$skpd->id_skpd] as $m) {
+                        $searchNames[] = trim($m->source_name);
+                    }
+                }
+
+                $kdskpds = [];
+                foreach ($searchNames as $name) {
+                    $shortCodes = $satkerMapping->get($name);
+                    if ($shortCodes) {
+                        foreach ($shortCodes as $sc) {
+                            $kdskpds[] = $sc->kdskpd;
+                        }
+                    }
+                }
+                $kdskpds = array_unique($kdskpds);
 
                 // Determine target jenis_gaji based on SP2D type (Common for all satkers of this SKPD)
                 $targetJenisGajiDetected = 'Induk';
