@@ -1,5 +1,5 @@
 <template>
-  <v-app>
+  <div>
     <Navbar />
     <Sidebar />
 
@@ -99,7 +99,7 @@
     <v-overlay v-model="actionLoading" class="align-center justify-center" persistent>
       <v-progress-circular color="primary" indeterminate size="64"></v-progress-circular>
     </v-overlay>
-  </v-app>
+  </div>
 </template>
 
 <script setup>

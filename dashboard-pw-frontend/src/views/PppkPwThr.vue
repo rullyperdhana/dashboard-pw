@@ -1,5 +1,5 @@
 <template>
-  <v-app class="modern-dashboard">
+  <div class="modern-dashboard">
     <Navbar />
     <Sidebar />
     <v-main class="bg-light">
@@ -122,7 +122,7 @@
     </v-alert>
       </v-container>
     </v-main>
-  </v-app>
+  </div>
 </template>
 
 <script setup>

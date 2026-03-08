@@ -1,5 +1,5 @@
 <template>
-  <v-app>
+  <div>
     <Sidebar />
     <v-main class="bg-light">
       <Navbar />
@@ -153,7 +153,7 @@
         </v-snackbar>
       </v-container>
     </v-main>
-  </v-app>
+  </div>
 </template>
 
 <script setup>

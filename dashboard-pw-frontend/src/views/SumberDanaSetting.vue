@@ -1,5 +1,5 @@
 <template>
-  <v-app class="modern-bg">
+  <div class="modern-bg">
     <Navbar @show-coming-soon="() => {}" />
     <Sidebar @show-coming-soon="() => {}" />
 
@@ -101,7 +101,7 @@
         </v-snackbar>
       </v-container>
     </v-main>
-  </v-app>
+  </div>
 </template>
 
 <script setup>

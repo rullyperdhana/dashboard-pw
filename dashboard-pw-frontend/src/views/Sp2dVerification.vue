@@ -1,9 +1,9 @@
 <template>
-  <v-app class="modern-dashboard">
+  <div class="modern-dashboard">
     <Navbar @show-coming-soon="showComingSoon" />
     <Sidebar @show-coming-soon="showComingSoon" />
     
-    <v-main class="bg-light">
+    <v-main class="bg-light min-vh-100">
       <v-container fluid class="pa-8">
         <v-row>
           <v-col cols="12">
@@ -380,9 +380,9 @@
         </div>
       </div>
     </v-snackbar>
-  </v-container>
-  </v-main>
-  </v-app>
+    </v-container>
+    </v-main>
+  </div>
 </template>
 
 <script setup>

@@ -1,5 +1,5 @@
 <template>
-  <v-app class="modern-dashboard">
+  <div class="modern-dashboard">
     <Navbar @show-coming-soon="showComingSoon" />
     <Sidebar @show-coming-soon="showComingSoon" />
     
@@ -651,7 +651,7 @@
         <v-btn variant="text" @click="snackbar = false">TUTUP</v-btn>
       </template>
     </v-snackbar>
-  </v-app>
+  </div>
 </template>
 
 <script setup>

@@ -1,5 +1,5 @@
 <template>
-  <v-app class="modern-dashboard">
+  <div class="modern-dashboard">
     <Navbar @show-coming-soon="(msg) => alert('Coming soon: ' + msg)" />
     <Sidebar @show-coming-soon="(msg) => alert('Coming soon: ' + msg)" />
 
@@ -105,7 +105,7 @@
         </v-card>
       </v-container>
     </v-main>
-  </v-app>
+  </div>
 </template>
 
 <script setup>

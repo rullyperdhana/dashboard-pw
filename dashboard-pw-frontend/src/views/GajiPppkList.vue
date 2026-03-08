@@ -1,5 +1,5 @@
 <template>
-  <v-app class="modern-bg">
+  <div class="modern-bg">
     <Navbar />
     <Sidebar />
 
@@ -381,7 +381,7 @@
     <v-snackbar v-model="snackbar" :timeout="3000" :color="snackbarColor" rounded="lg">
       {{ snackbarMessage }}
     </v-snackbar>
-  </v-app>
+  </div>
 </template>
 
 <script setup>

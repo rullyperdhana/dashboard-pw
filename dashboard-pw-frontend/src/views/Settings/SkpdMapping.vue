@@ -1,5 +1,5 @@
 <template>
-  <v-app class="modern-dashboard">
+  <div class="modern-dashboard">
     <Navbar @show-coming-soon="showComingSoon" />
     <Sidebar @show-coming-soon="showComingSoon" />
 
@@ -358,7 +358,7 @@
       <v-icon start icon="mdi-information-outline"></v-icon>
       Fitur {{ comingSoonTitle }} akan segera hadir.
     </v-snackbar>
-  </v-app>
+  </div>
 </template>
 
 <script setup>

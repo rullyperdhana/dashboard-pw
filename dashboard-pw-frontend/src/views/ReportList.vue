@@ -1,5 +1,5 @@
 <template>
-  <v-app class="modern-bg">
+  <div class="modern-bg">
     <Navbar @show-coming-soon="(msg) => alert('Coming soon: ' + msg)" />
     <Sidebar @show-coming-soon="(msg) => alert('Coming soon: ' + msg)" />
 
@@ -529,7 +529,7 @@
         <v-btn variant="text" @click="snackbar = false">TUTUP</v-btn>
       </template>
     </v-snackbar>
-  </v-app>
+  </div>
 </template>
 
 <script setup>
