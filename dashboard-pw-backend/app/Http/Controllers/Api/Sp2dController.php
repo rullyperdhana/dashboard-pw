@@ -262,7 +262,8 @@ class Sp2dController extends Controller
                 'gaji_pns' => 0,
                 'gaji_pppk' => 0,
                 'tpp_pns' => 0,
-                'tpp_pppk' => 0
+                'tpp_pppk' => 0,
+                'jenis_gaji' => null
             ];
 
             if ($skpd) {
@@ -331,6 +332,7 @@ class Sp2dController extends Controller
                     'gaji_pppk' => $internalCtx['gaji_pppk'],
                     'tpp_pns' => $internalCtx['tpp_pns'],
                     'tpp_pppk' => $internalCtx['tpp_pppk'],
+                    'jenis_gaji' => $internalCtx['jenis_gaji'],
                 ],
                 'sipd' => [
                     'tanggal_sp2d' => $real->tanggal_sp2d ? $real->tanggal_sp2d->format('Y-m-d') : null,
