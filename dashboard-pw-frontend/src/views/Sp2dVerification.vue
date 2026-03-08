@@ -23,7 +23,7 @@
         <v-card class="glass-card rounded-xl pa-4 mb-6" elevation="0">
           <v-row align="center">
             <!-- Period & Type Selection -->
-            <v-col cols="12" md="5">
+            <v-col cols="12" md="6">
               <div class="d-flex gap-2">
                 <v-select
                   v-model="selectedMonth"
@@ -83,7 +83,7 @@
             </v-col>
 
             <!-- View Mode Switcher -->
-            <v-col cols="12" md="4" class="d-flex justify-end">
+            <v-col cols="12" md="3" class="d-flex justify-end">
               <v-btn-toggle
                 v-model="viewMode"
                 mandatory
@@ -709,7 +709,8 @@ onMounted(() => {
 }
 
 .search-bar-300 {
-  width: 300px !important;
+  width: 450px !important;
+  max-width: 50% !important;
   flex: none !important;
 }
 

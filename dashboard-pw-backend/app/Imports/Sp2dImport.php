@@ -98,7 +98,7 @@ class Sp2dImport implements ToModel, WithHeadingRow
                 return 'PPPK-KEKURANGAN';
             if (str_contains($ket, 'TERUSAN'))
                 return 'PPPK-TERUSAN';
-            return 'PPPK';
+            return 'PPPK-INDUK';
         }
 
         // 3. PNS Gaji
@@ -109,9 +109,7 @@ class Sp2dImport implements ToModel, WithHeadingRow
                 return 'PNS-KEKURANGAN';
             if (str_contains($ket, 'TERUSAN'))
                 return 'PNS-TERUSAN';
-            if (str_contains($ket, 'INDUK') || str_contains($ket, 'GAJI PNS') || str_contains($ket, 'ASN'))
-                return 'PNS';
-            return 'PNS';
+            return 'PNS-INDUK';
         }
 
         return null;
