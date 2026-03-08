@@ -269,26 +269,26 @@ class Sp2dController extends Controller
                 $shortCodes = $satkerMapping->get($skpd->nama_skpd);
                 $kdskpds = $shortCodes ? $shortCodes->pluck('kdskpd')->unique()->toArray() : [];
 
+                // Determine target jenis_gaji based on SP2D type (Common for all satkers of this SKPD)
+                $targetJenisGajiDetected = 'Induk';
+                if (str_contains($real->jenis_data, 'SUSULAN'))
+                    $targetJenisGajiDetected = 'Susulan';
+                elseif (str_contains($real->jenis_data, 'KEKURANGAN'))
+                    $targetJenisGajiDetected = 'Kekurangan';
+                elseif (str_contains($real->jenis_data, 'TERUSAN'))
+                    $targetJenisGajiDetected = 'Terusan';
+
                 foreach ($kdskpds as $kd) {
                     $isPnsRow = str_contains($real->jenis_data, 'PNS');
                     $isPppkRow = str_contains($real->jenis_data, 'PPPK');
                     $isTppRow = $real->jenis_data === 'TPP';
-
-                    // Determine target jenis_gaji based on SP2D type
-                    $targetJenisGaji = 'Induk';
-                    if (str_contains($real->jenis_data, 'SUSULAN'))
-                        $targetJenisGaji = 'Susulan';
-                    elseif (str_contains($real->jenis_data, 'KEKURANGAN'))
-                        $targetJenisGaji = 'Kekurangan';
-                    elseif (str_contains($real->jenis_data, 'TERUSAN'))
-                        $targetJenisGaji = 'Terusan';
 
                     // Determine if TPP is for PNS or PPPK (Default to PNS if not specified)
                     $isPppkTpp = $isTppRow && (str_contains(strtoupper($real->keterangan), 'PPPK') || str_contains(strtoupper($real->keterangan), 'P3K'));
                     $isPnsTpp = $isTppRow && !$isPppkTpp;
 
                     if ($isPnsRow || $isPnsTpp) {
-                        $p = $pnsInternal->where('kdskpd', $kd)->where('jenis_gaji', $targetJenisGaji)->first();
+                        $p = $pnsInternal->where('kdskpd', $kd)->where('jenis_gaji', $targetJenisGajiDetected)->first();
                         if ($p) {
                             $internalCtx['brutto'] += (float) $p->brutto;
                             $internalCtx['potongan'] += (float) $p->potongan;
@@ -303,7 +303,7 @@ class Sp2dController extends Controller
                     }
 
                     if ($isPppkRow || $isPppkTpp) {
-                        $pk = $pppkInternal->where('kdskpd', $kd)->where('jenis_gaji', $targetJenisGaji)->first();
+                        $pk = $pppkInternal->where('kdskpd', $kd)->where('jenis_gaji', $targetJenisGajiDetected)->first();
                         if ($pk) {
                             $internalCtx['brutto'] += (float) $pk->brutto;
                             $internalCtx['potongan'] += (float) $pk->potongan;
@@ -317,6 +317,7 @@ class Sp2dController extends Controller
                         }
                     }
                 }
+                $internalCtx['jenis_gaji'] = $targetJenisGajiDetected;
             }
 
             return [

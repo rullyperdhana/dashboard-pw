@@ -229,12 +229,13 @@
             <v-table density="compact" class="recon-table" fixed-header hover>
               <thead>
                 <tr class="header-group-row">
-                  <th colspan="9" class="text-center simgaji-header">SIMGAJI</th>
+                  <th colspan="10" class="text-center simgaji-header">SIMGAJI</th>
                   <th colspan="8" class="text-center sipd-header">SIPD</th>
                 </tr>
                 <tr class="header-main-row">
                   <th rowspan="2" class="border-right">No</th>
                   <th rowspan="2" class="border-right" style="min-width: 200px">SKPD SIMGAJI</th>
+                  <th rowspan="2" class="border-right" style="min-width: 100px">Kategori</th>
                   <th rowspan="2" class="border-right" style="min-width: 120px">Brutto</th>
                   <th rowspan="2" class="border-right" style="min-width: 120px">Potongan</th>
                   <th rowspan="2" class="border-right" style="min-width: 120px">Netto</th>
@@ -269,6 +270,11 @@
                 <tr v-for="(row, idx) in filteredReconData" :key="idx">
                   <td class="text-center border-right">{{ idx + 1 }}</td>
                   <td class="border-right text-caption truncate">{{ row.simgaji.nama_skpd }}</td>
+                  <td class="border-right text-center">
+                    <v-chip v-if="row.simgaji.jenis_gaji" size="x-small" :color="getTypeColor(row.simgaji.jenis_gaji)" variant="tonal">
+                      {{ row.simgaji.jenis_gaji }}
+                    </v-chip>
+                  </td>
                   <td class="border-right text-right text-caption">{{ formatCurrency(row.simgaji.brutto) }}</td>
                   <td class="border-right text-right text-caption">{{ formatCurrency(row.simgaji.potongan) }}</td>
                   <td class="border-right text-right text-caption font-weight-bold">{{ formatCurrency(row.simgaji.netto) }}</td>
@@ -587,12 +593,16 @@ const formatCurrency = (val) => {
 }
 
 const getTypeColor = (type) => {
-  switch (type) {
-    case 'PNS': return 'blue'
-    case 'PPPK': return 'orange'
-    case 'TPP': return 'teal'
-    default: return 'grey'
-  }
+  if (!type) return 'grey'
+  const t = type.toUpperCase()
+  if (t.includes('PNS')) return 'blue'
+  if (t.includes('PPPK') || t.includes('P3K')) return 'orange'
+  if (t.includes('TPP')) return 'teal'
+  if (t.includes('INDUK')) return 'indigo'
+  if (t.includes('SUSULAN')) return 'deep-purple'
+  if (t.includes('KEKURANGAN')) return 'amber'
+  if (t.includes('TERUSAN')) return 'brown'
+  return 'grey'
 }
 
 const showSnackbar = (text, color = 'success') => {
