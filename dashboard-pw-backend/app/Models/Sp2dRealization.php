@@ -9,6 +9,7 @@ class Sp2dRealization extends Model
     protected $fillable = [
         'nomor_sp2d',
         'tanggal_sp2d',
+        'tanggal_cair',
         'nama_skpd_sipd',
         'skpd_id',
         'keterangan',
@@ -22,6 +23,7 @@ class Sp2dRealization extends Model
 
     protected $casts = [
         'tanggal_sp2d' => 'date',
+        'tanggal_cair' => 'date',
         'brutto' => 'float',
         'potongan' => 'float',
         'netto' => 'float',

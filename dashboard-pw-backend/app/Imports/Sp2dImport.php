@@ -14,7 +14,6 @@ class Sp2dImport implements ToModel, WithHeadingRow
     public function model(array $row)
     {
         // Skip header rows if any (SIPD has a complex header)
-        // Check if row has a numeric 'nomor' or a valid SP2D format
         if (!isset($row['nomor_sp2d']) || empty($row['nomor_sp2d']) || $row['nomor_sp2d'] == 'Nomor SP2D') {
             return null;
         }
@@ -23,8 +22,15 @@ class Sp2dImport implements ToModel, WithHeadingRow
         if (!$tanggalSp2d)
             return null;
 
+        $tanggalCair = $this->parseDate($row['tanggal_cair'] ?? $row['tgl_cair'] ?? null);
+
         $keterangan = $row['keterangan'] ?? '';
         $jenisData = $this->detectJenisData($keterangan);
+
+        // SKIP if not payroll
+        if (!$jenisData) {
+            return null;
+        }
 
         $namaSkpdSipd = $row['unit_skpd'] ?? '';
         $skpdId = $this->findSkpdId($namaSkpdSipd);
@@ -32,6 +38,7 @@ class Sp2dImport implements ToModel, WithHeadingRow
         return new Sp2dRealization([
             'nomor_sp2d' => $row['nomor_sp2d'],
             'tanggal_sp2d' => $tanggalSp2d->format('Y-m-d'),
+            'tanggal_cair' => $tanggalCair ? $tanggalCair->format('Y-m-d') : null,
             'nama_skpd_sipd' => $namaSkpdSipd,
             'skpd_id' => $skpdId,
             'keterangan' => $keterangan,
@@ -77,11 +84,24 @@ class Sp2dImport implements ToModel, WithHeadingRow
     private function detectJenisData($ket)
     {
         $ket = strtoupper($ket);
-        if (str_contains($ket, 'PPPK'))
-            return 'PPPK';
-        if (str_contains($ket, 'TPP') || str_contains($ket, 'TAMBAHAN PENGHASILAN'))
+
+        // 1. TPP / Tunjangan Kinerja
+        if (str_contains($ket, 'TPP ') || str_contains($ket, ' TAMBAHAN PENGHASILAN') || str_contains($ket, 'TUNJANGAN KINERJA')) {
             return 'TPP';
-        return 'PNS'; // Default to PNS for "Gaji" or "Gaji Induk"
+        }
+
+        // 2. PPPK / P3K Gaji
+        if ((str_contains($ket, 'PPPK') || str_contains($ket, 'P3K')) && (str_contains($ket, 'GAJI') || str_contains($ket, 'PEMBAYARAN BELANJA PEGAWAI'))) {
+            return 'PPPK';
+        }
+
+        // 3. PNS Gaji (look for GAJI + (PNS/INDUK/SUSULAN/TERUSAN))
+        if (str_contains($ket, 'GAJI') && (str_contains($ket, 'PNS') || str_contains($ket, 'INDUK') || str_contains($ket, 'SUSULAN') || str_contains($ket, 'TERUSAN') || str_contains($ket, 'KEPALA DAERAH'))) {
+            return 'PNS';
+        }
+
+        // 4. Default: Return null to SKIP non-payroll records (like UP, LS Barang/Jasa, etc.)
+        return null;
     }
 
     private function findSkpdId($name)
@@ -106,10 +126,51 @@ class Sp2dImport implements ToModel, WithHeadingRow
 
     private function cleanNum($val)
     {
-        if (is_string($val)) {
-            return (float) str_replace([',', '.'], ['', '.'], $val);
+        if (is_numeric($val)) {
+            return (float) $val;
         }
-        return (float) $val;
+
+        if (is_string($val)) {
+            // Remove any whitespace and currency symbols
+            $val = preg_replace('/[^\d,.]/', '', $val);
+
+            // Indonesian / European: 1.234.567,89
+            // US / Standard: 1,234,567.89
+
+            // If there's both a comma and a period
+            if (strpos($val, ',') !== false && strpos($val, '.') !== false) {
+                if (strrpos($val, ',') > strrpos($val, '.')) {
+                    // Indonesian: Comma is the last separator, so it's the decimal
+                    $val = str_replace('.', '', $val);
+                    $val = str_replace(',', '.', $val);
+                } else {
+                    // US: Period is the last separator
+                    $val = str_replace(',', '', $val);
+                }
+            } elseif (strpos($val, ',') !== false) {
+                // Only comma: Is it thousands (US) or decimal (ID)? 
+                // e.g. "1,234" vs "1,23"
+                // If it's 3 digits after comma, it might be thousands.
+                // But usually in SIPD, a single comma is a decimal.
+                if (preg_match('/,\d{3}$/', $val) && !preg_match('/,\d{3,}/', $val)) {
+                    // Looks like thousands (US)
+                    $val = str_replace(',', '', $val);
+                } else {
+                    // Assume decimal (ID)
+                    $val = str_replace(',', '.', $val);
+                }
+            } elseif (strpos($val, '.') !== false) {
+                // Only periods: If multiple, they are thousands (ID)
+                if (substr_count($val, '.') > 1) {
+                    $val = str_replace('.', '', $val);
+                }
+                // If single period, it's usually decimal (US style) in Excel.
+                // No change needed for single period.
+            }
+
+            return (float) $val;
+        }
+        return 0;
     }
 
     public function headingRow(): int

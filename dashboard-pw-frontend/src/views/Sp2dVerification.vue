@@ -1,111 +1,96 @@
 <template>
-  <v-container fluid class="modern-dashboard pa-6">
+  <v-app class="modern-dashboard">
+    <Navbar @show-coming-soon="showComingSoon" />
+    <Sidebar @show-coming-soon="showComingSoon" />
+    
+    <v-main class="bg-light">
+      <v-container fluid class="pa-8">
+        <v-row>
+          <v-col cols="12">
+            <div class="d-flex align-center mb-6">
+              <v-btn icon="mdi-arrow-left" variant="text" @click="$router.push('/dashboard')" class="mr-2"></v-btn>
+              <div>
+                <h1 class="text-h4 font-weight-bold mb-1">Verifikasi Realisasi SP2D</h1>
+                <p class="text-subtitle-1 text-medium-emphasis mb-0">Monitor pencairan Gaji & TPP berdasarkan data SIPD</p>
+              </div>
+            </div>
+          </v-col>
+        </v-row>
+
+    <!-- Top Controls Bar -->
     <v-row>
       <v-col cols="12">
-        <div class="d-flex align-center mb-6">
-          <v-btn icon="mdi-arrow-left" variant="text" @click="$router.push('/dashboard')" class="mr-2"></v-btn>
-          <div>
-            <h1 class="text-h4 font-weight-bold mb-1">Verifikasi Realisasi SP2D</h1>
-            <p class="text-subtitle-1 text-medium-emphasis mb-0">Monitor pencairan Gaji & TPP berdasarkan data SIPD</p>
-          </div>
-        </div>
+        <v-card class="glass-card rounded-xl pa-4 mb-6" elevation="0">
+          <v-row align="center">
+            <!-- Period Selection -->
+            <v-col cols="12" md="3">
+              <div class="d-flex gap-2">
+                <v-select
+                  v-model="selectedMonth"
+                  :items="months"
+                  label="Bulan"
+                  density="compact"
+                  variant="outlined"
+                  rounded="lg"
+                  hide-details
+                  @update:model-value="fetchData"
+                ></v-select>
+                <v-select
+                  v-model="selectedYear"
+                  :items="years"
+                  label="Tahun"
+                  density="compact"
+                  variant="outlined"
+                  rounded="lg"
+                  hide-details
+                  @update:model-value="fetchData"
+                ></v-select>
+              </div>
+            </v-col>
+
+            <!-- Upload Zone (Compact Row Style) -->
+            <v-col cols="12" md="4">
+              <div 
+                class="upload-zone-compact pa-2 px-4 d-flex align-center rounded-xl border-dashed cursor-pointer"
+                :class="{ 'is-dragging': isDragging }"
+                @dragover.prevent="isDragging = true"
+                @dragleave.prevent="isDragging = false"
+                @drop.prevent="handleDrop"
+                @click="$refs.fileInput.click()"
+              >
+                <input type="file" ref="fileInput" class="d-none" @change="handleFileSelect" accept=".xlsx,.xls">
+                <v-icon size="24" color="primary" class="mr-3">mdi-file-excel-outline</v-icon>
+                <div class="flex-grow-1">
+                  <div class="text-caption font-weight-bold">Impor Register SIPD</div>
+                  <div class="text-overline" style="font-size: 8px !important; line-height: 1">Tarik file ke sini atau klik</div>
+                </div>
+                <v-progress-circular v-if="uploading" indeterminate size="16" width="2" color="primary" class="ml-2"></v-progress-circular>
+              </div>
+            </v-col>
+
+            <!-- View Mode Switcher -->
+            <v-col cols="12" md="5" class="d-flex justify-end">
+              <v-btn-toggle
+                v-model="viewMode"
+                mandatory
+                color="primary"
+                density="compact"
+                rounded="pill"
+                variant="tonal"
+              >
+                <v-btn value="summary" size="small" prepend-icon="mdi-view-list">Ringkasan</v-btn>
+                <v-btn value="details" size="small" prepend-icon="mdi-table">Detail Data</v-btn>
+                <v-btn value="recon" size="small" prepend-icon="mdi-compare">Table Rekon</v-btn>
+              </v-btn-toggle>
+            </v-col>
+          </v-row>
+        </v-card>
       </v-col>
     </v-row>
 
+    <!-- Results Table (Full Width) -->
     <v-row>
-      <!-- Controls & Upload -->
-      <v-col cols="12" lg="4">
-        <v-card class="glass-card rounded-xl pa-6 mb-6" elevation="0">
-          <h2 class="text-h6 font-weight-bold mb-4">Pengaturan Periode</h2>
-          <v-row dense>
-            <v-col cols="7">
-              <v-select
-                v-model="selectedMonth"
-                :items="months"
-                label="Bulan"
-                density="comfortable"
-                variant="outlined"
-                rounded="lg"
-                @update:model-value="fetchData"
-              ></v-select>
-            </v-col>
-            <v-col cols="5">
-              <v-select
-                v-model="selectedYear"
-                :items="years"
-                label="Tahun"
-                density="comfortable"
-                variant="outlined"
-                rounded="lg"
-                @update:model-value="fetchData"
-              ></v-select>
-            </v-col>
-          </v-row>
-
-          <v-divider class="my-4"></v-divider>
-
-          <h2 class="text-h6 font-weight-bold mb-4">Upload Register SIPD</h2>
-          <div 
-            class="upload-zone pa-8 text-center rounded-xl border-dashed"
-            :class="{ 'is-dragging': isDragging }"
-            @dragover.prevent="isDragging = true"
-            @dragleave.prevent="isDragging = false"
-            @drop.prevent="handleDrop"
-            @click="$refs.fileInput.click()"
-          >
-            <input type="file" ref="fileInput" class="d-none" @change="handleFileSelect" accept=".xlsx,.xls">
-            <v-icon size="48" color="primary" class="mb-4">mdi-file-excel-outline</v-icon>
-            <div class="text-h6 mb-2">Pilih atau Tarik File Excel</div>
-            <div class="text-body-2 text-medium-emphasis">Format Laporan Register SIPD (.xlsx)</div>
-          </div>
-          
-          <v-expand-transition>
-            <div v-if="uploading" class="mt-4">
-              <v-progress-linear indeterminate color="primary" rounded height="6"></v-progress-linear>
-              <div class="text-center mt-2 text-caption">Sedang mengimpor data...</div>
-            </div>
-          </v-expand-transition>
-        </v-card>
-
-        <v-card class="glass-card rounded-xl pa-6" elevation="0">
-          <div class="d-flex align-center justify-space-between mb-4">
-            <h2 class="text-h6 font-weight-bold mb-0">Tampilan</h2>
-            <v-btn-toggle
-              v-model="viewMode"
-              mandatory
-              color="primary"
-              density="compact"
-              rounded="pill"
-            >
-              <v-btn value="summary" size="small">Ringkasan</v-btn>
-              <v-btn value="details" size="small">Detail Data</v-btn>
-            </v-btn-toggle>
-          </div>
-          <v-list density="compact" class="bg-transparent pa-0">
-            <v-list-item class="px-0">
-              <template v-slot:prepend>
-                <v-icon color="success" size="20">mdi-check-circle</v-icon>
-              </template>
-              <v-list-item-title class="text-body-2">Grup "PNS" -> Gaji Induk/PNS</v-list-item-title>
-            </v-list-item>
-            <v-list-item class="px-0">
-              <template v-slot:prepend>
-                <v-icon color="success" size="20">mdi-check-circle</v-icon>
-              </template>
-              <v-list-item-title class="text-body-2">Grup "PPPK" -> Gaji PPPK</v-list-item-title>
-            </v-list-item>
-            <v-list-item class="px-0">
-              <template v-slot:prepend>
-                <v-icon color="success" size="20">mdi-check-circle</v-icon>
-              </template>
-              <v-list-item-title class="text-body-2">Grup "TPP" -> Tambahan Penghasilan</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-card>
-      </v-col>
-
-      <!-- Results Table -->
-      <v-col cols="12" lg="8">
+      <v-col cols="12">
         <!-- Summary View -->
         <v-card v-if="viewMode === 'summary'" class="glass-card rounded-xl overflow-hidden" elevation="0">
           <div class="pa-6 border-bottom d-flex align-center justify-space-between bg-surface-variant-light">
@@ -152,7 +137,7 @@
         </v-card>
 
         <!-- Detailed View (Raw Transactions) -->
-        <v-card v-else class="glass-card rounded-xl overflow-hidden" elevation="0">
+        <v-card v-else-if="viewMode === 'details'" class="glass-card rounded-xl overflow-hidden" elevation="0">
           <div class="pa-6 border-bottom d-flex align-center justify-space-between bg-surface-variant-light">
             <h2 class="text-h6 font-weight-bold mb-0">Daftar Transaksi Hasil Impor</h2>
             <div class="d-flex align-center gap-2">
@@ -199,22 +184,162 @@
             <template v-slot:item.nama_skpd_sipd="{ item }">
               <div class="text-caption" style="max-width: 150px;">{{ item.nama_skpd_sipd }}</div>
             </template>
+
+            <template v-slot:item.actions="{ item }">
+              <div class="d-flex justify-end gap-1">
+                <v-btn icon="mdi-pencil" size="x-small" variant="text" color="primary" @click="openEditDialog(item)"></v-btn>
+                <v-btn icon="mdi-delete" size="x-small" variant="text" color="error" @click="confirmDelete(item)"></v-btn>
+              </div>
+            </template>
           </v-data-table>
+        </v-card>
+
+        <!-- Reconciliation Table View -->
+        <v-card v-else-if="viewMode === 'recon'" class="glass-card rounded-xl overflow-hidden" elevation="0">
+          <div class="pa-6 border-bottom d-flex align-center justify-space-between bg-surface-variant-light">
+            <h2 class="text-h6 font-weight-bold mb-0">Tabel Rekonsiliasi SIMGAJI vs SIPD</h2>
+            <v-btn color="primary" variant="tonal" prepend-icon="mdi-export" size="small" rounded="pill">Export Excel</v-btn>
+          </div>
+          
+          <div class="recon-table-container">
+            <v-table density="compact" class="recon-table" fixed-header hover>
+              <thead>
+                <tr class="header-group-row">
+                  <th colspan="9" class="text-center simgaji-header">SIMGAJI</th>
+                  <th colspan="8" class="text-center sipd-header">SIPD</th>
+                </tr>
+                <tr class="header-main-row">
+                  <th rowspan="2" class="border-right">No</th>
+                  <th rowspan="2" class="border-right" style="min-width: 200px">SKPD SIMGAJI</th>
+                  <th rowspan="2" class="border-right" style="min-width: 120px">Brutto</th>
+                  <th rowspan="2" class="border-right" style="min-width: 120px">Potongan</th>
+                  <th rowspan="2" class="border-right" style="min-width: 120px">Netto</th>
+                  <th colspan="2" class="text-center border-right">GAJI</th>
+                  <th colspan="2" class="text-center border-right">TPP</th>
+                  <th colspan="2" class="text-center border-right">Tanggal SP2D</th>
+                  <th rowspan="2" class="border-right" style="min-width: 180px">Nomor SP2D</th>
+                  <th rowspan="2" class="border-right" style="min-width: 180px">SKPD SIPD</th>
+                  <th rowspan="2" class="border-right" style="min-width: 250px">Keterangan</th>
+                  <th rowspan="2" class="border-right" style="min-width: 120px">Brutto</th>
+                  <th rowspan="2" class="border-right" style="min-width: 120px">Potongan</th>
+                  <th rowspan="2" class="border-right" style="min-width: 120px">Netto</th>
+                </tr>
+                <tr class="header-sub-row">
+                  <th class="text-center border-right">PNS</th>
+                  <th class="text-center border-right">PPPK</th>
+                  <th class="text-center border-right">PNS</th>
+                  <th class="text-center border-right">PPPK</th>
+                  <th class="text-center border-right">Pembuatan</th>
+                  <th class="text-center border-right">Pencairan</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="loading" class="text-center">
+                  <td colspan="17" class="pa-10">
+                    <v-progress-circular indeterminate color="primary"></v-progress-circular>
+                  </td>
+                </tr>
+                <tr v-else-if="reconData.length === 0" class="text-center">
+                  <td colspan="17" class="pa-10 text-medium-emphasis">Tidak ada data untuk periode ini</td>
+                </tr>
+                <tr v-for="(row, idx) in reconData" :key="idx">
+                  <td class="text-center border-right">{{ idx + 1 }}</td>
+                  <td class="border-right text-caption truncate">{{ row.simgaji.nama_skpd }}</td>
+                  <td class="border-right text-right text-caption">{{ formatCurrency(row.simgaji.brutto) }}</td>
+                  <td class="border-right text-right text-caption">{{ formatCurrency(row.simgaji.potongan) }}</td>
+                  <td class="border-right text-right text-caption font-weight-bold">{{ formatCurrency(row.simgaji.netto) }}</td>
+                  <td class="border-right text-right text-caption">{{ formatCurrency(row.simgaji.gaji_pns) }}</td>
+                  <td class="border-right text-right text-caption">{{ formatCurrency(row.simgaji.gaji_pppk) }}</td>
+                  <td class="border-right text-right text-caption">{{ formatCurrency(row.simgaji.tpp_pns) }}</td>
+                  <td class="border-right text-right text-caption">{{ formatCurrency(row.simgaji.tpp_pppk) }}</td>
+                  
+                  <td class="border-right text-center text-caption">{{ formatDate(row.sipd.tanggal_sp2d) }}</td>
+                  <td class="border-right text-center text-caption">{{ formatDate(row.sipd.tanggal_cair) }}</td>
+                  <td class="border-right text-caption font-weight-bold">{{ row.sipd.nomor_sp2d }}</td>
+                  <td class="border-right text-caption overflow-hidden" style="max-width: 15rem">{{ row.sipd.nama_skpd }}</td>
+                  <td class="border-right text-caption truncate">{{ row.sipd.keterangan }}</td>
+                  <td class="border-right text-right text-caption">{{ formatCurrency(row.sipd.brutto) }}</td>
+                  <td class="border-right text-right text-caption">{{ formatCurrency(row.sipd.potongan) }}</td>
+                  <td class="text-right text-caption font-weight-bold">{{ formatCurrency(row.sipd.netto) }}</td>
+                </tr>
+              </tbody>
+            </v-table>
+          </div>
         </v-card>
       </v-col>
     </v-row>
 
+    <!-- Edit Dialog -->
+    <v-dialog v-model="editDialog" max-width="500px">
+      <v-card class="rounded-xl pa-4">
+        <v-card-title class="text-h5 font-weight-bold">Atur Ulang Nilai SP2D</v-card-title>
+        <v-card-text>
+          <p class="text-body-2 text-medium-emphasis mb-4">
+            Sesuaikan nilai SP2D jika data register SIPD tergabung dengan kegiatan lain.
+          </p>
+          <v-form ref="editForm" v-model="isFormValid">
+            <v-text-field
+              v-model="editItem.nomor_sp2d"
+              label="Nomor SP2D"
+              variant="outlined"
+              density="comfortable"
+              rounded="lg"
+              class="mb-2"
+            ></v-text-field>
+            
+            <v-select
+              v-model="editItem.jenis_data"
+              :items="['PNS', 'PPPK', 'TPP']"
+              label="Kategori Data"
+              variant="outlined"
+              density="comfortable"
+              rounded="lg"
+              class="mb-2"
+            ></v-select>
+
+            <v-text-field
+              v-model.number="editItem.netto"
+              label="Nilai Netto (Nominal)"
+              variant="outlined"
+              density="comfortable"
+              rounded="lg"
+              type="number"
+              prefix="Rp"
+              :rules="[v => !!v || 'Wajib diisi']"
+            ></v-text-field>
+          </v-form>
+        </v-card-text>
+        <v-card-actions class="pa-4">
+          <v-spacer></v-spacer>
+          <v-btn variant="text" rounded="pill" @click="editDialog = false">Batal</v-btn>
+          <v-btn color="primary" variant="flat" rounded="pill" :loading="saving" :disabled="!isFormValid" @click="updateTransaction">
+            Simpan Perubahan
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Success Snackbar -->
     <v-snackbar v-model="snackbar" :color="snackbarColor" timeout="3000" rounded="lg">
-      {{ snackbarText }}
+      <div class="d-flex align-center">
+        <v-icon class="mr-3" v-if="snackbarTitle">mdi-information-outline</v-icon>
+        <div>
+          <div class="font-weight-bold" v-if="snackbarTitle">{{ snackbarTitle }}</div>
+          <div class="text-body-2">{{ snackbarText }}</div>
+        </div>
+      </div>
     </v-snackbar>
   </v-container>
+  </v-main>
+  </v-app>
 </template>
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import api from '../api'
 import StatusChip from '../components/Sp2dStatusChip.vue'
+import Sidebar from '../components/Sidebar.vue'
+import Navbar from '../components/Navbar.vue'
 
 const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedYear = ref(new Date().getFullYear())
@@ -226,9 +351,24 @@ const isDragging = ref(false)
 const viewMode = ref('summary')
 const items = ref([])
 const transactions = ref([])
+const reconData = ref([])
 const snackbar = ref(false)
 const snackbarText = ref('')
 const snackbarColor = ref('success')
+const snackbarTitle = ref('')
+
+const showComingSoon = (feature) => {
+  snackbarTitle.value = feature
+  snackbarText.value = 'Fitur ini akan segera hadir.'
+  snackbarColor.value = 'primary'
+  snackbar.value = true
+}
+
+// Edit Logic
+const editDialog = ref(false)
+const saving = ref(false)
+const isFormValid = ref(false)
+const editItem = ref({ id: null, nomor_sp2d: '', netto: 0, jenis_data: '' })
 
 const months = [
   { title: 'Januari', value: 1 }, { title: 'Februari', value: 2 },
@@ -248,18 +388,21 @@ const headers = [
 ]
 
 const detailHeaders = [
-  { title: 'No. SP2D', key: 'nomor_sp2d', width: '200px' },
+  { title: 'No. SP2D', key: 'nomor_sp2d', width: '180px' },
   { title: 'Tanggal', key: 'tanggal_sp2d' },
   { title: 'SKPD (SIPD)', key: 'nama_skpd_sipd' },
   { title: 'Kategori', key: 'jenis_data', align: 'center' },
   { title: 'Nilai Netto', key: 'netto', align: 'end' },
+  { title: 'Aksi', key: 'actions', align: 'end', sortable: false },
 ]
 
 const fetchData = async () => {
   if (viewMode.value === 'summary') {
     await fetchStatus()
-  } else {
+  } else if (viewMode.value === 'details') {
     await fetchTransactions()
+  } else if (viewMode.value === 'recon') {
+    await fetchRecon()
   }
 }
 
@@ -297,6 +440,57 @@ const fetchTransactions = async () => {
   }
 }
 
+const fetchRecon = async () => {
+  loading.value = true
+  try {
+    const response = await api.get('/sp2d/recon', {
+      params: { bulan: selectedMonth.value, tahun: selectedYear.value }
+    })
+    reconData.value = response.data.data
+  } catch (err) {
+    console.error(err)
+    showSnackbar('Gagal mengambil data rekonsiliasi', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+const openEditDialog = (item) => {
+  editItem.value = { ...item }
+  editDialog.value = true
+}
+
+const updateTransaction = async () => {
+  saving.value = true
+  try {
+    await api.put(`/sp2d/realizations/${editItem.value.id}`, {
+      netto: editItem.value.netto,
+      nomor_sp2d: editItem.value.nomor_sp2d,
+      jenis_data: editItem.value.jenis_data
+    })
+    showSnackbar('Data berhasil diperbarui')
+    editDialog.value = false
+    fetchData()
+    if (viewMode.value === 'details') fetchStatus() // Update summary silently if in details view
+  } catch (err) {
+    showSnackbar('Gagal memperbarui data', 'error')
+  } finally {
+    saving.value = false
+  }
+}
+
+const confirmDelete = async (item) => {
+  if (confirm('Apakah Anda yakin ingin menghapus data realisasi ini?')) {
+    try {
+      await api.delete(`/sp2d/realizations/${item.id}`)
+      showSnackbar('Data berhasil dihapus')
+      fetchData()
+    } catch (err) {
+      showSnackbar('Gagal menghapus data', 'error')
+    }
+  }
+}
+
 const handleFileSelect = (e) => {
   const file = e.target.files[0]
   if (file) uploadFile(file)
@@ -311,6 +505,8 @@ const handleDrop = (e) => {
 const uploadFile = async (file) => {
   const formData = new FormData()
   formData.append('file', file)
+  formData.append('bulan', selectedMonth.value)
+  formData.append('tahun', selectedYear.value)
   
   uploading.value = true
   try {
@@ -323,7 +519,9 @@ const uploadFile = async (file) => {
     showSnackbar(err.response?.data?.message || 'Gagal mengunggah file', 'error')
   } finally {
     uploading.value = false
-    if (this.$refs.fileInput) this.$refs.fileInput.value = ''
+    // Clear input
+    const input = document.querySelector('input[type="file"]')
+    if (input) input.value = ''
   }
 }
 
@@ -351,6 +549,7 @@ const getTypeColor = (type) => {
 }
 
 const showSnackbar = (text, color = 'success') => {
+  snackbarTitle.value = ''
   snackbarText.value = text
   snackbarColor.value = color
   snackbar.value = true
@@ -378,9 +577,19 @@ onMounted(() => {
   transition: all 0.3s ease;
 }
 
-.upload-zone:hover, .upload-zone.is-dragging {
+.upload-zone:hover, .upload-zone.is-dragging, .upload-zone-compact:hover, .upload-zone-compact.is-dragging {
   border-color: rgb(var(--v-theme-primary));
   background-color: rgba(var(--v-theme-primary), 0.05);
+}
+/*
+- **Full-Screen Table**: Redesigned the layout to be full screen. Controls (Period, Upload, and View Mode) are now placed in a compact top-bar, allowing the table to expand to the full width of the container.
+- **Dark Mode Support**: Replaced hardcoded light colors with theme-aware CSS. Table headers now automatically adapt their background and text colors for perfect readability in both light and dark modes.
+- **Sidebar Integration**: The page is now correctly wrapped in the main application layout (`v-app` and `v-main`).
+*/
+.upload-zone-compact {
+  border: 1px dashed rgba(var(--v-border-color), 0.3);
+  transition: all 0.2s ease;
+  min-height: 48px;
 }
 
 .max-width-300 {
@@ -389,6 +598,10 @@ onMounted(() => {
 
 .max-width-200 {
   max-width: 200px;
+}
+
+.gap-1 {
+  gap: 4px;
 }
 
 .gap-2 {
@@ -401,5 +614,63 @@ onMounted(() => {
 
 .bg-surface-variant-light {
   background-color: rgba(var(--v-theme-surface-variant), 0.05);
+}
+
+.recon-table-container {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.recon-table {
+  border-collapse: collapse;
+}
+
+.recon-table th, .recon-table td {
+  border: 1px solid rgba(var(--v-border-color), 0.1) !important;
+  white-space: nowrap !important;
+}
+
+.header-group-row th {
+  font-size: 0.875rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.05rem;
+}
+
+.v-theme--light .simgaji-header {
+  background-color: #e8f5e9 !important;
+  color: #1b5e20 !important;
+}
+
+.v-theme--dark .simgaji-header {
+  background-color: #1b5e20 !important;
+  color: #c8e6c9 !important;
+}
+
+.v-theme--light .sipd-header {
+  background-color: #e3f2fd !important;
+  color: #0d47a1 !important;
+}
+
+.v-theme--dark .sipd-header {
+  background-color: #0d47a1 !important;
+  color: #bbdefb !important;
+}
+
+.header-main-row th, .header-sub-row th {
+  background-color: rgba(var(--v-theme-on-surface), 0.05) !important;
+  color: rgb(var(--v-theme-on-surface)) !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+}
+
+.border-right {
+  border-right: 1px solid rgba(var(--v-border-color), 0.1) !important;
+}
+
+.truncate {
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>
