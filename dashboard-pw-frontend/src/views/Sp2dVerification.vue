@@ -45,6 +45,17 @@
                   hide-details
                   @update:model-value="fetchData"
                 ></v-select>
+                <v-select
+                  v-model="selectedJenisGaji"
+                  :items="['Induk', 'Susulan', 'Kekurangan', 'Terusan']"
+                  label="Jenis Gaji"
+                  density="compact"
+                  variant="outlined"
+                  rounded="lg"
+                  hide-details
+                  clearable
+                  @update:model-value="fetchData"
+                ></v-select>
               </div>
             </v-col>
 
@@ -359,6 +370,7 @@ const selectedYear = ref(new Date().getFullYear())
 const search = ref('')
 const searchDetail = ref('')
 const searchRecon = ref('')
+const selectedJenisGaji = ref(null)
 const loading = ref(false)
 const uploading = ref(false)
 const isDragging = ref(false)
@@ -437,7 +449,11 @@ const fetchStatus = async () => {
   loading.value = true
   try {
     const response = await api.get('/sp2d/status', {
-      params: { bulan: selectedMonth.value, tahun: selectedYear.value }
+      params: { 
+        bulan: selectedMonth.value, 
+        tahun: selectedYear.value,
+        jenis_gaji: selectedJenisGaji.value || undefined
+      }
     })
     items.value = response.data.data
   } catch (err) {
@@ -452,7 +468,11 @@ const fetchTransactions = async () => {
   loading.value = true
   try {
     const response = await api.get('/sp2d/transactions', {
-      params: { bulan: selectedMonth.value, tahun: selectedYear.value }
+      params: { 
+        bulan: selectedMonth.value, 
+        tahun: selectedYear.value,
+        jenis_gaji: selectedJenisGaji.value || undefined
+      }
     })
     transactions.value = response.data.data
   } catch (err) {
@@ -467,7 +487,11 @@ const fetchRecon = async () => {
   loading.value = true
   try {
     const response = await api.get('/sp2d/recon', {
-      params: { bulan: selectedMonth.value, tahun: selectedYear.value }
+      params: { 
+        bulan: selectedMonth.value, 
+        tahun: selectedYear.value,
+        jenis_gaji: selectedJenisGaji.value || undefined
+      }
     })
     reconData.value = response.data.data
   } catch (err) {

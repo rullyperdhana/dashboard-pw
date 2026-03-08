@@ -37,28 +37,44 @@ class Sp2dController extends Controller
     {
         $bulan = $request->query('bulan', date('n'));
         $tahun = $request->query('tahun', date('Y'));
+        $jenisGaji = $request->query('jenis_gaji');
 
         // Get all main SKPDs
         $skpds = Skpd::where('is_skpd', 1)->orderBy('nama_skpd')->get();
 
         // Get all realizations for the period
-        $realizations = Sp2dRealization::where('bulan', $bulan)
-            ->where('tahun', $tahun)
-            ->get();
+        $realQuery = Sp2dRealization::where('bulan', $bulan)
+            ->where('tahun', $tahun);
+
+        if ($jenisGaji) {
+            $realQuery->where('jenis_data', 'LIKE', '%' . strtoupper($jenisGaji) . '%');
+        }
+
+        $realizations = $realQuery->get();
 
         // Get Internal Stats
-        $pnsInternal = \DB::table('gaji_pns')
+        $pnsQuery = \DB::table('gaji_pns')
             ->where('bulan', $bulan)
-            ->where('tahun', $tahun)
-            ->select('kdskpd', \DB::raw('SUM(bersih) as total_gaji'), \DB::raw('SUM(tunj_tpp) as total_tpp'))
+            ->where('tahun', $tahun);
+
+        if ($jenisGaji) {
+            $pnsQuery->where('jenis_gaji', $jenisGaji);
+        }
+
+        $pnsInternal = $pnsQuery->select('kdskpd', \DB::raw('SUM(bersih) as total_gaji'), \DB::raw('SUM(tunj_tpp) as total_tpp'))
             ->groupBy('kdskpd')
             ->get()
             ->keyBy('kdskpd');
 
-        $pppkInternal = \DB::table('gaji_pppk')
+        $pppkQuery = \DB::table('gaji_pppk')
             ->where('bulan', $bulan)
-            ->where('tahun', $tahun)
-            ->select('kdskpd', \DB::raw('SUM(bersih) as total_gaji'), \DB::raw('SUM(tunj_tpp) as total_tpp'))
+            ->where('tahun', $tahun);
+
+        if ($jenisGaji) {
+            $pppkQuery->where('jenis_gaji', $jenisGaji);
+        }
+
+        $pppkInternal = $pppkQuery->select('kdskpd', \DB::raw('SUM(bersih) as total_gaji'), \DB::raw('SUM(tunj_tpp) as total_tpp'))
             ->groupBy('kdskpd')
             ->get()
             ->keyBy('kdskpd');
@@ -129,12 +145,17 @@ class Sp2dController extends Controller
         $bulan = $request->query('bulan', date('n'));
         $tahun = $request->query('tahun', date('Y'));
         $idSkpd = $request->query('id_skpd');
+        $jenisGaji = $request->query('jenis_gaji');
 
         $query = Sp2dRealization::where('bulan', $bulan)
             ->where('tahun', $tahun);
 
         if ($idSkpd) {
             $query->where('skpd_id', $idSkpd);
+        }
+
+        if ($jenisGaji) {
+            $query->where('jenis_data', 'LIKE', '%' . strtoupper($jenisGaji) . '%');
         }
 
         $data = $query->orderBy('tanggal_sp2d', 'desc')->get();
@@ -178,11 +199,17 @@ class Sp2dController extends Controller
     {
         $bulan = $request->query('bulan', date('n'));
         $tahun = $request->query('tahun', date('Y'));
+        $jenisGaji = $request->query('jenis_gaji');
 
         // 1. Get all realizations for the period
-        $realizations = Sp2dRealization::where('bulan', $bulan)
-            ->where('tahun', $tahun)
-            ->orderBy('tanggal_sp2d', 'asc')
+        $realQuery = Sp2dRealization::where('bulan', $bulan)
+            ->where('tahun', $tahun);
+
+        if ($jenisGaji) {
+            $realQuery->where('jenis_data', 'LIKE', '%' . strtoupper($jenisGaji) . '%');
+        }
+
+        $realizations = $realQuery->orderBy('tanggal_sp2d', 'asc')
             ->get();
 
         // 2. Get SKPDs to map internal data
