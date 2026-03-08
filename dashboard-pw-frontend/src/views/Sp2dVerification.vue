@@ -393,6 +393,12 @@ const selectedJenisGaji = ref(null)
 const sortBy = ref('nama_skpd')
 const sortDesc = ref(false)
 const loading = ref(false)
+const uploading = ref(false)
+const isDragging = ref(false)
+const viewMode = ref('summary')
+const items = ref([])
+const transactions = ref([])
+const reconData = ref([])
 
 const toggleSort = (key) => {
   if (sortBy.value === key) {
