@@ -79,18 +79,21 @@ class Sp2dController extends Controller
             ->get()
             ->keyBy('kdskpd');
 
-        // Get mappings from satkers (name to short kdskpd)
         $satkerMapping = \DB::table('satkers')
             ->select('nmskpd', 'kdskpd')
             ->distinct()
             ->get()
+            ->map(function ($item) {
+                $item->nmskpd = trim($item->nmskpd);
+                return $item;
+            })
             ->groupBy('nmskpd');
 
         $data = $skpds->map(function ($skpd) use ($realizations, $pnsInternal, $pppkInternal, $satkerMapping) {
             $skpdRealizations = $realizations->where('skpd_id', $skpd->id_skpd);
 
             // Mapping: Find short codes (kdskpd) in satkers table by official name
-            $shortCodes = $satkerMapping->get($skpd->nama_skpd);
+            $shortCodes = $satkerMapping->get(trim($skpd->nama_skpd));
             $kdskpds = $shortCodes ? $shortCodes->pluck('kdskpd')->unique()->toArray() : [];
 
             // Sum up internal data for all matching short codes
@@ -244,11 +247,14 @@ class Sp2dController extends Controller
             ->groupBy('kdskpd', 'jenis_gaji')
             ->get();
 
-        // 4. Get satker mapping for internal totals
         $satkerMapping = \DB::table('satkers')
             ->select('nmskpd', 'kdskpd')
             ->distinct()
             ->get()
+            ->map(function ($item) {
+                $item->nmskpd = trim($item->nmskpd);
+                return $item;
+            })
             ->groupBy('nmskpd');
 
         // 5. Build rows
@@ -267,7 +273,7 @@ class Sp2dController extends Controller
             ];
 
             if ($skpd) {
-                $shortCodes = $satkerMapping->get($skpd->nama_skpd);
+                $shortCodes = $satkerMapping->get(trim($skpd->nama_skpd));
                 $kdskpds = $shortCodes ? $shortCodes->pluck('kdskpd')->unique()->toArray() : [];
 
                 // Determine target jenis_gaji based on SP2D type (Common for all satkers of this SKPD)

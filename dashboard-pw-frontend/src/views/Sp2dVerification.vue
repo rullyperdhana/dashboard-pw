@@ -22,8 +22,8 @@
       <v-col cols="12">
         <v-card class="glass-card rounded-xl pa-4 mb-6" elevation="0">
           <v-row align="center">
-            <!-- Period Selection -->
-            <v-col cols="12" md="3">
+            <!-- Period & Type Selection -->
+            <v-col cols="12" md="5">
               <div class="d-flex gap-2">
                 <v-select
                   v-model="selectedMonth"
@@ -33,6 +33,7 @@
                   variant="outlined"
                   rounded="lg"
                   hide-details
+                  class="flex-grow-1"
                   @update:model-value="fetchData"
                 ></v-select>
                 <v-select
@@ -43,6 +44,7 @@
                   variant="outlined"
                   rounded="lg"
                   hide-details
+                  style="width: 100px"
                   @update:model-value="fetchData"
                 ></v-select>
                 <v-select
@@ -54,13 +56,14 @@
                   rounded="lg"
                   hide-details
                   clearable
+                  class="flex-grow-1"
                   @update:model-value="fetchData"
                 ></v-select>
               </div>
             </v-col>
 
-            <!-- Upload Zone (Compact Row Style) -->
-            <v-col cols="12" md="4">
+            <!-- Upload Zone -->
+            <v-col cols="12" md="3">
               <div 
                 class="upload-zone-compact pa-2 px-4 d-flex align-center rounded-xl border-dashed cursor-pointer"
                 :class="{ 'is-dragging': isDragging }"
@@ -80,7 +83,7 @@
             </v-col>
 
             <!-- View Mode Switcher -->
-            <v-col cols="12" md="5" class="d-flex justify-end">
+            <v-col cols="12" md="4" class="d-flex justify-end">
               <v-btn-toggle
                 v-model="viewMode"
                 mandatory
@@ -234,11 +237,21 @@
                 </tr>
                 <tr class="header-main-row">
                   <th rowspan="2" class="border-right">No</th>
-                  <th rowspan="2" class="border-right" style="min-width: 200px">SKPD SIMGAJI</th>
-                  <th rowspan="2" class="border-right" style="min-width: 100px">Kategori</th>
-                  <th rowspan="2" class="border-right" style="min-width: 120px">Brutto</th>
-                  <th rowspan="2" class="border-right" style="min-width: 120px">Potongan</th>
-                  <th rowspan="2" class="border-right" style="min-width: 120px">Netto</th>
+                  <th rowspan="2" class="border-right cursor-pointer" style="min-width: 200px" @click="toggleSort('nama_skpd')">
+                    SKPD SIMGAJI <v-icon size="14">{{ getSortIcon('nama_skpd') }}</v-icon>
+                  </th>
+                  <th rowspan="2" class="border-right cursor-pointer" style="min-width: 100px" @click="toggleSort('jenis_gaji')">
+                    Kategori <v-icon size="14">{{ getSortIcon('jenis_gaji') }}</v-icon>
+                  </th>
+                  <th rowspan="2" class="border-right cursor-pointer" style="min-width: 120px" @click="toggleSort('brutto')">
+                    Brutto <v-icon size="14">{{ getSortIcon('brutto') }}</v-icon>
+                  </th>
+                  <th rowspan="2" class="border-right cursor-pointer" style="min-width: 120px" @click="toggleSort('potongan')">
+                    Potongan <v-icon size="14">{{ getSortIcon('potongan') }}</v-icon>
+                  </th>
+                  <th rowspan="2" class="border-right cursor-pointer" style="min-width: 120px" @click="toggleSort('netto')">
+                    Netto <v-icon size="14">{{ getSortIcon('netto') }}</v-icon>
+                  </th>
                   <th colspan="2" class="text-center border-right">GAJI</th>
                   <th colspan="2" class="text-center border-right">TPP</th>
                   <th colspan="2" class="text-center border-right">Tanggal SP2D</th>
@@ -377,21 +390,57 @@ const search = ref('')
 const searchDetail = ref('')
 const searchRecon = ref('')
 const selectedJenisGaji = ref(null)
+const sortBy = ref('nama_skpd')
+const sortDesc = ref(false)
 const loading = ref(false)
-const uploading = ref(false)
-const isDragging = ref(false)
-const viewMode = ref('summary')
-const items = ref([])
-const transactions = ref([])
-const reconData = ref([])
+
+const toggleSort = (key) => {
+  if (sortBy.value === key) {
+    sortDesc.value = !sortDesc.value
+  } else {
+    sortBy.value = key
+    sortDesc.value = false
+  }
+}
+
+const getSortIcon = (key) => {
+  if (sortBy.value !== key) return 'mdi-minus-variant'
+  return sortDesc.value ? 'mdi-sort-descending' : 'mdi-sort-ascending'
+}
 
 const filteredReconData = computed(() => {
-  if (!searchRecon.value) return reconData.value
-  const s = searchRecon.value.toLowerCase()
-  return reconData.value.filter(row => 
-    (row.simgaji?.nama_skpd?.toLowerCase().includes(s)) ||
-    (row.sipd?.nama_skpd?.toLowerCase().includes(s))
-  )
+  let data = [...reconData.value]
+  
+  if (searchRecon.value) {
+    const s = searchRecon.value.toLowerCase()
+    data = data.filter(row => 
+      (row.simgaji?.nama_skpd?.toLowerCase().includes(s)) ||
+      (row.sipd?.nama_skpd?.toLowerCase().includes(s))
+    )
+  }
+
+  // Apply Sorting
+  data.sort((a, b) => {
+    let valA, valB
+    
+    if (sortBy.value === 'nama_skpd') {
+      valA = a.simgaji.nama_skpd
+      valB = b.simgaji.nama_skpd
+    } else if (sortBy.value === 'jenis_gaji') {
+      valA = a.simgaji.jenis_gaji || ''
+      valB = b.simgaji.jenis_gaji || ''
+    } else {
+      // Numbers (brutto, netto, etc)
+      valA = a.simgaji[sortBy.value] || 0
+      valB = b.simgaji[sortBy.value] || 0
+    }
+
+    if (valA < valB) return sortDesc.value ? 1 : -1
+    if (valA > valB) return sortDesc.value ? -1 : 1
+    return 0
+  })
+
+  return data
 })
 const snackbar = ref(false)
 const snackbarText = ref('')
@@ -632,6 +681,10 @@ onMounted(() => {
   border: 2px dashed rgba(var(--v-border-color), 0.2);
   cursor: pointer;
   transition: all 0.3s ease;
+}
+
+.cursor-pointer {
+  cursor: pointer;
 }
 
 .upload-zone:hover, .upload-zone.is-dragging, .upload-zone-compact:hover, .upload-zone-compact.is-dragging {
