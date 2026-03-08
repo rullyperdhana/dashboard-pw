@@ -243,21 +243,42 @@ class Sp2dController extends Controller
                 $kdskpds = $shortCodes ? $shortCodes->pluck('kdskpd')->unique()->toArray() : [];
 
                 foreach ($kdskpds as $kd) {
-                    $p = $pnsInternal->get($kd);
-                    if ($p) {
-                        $internalCtx['brutto'] += (float) $p->brutto;
-                        $internalCtx['potongan'] += (float) $p->potongan;
-                        $internalCtx['netto'] += (float) $p->netto;
-                        $internalCtx['gaji_pns'] += (float) ($p->netto - $p->tpp);
-                        $internalCtx['tpp_pns'] += (float) $p->tpp;
+                    $isPnsRow = $real->jenis_data === 'PNS';
+                    $isPppkRow = $real->jenis_data === 'PPPK';
+                    $isTppRow = $real->jenis_data === 'TPP';
+
+                    // Determine if TPP is for PNS or PPPK (Default to PNS if not specified)
+                    $isPppkTpp = $isTppRow && (str_contains(strtoupper($real->keterangan), 'PPPK') || str_contains(strtoupper($real->keterangan), 'P3K'));
+                    $isPnsTpp = $isTppRow && !$isPppkTpp;
+
+                    if ($isPnsRow || $isPnsTpp) {
+                        $p = $pnsInternal->get($kd);
+                        if ($p) {
+                            $internalCtx['brutto'] += (float) $p->brutto;
+                            $internalCtx['potongan'] += (float) $p->potongan;
+                            $internalCtx['netto'] += (float) $p->netto;
+
+                            if ($isPnsRow) {
+                                $internalCtx['gaji_pns'] += (float) ($p->netto - $p->tpp);
+                            } else {
+                                $internalCtx['tpp_pns'] += (float) $p->tpp;
+                            }
+                        }
                     }
-                    $pk = $pppkInternal->get($kd);
-                    if ($pk) {
-                        $internalCtx['brutto'] += (float) $pk->brutto;
-                        $internalCtx['potongan'] += (float) $pk->potongan;
-                        $internalCtx['netto'] += (float) $pk->netto;
-                        $internalCtx['gaji_pppk'] += (float) ($pk->netto - $pk->tpp);
-                        $internalCtx['tpp_pppk'] += (float) $pk->tpp;
+
+                    if ($isPppkRow || $isPppkTpp) {
+                        $pk = $pppkInternal->get($kd);
+                        if ($pk) {
+                            $internalCtx['brutto'] += (float) $pk->brutto;
+                            $internalCtx['potongan'] += (float) $pk->potongan;
+                            $internalCtx['netto'] += (float) $pk->netto;
+
+                            if ($isPppkRow) {
+                                $internalCtx['gaji_pppk'] += (float) ($pk->netto - $pk->tpp);
+                            } else {
+                                $internalCtx['tpp_pppk'] += (float) $pk->tpp;
+                            }
+                        }
                     }
                 }
             }
