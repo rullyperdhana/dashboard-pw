@@ -95,17 +95,17 @@
         <v-card v-if="viewMode === 'summary'" class="glass-card rounded-xl overflow-hidden" elevation="0">
           <div class="pa-6 border-bottom d-flex align-center justify-space-between bg-surface-variant-light">
             <h2 class="text-h6 font-weight-bold mb-0">Status Realisasi per SKPD</h2>
-            <v-text-field
-              v-model="search"
-              prepend-inner-icon="mdi-magnify"
-              label="Cari SKPD..."
-              single-line
-              hide-details
-              density="compact"
-              variant="outlined"
-              rounded="pill"
-              class="max-width-300"
-            ></v-text-field>
+              <v-text-field
+                v-model="search"
+                prepend-inner-icon="mdi-magnify"
+                label="Cari SKPD..."
+                single-line
+                hide-details
+                density="compact"
+                variant="outlined"
+                rounded="pill"
+                class="search-bar-300"
+              ></v-text-field>
           </div>
           
           <v-data-table
@@ -150,7 +150,7 @@
                 density="compact"
                 variant="outlined"
                 rounded="pill"
-                class="max-width-200"
+                class="search-bar-300"
               ></v-text-field>
             </div>
           </div>
@@ -592,12 +592,9 @@ onMounted(() => {
   min-height: 48px;
 }
 
-.max-width-300 {
-  max-width: 300px;
-}
-
-.max-width-200 {
-  max-width: 200px;
+.search-bar-300 {
+  width: 300px !important;
+  flex: none !important;
 }
 
 .gap-1 {
