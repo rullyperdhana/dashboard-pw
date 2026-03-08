@@ -198,7 +198,20 @@
         <v-card v-else-if="viewMode === 'recon'" class="glass-card rounded-xl overflow-hidden" elevation="0">
           <div class="pa-6 border-bottom d-flex align-center justify-space-between bg-surface-variant-light">
             <h2 class="text-h6 font-weight-bold mb-0">Tabel Rekonsiliasi SIMGAJI vs SIPD</h2>
-            <v-btn color="primary" variant="tonal" prepend-icon="mdi-export" size="small" rounded="pill">Export Excel</v-btn>
+            <div class="d-flex align-center gap-2">
+              <v-text-field
+                v-model="searchRecon"
+                prepend-inner-icon="mdi-magnify"
+                label="Cari SKPD..."
+                single-line
+                hide-details
+                density="compact"
+                variant="outlined"
+                rounded="pill"
+                class="search-bar-300"
+              ></v-text-field>
+              <v-btn color="primary" variant="tonal" prepend-icon="mdi-export" size="small" rounded="pill">Export Excel</v-btn>
+            </div>
           </div>
           
           <div class="recon-table-container">
@@ -239,10 +252,10 @@
                     <v-progress-circular indeterminate color="primary"></v-progress-circular>
                   </td>
                 </tr>
-                <tr v-else-if="reconData.length === 0" class="text-center">
-                  <td colspan="17" class="pa-10 text-medium-emphasis">Tidak ada data untuk periode ini</td>
+                <tr v-else-if="filteredReconData.length === 0" class="text-center">
+                  <td colspan="17" class="pa-10 text-medium-emphasis">Tidak ada data yang cocok dengan pencarian</td>
                 </tr>
-                <tr v-for="(row, idx) in reconData" :key="idx">
+                <tr v-for="(row, idx) in filteredReconData" :key="idx">
                   <td class="text-center border-right">{{ idx + 1 }}</td>
                   <td class="border-right text-caption truncate">{{ row.simgaji.nama_skpd }}</td>
                   <td class="border-right text-right text-caption">{{ formatCurrency(row.simgaji.brutto) }}</td>
@@ -335,7 +348,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import api from '../api'
 import StatusChip from '../components/Sp2dStatusChip.vue'
 import Sidebar from '../components/Sidebar.vue'
@@ -345,6 +358,7 @@ const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedYear = ref(new Date().getFullYear())
 const search = ref('')
 const searchDetail = ref('')
+const searchRecon = ref('')
 const loading = ref(false)
 const uploading = ref(false)
 const isDragging = ref(false)
@@ -352,6 +366,15 @@ const viewMode = ref('summary')
 const items = ref([])
 const transactions = ref([])
 const reconData = ref([])
+
+const filteredReconData = computed(() => {
+  if (!searchRecon.value) return reconData.value
+  const s = searchRecon.value.toLowerCase()
+  return reconData.value.filter(row => 
+    (row.simgaji?.nama_skpd?.toLowerCase().includes(s)) ||
+    (row.sipd?.nama_skpd?.toLowerCase().includes(s))
+  )
+})
 const snackbar = ref(false)
 const snackbarText = ref('')
 const snackbarColor = ref('success')
