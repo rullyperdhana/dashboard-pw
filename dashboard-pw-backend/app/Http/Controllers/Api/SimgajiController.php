@@ -71,6 +71,7 @@ class SimgajiController extends Controller
         $kode_instansi = $request->kode_instansi;
         $nip = $request->nip;
         $tahun = $request->tahun;
+        $jenis_gaji = $request->jenis_gaji;
 
         $bulan = null;
         if ($period) {
@@ -82,7 +83,7 @@ class SimgajiController extends Controller
         }
 
         // Build filter closure (shared for both PNS and PPPK queries)
-        $applyFilters = function ($query) use ($tahun, $bulan, $nip, $kode_instansi) {
+        $applyFilters = function ($query) use ($tahun, $bulan, $nip, $kode_instansi, $jenis_gaji) {
             if ($tahun) {
                 $query->where('g.tahun', $tahun);
             }
@@ -91,6 +92,9 @@ class SimgajiController extends Controller
             }
             if ($nip) {
                 $query->where('g.nip', $nip);
+            }
+            if ($jenis_gaji) {
+                $query->where('g.jenis_gaji', $jenis_gaji);
             }
             if ($kode_instansi) {
                 $query->where(function ($q) use ($kode_instansi) {
@@ -149,6 +153,7 @@ class SimgajiController extends Controller
             'g.pot_taperum',
             'g.total_potongan as jlh_potongan',
             'g.bersih as jlh_bersih',
+            'g.jenis_gaji',
             's.nmskpd as nama_skpd'
         ];
 
@@ -261,6 +266,7 @@ class SimgajiController extends Controller
                 "jlh_potongan" => (string) (int) $row->jlh_potongan,
                 "jlh_bersih" => (string) (int) $row->jlh_bersih,
                 "status_pajak" => $statusPajak,
+                "jenis_gaji" => $row->jenis_gaji ?? "Induk",
             ];
         }
 
