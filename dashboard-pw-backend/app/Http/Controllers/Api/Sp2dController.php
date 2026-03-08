@@ -119,15 +119,15 @@ class Sp2dController extends Controller
                 'id_skpd' => $skpd->id_skpd,
                 'nama_skpd' => $skpd->nama_skpd,
                 'pns' => $this->formatStatus(
-                    $skpdRealizations->where('jenis_data', 'PNS'),
+                    $skpdRealizations->filter(fn($r) => str_contains($r->jenis_data, 'PNS') && !str_contains($r->jenis_data, 'TPP')),
                     $pnsGaji
                 ),
                 'pppk' => $this->formatStatus(
-                    $skpdRealizations->where('jenis_data', 'PPPK'),
+                    $skpdRealizations->filter(fn($r) => str_contains($r->jenis_data, 'PPPK') && !str_contains($r->jenis_data, 'TPP')),
                     $pppkGaji
                 ),
                 'tpp' => $this->formatStatus(
-                    $skpdRealizations->where('jenis_data', 'TPP'),
+                    $skpdRealizations->filter(fn($r) => str_contains($r->jenis_data, 'TPP')),
                     ($pnsTpp + $pppkTpp)
                 ),
             ];
@@ -297,13 +297,15 @@ class Sp2dController extends Controller
                     if ($isPnsRow || $isPnsTpp) {
                         $p = $pnsInternal->where('kdskpd', $kd)->where('jenis_gaji', $targetJenisGajiDetected)->first();
                         if ($p) {
-                            $internalCtx['brutto'] += (float) $p->brutto;
-                            $internalCtx['potongan'] += (float) $p->potongan;
-                            $internalCtx['netto'] += (float) $p->netto;
-
                             if ($isPnsRow) {
-                                $internalCtx['gaji_pns'] += (float) ($p->netto - $p->tpp);
+                                $internalCtx['brutto'] += (float) $p->brutto;
+                                $internalCtx['potongan'] += (float) $p->potongan;
+                                $internalCtx['netto'] += (float) $p->netto;
+                                $internalCtx['gaji_pns'] += (float) $p->netto;
                             } else {
+                                // For TPP rows, we show TPP as the primary value
+                                $internalCtx['brutto'] += (float) $p->tpp;
+                                $internalCtx['netto'] += (float) $p->tpp;
                                 $internalCtx['tpp_pns'] += (float) $p->tpp;
                             }
                         }
@@ -312,13 +314,15 @@ class Sp2dController extends Controller
                     if ($isPppkRow || $isPppkTpp) {
                         $pk = $pppkInternal->where('kdskpd', $kd)->where('jenis_gaji', $targetJenisGajiDetected)->first();
                         if ($pk) {
-                            $internalCtx['brutto'] += (float) $pk->brutto;
-                            $internalCtx['potongan'] += (float) $pk->potongan;
-                            $internalCtx['netto'] += (float) $pk->netto;
-
                             if ($isPppkRow) {
-                                $internalCtx['gaji_pppk'] += (float) ($pk->netto - $pk->tpp);
+                                $internalCtx['brutto'] += (float) $pk->brutto;
+                                $internalCtx['potongan'] += (float) $pk->potongan;
+                                $internalCtx['netto'] += (float) $pk->netto;
+                                $internalCtx['gaji_pppk'] += (float) $pk->netto;
                             } else {
+                                // For TPP rows
+                                $internalCtx['brutto'] += (float) $pk->tpp;
+                                $internalCtx['netto'] += (float) $pk->tpp;
                                 $internalCtx['tpp_pppk'] += (float) $pk->tpp;
                             }
                         }

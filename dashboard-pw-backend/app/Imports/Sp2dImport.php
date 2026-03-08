@@ -87,7 +87,7 @@ class Sp2dImport implements ToModel, WithHeadingRow
 
         // 1. TPP / Tunjangan Kinerja
         if (str_contains($ket, 'TPP ') || str_contains($ket, ' TAMBAHAN PENGHASILAN') || str_contains($ket, 'TUNJANGAN KINERJA')) {
-            return 'TPP';
+            return 'TPP-INDUK';
         }
 
         // 2. PPPK / P3K Gaji
