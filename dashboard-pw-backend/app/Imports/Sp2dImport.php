@@ -92,15 +92,28 @@ class Sp2dImport implements ToModel, WithHeadingRow
 
         // 2. PPPK / P3K Gaji
         if ((str_contains($ket, 'PPPK') || str_contains($ket, 'P3K')) && (str_contains($ket, 'GAJI') || str_contains($ket, 'PEMBAYARAN BELANJA PEGAWAI'))) {
+            if (str_contains($ket, 'SUSULAN'))
+                return 'PPPK-SUSULAN';
+            if (str_contains($ket, 'KEKURANGAN'))
+                return 'PPPK-KEKURANGAN';
+            if (str_contains($ket, 'TERUSAN'))
+                return 'PPPK-TERUSAN';
             return 'PPPK';
         }
 
-        // 3. PNS Gaji (look for GAJI + (PNS/INDUK/SUSULAN/TERUSAN))
-        if (str_contains($ket, 'GAJI') && (str_contains($ket, 'PNS') || str_contains($ket, 'INDUK') || str_contains($ket, 'SUSULAN') || str_contains($ket, 'TERUSAN') || str_contains($ket, 'KEPALA DAERAH'))) {
+        // 3. PNS Gaji
+        if (str_contains($ket, 'GAJI') && (str_contains($ket, 'PNS') || str_contains($ket, 'INDUK') || str_contains($ket, 'SUSULAN') || str_contains($ket, 'TERUSAN') || str_contains($ket, 'KEPALA DAERAH') || str_contains($ket, 'KEKURANGAN'))) {
+            if (str_contains($ket, 'SUSULAN'))
+                return 'PNS-SUSULAN';
+            if (str_contains($ket, 'KEKURANGAN'))
+                return 'PNS-KEKURANGAN';
+            if (str_contains($ket, 'TERUSAN'))
+                return 'PNS-TERUSAN';
+            if (str_contains($ket, 'INDUK') || str_contains($ket, 'GAJI PNS') || str_contains($ket, 'ASN'))
+                return 'PNS';
             return 'PNS';
         }
 
-        // 4. Default: Return null to SKIP non-payroll records (like UP, LS Barang/Jasa, etc.)
         return null;
     }
 

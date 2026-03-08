@@ -30,8 +30,11 @@
                   <v-col cols="6">
                     <v-select v-model="selectedYear" :items="years" label="Tahun" density="compact" variant="outlined" hide-details></v-select>
                   </v-col>
+                  <v-col cols="12">
+                    <v-select v-model="selectedJenisGajiFilter" :items="jenisGajiOptions" label="Jenis Gaji" density="compact" variant="outlined" hide-details clearable></v-select>
+                  </v-col>
                   <v-col cols="12" class="mt-2 text-right">
-                    <v-btn block color="teal" @click="fetchData(); menu = false">TERAPKAN</v-btn>
+                    <v-btn block color="teal" @click="fetchData(); fetchAnnualReport(); menu = false">TERAPKAN</v-btn>
                   </v-col>
                 </v-row>
               </v-card>
@@ -849,6 +852,8 @@ const skpdList = ref([])
 const menu = ref(false)
 const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedYear = ref(new Date().getFullYear())
+const selectedJenisGajiFilter = ref(null)
+const jenisGajiOptions = ['Induk', 'Susulan', 'Kekurangan', 'Terusan']
 const months = [
   { title: 'Januari', value: 1 }, { title: 'Februari', value: 2 }, { title: 'Maret', value: 3 },
   { title: 'April', value: 4 }, { title: 'Mei', value: 5 }, { title: 'Juni', value: 6 },
@@ -1071,10 +1076,18 @@ const fetchData = async () => {
       // Fetch both PNS and PPPK data
       const [pnsResponse, pppkResponse] = await Promise.all([
         api.get('/pns/dashboard', {
-          params: { month: selectedMonth.value, year: selectedYear.value }
+          params: { 
+            month: selectedMonth.value, 
+            year: selectedYear.value,
+            jenis_gaji: selectedJenisGajiFilter.value || undefined
+          }
         }),
         api.get('/pppk/dashboard', {
-          params: { month: selectedMonth.value, year: selectedYear.value }
+          params: { 
+            month: selectedMonth.value, 
+            year: selectedYear.value,
+            jenis_gaji: selectedJenisGajiFilter.value || undefined
+          }
         })
       ])
       
@@ -1104,7 +1117,11 @@ const fetchData = async () => {
       // Fetch single type data
       const endpoint = employeeType.value === 'pns' ? '/pns/dashboard' : '/pppk/dashboard'
       const response = await api.get(endpoint, {
-        params: { month: selectedMonth.value, year: selectedYear.value }
+        params: { 
+          month: selectedMonth.value, 
+          year: selectedYear.value,
+          jenis_gaji: selectedJenisGajiFilter.value || undefined
+        }
       })
       if (response.data.success) {
         stats.value = response.data.data.summary
@@ -1396,8 +1413,20 @@ const fetchAnnualReport = async () => {
 
     // Fetch both PNS and PPPK data
     const [pnsResponse, pppkResponse] = await Promise.all([
-      api.get('/pns/annual-report', { params: { ...params, type: 'pns' } }),
-      api.get('/pns/annual-report', { params: { ...params, type: 'pppk' } })
+      api.get('/pns/annual-report', { 
+        params: { 
+          ...params, 
+          type: 'pns',
+          jenis_gaji: selectedJenisGajiFilter.value || undefined
+        } 
+      }),
+      api.get('/pns/annual-report', { 
+        params: { 
+          ...params, 
+          type: 'pppk',
+          jenis_gaji: selectedJenisGajiFilter.value || undefined
+        } 
+      })
     ])
     
     if (pnsResponse.data.success && pppkResponse.data.success) {

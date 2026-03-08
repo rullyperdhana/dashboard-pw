@@ -188,34 +188,34 @@ class Sp2dController extends Controller
         // 2. Get SKPDs to map internal data
         $skpds = Skpd::where('is_skpd', 1)->get();
 
-        // 3. Get Internal Data (Gaji & TPP)
+        // 3. Get Internal Data (Gaji & TPP) grouped by SKPD and Type
         $pnsInternal = \DB::table('gaji_pns')
             ->where('bulan', $bulan)
             ->where('tahun', $tahun)
             ->select(
                 'kdskpd',
+                'jenis_gaji',
                 \DB::raw('SUM(kotor) as brutto'),
                 \DB::raw('SUM(total_potongan) as potongan'),
                 \DB::raw('SUM(bersih) as netto'),
                 \DB::raw('SUM(tunj_tpp) as tpp')
             )
-            ->groupBy('kdskpd')
-            ->get()
-            ->keyBy('kdskpd');
+            ->groupBy('kdskpd', 'jenis_gaji')
+            ->get();
 
         $pppkInternal = \DB::table('gaji_pppk')
             ->where('bulan', $bulan)
             ->where('tahun', $tahun)
             ->select(
                 'kdskpd',
+                'jenis_gaji',
                 \DB::raw('SUM(kotor) as brutto'),
                 \DB::raw('SUM(total_potongan) as potongan'),
                 \DB::raw('SUM(bersih) as netto'),
                 \DB::raw('SUM(tunj_tpp) as tpp')
             )
-            ->groupBy('kdskpd')
-            ->get()
-            ->keyBy('kdskpd');
+            ->groupBy('kdskpd', 'jenis_gaji')
+            ->get();
 
         // 4. Get satker mapping for internal totals
         $satkerMapping = \DB::table('satkers')
@@ -243,16 +243,25 @@ class Sp2dController extends Controller
                 $kdskpds = $shortCodes ? $shortCodes->pluck('kdskpd')->unique()->toArray() : [];
 
                 foreach ($kdskpds as $kd) {
-                    $isPnsRow = $real->jenis_data === 'PNS';
-                    $isPppkRow = $real->jenis_data === 'PPPK';
+                    $isPnsRow = str_contains($real->jenis_data, 'PNS');
+                    $isPppkRow = str_contains($real->jenis_data, 'PPPK');
                     $isTppRow = $real->jenis_data === 'TPP';
+
+                    // Determine target jenis_gaji based on SP2D type
+                    $targetJenisGaji = 'Induk';
+                    if (str_contains($real->jenis_data, 'SUSULAN'))
+                        $targetJenisGaji = 'Susulan';
+                    elseif (str_contains($real->jenis_data, 'KEKURANGAN'))
+                        $targetJenisGaji = 'Kekurangan';
+                    elseif (str_contains($real->jenis_data, 'TERUSAN'))
+                        $targetJenisGaji = 'Terusan';
 
                     // Determine if TPP is for PNS or PPPK (Default to PNS if not specified)
                     $isPppkTpp = $isTppRow && (str_contains(strtoupper($real->keterangan), 'PPPK') || str_contains(strtoupper($real->keterangan), 'P3K'));
                     $isPnsTpp = $isTppRow && !$isPppkTpp;
 
                     if ($isPnsRow || $isPnsTpp) {
-                        $p = $pnsInternal->get($kd);
+                        $p = $pnsInternal->where('kdskpd', $kd)->where('jenis_gaji', $targetJenisGaji)->first();
                         if ($p) {
                             $internalCtx['brutto'] += (float) $p->brutto;
                             $internalCtx['potongan'] += (float) $p->potongan;
@@ -267,7 +276,7 @@ class Sp2dController extends Controller
                     }
 
                     if ($isPppkRow || $isPppkTpp) {
-                        $pk = $pppkInternal->get($kd);
+                        $pk = $pppkInternal->where('kdskpd', $kd)->where('jenis_gaji', $targetJenisGaji)->first();
                         if ($pk) {
                             $internalCtx['brutto'] += (float) $pk->brutto;
                             $internalCtx['potongan'] += (float) $pk->potongan;
@@ -300,6 +309,7 @@ class Sp2dController extends Controller
                     'tanggal_cair' => $real->tanggal_cair ? $real->tanggal_cair->format('Y-m-d') : null,
                     'nomor_sp2d' => $real->nomor_sp2d,
                     'nama_skpd' => $real->nama_skpd_sipd,
+                    'jenis_data' => $real->jenis_data,
                     'keterangan' => $real->keterangan,
                     'brutto' => $real->brutto,
                     'potongan' => $real->potongan,

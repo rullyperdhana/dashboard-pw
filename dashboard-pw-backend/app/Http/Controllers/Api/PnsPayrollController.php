@@ -75,15 +75,22 @@ class PnsPayrollController extends Controller
             $month = $request->month;
         }
 
+        $jenisGaji = $request->jenis_gaji;
+
         \Log::info('PNS Dashboard Request', [
             'year' => $year,
             'month' => $month,
             'request_params' => $request->all()
         ]);
 
-        $stats = GajiPns::where('tahun', $year)
-            ->where('bulan', $month)
-            ->selectRaw($this->dashboardSelectRaw())
+        $query = GajiPns::where('tahun', $year)
+            ->where('bulan', $month);
+
+        if ($jenisGaji) {
+            $query->where('jenis_gaji', $jenisGaji);
+        }
+
+        $stats = $query->selectRaw($this->dashboardSelectRaw())
             ->first();
 
         \Log::info('PNS Dashboard Stats', [
@@ -234,15 +241,22 @@ class PnsPayrollController extends Controller
             $month = $request->month;
         }
 
+        $jenisGaji = $request->jenis_gaji;
+
         \Log::info('PPPK Dashboard Request', [
             'year' => $year,
             'month' => $month,
             'request_params' => $request->all()
         ]);
 
-        $stats = GajiPppk::where('tahun', $year)
-            ->where('bulan', $month)
-            ->selectRaw($this->dashboardSelectRaw())
+        $query = GajiPppk::where('tahun', $year)
+            ->where('bulan', $month);
+
+        if ($jenisGaji) {
+            $query->where('jenis_gaji', $jenisGaji);
+        }
+
+        $stats = $query->selectRaw($this->dashboardSelectRaw())
             ->first();
 
         \Log::info('PPPK Dashboard Stats', [
@@ -371,6 +385,7 @@ class PnsPayrollController extends Controller
         $year = $request->year ?? date('Y');
         $employeeType = $request->type ?? 'pns'; // 'pns' or 'pppk'
         $skpdFilter = $request->skpd ?? null;
+        $jenisGajiFilter = $request->jenis_gaji;
 
         $model = $employeeType === 'pns' ? GajiPns::class : GajiPppk::class;
 
@@ -440,6 +455,9 @@ class PnsPayrollController extends Controller
         $query = $model::where("$tableName.tahun", $year);
         if ($skpdFilter) {
             $query->where("$tableName.kdskpd", $skpdFilter);
+        }
+        if ($jenisGajiFilter) {
+            $query->where("$tableName.jenis_gaji", $jenisGajiFilter);
         }
 
         $results = $query->selectRaw($selectFields)
