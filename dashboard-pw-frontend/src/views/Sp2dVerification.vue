@@ -224,7 +224,15 @@
                 rounded="pill"
                 class="search-bar-300"
               ></v-text-field>
-              <v-btn color="primary" variant="tonal" prepend-icon="mdi-export" size="small" rounded="pill">Export Excel</v-btn>
+              <v-btn 
+                color="primary" 
+                variant="tonal" 
+                prepend-icon="mdi-export" 
+                size="small" 
+                rounded="pill"
+                @click="exportExcel"
+                :loading="exporting"
+              >Export Excel</v-btn>
             </div>
           </div>
           
@@ -452,6 +460,34 @@ const snackbar = ref(false)
 const snackbarText = ref('')
 const snackbarColor = ref('success')
 const snackbarTitle = ref('')
+const exporting = ref(false)
+
+const exportExcel = async () => {
+    exporting.value = true
+    try {
+        const response = await api.get('/sp2d/export-recon', {
+            params: {
+                bulan: selectedMonth.value,
+                tahun: selectedYear.value,
+                jenis_gaji: selectedJenisGaji.value || undefined
+            },
+            responseType: 'blob'
+        })
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `rekon-sp2d-${selectedMonth.value}-${selectedYear.value}.xlsx`)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        showSnackbar('Excel berhasil di-unduh')
+    } catch (err) {
+        console.error(err)
+        showSnackbar('Gagal mengunduh Excel', 'error')
+    } finally {
+        exporting.value = false
+    }
+}
 
 const showComingSoon = (feature) => {
   snackbarTitle.value = feature

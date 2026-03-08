@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Sp2dRealization;
 use App\Models\Skpd;
 use App\Imports\Sp2dImport;
+use App\Exports\Sp2dReconExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
 
@@ -428,5 +429,16 @@ class Sp2dController extends Controller
             'internal_amount' => $internalAmount,
             'count' => $collection->count()
         ];
+    }
+
+    public function exportRecon(Request $request)
+    {
+        $bulan = $request->query('bulan', date('n'));
+        $tahun = $request->query('tahun', date('Y'));
+
+        $response = $this->getRecon($request);
+        $data = $response->getData(true)['data'];
+
+        return Excel::download(new Sp2dReconExport($data, (int) $bulan, (int) $tahun), "rekon-sp2d-{$bulan}-{$tahun}.xlsx");
     }
 }

@@ -190,6 +190,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sp2d/status', [App\Http\Controllers\Api\Sp2dController::class, 'getStatus']);
     Route::get('/sp2d/transactions', [App\Http\Controllers\Api\Sp2dController::class, 'getTransactions']);
     Route::get('/sp2d/recon', [App\Http\Controllers\Api\Sp2dController::class, 'getRecon']);
+    Route::get('/sp2d/export-recon', [App\Http\Controllers\Api\Sp2dController::class, 'exportRecon']);
     Route::put('/sp2d/realizations/{id}', [App\Http\Controllers\Api\Sp2dController::class, 'update']);
     Route::delete('/sp2d/realizations/{id}', [App\Http\Controllers\Api\Sp2dController::class, 'destroy']);
 });
