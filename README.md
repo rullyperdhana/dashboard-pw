@@ -26,6 +26,8 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 | **Trace Gaji Pegawai** | Riwayat gaji per pegawai + kelola status & SK |
 | **SKPD Mapping** | Pemetaan Kode & Nama SKPD untuk akurasi laporan |
 | **Manajemen User** | Akun admin & admin SKPD |
+| **Status Pajak (PTKP)**| Kelola status PTKP statis tahunan (K/0, TK/1, dll) |
+| **API Integrasi**    | Endpoint API Key untuk integrasi sistem Simgaji |
 | **Export Excel & PDF** | Export laporan sesuai tab yang aktif |
 
 ---
@@ -280,6 +282,7 @@ Export Excel/PDF secara otomatis menyesuaikan kolom dengan tab yang aktif.
 | `/upload/pppk` | Upload Gaji PPPK |
 | `/upload/tpp` | Upload TPP |
 | `/upload/tpg` | Upload TPG |
+| `/settings/tax-status` | Manajemen Status Pajak (PTKP) |
 
 ---
 
