@@ -89,6 +89,14 @@
                     PPPK Penuh Waktu
                     <v-chip size="x-small" color="warning" class="ml-2">{{ unmappedPppk.length }}</v-chip>
                   </v-tab>
+                  <v-tab value="pppk_pw">
+                    PPPK Paruh Waktu
+                    <v-chip size="x-small" color="warning" class="ml-2">{{ unmappedPppkPw.length }}</v-chip>
+                  </v-tab>
+                  <v-tab value="sp2d">
+                    SP2D (SIPD)
+                    <v-chip size="x-small" color="warning" class="ml-2">{{ unmappedSp2d.length }}</v-chip>
+                  </v-tab>
                 </v-tabs>
 
                 <v-window v-model="unmappedTab" class="mt-4">
@@ -157,6 +165,66 @@
                       </v-list-item>
                     </v-list>
                   </v-window-item>
+
+                  <!-- PPPK-PW Unmapped -->
+                  <v-window-item value="pppk_pw">
+                    <div v-if="unmappedPppkPw.length === 0" class="text-center pa-4 text-medium-emphasis">
+                      <v-icon icon="mdi-check-circle-outline" color="success" size="32" class="mb-2"></v-icon>
+                      <div>Semua SKPD PPPK Paruh Waktu sudah dipetakan!</div>
+                    </div>
+                    <v-list v-else density="compact" class="rounded-lg">
+                      <v-list-item
+                        v-for="item in unmappedPppkPw"
+                        :key="item.source_name"
+                        class="mb-1 border rounded-lg"
+                      >
+                        <template v-slot:prepend>
+                          <v-icon icon="mdi-office-building-remove-outline" color="warning" size="20"></v-icon>
+                        </template>
+                        <v-list-item-title class="text-body-2 font-weight-medium">
+                          <v-chip size="x-small" color="warning" class="mr-2">{{ item.source_code }}</v-chip>
+                          {{ item.source_name }}
+                        </v-list-item-title>
+                        <v-list-item-subtitle v-if="item.suggestion" class="text-caption text-primary">
+                          Saran: {{ item.suggestion }}
+                        </v-list-item-subtitle>
+                        <template v-slot:append>
+                          <v-btn size="small" color="primary" variant="tonal" @click="quickMap(item)">
+                            <v-icon start icon="mdi-link-variant" size="16"></v-icon>
+                            Petakan
+                          </v-btn>
+                        </template>
+                      </v-list-item>
+                    </v-list>
+                  </v-window-item>
+
+                  <!-- SP2D Unmapped -->
+                  <v-window-item value="sp2d">
+                    <div v-if="unmappedSp2d.length === 0" class="text-center pa-4 text-medium-emphasis">
+                      <v-icon icon="mdi-check-circle-outline" color="success" size="32" class="mb-2"></v-icon>
+                      <div>Semua nama SKPD dari SP2D sudah dipetakan!</div>
+                    </div>
+                    <v-list v-else density="compact" class="rounded-lg">
+                      <v-list-item
+                        v-for="item in unmappedSp2d"
+                        :key="item.source_name"
+                        class="mb-1 border rounded-lg"
+                      >
+                        <template v-slot:prepend>
+                          <v-icon icon="mdi-file-document-remove-outline" color="warning" size="20"></v-icon>
+                        </template>
+                        <v-list-item-title class="text-body-2 font-weight-medium">
+                          {{ item.source_name }}
+                        </v-list-item-title>
+                        <template v-slot:append>
+                          <v-btn size="small" color="primary" variant="tonal" @click="quickMap(item)">
+                            <v-icon start icon="mdi-link-variant" size="16"></v-icon>
+                            Petakan
+                          </v-btn>
+                        </template>
+                      </v-list-item>
+                    </v-list>
+                  </v-window-item>
                 </v-window>
               </v-card-text>
             </v-expand-transition>
@@ -186,7 +254,7 @@
               <v-col cols="12" md="3">
                 <v-select
                   v-model="filterType"
-                  :items="[{ title: 'Semua Tipe', value: '' }, { title: 'PNS', value: 'pns' }, { title: 'PPPK', value: 'pppk' }, { title: 'All', value: 'all' }]"
+                  :items="[{ title: 'Semua Tipe', value: '' }, { title: 'PNS', value: 'pns' }, { title: 'PPPK', value: 'pppk' }, { title: 'PPPK-PW', value: 'pppk_pw' }, { title: 'All', value: 'all' }]"
                   item-title="title"
                   item-value="value"
                   label="Filter Tipe"
@@ -386,6 +454,8 @@ const comingSoonTitle = ref('')
 const mappings = ref([])
 const unmappedPns = ref([])
 const unmappedPppk = ref([])
+const unmappedPppkPw = ref([])
+const unmappedSp2d = ref([])
 const skpdList = ref([])
 const deletingItem = ref(null)
 
@@ -403,6 +473,7 @@ const typeOptions = [
   { title: 'Semua Tipe (PNS & PPPK)', value: 'all' },
   { title: 'PNS saja', value: 'pns' },
   { title: 'PPPK Penuh Waktu saja', value: 'pppk' },
+  { title: 'PPPK Paruh Waktu saja', value: 'pppk_pw' },
 ]
 
 const tableHeaders = [
@@ -413,7 +484,7 @@ const tableHeaders = [
   { title: 'Aksi', key: 'actions', sortable: false, align: 'center', width: '100px' },
 ]
 
-const unmappedCount = computed(() => unmappedPns.value.length + unmappedPppk.value.length)
+const unmappedCount = computed(() => unmappedPns.value.length + unmappedPppk.value.length + unmappedPppkPw.value.length)
 
 const filteredMappings = computed(() => {
   if (!filterType.value) return mappings.value
@@ -423,6 +494,7 @@ const filteredMappings = computed(() => {
 const typeColor = (type) => {
   if (type === 'pns') return 'blue'
   if (type === 'pppk') return 'green'
+  if (type === 'pppk_pw') return 'orange'
   return 'grey'
 }
 
@@ -457,6 +529,8 @@ const loadUnmapped = async () => {
     const res = await api.get('/skpd-mapping/unmapped')
     unmappedPns.value = res.data.data?.pns ?? []
     unmappedPppk.value = res.data.data?.pppk ?? []
+    unmappedPppkPw.value = res.data.data?.pppk_pw ?? []
+    unmappedSp2d.value = res.data.data?.sp2d ?? []
   } catch (e) {
     console.error(e)
   }

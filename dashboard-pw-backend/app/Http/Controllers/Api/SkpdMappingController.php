@@ -71,11 +71,43 @@ class SkpdMappingController extends Controller
                 'type' => 'pppk'
             ]);
 
+        // Unique SKPD codes from pegawai_pw (PPPK Paruh Waktu) not yet mapped
+        $mappedPppkPw = SkpdMapping::whereIn('type', ['pppk_pw', 'all'])->whereNotNull('source_code')->pluck('source_code')->toArray();
+        $unmappedPppkPw = DB::table('pegawai_pw')
+            ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as s'), 'pegawai_pw.idskpd', '=', 's.kdskpd')
+            ->whereNotNull('pegawai_pw.idskpd')
+            ->whereNotIn('pegawai_pw.idskpd', $mappedPppkPw)
+            ->select('pegawai_pw.idskpd as source_code', DB::raw('MAX(pegawai_pw.skpd) as source_name'), 's.nmskpd as suggestion')
+            ->groupBy('pegawai_pw.idskpd', 's.nmskpd')
+            ->orderBy('pegawai_pw.idskpd')
+            ->get()
+            ->map(fn($item) => [
+                'source_code' => (string) $item->source_code,
+                'source_name' => $item->source_name,
+                'suggestion' => $item->suggestion,
+                'type' => 'pppk_pw'
+            ]);
+
+        // Unique SKPD names from sp2d_realizations not yet mapped
+        $unmappedSp2d = DB::table('sp2d_realizations')
+            ->whereNull('skpd_id')
+            ->select('nama_skpd_sipd as source_name')
+            ->distinct()
+            ->get()
+            ->map(fn($item) => [
+                'source_code' => '',
+                'source_name' => $item->source_name,
+                'suggestion' => null,
+                'type' => 'all'
+            ]);
+
         return response()->json([
             'success' => true,
             'data' => [
                 'pns' => $unmappedPns,
                 'pppk' => $unmappedPppk,
+                'pppk_pw' => $unmappedPppkPw,
+                'sp2d' => $unmappedSp2d,
             ]
         ]);
     }
@@ -87,15 +119,22 @@ class SkpdMappingController extends Controller
     {
         $request->validate([
             'source_name' => 'required|string|max:255',
-            'source_code' => 'required|string|max:50',
+            'source_code' => 'nullable|string|max:50',
             'skpd_id' => 'required|integer|exists:skpd,id_skpd',
-            'type' => 'required|in:pns,pppk,all',
+            'type' => 'required|in:pns,pppk,pppk_pw,all',
         ]);
 
-        $mapping = SkpdMapping::updateOrCreate(
-            ['source_code' => $request->source_code, 'type' => $request->type],
-            ['skpd_id' => $request->skpd_id, 'source_name' => $request->source_name]
-        );
+        if ($request->source_code) {
+            $mapping = SkpdMapping::updateOrCreate(
+                ['source_code' => $request->source_code, 'type' => $request->type],
+                ['skpd_id' => $request->skpd_id, 'source_name' => $request->source_name]
+            );
+        } else {
+            $mapping = SkpdMapping::updateOrCreate(
+                ['source_name' => $request->source_name, 'type' => $request->type],
+                ['skpd_id' => $request->skpd_id, 'source_code' => null]
+            );
+        }
 
         $mapping->load('skpd');
 
@@ -132,17 +171,24 @@ class SkpdMappingController extends Controller
         $request->validate([
             'mappings' => 'required|array|min:1',
             'mappings.*.source_name' => 'required|string|max:255',
-            'mappings.*.source_code' => 'required|string|max:50',
+            'mappings.*.source_code' => 'nullable|string|max:50',
             'mappings.*.skpd_id' => 'required|integer|exists:skpd,id_skpd',
-            'mappings.*.type' => 'required|in:pns,pppk,all',
+            'mappings.*.type' => 'required|in:pns,pppk,pppk_pw,all',
         ]);
 
         $saved = 0;
         foreach ($request->mappings as $item) {
-            SkpdMapping::updateOrCreate(
-                ['source_code' => $item['source_code'], 'type' => $item['type']],
-                ['skpd_id' => $item['skpd_id'], 'source_name' => $item['source_name']]
-            );
+            if (!empty($item['source_code'])) {
+                SkpdMapping::updateOrCreate(
+                    ['source_code' => $item['source_code'], 'type' => $item['type']],
+                    ['skpd_id' => $item['skpd_id'], 'source_name' => $item['source_name']]
+                );
+            } else {
+                SkpdMapping::updateOrCreate(
+                    ['source_name' => $item['source_name'], 'type' => $item['type']],
+                    ['skpd_id' => $item['skpd_id'], 'source_code' => null]
+                );
+            }
             $saved++;
         }
 

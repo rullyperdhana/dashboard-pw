@@ -166,6 +166,14 @@
                 rounded="pill"
                 class="search-bar-300"
               ></v-text-field>
+              <v-btn 
+                color="primary" 
+                prepend-icon="mdi-plus" 
+                variant="flat" 
+                rounded="pill" 
+                size="small"
+                @click="openCreateDialog"
+              >Tambah Data Manual</v-btn>
             </div>
           </div>
           
@@ -178,7 +186,10 @@
             hover
           >
             <template v-slot:item.nomor_sp2d="{ item }">
-              <div class="text-caption font-weight-bold">{{ item.nomor_sp2d }}</div>
+              <div class="d-flex align-center gap-2">
+                <div class="text-caption font-weight-bold">{{ item.nomor_sp2d }}</div>
+                <v-chip v-if="item.is_manual" size="x-small" color="orange" variant="flat">Manual</v-chip>
+              </div>
             </template>
             
             <template v-slot:item.tanggal_sp2d="{ item }">
@@ -288,8 +299,8 @@
                 <tr v-else-if="filteredReconData.length === 0" class="text-center">
                   <td colspan="17" class="pa-10 text-medium-emphasis">Tidak ada data yang cocok dengan pencarian</td>
                 </tr>
-                <tr v-for="(row, idx) in filteredReconData" :key="idx">
-                  <td class="text-center border-right">{{ idx + 1 }}</td>
+                <tr v-for="(row, idx) in paginatedReconData" :key="idx">
+                  <td class="text-center border-right">{{ (reconPage - 1) * reconItemsPerPage + idx + 1 }}</td>
                   <td class="border-right text-caption truncate">{{ row.simgaji.nama_skpd }}</td>
                   <td class="border-right text-center">
                     <v-chip v-if="row.simgaji.jenis_gaji" size="x-small" :color="getTypeColor(row.simgaji.jenis_gaji)" variant="tonal">
@@ -316,6 +327,36 @@
               </tbody>
             </v-table>
           </div>
+          
+          <!-- Pagination -->
+          <div class="pa-4 d-flex align-center justify-space-between border-top">
+            <div class="d-flex align-center gap-4">
+              <div class="text-caption text-medium-emphasis">
+                Menampilkan {{ Math.min(filteredReconData.length, (reconPage - 1) * reconItemsPerPage + 1) }} - 
+                {{ Math.min(filteredReconData.length, reconPage * reconItemsPerPage) }} dari {{ filteredReconData.length }} SKPD
+              </div>
+              <div class="d-flex align-center gap-2" style="width: 150px">
+                <span class="text-caption text-medium-emphasis">Baris:</span>
+                <v-select
+                  v-model="reconItemsPerPage"
+                  :items="[10, 15, 25, 50, 100]"
+                  density="compact"
+                  variant="plain"
+                  hide-details
+                  class="items-per-page-select"
+                  @update:model-value="reconPage = 1"
+                ></v-select>
+              </div>
+            </div>
+            <v-pagination
+              v-model="reconPage"
+              :length="Math.ceil(filteredReconData.length / reconItemsPerPage)"
+              :total-visible="7"
+              density="compact"
+              variant="tonal"
+              active-color="primary"
+            ></v-pagination>
+          </div>
         </v-card>
       </v-col>
     </v-row>
@@ -323,10 +364,10 @@
     <!-- Edit Dialog -->
     <v-dialog v-model="editDialog" max-width="500px">
       <v-card class="rounded-xl pa-4">
-        <v-card-title class="text-h5 font-weight-bold">Atur Ulang Nilai SP2D</v-card-title>
+        <v-card-title class="text-h5 font-weight-bold">{{ isEdit ? 'Atur Ulang Nilai SP2D' : 'Tambah Register Manual' }}</v-card-title>
         <v-card-text>
           <p class="text-body-2 text-medium-emphasis mb-4">
-            Sesuaikan nilai SP2D jika data register SIPD tergabung dengan kegiatan lain.
+            {{ isEdit ? 'Sesuaikan nilai SP2D jika data register SIPD tergabung dengan kegiatan lain.' : 'Tambahkan data SP2D yang tidak terdeteksi otomatis oleh sistem.' }}
           </p>
           <v-form ref="editForm" v-model="isFormValid">
             <v-text-field
@@ -336,7 +377,34 @@
               density="comfortable"
               rounded="lg"
               class="mb-2"
+              :rules="[v => !!v || 'Wajib diisi']"
             ></v-text-field>
+
+            <v-text-field
+              v-model="editItem.tanggal_sp2d"
+              label="Tanggal SP2D"
+              type="date"
+              variant="outlined"
+              density="comfortable"
+              rounded="lg"
+              class="mb-2"
+              v-if="!isEdit"
+              :rules="[v => !!v || 'Wajib diisi']"
+            ></v-text-field>
+
+            <v-autocomplete
+              v-model="editItem.skpd_id"
+              :items="skpds"
+              item-title="nama_skpd"
+              item-value="id_skpd"
+              label="Pilih SKPD"
+              variant="outlined"
+              density="comfortable"
+              rounded="lg"
+              class="mb-2"
+              v-if="!isEdit"
+              :rules="[v => !!v || 'Wajib diisi']"
+            ></v-autocomplete>
             
             <v-select
               v-model="editItem.jenis_data"
@@ -346,6 +414,7 @@
               density="comfortable"
               rounded="lg"
               class="mb-2"
+              :rules="[v => !!v || 'Wajib diisi']"
             ></v-select>
 
             <v-text-field
@@ -358,13 +427,24 @@
               prefix="Rp"
               :rules="[v => !!v || 'Wajib diisi']"
             ></v-text-field>
+
+            <v-textarea
+              v-model="editItem.keterangan"
+              label="Keterangan"
+              variant="outlined"
+              density="comfortable"
+              rounded="lg"
+              class="mb-2"
+              rows="2"
+              v-if="!isEdit"
+            ></v-textarea>
           </v-form>
         </v-card-text>
         <v-card-actions class="pa-4">
           <v-spacer></v-spacer>
           <v-btn variant="text" rounded="pill" @click="editDialog = false">Batal</v-btn>
-          <v-btn color="primary" variant="flat" rounded="pill" :loading="saving" :disabled="!isFormValid" @click="updateTransaction">
-            Simpan Perubahan
+          <v-btn color="primary" variant="flat" rounded="pill" :loading="saving" :disabled="!isFormValid" @click="saveTransaction">
+            {{ isEdit ? 'Simpan Perubahan' : 'Simpan Data' }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -400,6 +480,8 @@ const searchRecon = ref('')
 const selectedJenisGaji = ref(null)
 const sortBy = ref('nama_skpd')
 const sortDesc = ref(false)
+const reconPage = ref(1)
+const reconItemsPerPage = ref(15)
 const loading = ref(false)
 const uploading = ref(false)
 const isDragging = ref(false)
@@ -407,6 +489,8 @@ const viewMode = ref('summary')
 const items = ref([])
 const transactions = ref([])
 const reconData = ref([])
+const skpds = ref([])
+const isEdit = ref(false)
 
 const toggleSort = (key) => {
   if (sortBy.value === key) {
@@ -455,6 +539,12 @@ const filteredReconData = computed(() => {
   })
 
   return data
+})
+
+const paginatedReconData = computed(() => {
+  const start = (reconPage.value - 1) * reconItemsPerPage.value
+  const end = start + reconItemsPerPage.value
+  return filteredReconData.value.slice(start, end)
 })
 const snackbar = ref(false)
 const snackbarText = ref('')
@@ -534,6 +624,7 @@ const fetchData = async () => {
   } else if (viewMode.value === 'details') {
     await fetchTransactions()
   } else if (viewMode.value === 'recon') {
+    reconPage.value = 1
     await fetchRecon()
   }
 }
@@ -599,9 +690,62 @@ const fetchRecon = async () => {
   }
 }
 
+const openCreateDialog = () => {
+    isEdit.value = false
+    editItem.value = { 
+        id: null, 
+        nomor_sp2d: '', 
+        netto: 0, 
+        jenis_data: 'PNS',
+        tanggal_sp2d: new Date().toISOString().substr(0, 10),
+        skpd_id: null,
+        keterangan: 'Input Manual'
+    }
+    fetchSkpds()
+    editDialog.value = true
+}
+
 const openEditDialog = (item) => {
+  isEdit.value = true
   editItem.value = { ...item }
   editDialog.value = true
+}
+
+const fetchSkpds = async () => {
+    if (skpds.value.length > 0) return
+    try {
+        const response = await api.get('/skpd')
+        skpds.value = response.data.data
+    } catch (err) {
+        console.error(err)
+    }
+}
+
+const saveTransaction = async () => {
+    if (isEdit.value) {
+        await updateTransaction()
+    } else {
+        await createTransaction()
+    }
+}
+
+const createTransaction = async () => {
+    saving.value = true
+    try {
+        await api.post('/sp2d/realizations', {
+            ...editItem.value,
+            bulan: selectedMonth.value,
+            tahun: selectedYear.value
+        })
+        showSnackbar('Data manual berhasil ditambahkan')
+        editDialog.value = false
+        fetchData()
+        if (viewMode.value === 'details') fetchStatus()
+    } catch (err) {
+        showSnackbar(err.response?.data?.message || 'Gagal menambahkan data', 'error')
+    } finally {
+        saving.value = false
+    }
 }
 
 const updateTransaction = async () => {
@@ -754,8 +898,18 @@ onMounted(() => {
   gap: 4px;
 }
 
-.gap-2 {
-  gap: 8px;
+.gap-4 {
+  gap: 16px;
+}
+.items-per-page-select {
+  font-size: 0.75rem !important;
+}
+.items-per-page-select :deep(.v-field__input) {
+  padding-top: 0 !important;
+  min-height: 0 !important;
+}
+.border-top {
+  border-top: 1px solid rgba(var(--v-border-color), 0.08);
 }
 
 .border-bottom {
@@ -815,6 +969,15 @@ onMounted(() => {
 
 .border-right {
   border-right: 1px solid rgba(var(--v-border-color), 0.1) !important;
+}
+
+/* Striped Row Styling */
+.recon-table :deep(tbody tr:nth-of-type(even)) {
+  background-color: rgba(var(--v-theme-on-surface), 0.03) !important;
+}
+
+.recon-table :deep(tbody tr:hover) {
+  background-color: rgba(var(--v-theme-primary), 0.08) !important;
 }
 
 .truncate {

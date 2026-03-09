@@ -90,8 +90,17 @@ class Sp2dImport implements ToModel, WithHeadingRow
             return 'TPP-INDUK';
         }
 
-        // 2. PPPK / P3K Gaji
-        if ((str_contains($ket, 'PPPK') || str_contains($ket, 'P3K')) && (str_contains($ket, 'GAJI') || str_contains($ket, 'PEMBAYARAN BELANJA PEGAWAI'))) {
+        // 2. PPPK Paruh Waktu (PPPK-PW) - Check this BEFORE standard PPPK
+        if ((str_contains($ket, 'PPPK PW') || str_contains($ket, 'P3K PW') || str_contains($ket, 'PPPK PARUH WAKTU') || str_contains($ket, 'P3K PARUH WAKTU')) && (str_contains($ket, 'GAJI') || str_contains($ket, 'PEMBAYARAN BELANJA PEGAWAI') || str_contains($ket, 'BELANJA GAJI'))) {
+            if (str_contains($ket, 'SUSULAN'))
+                return 'PPPK-PW-SUSULAN';
+            if (str_contains($ket, 'KEKURANGAN'))
+                return 'PPPK-PW-KEKURANGAN';
+            return 'PPPK-PW-INDUK';
+        }
+
+        // 3. PPPK Penuh Waktu / P3K Gaji
+        if ((str_contains($ket, 'PPPK') || str_contains($ket, 'P3K')) && (str_contains($ket, 'GAJI') || str_contains($ket, 'PEMBAYARAN BELANJA PEGAWAI') || str_contains($ket, 'BELANJA GAJI'))) {
             if (str_contains($ket, 'SUSULAN'))
                 return 'PPPK-SUSULAN';
             if (str_contains($ket, 'KEKURANGAN'))
@@ -101,14 +110,28 @@ class Sp2dImport implements ToModel, WithHeadingRow
             return 'PPPK-INDUK';
         }
 
-        // 3. PNS Gaji
-        if (str_contains($ket, 'GAJI') && (str_contains($ket, 'PNS') || str_contains($ket, 'INDUK') || str_contains($ket, 'SUSULAN') || str_contains($ket, 'TERUSAN') || str_contains($ket, 'KEPALA DAERAH') || str_contains($ket, 'KEKURANGAN'))) {
+        // 3. PNS / ASN / DPRD Gaji
+        if (
+            (str_contains($ket, 'GAJI') || str_contains($ket, 'PEMBAYARAN BELANJA PEGAWAI') || str_contains($ket, 'BELANJA GAJI')) &&
+            (str_contains($ket, 'PNS') || str_contains($ket, 'ASN') || str_contains($ket, 'DPRD') || str_contains($ket, 'INDUK') || str_contains($ket, 'SUSULAN') || str_contains($ket, 'TERUSAN') || str_contains($ket, 'KEPALA DAERAH') || str_contains($ket, 'KEKURANGAN'))
+        ) {
+
             if (str_contains($ket, 'SUSULAN'))
                 return 'PNS-SUSULAN';
             if (str_contains($ket, 'KEKURANGAN'))
                 return 'PNS-KEKURANGAN';
             if (str_contains($ket, 'TERUSAN'))
                 return 'PNS-TERUSAN';
+            return 'PNS-INDUK';
+        }
+
+        // 4. Iuran JKK/JKM/BPJS (Counted as PNS Gaji for total reports)
+        if (str_contains($ket, 'IURAN') && (str_contains($ket, 'JKK') || str_contains($ket, 'JKM') || str_contains($ket, 'BPJS') || str_contains($ket, 'KES'))) {
+            return 'PNS-INDUK';
+        }
+
+        // 5. Fallback for generic Gaji that didn't match specific markers
+        if (str_contains($ket, 'GAJI') && !str_contains($ket, 'UANG PERSEDIAAN') && !str_contains($ket, 'TAMBAHAN UANG')) {
             return 'PNS-INDUK';
         }
 

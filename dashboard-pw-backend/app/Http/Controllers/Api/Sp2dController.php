@@ -22,9 +22,10 @@ class Sp2dController extends Controller
         ]);
 
         try {
-            // Clear existing data for the period before importing new ones
+            // Clear existing AUTOMATED data for the period before importing new ones
             Sp2dRealization::where('bulan', $request->bulan)
                 ->where('tahun', $request->tahun)
+                ->where('is_manual', 0)
                 ->delete();
 
             Excel::import(new Sp2dImport, $request->file('file'));
@@ -32,6 +33,33 @@ class Sp2dController extends Controller
         } catch (\Exception $e) {
             return response()->json(['message' => 'Gagal impor: ' . $e->getMessage()], 500);
         }
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'nomor_sp2d' => 'required|string',
+            'tanggal_sp2d' => 'required|date',
+            'nama_skpd_sipd' => 'nullable|string',
+            'skpd_id' => 'required|exists:skpds,id_skpd',
+            'jenis_data' => 'required|string',
+            'netto' => 'required|numeric',
+            'bulan' => 'required|numeric',
+            'tahun' => 'required|numeric',
+            'keterangan' => 'nullable|string',
+        ]);
+
+        $realization = Sp2dRealization::create(array_merge($request->all(), [
+            'is_manual' => 1,
+            'brutto' => $request->netto, // Default brutto to netto for manual entries if not provided
+            'potongan' => 0
+        ]));
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Data realisasi manual berhasil ditambahkan',
+            'data' => $realization
+        ]);
     }
 
     public function getStatus(Request $request)
@@ -49,6 +77,11 @@ class Sp2dController extends Controller
 
         if ($jenisGaji) {
             $realQuery->where('jenis_data', 'LIKE', '%' . strtoupper($jenisGaji) . '%');
+        }
+
+        // Exclude PPPK-PW by default unless specifically asked for (usually not)
+        if (!$jenisGaji) {
+            $realQuery->where('jenis_data', 'NOT LIKE', 'PPPK-PW%');
         }
 
         $realizations = $realQuery->get();
@@ -233,6 +266,11 @@ class Sp2dController extends Controller
 
         if ($jenisGaji) {
             $realQuery->where('jenis_data', 'LIKE', '%' . strtoupper($jenisGaji) . '%');
+        }
+
+        // EXCLUDE PPPK-PW from general reconciliation per user request
+        if (!$jenisGaji) {
+            $realQuery->where('jenis_data', 'NOT LIKE', 'PPPK-PW%');
         }
 
         $realizations = $realQuery->orderBy('tanggal_sp2d', 'asc')

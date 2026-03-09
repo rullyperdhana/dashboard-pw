@@ -19,6 +19,7 @@ class Sp2dRealization extends Model
         'netto',
         'bulan',
         'tahun',
+        'is_manual',
     ];
 
     protected $casts = [
