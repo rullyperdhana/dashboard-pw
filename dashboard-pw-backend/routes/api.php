@@ -194,6 +194,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/sp2d/realizations', [App\Http\Controllers\Api\Sp2dController::class, 'store']);
     Route::put('/sp2d/realizations/{id}', [App\Http\Controllers\Api\Sp2dController::class, 'update']);
     Route::delete('/sp2d/realizations/{id}', [App\Http\Controllers\Api\Sp2dController::class, 'destroy']);
+
+    // Tax Status (PTKP)
+    Route::get('/tax-status', [App\Http\Controllers\Api\TaxStatusController::class, 'index']);
+    Route::post('/tax-status', [App\Http\Controllers\Api\TaxStatusController::class, 'store']);
+    Route::post('/tax-status/initialize', [App\Http\Controllers\Api\TaxStatusController::class, 'initializeYear']);
+    Route::get('/tax-status/export', [App\Http\Controllers\Api\TaxStatusController::class, 'export']);
+    Route::post('/tax-status/import', [App\Http\Controllers\Api\TaxStatusController::class, 'import']);
 });
 
 // Simgaji Integration API (protected by API Key)

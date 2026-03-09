@@ -123,17 +123,30 @@ import api from '../api'
 
 const router = useRouter()
 const route = useRoute()
-const user = ref(JSON.parse(localStorage.getItem('user') || '{}'))
+const getUserFromStorage = () => {
+  try {
+    const stored = localStorage.getItem('user')
+    return (stored && stored !== 'null') ? JSON.parse(stored) : {}
+  } catch (e) {
+    return {}
+  }
+}
+
+const user = ref(getUserFromStorage())
 
 // Re-sync user data whenever route changes (to catch login updates)
 watch(() => route.path, () => {
-  user.value = JSON.parse(localStorage.getItem('user') || '{}')
+  user.value = getUserFromStorage()
 })
 
 const userInitials = computed(() => {
-  if (!user.value.name && !user.value.username) return 'U'
-  const nameToUse = user.value.name || user.value.username
-  return nameToUse.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+  const nameToUse = user.value?.name || user.value?.username || ''
+  if (!nameToUse) return 'U'
+  try {
+    return nameToUse.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+  } catch (e) {
+    return 'U'
+  }
 })
 
 const passwordDialog = ref(false)
@@ -204,6 +217,7 @@ const menuItems = ref([
 
   { divider: true },
   { header: 'Pengaturan' },
+  { title: 'Status Pajak (PTKP)', icon: 'mdi-account-cash-outline', value: 'tax-status', to: '/settings/tax-status' },
   { title: 'Posting Data', icon: 'mdi-lock-check-outline', value: 'posting-data', to: '/posting-data' },
   { title: 'Sumber Dana SKPD', icon: 'mdi-cash-multiple', value: 'sumber-dana', to: '/settings/sumber-dana' },
   { title: 'Referensi Satker', icon: 'mdi-office-building-cog', value: 'satker-setting', to: '/settings/satker' },
@@ -223,7 +237,7 @@ const filteredMenuItems = computed(() => {
     
     // Fallback: Show by default if no app_access array is found (to prevent empty sidebar)
     // but only for basic items
-    const basicItems = ['dashboard', 'pns', 'employees', 'payments', 'sp2d-verification']
+    const basicItems = ['dashboard', 'pns', 'employees', 'payments', 'sp2d-verification', 'tax-status']
     return basicItems.includes(item.value)
   })
 

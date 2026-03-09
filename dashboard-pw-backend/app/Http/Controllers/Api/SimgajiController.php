@@ -154,13 +154,18 @@ class SimgajiController extends Controller
             'g.total_potongan as jlh_potongan',
             'g.bersih as jlh_bersih',
             'g.jenis_gaji',
-            's.nmskpd as nama_skpd'
+            's.nmskpd as nama_skpd',
+            'ts.tax_status as fixed_tax_status'
         ];
 
         // Query PNS - Join dengan satkers untuk kode short (kdskpd)
         $queryPns = DB::table('gaji_pns as g')
             ->leftJoin('master_pegawai as m', 'g.nip', '=', 'm.nip')
             ->leftJoin('satkers as s', 'g.kdskpd', '=', 's.kdskpd')
+            ->leftJoin('tax_statuses as ts', function ($join) {
+                $join->on('g.nip', '=', 'ts.nip')
+                    ->on('g.tahun', '=', 'ts.year');
+            })
             ->leftJoin('ref_jabatan_fungsional as rjf', 'm.kdfungsi', '=', 'rjf.kdfungsi')
             ->leftJoin('ref_eselon as re', 'm.kdeselon', '=', 're.kd_eselon')
             ->select(array_merge($selectColumns, [DB::raw("'1' as status_asn")]));
@@ -171,6 +176,10 @@ class SimgajiController extends Controller
         $queryPpk = DB::table('gaji_pppk as g')
             ->leftJoin('master_pegawai as m', 'g.nip', '=', 'm.nip')
             ->leftJoin('satkers as s', 'g.kdskpd', '=', 's.kdskpd')
+            ->leftJoin('tax_statuses as ts', function ($join) {
+                $join->on('g.nip', '=', 'ts.nip')
+                    ->on('g.tahun', '=', 'ts.year');
+            })
             ->leftJoin('ref_jabatan_fungsional as rjf', 'm.kdfungsi', '=', 'rjf.kdfungsi')
             ->leftJoin('ref_eselon as re', 'm.kdeselon', '=', 're.kd_eselon')
             ->select(array_merge($selectColumns, [DB::raw("'2' as status_asn")]));
@@ -182,25 +191,26 @@ class SimgajiController extends Controller
 
         $formattedData = [];
         foreach ($results as $row) {
-            // Status Pajak Formatting
-            // Wanita (kdjenkel=2) selalu TK/0
-            if ($row->kdjenkel == 2) {
-                $statusPajak = "TK/0";
+            // Status Pajak Priority: 1. Fixed Tax Status (from management), 2. Dynamic Calculation
+            if (!empty($row->fixed_tax_status) && $row->fixed_tax_status !== '-') {
+                $statusPajak = $row->fixed_tax_status;
             } else {
-                $statusPajak = "TK/0";
-                $anak = (int) $row->janak;
-                if ($anak > 3)
-                    $anak = 3; // Max 3 for tax
-
-                if ($row->kdstawin == 1) {
-                    // Belum kawin -> TK
-                    $statusPajak = "TK/" . $anak;
-                } else if ($row->kdstawin == 2) {
-                    // Kawin -> K
-                    $statusPajak = "K/" . $anak;
+                // Fallback to calculation
+                if ($row->kdjenkel == 2) {
+                    $statusPajak = "TK/0";
                 } else {
-                    // Janda/Duda -> TK
-                    $statusPajak = "TK/" . $anak;
+                    $statusPajak = "TK/0";
+                    $anak = (int) $row->janak;
+                    if ($anak > 3)
+                        $anak = 3;
+
+                    if ($row->kdstawin == 1) {
+                        $statusPajak = "TK/" . $anak;
+                    } else if ($row->kdstawin == 2) {
+                        $statusPajak = "K/" . $anak;
+                    } else {
+                        $statusPajak = "TK/" . $anak;
+                    }
                 }
             }
 

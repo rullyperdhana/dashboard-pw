@@ -248,6 +248,7 @@ const moduleGroups = [
   {
     name: 'Pengaturan',
     items: [
+      { title: 'Status Pajak (PTKP)', value: 'tax-status' },
       { title: 'Posting Data', value: 'posting-data' },
       { title: 'Sumber Dana SKPD', value: 'sumber-dana' },
       { title: 'Referensi Satker', value: 'satker-setting' },

@@ -81,6 +81,12 @@ const router = createRouter({
             meta: { requiresAuth: true, breadcrumb: 'Pemetaan SKPD', app_access: 'skpd-mapping' },
         },
         {
+            path: '/settings/tax-status',
+            name: 'TaxStatusList',
+            component: () => import('../views/Settings/TaxStatusList.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Status Pajak (PTKP)', app_access: 'tax-status' },
+        },
+        {
             path: '/tpg-upload',
             name: 'TpgUpload',
             component: () => import('../views/TpgUpload.vue'),
