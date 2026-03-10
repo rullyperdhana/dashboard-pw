@@ -170,6 +170,12 @@ const router = createRouter({
             component: () => import('../views/Sp2dVerification.vue'),
             meta: { requiresAuth: true, breadcrumb: 'Verifikasi SP2D', app_access: 'sp2d-verification' },
         },
+        {
+            path: '/master/pegawai/export',
+            name: 'MasterPegawaiExport',
+            component: () => import('../views/Master/MasterPegawaiExport.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Export Master Pegawai', app_access: 'master-pegawai-export' },
+        },
     ],
 })
 

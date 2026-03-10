@@ -6,9 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Models\MasterPegawai;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Exports\EmployeesExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class MasterPegawaiController extends Controller
 {
+    public function export(Request $request)
+    {
+        $filters = $request->only(['search', 'kdskpd', 'kd_jns_peg', 'kdstapeg']);
+        $fileName = "master_pegawai_" . date('Ymd_His') . ".xlsx";
+
+        return Excel::download(new EmployeesExport($filters), $fileName);
+    }
+
     public function index(Request $request)
     {
         $query = MasterPegawai::query()

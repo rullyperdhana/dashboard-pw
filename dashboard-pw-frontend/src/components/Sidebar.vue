@@ -199,6 +199,7 @@ const menuItems = ref([
   { title: 'Instansi / SKPD', icon: 'mdi-office-building-outline', value: 'skpd', to: '/skpd' },
   { title: 'SKPD Mapping', icon: 'mdi-swap-horizontal', value: 'skpd-mapping', to: '/settings/skpd-mapping' },
   { title: 'Master Pegawai (DBF)', icon: 'mdi-database-import', value: 'master-pegawai', to: '/master-pegawai' },
+  { title: 'Export Master Pegawai', icon: 'mdi-account-arrow-right', value: 'master-pegawai-export', to: '/master-pegawai/export' },
 
   { divider: true },
   { header: 'Keuangan' },

@@ -2,118 +2,126 @@
 
 namespace App\Exports;
 
-use Maatwebsite\Excel\Concerns\FromArray;
+use App\Models\MasterPegawai;
+use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use Illuminate\Support\Facades\DB;
 
-class EmployeesExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
+class EmployeesExport implements FromCollection, WithHeadings, WithStyles, ShouldAutoSize, WithMapping, WithColumnFormatting
 {
-    protected $data;
+    protected $filters;
 
-    public function __construct(array $data)
+    public function __construct($filters = [])
     {
-        $this->data = $data;
+        $this->filters = $filters;
+    }
+
+    public function collection()
+    {
+        $query = MasterPegawai::query()
+            ->leftJoin('satkers', function ($join) {
+                $join->on('master_pegawai.kdskpd', '=', 'satkers.kdskpd')
+                    ->on('master_pegawai.kdsatker', '=', 'satkers.kdsatker');
+            })
+            ->leftJoin('ref_stapeg', 'master_pegawai.kdstapeg', '=', 'ref_stapeg.kdstapeg')
+            ->leftJoin('ref_jabatan_fungsional', 'master_pegawai.kdfungsi', '=', 'ref_jabatan_fungsional.kdfungsi')
+            ->leftJoin('ref_eselon', 'master_pegawai.kdeselon', '=', 'ref_eselon.kd_eselon')
+            ->select(
+                'master_pegawai.*',
+                'satkers.nmskpd',
+                'ref_stapeg.nmstapeg',
+                DB::raw('CASE WHEN master_pegawai.kdfungsi = "00000" THEN ref_eselon.uraian ELSE ref_jabatan_fungsional.nama_jabatan END as nama_jabatan')
+            );
+
+        if (!empty($this->filters['search'])) {
+            $s = $this->filters['search'];
+            $query->where(function ($q) use ($s) {
+                $q->where('master_pegawai.nip', 'like', "%$s%")
+                    ->orWhere('master_pegawai.nama', 'like', "%$s%");
+            });
+        }
+
+        if (!empty($this->filters['kdskpd'])) {
+            $query->where('master_pegawai.kdskpd', $this->filters['kdskpd']);
+        }
+
+        if (!empty($this->filters['kd_jns_peg'])) {
+            $query->where('master_pegawai.kd_jns_peg', $this->filters['kd_jns_peg']);
+        }
+
+        if (!empty($this->filters['kdstapeg'])) {
+            $query->where('master_pegawai.kdstapeg', $this->filters['kdstapeg']);
+        }
+
+        return $query->orderBy('satkers.nmskpd')->orderBy('master_pegawai.nama')->get();
     }
 
     public function headings(): array
     {
         return [
-            'No',
             'NIP',
+            'NAMA',
             'NIK',
-            'Nama',
-            'JK',
-            'Tempat Lahir',
-            'Tgl Lahir',
-            'Agama',
-            'Status',
-            'No HP',
-            'Golongan',
-            'Jabatan',
-            'Eselon',
+            'NPWP',
+            'TIPE PEG.',
+            'STATUS PEG.',
             'SKPD',
-            'UPT',
-            'Masa Kerja (Thn)',
-            'Masa Kerja (Bln)',
-            'Pendidikan',
-            'Gaji Pokok',
-            'Tunjangan',
+            'JABATAN',
+            'ESELON',
+            'GOL.',
+            'TGL LAHIR',
+            'JENIS KELAMIN',
+            'ALAMAT'
         ];
     }
 
-    public function array(): array
+    public function map($row): array
     {
-        $rows = [];
-        $no = 1;
-
-        foreach ($this->data as $item) {
-            $rows[] = [
-                $no++,
-                "'" . ($item['nip'] ?? ''),
-                "'" . ($item['nik'] ?? ''),
-                $item['nama'] ?? '',
-                $item['jk'] ?? '',
-                $item['tempat_lahir'] ?? '',
-                $item['tgl_lahir'] ?? '',
-                $item['agama'] ?? '',
-                $item['status'] ?? '',
-                $item['no_hp'] ?? '',
-                $item['golru'] ?? '',
-                $item['jabatan'] ?? '',
-                $item['eselon'] ?? '',
-                $item['skpd']['nama_skpd'] ?? '',
-                $item['upt'] ?? '',
-                $item['mk_thn'] ?? 0,
-                $item['mk_bln'] ?? 0,
-                ($item['tk_ijazah'] ?? '') . ' - ' . ($item['nm_pendidikan'] ?? ''),
-                $item['gapok'] ?? 0,
-                $item['tunjangan'] ?? 0,
-            ];
-        }
-
-        return $rows;
-    }
-
-    public function styles(Worksheet $sheet): array
-    {
-        $lastRow = count($this->data) + 1;
-
-        // Format NIP and NIK columns as text
-        $sheet->getStyle("B2:C{$lastRow}")->getNumberFormat()->setFormatCode('@');
-
-        // Format currency columns
-        $sheet->getStyle("S2:T{$lastRow}")->getNumberFormat()->setFormatCode('#,##0');
+        $tipePeg = $row->kd_jns_peg == 4 ? 'PPPK' : 'PNS';
+        $jk = $row->kdjenkel == 1 ? 'Laki-laki' : 'Perempuan';
 
         return [
-            1 => ['font' => ['bold' => true, 'size' => 10]],
+            $row->nip . " ", // Add space to force string
+            $row->nama,
+            $row->noktp . " ",
+            $row->npwp . " ",
+            $tipePeg,
+            $row->nmstapeg,
+            $row->nmskpd,
+            $row->nama_jabatan,
+            $row->kdeselon,
+            $row->kdgolo,
+            $row->tgllhr,
+            $jk,
+            $row->alamat
         ];
     }
 
-    public function columnWidths(): array
+    public function columnFormats(): array
     {
         return [
-            'A' => 5,
-            'B' => 22,
-            'C' => 20,
-            'D' => 30,
-            'E' => 12,
-            'F' => 15,
-            'G' => 12,
-            'H' => 10,
-            'I' => 12,
-            'J' => 15,
-            'K' => 10,
-            'L' => 25,
-            'M' => 8,
-            'N' => 35,
-            'O' => 20,
-            'P' => 8,
-            'Q' => 8,
-            'R' => 25,
-            'S' => 15,
-            'T' => 15,
+            'A' => NumberFormat::FORMAT_TEXT,
+            'C' => NumberFormat::FORMAT_TEXT,
+            'D' => NumberFormat::FORMAT_TEXT,
+        ];
+    }
+
+    public function styles(Worksheet $sheet)
+    {
+        return [
+            1 => [
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => '4F46E5']
+                ],
+            ],
         ];
     }
 }
