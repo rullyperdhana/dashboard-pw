@@ -878,15 +878,6 @@ watch(search, () => {
 </script>
 
 <style scoped>
-.modern-bg {
-  background-color: rgb(var(--v-theme-background)) !important;
-}
-
-.glass-card {
-  background-color: rgb(var(--v-theme-surface)) !important;
-  border: 1px solid rgba(var(--v-border-color), 0.08) !important;
-}
-
 .sticky-top {
   position: sticky;
   top: 96px;

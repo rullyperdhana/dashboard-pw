@@ -529,11 +529,54 @@
             v-else
             :headers="detailType === 'pppk_pw' ? detailHeadersPw : detailHeaders"
             :items="detailEmployees"
+            :group-by="detailType === 'pppk_pw' ? [{ key: 'jabatan', order: 'asc' }] : []"
             items-per-page="20"
             class="elevation-0 border rounded-lg"
             density="compact"
             hover
           >
+            <!-- Custom Group Header for PPPK-PW with Tree Model and Sums -->
+            <template v-slot:group-header="{ item, columns, toggleGroup, isGroupOpen }">
+              <tr class="bg-blue-lighten-5 group-header-row">
+                <td :colspan="3" class="py-2 px-4 cursor-pointer" @click="toggleGroup(item)">
+                  <div class="d-flex align-center">
+                    <v-btn
+                      :icon="isGroupOpen(item) ? 'mdi-chevron-down' : 'mdi-chevron-right'"
+                      variant="text"
+                      size="small"
+                      density="compact"
+                      class="mr-2"
+                    ></v-btn>
+                    <v-icon color="primary" class="mr-2" size="20">mdi-briefcase-outline</v-icon>
+                    <span class="font-weight-bold text-subtitle-2">{{ item.value || 'Tanpa Jabatan' }}</span>
+                    <v-chip size="x-small" color="primary" class="ml-3 font-weight-bold" variant="flat">
+                      {{ item.items.length }} Pegawai
+                    </v-chip>
+                  </div>
+                </td>
+                <td class="text-right font-weight-bold py-2">
+                  {{ formatCurrency(item.items.reduce((acc, row) => acc + (row.raw.gaji_pokok || 0), 0)) }}
+                </td>
+                <td v-if="detailType === 'pppk_pw'" class="text-right font-weight-bold py-2">
+                  {{ formatCurrency(item.items.reduce((acc, row) => acc + (row.raw.tunjangan || 0), 0)) }}
+                </td>
+                <td v-else :colspan="4"></td> <!-- Placeholder for other types -->
+                <td class="text-right font-weight-bold py-2"></td> <!-- BPJS Base placeholder -->
+                <td class="text-right font-weight-bold py-2">
+                  {{ formatCurrency(item.items.reduce((acc, row) => acc + (row.raw.jkk || 0), 0)) }}
+                </td>
+                <td class="text-right font-weight-bold py-2">
+                  {{ formatCurrency(item.items.reduce((acc, row) => acc + (row.raw.jkm || 0), 0)) }}
+                </td>
+                <td class="text-right font-weight-bold py-2">
+                  {{ formatCurrency(item.items.reduce((acc, row) => acc + (row.raw.bpjs_kesehatan || 0), 0)) }}
+                </td>
+                <td class="text-right font-weight-bold py-2 text-success">
+                  {{ formatCurrency(item.items.reduce((acc, row) => acc + (row.raw.total_estimation || 0), 0)) }}
+                </td>
+              </tr>
+            </template>
+
             <template v-slot:item.gaji_pokok="{ item }">
                 {{ formatCurrency(item.gaji_pokok) }}
             </template>

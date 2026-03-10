@@ -159,7 +159,7 @@
                 class="mt-4 rounded-lg"
                 density="compact"
               >
-                Data ini dapat digunakan sebagai referensi untuk rekonsiliasi dengan Simgaji Taspen.
+                Data ini dapat digunakan sebagai referensi untuk rekonsiliasi dengan Simpeg BKD.
               </v-alert>
             </v-card>
           </v-col>
@@ -252,13 +252,4 @@ onMounted(fetchInitialData)
 </script>
 
 <style scoped>
-.modern-bg {
-  background-color: #f8fafc !important;
-  min-height: 100vh;
-}
-.glass-card {
-  background: rgba(255, 255, 255, 0.9) !important;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-}
 </style>

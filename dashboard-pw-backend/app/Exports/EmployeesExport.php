@@ -75,9 +75,12 @@ class EmployeesExport implements FromCollection, WithHeadings, WithStyles, Shoul
             'JABATAN',
             'ESELON',
             'GOL.',
+            'TUNJ. ESELON',
+            'TUNJ. FUNGSI',
             'TGL LAHIR',
             'JENIS KELAMIN',
-            'ALAMAT'
+            'ALAMAT',
+            'WAKTU EXPORT'
         ];
     }
 
@@ -97,9 +100,12 @@ class EmployeesExport implements FromCollection, WithHeadings, WithStyles, Shoul
             $row->nama_jabatan,
             $row->kdeselon,
             $row->kdgolo,
+            $row->tjeselon,
+            $row->tjfungsi,
             $row->tgllhr,
             $jk,
-            $row->alamat
+            $row->alamat,
+            date('Y-m-d H:i:s')
         ];
     }
 

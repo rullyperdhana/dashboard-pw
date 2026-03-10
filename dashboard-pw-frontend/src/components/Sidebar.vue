@@ -253,12 +253,6 @@ const filteredMenuItems = computed(() => {
 </script>
 
 <style scoped>
-.glass-sidebar {
-  border-right: 1px solid rgba(var(--v-border-color), 0.08) !important;
-  background-color: rgba(var(--v-theme-surface), 0.95) !important;
-  backdrop-filter: blur(10px);
-}
-
 .logo-circle {
   width: 32px;
   height: 32px;

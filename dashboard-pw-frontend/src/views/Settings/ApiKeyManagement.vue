@@ -112,7 +112,7 @@
               <strong>Penting!</strong> Simpan API Key ini sekarang. Key tidak akan ditampilkan lagi secara lengkap.
             </v-alert>
             <v-label class="mb-2 font-weight-bold">API Key:</v-label>
-            <div class="d-flex align-center pa-3 bg-grey-lighten-4 rounded-lg mb-4">
+            <div class="d-flex align-center pa-3 bg-surface-variant rounded-lg mb-4">
               <code class="text-body-2 flex-grow-1" style="word-break: break-all;">{{ createdKey }}</code>
               <v-btn icon="mdi-content-copy" variant="text" size="small" color="primary" class="ml-2"
                 @click="copyToClipboard(createdKey)">

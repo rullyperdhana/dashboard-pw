@@ -199,12 +199,5 @@ defineEmits(['show-coming-soon'])
 </script>
 
 <style scoped>
-.glass-nav {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  background-color: rgba(var(--v-theme-surface), 0.8) !important;
-  border-bottom: 1px solid rgba(var(--v-border-color), 0.05) !important;
-  z-index: 1000;
-}
 </style>
 

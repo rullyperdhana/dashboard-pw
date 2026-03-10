@@ -21,22 +21,14 @@ const theme = useTheme()
 
 const toggleTheme = () => {
   const newTheme = theme.global.name.value === 'dark' ? 'light' : 'dark'
-  if (typeof theme.change === 'function') {
-    theme.change(newTheme)
-  } else {
-    theme.global.name.value = newTheme
-  }
+  theme.global.name.value = newTheme
   localStorage.setItem('theme', newTheme)
 }
 
 onMounted(() => {
   const savedTheme = localStorage.getItem('theme')
   if (savedTheme) {
-    if (typeof theme.change === 'function') {
-      theme.change(savedTheme)
-    } else {
-      theme.global.name.value = savedTheme
-    }
+    theme.global.name.value = savedTheme
   }
 })
 </script>

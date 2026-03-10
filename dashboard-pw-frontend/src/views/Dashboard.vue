@@ -975,20 +975,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.modern-dashboard {
-  background-color: rgb(var(--v-theme-background)) !important;
-}
-
-.bg-light {
-  background-color: rgb(var(--v-theme-background));
-}
-
-.glass-card {
-  background-color: rgb(var(--v-theme-surface)) !important;
-  border: 1px solid rgba(var(--v-border-color), 0.08) !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
 .stat-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.08) !important;

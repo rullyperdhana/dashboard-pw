@@ -13,3 +13,34 @@ body {
 #app {
   width: 100%;
 }
+
+/* Global Theme Utilities */
+.bg-light {
+  background-color: rgb(var(--v-theme-background)) !important;
+  color: rgb(var(--v-theme-on-background)) !important;
+}
+
+.modern-bg {
+  background-color: rgb(var(--v-theme-background)) !important;
+  min-height: 100vh;
+}
+
+.glass-card {
+  background-color: rgba(var(--v-theme-surface), 0.9) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(var(--v-border-color), 0.08) !important;
+  color: rgb(var(--v-theme-on-surface)) !important;
+}
+
+.glass-nav {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(var(--v-theme-surface), 0.8) !important;
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.05) !important;
+}
+
+.glass-sidebar {
+  border-right: 1px solid rgba(var(--v-border-color), 0.08) !important;
+  background-color: rgba(var(--v-theme-surface), 0.95) !important;
+  backdrop-filter: blur(10px);
+}

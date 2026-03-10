@@ -724,6 +724,7 @@ class SettingController extends Controller
         $jkmPercent = (float) Setting::where('key', 'pppk_jkm_percentage')->value('value') ?? 0.72;
         $bpjsPercent = 4.0;
         $bpjsCap = 12000000;
+        $umpValue = (float) Setting::where('key', 'ump_kalsel')->value('value') ?? 3725000;
 
         $month = (int) ($request->month ?? date('n'));
         $year = (int) ($request->year ?? date('Y'));
@@ -739,15 +740,22 @@ class SettingController extends Controller
         }
 
         $employees = $query->leftJoin('skpd', 'pegawai_pw.idskpd', '=', 'skpd.id_skpd')
-            ->select('pegawai_pw.*', 'skpd.nama_skpd')
-            ->orderBy('skpd.nama_skpd')
+            ->leftJoin('master_pegawai as mp', 'pegawai_pw.nip', '=', 'mp.nip')
+            ->leftJoin('ref_eselon as re', 'mp.kdeselon', '=', 're.kd_eselon')
+            ->select(
+                'pegawai_pw.*',
+                DB::raw('COALESCE(skpd.nama_skpd, pegawai_pw.skpd) as resolved_skpd_name'),
+                DB::raw('CASE WHEN mp.kdfungsi = "00000" THEN re.uraian ELSE pegawai_pw.jabatan END as resolved_jabatan_name')
+            )
+            ->orderBy('resolved_skpd_name')
+            ->orderBy('resolved_jabatan_name')
             ->orderBy('pegawai_pw.nama')
             ->get();
 
-        $data = $employees->map(function ($emp) use ($jkkPercent, $jkmPercent, $bpjsPercent, $bpjsCap) {
+        $data = $employees->map(function ($emp) use ($jkkPercent, $jkmPercent, $bpjsPercent, $bpjsCap, $umpValue) {
             $gapok = (float) $emp->gapok;
             $tunj = (float) $emp->tunjangan;
-            $bpjsBase = min($gapok + $tunj, $bpjsCap);
+            $bpjsBase = min(max($gapok, $umpValue), $bpjsCap);
             $jkk = round($gapok * ($jkkPercent / 100), 2);
             $jkm = round($gapok * ($jkmPercent / 100), 2);
             $bpjs = round($bpjsBase * ($bpjsPercent / 100), 2);
@@ -755,8 +763,8 @@ class SettingController extends Controller
             return [
                 'nip' => $emp->nip,
                 'nama' => $emp->nama,
-                'jabatan' => $emp->jabatan,
-                'skpd' => $emp->nama_skpd ?? $emp->skpd ?? '',
+                'jabatan' => $emp->resolved_jabatan_name ?? $emp->jabatan,
+                'skpd' => $emp->resolved_skpd_name ?? '',
                 'gaji_pokok' => $gapok,
                 'tunjangan' => $tunj,
                 'bpjs_base' => $bpjsBase,

@@ -164,6 +164,12 @@
           </v-chip>
           <span v-else class="text-grey">{{ item.kdstapeg || '-' }}</span>
         </template>
+        <template v-slot:item.tjeselon="{ item }">
+          <span class="text-caption font-weight-medium">{{ formatCurrency(item.tjeselon) }}</span>
+        </template>
+        <template v-slot:item.tjfungsi="{ item }">
+          <span class="text-caption font-weight-medium text-primary">{{ formatCurrency(item.tjfungsi) }}</span>
+        </template>
         <template v-slot:item.actions="{ item }">
           <v-btn icon size="small" variant="text" color="primary" @click="showDetail(item)">
             <v-icon>mdi-eye-outline</v-icon>
@@ -388,7 +394,10 @@
                   <div class="text-body-1 mb-4">{{ selectedItem.kdpangkat }} ({{ selectedItem.blgolt }}/{{ selectedItem.mkgolt }})</div>
 
                   <div class="text-subtitle-2 text-grey mb-1">Tunjangan Eselon</div>
-                  <div class="text-body-1 font-weight-bold text-primary mb-4">{{ formatCurrency(selectedItem.tjeselon) }}</div>
+                  <div class="text-body-1 font-weight-bold text-indigo mb-4">{{ formatCurrency(selectedItem.tjeselon) }}</div>
+
+                  <div class="text-subtitle-2 text-grey mb-1">Tunjangan Fungsional</div>
+                  <div class="text-body-1 font-weight-bold text-primary mb-4">{{ formatCurrency(selectedItem.tjfungsi) }}</div>
                 </v-col>
                 <v-col cols="12" md="6">
                   <div class="text-subtitle-2 text-grey mb-1">Unit Kerja / SKPD</div>
@@ -473,6 +482,8 @@ const headers = [
   { title: 'Satker', key: 'kdsatker', align: 'start', sortable: false },
   { title: 'Jabatan', key: 'nama_jabatan', align: 'start', sortable: false },
   { title: 'Golongan', key: 'kdpangkat', align: 'start', sortable: false },
+  { title: 'Tunj. Eselon', key: 'tjeselon', align: 'end', sortable: false },
+  { title: 'Tunj. Fungsi', key: 'tjfungsi', align: 'end', sortable: false },
   { title: 'Gaji Pokok', key: 'gapok', align: 'end', sortable: false },
   { title: 'Aksi', key: 'actions', align: 'center', sortable: false },
 ]
