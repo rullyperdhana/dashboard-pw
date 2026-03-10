@@ -238,7 +238,7 @@ const filteredMenuItems = computed(() => {
     
     // Fallback: Show by default if no app_access array is found (to prevent empty sidebar)
     // but only for basic items
-    const basicItems = ['dashboard', 'pns', 'employees', 'payments', 'sp2d-verification', 'tax-status']
+    const basicItems = ['dashboard', 'pns', 'employees', 'payments', 'sp2d-verification', 'tax-status', 'master-pegawai-export']
     return basicItems.includes(item.value)
   })
 
