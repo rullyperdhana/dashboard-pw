@@ -203,7 +203,7 @@ class ThrController extends Controller
                     'date' => $printDate,
                     'sub_giat' => $subGiat['sub_giat_name']
                 ];
-                $verifyUrl = "https://simgajitaspen.my.id/api/verify-thr?" . http_build_query($params);
+                $verifyUrl = "https://sipgaji.my.id/api/verify-thr?" . http_build_query($params);
                 $cacheKey = md5($verifyUrl);
 
                 if (isset($qrCache[$cacheKey])) {
@@ -234,7 +234,7 @@ class ThrController extends Controller
                         $dataArray[$sIndex]['sub_giat_groups'][$gIndex]['qr_code'] = $base64;
 
                         $subGiat = $dataArray[$sIndex]['sub_giat_groups'][$gIndex];
-                        $verifyUrl = "https://simgajitaspen.my.id/api/verify-thr?" . http_build_query([
+                        $verifyUrl = "https://sipgaji.my.id/api/verify-thr?" . http_build_query([
                             'total' => number_format($subGiat['subtotal_thr'], 0, ',', '.'),
                             'period' => $thrMonthName . ' ' . $year,
                             'date' => $printDate,

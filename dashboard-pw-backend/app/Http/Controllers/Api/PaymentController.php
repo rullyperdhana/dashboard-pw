@@ -243,7 +243,7 @@ class PaymentController extends Controller
         $monthName = $payment->month_name;
 
         // Generate Verification URL
-        $verifyUrl = "https://simgajitaspen.my.id/api/verify-payment?" . http_build_query([
+        $verifyUrl = "https://sipgaji.my.id/api/verify-payment?" . http_build_query([
             'total' => $totalFormatted,
             'period' => $monthName . ' ' . $payment->year,
             'date' => $printDate,
