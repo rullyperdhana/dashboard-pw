@@ -102,19 +102,26 @@ class TaxStatusController extends Controller
         }
 
         // 2. Also check MasterPegawai (PNS) and PegawaiPw (PPPK) for any missing employees
-        $pns = DB::table('master_pegawai')->select('nip', 'nama', 'kdstawin', 'janak')->get();
+        $pns = DB::table('master_pegawai')->select('nip', 'nama', 'kdstawin', 'janak', 'kdjenkel')->get();
         foreach ($pns as $p) {
             if (!TaxStatus::where('nip', $p->nip)->where('year', $targetYear)->exists()) {
-                $statusLetter = ($p->kdstawin == 2) ? 'K' : 'TK';
-                $childCount = $p->janak ?: 0;
-                if ($childCount > 3)
-                    $childCount = 3; // PTKP Max 3
+                $isFemale = ($p->kdjenkel == 2 || (strlen($p->nip) >= 15 && substr($p->nip, 14, 1) == '2'));
+
+                if ($isFemale) {
+                    $taxStatusValue = 'TK/0';
+                } else {
+                    $statusLetter = ($p->kdstawin == 2) ? 'K' : 'TK';
+                    $childCount = $p->janak ?: 0;
+                    if ($childCount > 3)
+                        $childCount = 3; // PTKP Max 3
+                    $taxStatusValue = "$statusLetter/$childCount";
+                }
 
                 TaxStatus::create([
                     'nip' => $p->nip,
                     'nama' => $p->nama,
                     'employee_type' => 'pns',
-                    'tax_status' => "$statusLetter/$childCount",
+                    'tax_status' => $taxStatusValue,
                     'year' => $targetYear,
                     'is_manual' => false
                 ]);

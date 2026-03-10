@@ -196,7 +196,9 @@ class SimgajiController extends Controller
                 $statusPajak = $row->fixed_tax_status;
             } else {
                 // Fallback to calculation
-                if ($row->kdjenkel == 2) {
+                $isFemale = ($row->kdjenkel == 2 || (strlen($row->nip) >= 15 && substr($row->nip, 14, 1) == '2'));
+
+                if ($isFemale) {
                     $statusPajak = "TK/0";
                 } else {
                     $statusPajak = "TK/0";
