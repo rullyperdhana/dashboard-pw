@@ -30,11 +30,19 @@ class SecurityHeadersMiddleware
         $response->headers->set('X-XSS-Protection', '1; mode=block');
 
         // 5. Content Security Policy (Hanya mengizinkan sumber data yang dipercaya)
-        // Kita gunakan set yang relatif longgar namun aman untuk Laravel standard
-        $response->headers->set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: https:; connect-src 'self' https:;");
+        // Set yang aman untuk Vue + Laravel standard
+        $csp = "default-src 'self'; ";
+        $csp .= "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; ";
+        $csp .= "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; ";
+        $csp .= "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; ";
+        $csp .= "img-src 'self' data: https:; ";
+        $csp .= "connect-src 'self' https:; ";
+        $csp .= "frame-ancestors 'none';";
 
-        // 6. Permissions Policy (Membatasi fitur browser yang tidak diperlukan)
-        $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), browsing-topics=()');
+        $response->headers->set('Content-Security-Policy', $csp);
+
+        // 6. Permissions Policy
+        $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
 
         return $response;
     }
