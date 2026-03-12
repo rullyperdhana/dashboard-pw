@@ -94,7 +94,8 @@
     </footer>
 
     <header>
-        <h2 style="margin:0; padding:0;">DAFTAR PEMBAYARAN THR PEGAWAI PPPK PARUH WAKTU</h2>
+        <h2 style="margin:0; padding:0;">PEMERINTAH PROVINSI KALIMANTAN SELATAN <br>DAFTAR PEMBAYARAN THR PEGAWAI PPPK
+            PARUH WAKTU</h2>
         <h3 style="margin:5px 0 0 0; padding:0;">TAHUN {{ $year }} (PEMBAYARAN BULAN {{ strtoupper($thrMonthName) }})
         </h3>
         <p style="margin:5px 0 0 0; padding:0; font-size: 10px;">Dasar Perhitungan: Gaji Pokok Pebruari
@@ -168,7 +169,8 @@
                                 <td style="border: none; width: 60%; vertical-align: bottom;">
                                     <div class="footer" style="font-size: 10px; color: #555;">
                                         <strong>KEABSAHAN DOKUMEN:</strong><br>
-                                        Dokumen ini dihasilkan secara otomatis oleh Sistem PPPK Payroll Dashboard.<br>
+                                        Dokumen ini dihasilkan secara otomatis oleh Sistem PPPK Payroll Dashboard yang
+                                        menggunakan skema n/12.<br>
                                         Keaslian dokumen dapat diverifikasi melalui kode QR di samping.<br>
                                         Dicetak pada: {{ $printDate }}
                                     </div>
