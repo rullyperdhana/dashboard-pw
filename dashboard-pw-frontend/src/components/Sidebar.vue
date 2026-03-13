@@ -194,6 +194,7 @@ const menuItems = ref([
   { divider: true },
   { header: 'Data Master' },
   { title: 'Pegawai PW', icon: 'mdi-account-group-outline', value: 'employees', to: '/employees' },
+  { title: 'Update NIK Massal', icon: 'mdi-account-plus-outline', value: 'employees', to: '/employees/import-nik' },
   { title: 'Data Gaji PNS', icon: 'mdi-badge-account-horizontal-outline', value: 'gaji-pns', to: '/gaji-pns' },
   { title: 'Data Gaji PPPK', icon: 'mdi-account-check-outline', value: 'gaji-pppk', to: '/gaji-pppk' },
   { title: 'Instansi / SKPD', icon: 'mdi-office-building-outline', value: 'skpd', to: '/skpd' },

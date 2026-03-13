@@ -112,7 +112,7 @@ class EmployeeController extends Controller
             return $pdf->download($filename . '.pdf');
         }
 
-        return Excel::download(new EmployeesExport($employees), $filename . '.xlsx');
+        return Excel::download(new \App\Exports\PppkPwExport($employees), $filename . '.xlsx');
     }
 
     /**

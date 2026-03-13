@@ -90,6 +90,9 @@ class ProcessPayrollUpload implements ShouldQueue
                 case 'jabfung_ref':
                     $this->processJabfungRef($uploadJob, $filePath, $params);
                     break;
+                case 'nik_update':
+                    $this->processNikUpdate($uploadJob, $filePath, $params);
+                    break;
                 default:
                     $uploadJob->markFailed("Tipe upload tidak dikenal: {$uploadJob->type}");
                     return;
@@ -712,6 +715,20 @@ class ProcessPayrollUpload implements ShouldQueue
         $job->markCompleted([
             'total_records' => $count,
             'message' => "Berhasil mengupdate {$count} data referensi Jabatan Fungsional dalam {$duration} detik.",
+        ]);
+    }
+
+    protected function processNikUpdate(UploadJob $uploadJob, string $filePath, array $params): void
+    {
+        $import = new \App\Imports\NikUpdateImport();
+        
+        \Maatwebsite\Excel\Facades\Excel::import($import, $filePath);
+        
+        $uploadJob->markCompleted([
+            'message' => "NIK berhasil diperbarui untuk {$import->updatedCount} pegawai.",
+            'updated_count' => $import->updatedCount,
+            'not_found_count' => $import->notFoundCount,
+            'errors' => $import->errors,
         ]);
     }
 }

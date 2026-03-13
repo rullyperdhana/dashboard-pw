@@ -118,12 +118,13 @@
                         <thead>
                             <tr>
                                 <th width="30">No</th>
-                                <th width="120">NIP</th>
+                                <th width="110">NIP</th>
                                 <th>Nama</th>
                                 <th>Jabatan</th>
-                                <th width="100">Gapok Basis</th>
-                                <th width="80">Masa Kerja</th>
-                                <th width="110">Besaran THR</th>
+                                <th width="90">Gapok Basis</th>
+                                <th width="70">Masa Kerja</th>
+                                <th width="100">Besaran THR</th>
+                                <th width="140">Tanda Tangan / Penerima</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -136,11 +137,19 @@
                                     <td class="text-right">{{ number_format($item['gapok_basis'], 0, ',', '.') }}</td>
                                     <td class="text-center">{{ $item['n_months'] }} Bln</td>
                                     <td class="text-right">{{ number_format($item['thr_amount'], 0, ',', '.') }}</td>
+                                    <td style="padding-top: 5px; height: 35px; vertical-align: top;">
+                                        @if(($index + 1) % 2 != 0)
+                                            {{ $index + 1 }}.
+                                        @else
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ $index + 1 }}.
+                                        @endif
+                                    </td>
                                 </tr>
                             @endforeach
                             <tr class="total-row">
                                 <td colspan="6" class="text-right">SUBTOTAL SUB KEGIATAN &nbsp;</td>
                                 <td class="text-right">{{ number_format($subGiat['subtotal_thr'], 0, ',', '.') }}</td>
+                                <td></td>
                             </tr>
                         </tbody>
                     </table>

@@ -176,6 +176,12 @@ const router = createRouter({
             component: () => import('../views/Master/MasterPegawaiExport.vue'),
             meta: { requiresAuth: true, breadcrumb: 'Export Master Pegawai', app_access: 'master-pegawai-export' },
         },
+        {
+            path: '/employees/import-nik',
+            name: 'EmployeeNikImport',
+            component: () => import('../views/Master/EmployeeNikImport.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Update NIK Massal', app_access: 'employees' },
+        },
     ],
 })
 

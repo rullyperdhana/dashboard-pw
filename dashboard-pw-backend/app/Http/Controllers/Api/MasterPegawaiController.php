@@ -174,4 +174,9 @@ class MasterPegawaiController extends Controller
             ]
         ]);
     }
+
+    public function downloadNikTemplate()
+    {
+        return Excel::download(new \App\Exports\NikTemplateExport, 'template_update_nik.xlsx');
+    }
 }

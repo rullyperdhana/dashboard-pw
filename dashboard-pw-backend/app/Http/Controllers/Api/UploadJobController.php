@@ -19,7 +19,7 @@ class UploadJobController extends Controller
     {
         $request->validate([
             'file' => 'required|file',
-            'type' => 'required|in:pns,pppk,tpp,tpg,master_pegawai,master_keluarga,satker_ref,payroll_dbf,history_gpok,jabfung_ref',
+            'type' => 'required|in:pns,pppk,tpp,tpg,master_pegawai,master_keluarga,satker_ref,payroll_dbf,history_gpok,jabfung_ref,nik_update',
         ]);
 
         $type = $request->input('type');
