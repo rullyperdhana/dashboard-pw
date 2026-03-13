@@ -6,89 +6,102 @@
     <!-- Modern Sidebar -->
     <Sidebar @show-coming-soon="showComingSoon" />
     
-    <v-main class="bg-light">
-      <v-container fluid class="pa-8">
+    <v-main class="bg-dashboard">
+      <v-container fluid class="pa-6 pa-md-10">
         <!-- Page Header -->
-        <div class="d-flex align-center mb-6">
-          <div>
-            <h1 class="text-h4 font-weight-bold text-grey-darken-2">Perhitungan Estimasi JKK, JKM & BPJS Kesehatan</h1>
-            <p class="text-body-2 text-medium-emphasis mt-1">Estimasi pembayaran iuran ketenagakerjaan dan kesehatan per periode</p>
-          </div>
-          <v-spacer></v-spacer>
-          <v-btn variant="tonal" color="info" rounded="pill" @click="fetchAllEstimations" :loading="loadingEstimation" class="mr-3">
-            <v-icon start icon="mdi-refresh"></v-icon>
-            Refresh
-          </v-btn>
-          <v-btn variant="tonal" color="primary" rounded="pill" @click="showSettings = !showSettings">
-            <v-icon start icon="mdi-cog"></v-icon>
-            Parameter JKK & JKM
-            <v-icon end :icon="showSettings ? 'mdi-chevron-up' : 'mdi-chevron-down'"></v-icon>
-          </v-btn>
-        </div>
+        <header class="dashboard-header mb-8">
+          <v-row align="center">
+            <v-col cols="12" sm="auto">
+              <v-avatar color="primary-lighten-4" size="48" class="mr-4">
+                <v-icon color="primary" size="28">mdi-calculator-variant</v-icon>
+              </v-avatar>
+            </v-col>
+            <v-col>
+              <h1 class="text-h4 font-weight-black tracking-tight text-high-emphasis">Estimasi Iuran JKK, JKM & BPJS</h1>
+              <p class="text-subtitle-1 text-medium-emphasis">Proyeksi iuran ketenagakerjaan dan kesehatan periodik.</p>
+            </v-col>
+            <v-col cols="12" sm="auto" class="d-flex ga-3">
+              <v-btn variant="tonal" color="primary" rounded="pill" @click="fetchAllEstimations" :loading="loadingEstimation">
+                <v-icon start icon="mdi-refresh"></v-icon>
+                Refresh
+              </v-btn>
+              <v-btn variant="flat" color="primary" rounded="pill" @click="showSettings = !showSettings" class="font-weight-bold">
+                <v-icon start icon="mdi-cog-outline"></v-icon>
+                Parameter
+                <v-icon end icon="mdi-chevron-down" v-if="!showSettings"></v-icon>
+                <v-icon end icon="mdi-chevron-up" v-else></v-icon>
+              </v-btn>
+            </v-col>
+          </v-row>
+        </header>
 
         <!-- Collapsible Settings Panel -->
         <v-expand-transition>
-          <v-card v-show="showSettings" class="rounded-xl glass-card mb-6" elevation="0">
-            <v-card-text class="pa-6">
+          <v-card v-show="showSettings" class="glass-panel mb-8 pa-2" elevation="0">
+            <v-card-text>
+              <div class="text-overline font-weight-black mb-4 text-primary px-2">KONFIGURASI PERSENTASE IURAN</div>
               <v-row align="center">
-                <v-col cols="12" md="3">
+                <v-col cols="12" md="4">
                   <v-text-field
                     v-model="settings.pppk_jkk_percentage"
-                    label="Persentase Iuran JKK (%)"
+                    label="Persentase JKK (%)"
                     type="number" step="0.01" min="0"
-                    hint="Contoh: 0.24" persistent-hint
-                    variant="outlined" color="primary" bg-color="surface" density="compact"
+                    hint="Default: 0.24" persistent-hint
+                    variant="filled" flat rounded="lg"
                     :loading="loading"
                   ></v-text-field>
                 </v-col>
-                <v-col cols="12" md="3">
+                <v-col cols="12" md="4">
                   <v-text-field
                     v-model="settings.pppk_jkm_percentage"
-                    label="Persentase Iuran JKM (%)"
+                    label="Persentase JKM (%)"
                     type="number" step="0.01" min="0"
-                    hint="Contoh: 0.72" persistent-hint
-                    variant="outlined" color="primary" bg-color="surface" density="compact"
+                    hint="Default: 0.72" persistent-hint
+                    variant="filled" flat rounded="lg"
                     :loading="loading"
                   ></v-text-field>
                 </v-col>
-                <v-col cols="12" md="3" class="d-flex align-center">
-                  <v-btn color="primary" :loading="saving" prepend-icon="mdi-content-save" class="rounded-lg" @click="saveSettings">
-                    Simpan Perubahan
+                <v-col cols="12" md="4" class="d-flex align-center pt-0">
+                  <v-btn color="primary" :loading="saving" prepend-icon="mdi-content-save-outline" flat rounded="pill" block size="large" @click="saveSettings" class="font-weight-black">
+                    Simpan Parameter
                   </v-btn>
                 </v-col>
-                <v-col cols="12" md="3">
-                  <v-alert v-if="successMessage" type="success" variant="tonal" class="rounded-lg" density="compact" closable @click:close="successMessage = ''">
-                    {{ successMessage }}
-                  </v-alert>
-                </v-col>
               </v-row>
+              <v-alert v-if="successMessage" type="success" variant="tonal" class="mt-4 rounded-xl border-0" density="compact" closable @click:close="successMessage = ''">
+                {{ successMessage }}
+              </v-alert>
             </v-card-text>
           </v-card>
         </v-expand-transition>
 
         <!-- Full-width Estimation Card -->
-        <v-card class="rounded-xl glass-card" elevation="0">
-          <v-card-title class="bg-secondary text-white py-4 px-6">
-            <v-icon start icon="mdi-calculator" class="mr-2"></v-icon>
-            Estimasi Pembayaran
-          </v-card-title>
-          
+        <v-card class="glass-panel overflow-hidden" elevation="0">
           <v-tabs
             v-model="activeTab"
-            bg-color="secondary"
-            slider-color="white"
-            density="comfortable"
+            bg-color="transparent"
+            color="primary"
+            class="header-tabs px-4 border-b"
+            grow
           >
-              <v-tab value="pns" class="text-white">PNS</v-tab>
-              <v-tab value="full_time" class="text-white">PPPK Penuh Waktu</v-tab>
-              <v-tab value="part_time" class="text-white">PPPK Paruh Waktu</v-tab>
+              <v-tab value="pns" class="text-subtitle-2 font-weight-black py-4">
+                <v-icon start icon="mdi-account-tie" class="mr-2"></v-icon>
+                PNS
+              </v-tab>
+              <v-tab value="full_time" class="text-subtitle-2 font-weight-black py-4 border-s">
+                <v-icon start icon="mdi-account-clock" class="mr-2"></v-icon>
+                PPPK Penuh Waktu
+              </v-tab>
+              <v-tab value="part_time" class="text-subtitle-2 font-weight-black py-4 border-s">
+                <v-icon start icon="mdi-account-group" class="mr-2"></v-icon>
+                PPPK Paruh Waktu
+              </v-tab>
           </v-tabs>
     
           <v-window v-model="activeTab">
             <!-- PNS Tab -->
             <v-window-item value="pns">
-                <v-card-text class="pt-6 px-6">
-                    <v-row class="mb-6">
+                <v-card-text class="pa-8">
+                    <v-row class="mb-8 align-center">
                         <v-col cols="12" md="3">
                              <v-select
                                 v-model="selectedMonth"
@@ -96,11 +109,11 @@
                                 item-title="text"
                                 item-value="value"
                                 label="Bulan"
-                                variant="outlined"
-                                density="comfortable"
-                                bg-color="surface"
+                                variant="filled"
+                                flat
+                                rounded="lg"
                                 hide-details
-                                color="primary"
+                                prepend-inner-icon="mdi-calendar-month"
                                 @update:modelValue="fetchEstimationPns"
                             ></v-select>
                         </v-col>
@@ -109,38 +122,41 @@
                                 v-model="selectedYear"
                                 :items="years"
                                 label="Tahun"
-                                variant="outlined"
-                                density="comfortable"
-                                bg-color="surface"
+                                variant="filled"
+                                flat
+                                rounded="lg"
                                 hide-details
-                                color="primary"
+                                prepend-inner-icon="mdi-calendar-range"
                                 @update:modelValue="fetchEstimationPns"
                             ></v-select>
                         </v-col>
-                        <v-col cols="12" md="6" class="d-flex align-center gap-2">
-                              <v-chip color="info" label class="font-weight-medium">
+                        <v-col cols="12" md="6" class="d-flex align-center ga-3">
+                              <v-chip color="primary" size="large" class="font-weight-black">
                                   {{ getMonthName(selectedMonth) }} {{ selectedYear }}
                               </v-chip>
-                              <v-btn v-if="estimationPns" variant="tonal" color="success" size="small" rounded="pill" @click="exportData('pns')" :loading="exporting">
-                                <v-icon start icon="mdi-file-excel"></v-icon>
-                                Export XLS
+                              <v-spacer></v-spacer>
+                              <v-btn v-if="estimationPns" color="success" size="large" variant="flat" rounded="pill" @click="exportData('pns')" :loading="exporting" class="px-6 font-weight-black">
+                                <v-icon start icon="mdi-file-excel-outline"></v-icon>
+                                EXPORT XLS
                               </v-btn>
                         </v-col>
                     </v-row>
 
                     <div v-if="estimationPns">
-                        <v-row class="mb-4">
-                          <v-col cols="12" md="3">
-                            <div class="text-caption text-medium-emphasis mb-1">Periode Data</div>
-                            <div class="text-subtitle-1 font-weight-bold">{{ getMonthName(estimationPns.period.month) }} {{ estimationPns.period.year }}</div>
+                        <v-row class="mb-8 ga-y-4">
+                          <v-col cols="12" md="4">
+                             <div class="pa-6 border rounded-xl h-100 bg-surface">
+                                <div class="text-overline text-medium-emphasis mb-1">DATA PEGAWAI</div>
+                                <div class="text-h4 font-weight-black text-high-emphasis">{{ formatNumber(estimationPns.employees_count) }}</div>
+                                <div class="text-caption text-medium-emphasis">Aktif Periode {{ getMonthName(estimationPns.period.month) }}</div>
+                             </div>
                           </v-col>
-                          <v-col cols="12" md="3">
-                            <div class="text-caption text-medium-emphasis mb-1">Total Pegawai</div>
-                            <div class="text-subtitle-1 font-weight-bold">{{ formatNumber(estimationPns.employees_count) }} Orang</div>
-                          </v-col>
-                          <v-col cols="12" md="3">
-                            <div class="text-caption text-medium-emphasis mb-1">Total Gaji Pokok</div>
-                            <div class="text-h6 font-weight-bold text-grey-darken-3">{{ formatCurrency(estimationPns.total_gaji_pokok) }}</div>
+                          <v-col cols="12" md="8">
+                             <div class="pa-6 border rounded-xl h-100 bg-surface">
+                                <div class="text-overline text-medium-emphasis mb-1">TOTAL DASAR PERHITUNGAN (GAJI POKOK)</div>
+                                <div class="text-h4 font-weight-black text-primary">{{ formatCurrency(estimationPns.total_gaji_pokok) }}</div>
+                                <div class="text-caption text-medium-emphasis">Aggregasi seluruh SKPD</div>
+                             </div>
                           </v-col>
                         </v-row>
 
@@ -218,8 +234,8 @@
 
             <!-- Full Time Tab -->
             <v-window-item value="full_time">
-                <v-card-text class="pt-6 px-6">
-                    <v-row class="mb-6">
+                <v-card-text class="pa-8">
+                    <v-row class="mb-8 align-center">
                         <v-col cols="12" md="3">
                              <v-select
                                 v-model="selectedMonth"
@@ -227,11 +243,11 @@
                                 item-title="text"
                                 item-value="value"
                                 label="Bulan"
-                                variant="outlined"
-                                density="comfortable"
-                                bg-color="surface"
+                                variant="filled"
+                                flat
+                                rounded="lg"
                                 hide-details
-                                color="primary"
+                                prepend-inner-icon="mdi-calendar-month"
                                 @update:modelValue="fetchEstimation"
                             ></v-select>
                         </v-col>
@@ -240,38 +256,41 @@
                                 v-model="selectedYear"
                                 :items="years"
                                 label="Tahun"
-                                variant="outlined"
-                                density="comfortable"
-                                bg-color="surface"
+                                variant="filled"
+                                flat
+                                rounded="lg"
                                 hide-details
-                                color="primary"
+                                prepend-inner-icon="mdi-calendar-range"
                                 @update:modelValue="fetchEstimation"
                             ></v-select>
                         </v-col>
-                        <v-col cols="12" md="6" class="d-flex align-center gap-2">
-                              <v-chip color="info" label class="font-weight-medium">
+                        <v-col cols="12" md="6" class="d-flex align-center ga-3">
+                              <v-chip color="primary" size="large" class="font-weight-black">
                                   {{ getMonthName(selectedMonth) }} {{ selectedYear }}
                               </v-chip>
-                              <v-btn v-if="estimation" variant="tonal" color="success" size="small" rounded="pill" @click="exportData('pppk')" :loading="exporting">
-                                <v-icon start icon="mdi-file-excel"></v-icon>
-                                Export XLS
+                              <v-spacer></v-spacer>
+                              <v-btn v-if="estimation" color="success" size="large" variant="flat" rounded="pill" @click="exportData('pppk')" :loading="exporting" class="px-6 font-weight-black">
+                                <v-icon start icon="mdi-file-excel-outline"></v-icon>
+                                EXPORT XLS
                               </v-btn>
                         </v-col>
                     </v-row>
 
                     <div v-if="estimation">
-                        <v-row class="mb-4">
-                          <v-col cols="12" md="3">
-                            <div class="text-caption text-medium-emphasis mb-1">Periode Data</div>
-                            <div class="text-subtitle-1 font-weight-bold">{{ getMonthName(estimation.period.month) }} {{ estimation.period.year }}</div>
+                        <v-row class="mb-8 ga-y-4">
+                          <v-col cols="12" md="4">
+                             <div class="pa-6 border rounded-xl h-100 bg-surface">
+                                <div class="text-overline text-medium-emphasis mb-1">DATA PEGAWAI</div>
+                                <div class="text-h4 font-weight-black text-high-emphasis">{{ formatNumber(estimation.employees_count) }}</div>
+                                <div class="text-caption text-medium-emphasis">Aktif Periode {{ getMonthName(estimation.period.month) }}</div>
+                             </div>
                           </v-col>
-                          <v-col cols="12" md="3">
-                            <div class="text-caption text-medium-emphasis mb-1">Total Pegawai</div>
-                            <div class="text-subtitle-1 font-weight-bold">{{ formatNumber(estimation.employees_count) }} Orang</div>
-                          </v-col>
-                          <v-col cols="12" md="3">
-                            <div class="text-caption text-medium-emphasis mb-1">Total Gaji Pokok</div>
-                            <div class="text-h6 font-weight-bold text-grey-darken-3">{{ formatCurrency(estimation.total_gaji_pokok) }}</div>
+                          <v-col cols="12" md="8">
+                             <div class="pa-6 border rounded-xl h-100 bg-surface">
+                                <div class="text-overline text-medium-emphasis mb-1">TOTAL DASAR PERHITUNGAN (GAJI POKOK)</div>
+                                <div class="text-h4 font-weight-black text-primary">{{ formatCurrency(estimation.total_gaji_pokok) }}</div>
+                                <div class="text-caption text-medium-emphasis">Aggregasi seluruh SKPD</div>
+                             </div>
                           </v-col>
                         </v-row>
     
@@ -304,17 +323,16 @@
                         </v-col>
                         </v-row>
     
-                        <v-divider class="my-4 border-opacity-10"></v-divider>
+                        <v-divider class="my-8 opacity-10"></v-divider>
     
-                        <h3 class="text-h6 font-weight-bold mb-4 text-grey-darken-2">Rincian per SKPD</h3>
+                        <h3 class="text-h6 font-weight-black mb-4 text-high-emphasis">Rincian per SKPD</h3>
                         <p class="text-body-2 text-medium-emphasis mb-3">Klik baris SKPD untuk melihat rincian per pegawai</p>
                         
                         <v-data-table
                             :headers="pwHeaders"
                             :items="estimation.details"
                             items-per-page="10"
-                            class="elevation-0 border rounded-lg cursor-pointer"
-                            density="comfortable"
+                            class="bg-transparent"
                             hover
                             @click:row="(event, { item }) => openDetail('pppk', item)"
                         >
@@ -349,8 +367,8 @@
     
             <!-- Part Time Tab -->
             <v-window-item value="part_time">
-                <v-card-text class="pt-6 px-6">
-                    <v-row class="mb-6">
+                <v-card-text class="pa-8">
+                    <v-row class="mb-8 align-center">
                         <v-col cols="12" md="3">
                              <v-select
                                 v-model="selectedMonth"
@@ -358,11 +376,11 @@
                                 item-title="text"
                                 item-value="value"
                                 label="Bulan"
-                                variant="outlined"
-                                density="comfortable"
-                                bg-color="surface"
+                                variant="filled"
+                                flat
+                                rounded="lg"
                                 hide-details
-                                color="primary"
+                                prepend-inner-icon="mdi-calendar-month"
                                 @update:modelValue="fetchEstimationPw"
                             ></v-select>
                         </v-col>
@@ -371,42 +389,51 @@
                                 v-model="selectedYear"
                                 :items="years"
                                 label="Tahun"
-                                variant="outlined"
-                                density="comfortable"
-                                bg-color="surface"
+                                variant="filled"
+                                flat
+                                rounded="lg"
                                 hide-details
-                                color="primary"
+                                prepend-inner-icon="mdi-calendar-range"
                                 @update:modelValue="fetchEstimationPw"
                             ></v-select>
                         </v-col>
-                        <v-col cols="12" md="6" class="d-flex align-center gap-2">
-                              <v-chip color="info" label class="font-weight-medium">
+                        <v-col cols="12" md="6" class="d-flex align-center ga-3">
+                              <v-chip color="primary" size="large" class="font-weight-black">
                                   {{ getMonthName(selectedMonth) }} {{ selectedYear }}
                               </v-chip>
-                              <v-btn v-if="estimationPw" variant="tonal" color="success" size="small" rounded="pill" @click="exportData('pppk_pw')" :loading="exporting">
-                                <v-icon start icon="mdi-file-excel"></v-icon>
-                                Export XLS
+                              <v-spacer></v-spacer>
+                              <v-btn v-if="estimationPw" color="success" size="large" variant="flat" rounded="pill" @click="exportData('pppk_pw')" :loading="exporting" class="px-6 font-weight-black">
+                                <v-icon start icon="mdi-file-excel-outline"></v-icon>
+                                EXPORT XLS
                               </v-btn>
                         </v-col>
                     </v-row>
     
                     <div v-if="estimationPw">
-                        <v-row class="mb-4">
+                        <v-row class="mb-8 ga-y-4">
                           <v-col cols="12" md="3">
-                            <div class="text-caption text-medium-emphasis mb-1">Referensi Data</div>
-                            <div class="text-subtitle-1 font-weight-bold">{{ getMonthName(estimationPw.period.month) }} {{ estimationPw.period.year }}</div>
+                             <div class="pa-6 border rounded-xl h-100 bg-surface">
+                                <div class="text-overline text-medium-emphasis mb-1">REFERENSI DATA</div>
+                                <div class="text-h6 font-weight-black text-high-emphasis">{{ getMonthName(estimationPw.period.month) }} {{ estimationPw.period.year }}</div>
+                             </div>
                           </v-col>
                           <v-col cols="12" md="3">
-                            <div class="text-caption text-medium-emphasis mb-1">Total Pegawai</div>
-                            <div class="text-subtitle-1 font-weight-bold">{{ formatNumber(estimationPw.employees_count) }} Orang <span v-if="estimationPw.employees_count < 6399" class="text-caption text-warning ml-2 font-weight-medium">(Dikurangi pensiun)</span></div>
+                             <div class="pa-6 border rounded-xl h-100 bg-surface">
+                                <div class="text-overline text-medium-emphasis mb-1">TOTAL PEGAWAI</div>
+                                <div class="text-h6 font-weight-black text-high-emphasis">{{ formatNumber(estimationPw.employees_count) }} <span class="text-caption">Orang</span></div>
+                             </div>
                           </v-col>
                           <v-col cols="12" md="3">
-                            <div class="text-caption text-medium-emphasis mb-1">Total Gaji Pokok</div>
-                            <div class="text-h6 font-weight-bold text-grey-darken-3">{{ formatCurrency(estimationPw.total_gaji_pokok) }}</div>
+                             <div class="pa-6 border rounded-xl h-100 bg-surface">
+                                <div class="text-overline text-medium-emphasis mb-1">GAJI POKOK</div>
+                                <div class="text-h6 font-weight-black text-primary">{{ formatCurrency(estimationPw.total_gaji_pokok) }}</div>
+                             </div>
                           </v-col>
                           <v-col cols="12" md="3">
-                            <div class="text-caption text-medium-emphasis mb-1">Total Tunjangan</div>
-                            <div class="text-h6 font-weight-bold text-grey-darken-3">{{ formatCurrency(estimationPw.total_tunjangan) }}</div>
+                             <div class="pa-6 border rounded-xl h-100 bg-surface">
+                                <div class="text-overline text-medium-emphasis mb-1">TUNJANGAN</div>
+                                <div class="text-h6 font-weight-black text-primary">{{ formatCurrency(estimationPw.total_tunjangan) }}</div>
+                             </div>
                           </v-col>
                         </v-row>
     
@@ -537,8 +564,8 @@
           >
             <!-- Custom Group Header for PPPK-PW with Tree Model and Sums -->
             <template v-slot:group-header="{ item, columns, toggleGroup, isGroupOpen }">
-              <tr class="bg-blue-lighten-5 group-header-row">
-                <td :colspan="3" class="py-2 px-4 cursor-pointer" @click="toggleGroup(item)">
+              <tr class="group-header-row bg-surface">
+                <td :colspan="3" class="py-3 px-4 cursor-pointer" @click="toggleGroup(item)">
                   <div class="d-flex align-center">
                     <v-btn
                       :icon="isGroupOpen(item) ? 'mdi-chevron-down' : 'mdi-chevron-right'"
@@ -548,14 +575,14 @@
                       class="mr-2"
                     ></v-btn>
                     <v-icon color="primary" class="mr-2" size="20">mdi-briefcase-outline</v-icon>
-                    <span class="font-weight-bold text-subtitle-2">{{ item.value || 'Tanpa Jabatan' }}</span>
+                    <span class="font-weight-black text-body-2">{{ item.value || 'Tanpa Jabatan' }}</span>
                     <v-chip size="x-small" color="primary" class="ml-3 font-weight-bold" variant="flat">
                       {{ item.items.length }} Pegawai
                     </v-chip>
                   </div>
                 </td>
-                <td class="text-right font-weight-bold py-2">
-                  {{ formatCurrency(item.items.reduce((acc, row) => acc + (row.raw.gaji_pokok || 0), 0)) }}
+                <td class="text-right font-weight-bold py-3">
+                    <span class="text-medium-emphasis">{{ formatCurrency(item.items.reduce((acc, row) => acc + (row.raw.gaji_pokok || 0), 0)) }}</span>
                 </td>
                 <td v-if="detailType === 'pppk_pw'" class="text-right font-weight-bold py-2">
                   {{ formatCurrency(item.items.reduce((acc, row) => acc + (row.raw.tunjangan || 0), 0)) }}
@@ -941,31 +968,58 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.glass-sidebar {
-  border-right: 1px solid rgba(var(--v-border-color), 0.08) !important;
-  background-color: rgba(var(--v-theme-surface), 0.95) !important;
-  backdrop-filter: blur(10px);
-}
-
-.glass-card {
-  background-color: rgb(var(--v-theme-surface)) !important;
-  border: 1px solid rgba(var(--v-border-color), 0.08) !important;
-  transition: box-shadow 0.2s ease;
-}
-
-.bg-light {
-  background-color: rgb(var(--v-theme-background));
-}
-
 .modern-dashboard {
-  background-color: rgb(var(--v-theme-background)) !important;
+  min-height: 100vh;
 }
 
-.cursor-pointer :deep(tbody tr) {
-  cursor: pointer;
+.bg-dashboard {
+  background-color: rgb(var(--v-theme-background));
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(var(--v-theme-primary), 0.05) 0, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(var(--v-theme-info), 0.05) 0, transparent 50%);
 }
 
-.cursor-pointer :deep(tbody tr:hover) {
-  background-color: rgba(var(--v-theme-primary), 0.04) !important;
+.glass-panel {
+  background: rgba(var(--v-theme-surface), 0.7) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(var(--v-border-color), 0.1) !important;
+  border-radius: 28px !important;
+}
+
+.header-tabs :deep(.v-slide-group__content) {
+  border-bottom: 0 !important;
+}
+
+.header-tabs :deep(.v-tab--selected) {
+  background: rgba(var(--v-theme-primary), 0.05);
+}
+
+.border-dashed {
+  border-style: dashed !important;
+}
+
+.group-header-row {
+  transition: background-color 0.2s ease;
+}
+
+.group-header-row:hover {
+  background-color: rgba(var(--v-theme-primary), 0.05) !important;
+}
+
+.text-wrap {
+  white-space: normal !important;
+}
+
+:deep(.v-data-table) {
+  background: transparent !important;
+}
+
+:deep(.v-data-table-header) {
+  background: rgba(var(--v-theme-on-surface), 0.02);
+}
+
+:deep(.v-data-table__tr:hover) {
+  background: rgba(var(--v-theme-primary), 0.03) !important;
 }
 </style>

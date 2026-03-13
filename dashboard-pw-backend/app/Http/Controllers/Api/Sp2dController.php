@@ -19,13 +19,30 @@ class Sp2dController extends Controller
             'file' => 'required|mimes:xlsx,xls,csv',
             'bulan' => 'required|numeric',
             'tahun' => 'required|numeric',
+            'target_type' => 'nullable|string',
+            'preview' => 'nullable|boolean',
         ]);
 
         try {
-            // Removed: Bulk delete for the month to allow multiple file imports.
-            // Logic moved to a safer 'updateOrCreate' in Sp2dImport.
+            $isPreview = $request->boolean('preview');
+            $targetType = $request->target_type;
+            
+            $import = new Sp2dImport($targetType, $isPreview);
+            Excel::import($import, $request->file('file'));
 
-            Excel::import(new Sp2dImport, $request->file('file'));
+            if ($isPreview) {
+                $previewData = $import->previewData;
+                return response()->json([
+                    'status' => 'success',
+                    'preview' => $previewData,
+                    'summary' => [
+                        'total_rows' => count($previewData),
+                        'unmapped_rows' => collect($previewData)->whereNull('skpd_id')->count(),
+                        'mapped_rows' => collect($previewData)->whereNotNull('skpd_id')->count(),
+                    ]
+                ]);
+            }
+
             return response()->json(['message' => 'Data SP2D berhasil diimpor/sinkronisasi.']);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Gagal impor: ' . $e->getMessage()], 500);
@@ -110,61 +127,63 @@ class Sp2dController extends Controller
             ->get()
             ->keyBy('kdskpd');
 
-        $satkerMapping = \DB::table('satkers')
-            ->select('nmskpd', 'kdskpd')
-            ->distinct()
+        // Get PPPK-PW Internal Stats
+        $pwQuery = \DB::table('tb_payment_detail as pd')
+            ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
+            ->join('pegawai_pw as e', 'pd.employee_id', '=', 'e.id')
+            ->where('p.month', $bulan)
+            ->where('p.year', $tahun);
+
+        $pwInternal = $pwQuery->select('e.idskpd', \DB::raw('SUM(pd.total_amoun) as total_netto'))
+            ->groupBy('e.idskpd')
             ->get()
-            ->map(function ($item) {
-                $item->nmskpd = trim($item->nmskpd);
-                return $item;
-            })
-            ->groupBy('nmskpd');
+            ->keyBy('idskpd');
 
         $manualMappings = \DB::table('skpd_mapping')
             ->get()
             ->groupBy('skpd_id');
 
-        $data = $skpds->map(function ($skpd) use ($realizations, $pnsInternal, $pppkInternal, $satkerMapping, $manualMappings) {
+        $data = $skpds->map(function ($skpd) use ($realizations, $pnsInternal, $pppkInternal, $pwInternal, $manualMappings) {
             $skpdRealizations = $realizations->where('skpd_id', $skpd->id_skpd);
 
-            // Mapping: Find short codes (kdskpd) in satkers table
-            // 1. Try official name
-            $searchNames = [trim($skpd->nama_skpd)];
-
-            // 2. Try manual mappings
+            // 1. Get kdskpds for standard payroll (PNS/PPPK)
+            $kdskpds = [];
+            if ($skpd->kode_simgaji) {
+                $kdskpds[] = $skpd->kode_simgaji;
+            }
+            
+            // Check manual mappings for extra kdskpds if needed (legacy)
             if (isset($manualMappings[$skpd->id_skpd])) {
                 foreach ($manualMappings[$skpd->id_skpd] as $m) {
-                    $searchNames[] = trim($m->source_name);
-                }
-            }
-
-            $kdskpds = [];
-            foreach ($searchNames as $name) {
-                $shortCodes = $satkerMapping->get($name);
-                if ($shortCodes) {
-                    foreach ($shortCodes as $sc) {
-                        $kdskpds[] = $sc->kdskpd;
-                    }
+                    if ($m->source_code) $kdskpds[] = $m->source_code;
                 }
             }
             $kdskpds = array_unique($kdskpds);
 
-            // Sum up internal data for all matching short codes
-            $pnsGaji = 0;
-            $pnsTpp = 0;
-            $pppkGaji = 0;
-            $pppkTpp = 0;
+            // Sum standard payroll
+            $pnsGaji = 0; $pnsTpp = 0;
+            $pppkGaji = 0; $pppkTpp = 0;
 
             foreach ($kdskpds as $kd) {
-                $p = $pnsInternal->get($kd);
-                if ($p) {
+                if ($p = $pnsInternal->get($kd)) {
                     $pnsGaji += (float) $p->total_gaji;
                     $pnsTpp += (float) $p->total_tpp;
                 }
-                $pk = $pppkInternal->get($kd);
-                if ($pk) {
+                if ($pk = $pppkInternal->get($kd)) {
                     $pppkGaji += (float) $pk->total_gaji;
                     $pppkTpp += (float) $pk->total_tpp;
+                }
+            }
+
+            // 2. Get PPPK-PW internal data (Source 1)
+            // Include sub-units that belong to this Main SKPD based on kode_skpd prefix
+            $prefix = substr($skpd->kode_skpd, 0, 18); // Typical prefix "1.01.2.22.0.00.01"
+            $allUnitIds = Skpd::where('kode_skpd', 'LIKE', $prefix . '%')->pluck('id_skpd')->toArray();
+            
+            $pwTotal = 0;
+            foreach ($allUnitIds as $uid) {
+                if ($pw = $pwInternal->get($uid)) {
+                    $pwTotal += (float) $pw->total_netto;
                 }
             }
 
@@ -176,8 +195,12 @@ class Sp2dController extends Controller
                     $pnsGaji
                 ),
                 'pppk' => $this->formatStatus(
-                    $skpdRealizations->filter(fn($r) => str_contains($r->jenis_data, 'PPPK') && !str_contains($r->jenis_data, 'TPP')),
+                    $skpdRealizations->filter(fn($r) => str_contains($r->jenis_data, 'PPPK') && !str_contains($r->jenis_data, 'TPP') && !str_contains($r->jenis_data, 'PPPK-PW')),
                     $pppkGaji
+                ),
+                'pppk_pw' => $this->formatStatus(
+                    $skpdRealizations->filter(fn($r) => str_contains($r->jenis_data, 'PPPK-PW')),
+                    $pwTotal
                 ),
                 'tpp' => $this->formatStatus(
                     $skpdRealizations->filter(fn($r) => str_contains($r->jenis_data, 'TPP')),
@@ -305,22 +328,26 @@ class Sp2dController extends Controller
             ->groupBy('kdskpd', 'jenis_gaji')
             ->get();
 
-        $satkerMapping = \DB::table('satkers')
-            ->select('nmskpd', 'kdskpd')
-            ->distinct()
-            ->get()
-            ->map(function ($item) {
-                $item->nmskpd = trim($item->nmskpd);
-                return $item;
-            })
-            ->groupBy('nmskpd');
+        $pwInternal = \DB::table('tb_payment_detail as pd')
+            ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
+            ->join('pegawai_pw as e', 'pd.employee_id', '=', 'e.id')
+            ->where('p.month', $bulan)
+            ->where('p.year', $tahun)
+            ->select(
+                'e.idskpd',
+                \DB::raw('SUM(pd.gaji_pokok + pd.tunjangan) as brutto'),
+                \DB::raw('SUM(pd.pajak + pd.iwp + pd.potongan) as potongan'),
+                \DB::raw('SUM(pd.total_amoun) as netto')
+            )
+            ->groupBy('e.idskpd')
+            ->get();
 
         $manualMappings = \DB::table('skpd_mapping')
             ->get()
             ->groupBy('skpd_id');
 
         // 5. Build rows
-        $data = $realizations->map(function ($real) use ($skpds, $pnsInternal, $pppkInternal, $satkerMapping, $manualMappings) {
+        $data = $realizations->map(function ($real) use ($skpds, $pnsInternal, $pppkInternal, $pwInternal, $manualMappings) {
             $skpd = $skpds->where('id_skpd', $real->skpd_id)->first();
 
             $internalCtx = [
@@ -335,25 +362,17 @@ class Sp2dController extends Controller
             ];
 
             if ($skpd) {
-                $searchNames = [trim($skpd->nama_skpd)];
+                // 1. Get kdskpds for Standard Payroll
+                $kdskpds = [];
+                if ($skpd->kode_simgaji) $kdskpds[] = $skpd->kode_simgaji;
                 if (isset($manualMappings[$skpd->id_skpd])) {
                     foreach ($manualMappings[$skpd->id_skpd] as $m) {
-                        $searchNames[] = trim($m->source_name);
-                    }
-                }
-
-                $kdskpds = [];
-                foreach ($searchNames as $name) {
-                    $shortCodes = $satkerMapping->get($name);
-                    if ($shortCodes) {
-                        foreach ($shortCodes as $sc) {
-                            $kdskpds[] = $sc->kdskpd;
-                        }
+                        if ($m->source_code) $kdskpds[] = $m->source_code;
                     }
                 }
                 $kdskpds = array_unique($kdskpds);
 
-                // Determine target jenis_gaji based on SP2D type (Common for all satkers of this SKPD)
+                // 2. Determine target jenis_gaji based on SP2D type
                 $targetJenisGajiDetected = 'Induk';
                 if (str_contains($real->jenis_data, 'SUSULAN'))
                     $targetJenisGajiDetected = 'Susulan';
@@ -362,14 +381,15 @@ class Sp2dController extends Controller
                 elseif (str_contains($real->jenis_data, 'TERUSAN'))
                     $targetJenisGajiDetected = 'Terusan';
 
-                foreach ($kdskpds as $kd) {
-                    $isPnsRow = str_contains($real->jenis_data, 'PNS');
-                    $isPppkRow = str_contains($real->jenis_data, 'PPPK');
-                    $isTppRow = $real->jenis_data === 'TPP';
+                $isPnsRow = str_contains($real->jenis_data, 'PNS');
+                $isPppkRow = str_contains($real->jenis_data, 'PPPK') && !str_contains($real->jenis_data, 'PPPK-PW');
+                $isTppRow = $real->jenis_data === 'TPP' || str_contains($real->jenis_data, 'TPP-');
+                $isPwRow = str_contains($real->jenis_data, 'PPPK-PW');
 
-                    // Determine if TPP is for PNS or PPPK (Default to PNS if not specified)
-                    $isPppkTpp = $isTppRow && (str_contains(strtoupper($real->keterangan), 'PPPK') || str_contains(strtoupper($real->keterangan), 'P3K'));
-                    $isPnsTpp = $isTppRow && !$isPppkTpp;
+                // Standard Payroll aggregation
+                foreach ($kdskpds as $kd) {
+                    $isPppkTpp = $isTppRow && (str_contains(strtoupper($real->keterangan), 'PPPK') || str_contains(strtoupper($real->keterangan), 'P3K') && !str_contains(strtoupper($real->keterangan), 'PARUH'));
+                    $isPnsTpp = $isTppRow && !$isPppkTpp && !str_contains(strtoupper($real->keterangan), 'PARUH');
 
                     if ($isPnsRow || $isPnsTpp) {
                         $p = $pnsInternal->where('kdskpd', $kd)->where('jenis_gaji', $targetJenisGajiDetected)->first();
@@ -380,7 +400,6 @@ class Sp2dController extends Controller
                                 $internalCtx['netto'] += (float) $p->netto;
                                 $internalCtx['gaji_pns'] += (float) $p->netto;
                             } else {
-                                // For TPP rows, we show TPP as the primary value
                                 $internalCtx['brutto'] += (float) $p->tpp;
                                 $internalCtx['netto'] += (float) $p->tpp;
                                 $internalCtx['tpp_pns'] += (float) $p->tpp;
@@ -397,7 +416,6 @@ class Sp2dController extends Controller
                                 $internalCtx['netto'] += (float) $pk->netto;
                                 $internalCtx['gaji_pppk'] += (float) $pk->netto;
                             } else {
-                                // For TPP rows
                                 $internalCtx['brutto'] += (float) $pk->tpp;
                                 $internalCtx['netto'] += (float) $pk->tpp;
                                 $internalCtx['tpp_pppk'] += (float) $pk->tpp;
@@ -405,6 +423,21 @@ class Sp2dController extends Controller
                         }
                     }
                 }
+
+                // PPPK-PW aggregation (Source 1)
+                if ($isPwRow) {
+                    $prefix = substr($skpd->kode_skpd, 0, 18);
+                    $allUnitIds = Skpd::where('kode_skpd', 'LIKE', $prefix . '%')->pluck('id_skpd')->toArray();
+                    foreach ($allUnitIds as $uid) {
+                        $pw = $pwInternal->where('idskpd', $uid)->first(); // Note: PW doesn't use Induk/Susulan yet in DB schema
+                        if ($pw) {
+                            $internalCtx['brutto'] += (float) $pw->brutto;
+                            $internalCtx['potongan'] += (float) $pw->potongan;
+                            $internalCtx['netto'] += (float) $pw->netto;
+                        }
+                    }
+                }
+                
                 $internalCtx['jenis_gaji'] = $targetJenisGajiDetected;
             }
 

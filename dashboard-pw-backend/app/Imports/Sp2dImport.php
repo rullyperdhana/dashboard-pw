@@ -11,6 +11,16 @@ use Carbon\Carbon;
 
 class Sp2dImport implements ToModel, WithHeadingRow
 {
+    protected $targetType;
+    protected $isPreview;
+    public $previewData = [];
+
+    public function __construct($targetType = null, $isPreview = false)
+    {
+        $this->targetType = $targetType;
+        $this->isPreview = $isPreview;
+    }
+
     public function model(array $row)
     {
         // Skip header rows if any (SIPD has a complex header)
@@ -25,7 +35,9 @@ class Sp2dImport implements ToModel, WithHeadingRow
         $tanggalCair = $this->parseDate($row['tanggal_cair'] ?? $row['tgl_cair'] ?? null);
 
         $keterangan = $row['keterangan'] ?? '';
-        $jenisData = $this->detectJenisData($keterangan);
+        
+        // Use explicit target type (e.g., 'PPPK-PW') if provided, otherwise auto-detect
+        $jenisData = $this->targetType ?: $this->detectJenisData($keterangan);
 
         // SKIP if not payroll
         if (!$jenisData) {
@@ -34,6 +46,20 @@ class Sp2dImport implements ToModel, WithHeadingRow
 
         $namaSkpdSipd = $row['unit_skpd'] ?? '';
         $skpdId = $this->findSkpdId($namaSkpdSipd);
+
+        if ($this->isPreview) {
+            $this->previewData[] = [
+                'nomor_sp2d' => $row['nomor_sp2d'],
+                'tanggal_sp2d' => $tanggalSp2d->format('Y-m-d'),
+                'nama_skpd' => $namaSkpdSipd,
+                'skpd_id' => $skpdId,
+                'skpd_match' => $skpdId ? \App\Models\Skpd::find($skpdId)->nama_skpd : null,
+                'jenis_data' => $jenisData,
+                'netto' => $this->cleanNum($row['netto'] ?? 0),
+                'keterangan' => $keterangan
+            ];
+            return null;
+        }
 
         return Sp2dRealization::updateOrCreate(
             [
@@ -91,15 +117,28 @@ class Sp2dImport implements ToModel, WithHeadingRow
 
         // 1. TPP / Tunjangan Kinerja
         if (str_contains($ket, 'TPP ') || str_contains($ket, ' TAMBAHAN PENGHASILAN') || str_contains($ket, 'TUNJANGAN KINERJA')) {
+            // Check for PPPK-PW TPP if any
+            if (str_contains($ket, 'PW') || str_contains($ket, 'PARUH')) {
+                return 'PPPK-PW-TPP';
+            }
             return 'TPP-INDUK';
         }
 
         // 2. PPPK Paruh Waktu (PPPK-PW) - Check this BEFORE standard PPPK
-        if ((str_contains($ket, 'PPPK PW') || str_contains($ket, 'P3K PW') || str_contains($ket, 'PPPK PARUH WAKTU') || str_contains($ket, 'P3K PARUH WAKTU')) && (str_contains($ket, 'GAJI') || str_contains($ket, 'PEMBAYARAN BELANJA PEGAWAI') || str_contains($ket, 'BELANJA GAJI'))) {
+        if ((str_contains($ket, 'PPPK PW') || str_contains($ket, 'P3K PW') || str_contains($ket, 'PPPK PARUH WAKTU') || str_contains($ket, 'P3K PARUH WAKTU')) && 
+            (str_contains($ket, 'GAJI') || str_contains($ket, 'PEMBAYARAN BELANJA PEGAWAI') || str_contains($ket, 'BELANJA GAJI') || str_contains($ket, 'HONOR'))) {
+            
             if (str_contains($ket, 'SUSULAN'))
                 return 'PPPK-PW-SUSULAN';
             if (str_contains($ket, 'KEKURANGAN'))
                 return 'PPPK-PW-KEKURANGAN';
+            if (str_contains($ket, 'THR'))
+                return 'PPPK-PW-THR';
+            if (str_contains($ket, '14'))
+                return 'PPPK-PW-THR';
+            if (str_contains($ket, '13'))
+                return 'PPPK-PW-G13';
+                
             return 'PPPK-PW-INDUK';
         }
 
@@ -111,10 +150,14 @@ class Sp2dImport implements ToModel, WithHeadingRow
                 return 'PPPK-KEKURANGAN';
             if (str_contains($ket, 'TERUSAN'))
                 return 'PPPK-TERUSAN';
+            if (str_contains($ket, 'THR') || str_contains($ket, 'G14'))
+                return 'PPPK-THR';
+            if (str_contains($ket, '13'))
+                return 'PPPK-G13';
             return 'PPPK-INDUK';
         }
 
-        // 3. PNS / ASN / DPRD Gaji
+        // 4. PNS / ASN / DPRD Gaji
         if (
             (str_contains($ket, 'GAJI') || str_contains($ket, 'PEMBAYARAN BELANJA PEGAWAI') || str_contains($ket, 'BELANJA GAJI')) &&
             (str_contains($ket, 'PNS') || str_contains($ket, 'ASN') || str_contains($ket, 'DPRD') || str_contains($ket, 'INDUK') || str_contains($ket, 'SUSULAN') || str_contains($ket, 'TERUSAN') || str_contains($ket, 'KEPALA DAERAH') || str_contains($ket, 'KEKURANGAN'))
@@ -126,15 +169,26 @@ class Sp2dImport implements ToModel, WithHeadingRow
                 return 'PNS-KEKURANGAN';
             if (str_contains($ket, 'TERUSAN'))
                 return 'PNS-TERUSAN';
+            if (str_contains($ket, 'THR') || str_contains($ket, 'G14'))
+                return 'PNS-THR';
+            if (str_contains($ket, '13'))
+                return 'PNS-G13';
             return 'PNS-INDUK';
         }
 
-        // 4. Iuran JKK/JKM/BPJS (Counted as PNS Gaji for total reports)
+        // 5. Iuran JKK/JKM/BPJS
         if (str_contains($ket, 'IURAN') && (str_contains($ket, 'JKK') || str_contains($ket, 'JKM') || str_contains($ket, 'BPJS') || str_contains($ket, 'KES'))) {
+             // Try to detect if it's for PPPK-PW
+             if (str_contains($ket, 'PW') || str_contains($ket, 'PARUH')) {
+                 return 'PPPK-PW-INDUK';
+             }
+             if (str_contains($ket, 'PPPK') || str_contains($ket, 'P3K')) {
+                 return 'PPPK-INDUK';
+             }
             return 'PNS-INDUK';
         }
 
-        // 5. Fallback for generic Gaji that didn't match specific markers
+        // 6. Fallback for generic Gaji
         if (str_contains($ket, 'GAJI') && !str_contains($ket, 'UANG PERSEDIAAN') && !str_contains($ket, 'TAMBAHAN UANG')) {
             return 'PNS-INDUK';
         }
@@ -147,19 +201,38 @@ class Sp2dImport implements ToModel, WithHeadingRow
         if (empty($name))
             return null;
 
+        $originalName = trim($name);
+        $normalizedSearch = $this->normalizeName($name);
+
         // 1. Try exact match in skpd_mapping
-        $mapping = SkpdMapping::where('source_name', $name)->first();
+        $mapping = SkpdMapping::where('source_name', $originalName)->first();
         if ($mapping)
             return $mapping->skpd_id;
 
         // 2. Try exact match in skpds table
-        $skpd = Skpd::where('nama_skpd', $name)->first();
+        $skpd = Skpd::where('nama_skpd', $originalName)->first();
         if ($skpd)
             return $skpd->id_skpd;
 
-        // 3. Try fuzzy match (first 30 chars or similar)
-        $skpdFuzzy = Skpd::where('nama_skpd', 'LIKE', substr($name, 0, 30) . '%')->first();
+        // 3. Try Normalized match
+        $allSkpds = Skpd::all();
+        foreach ($allSkpds as $s) {
+            if ($this->normalizeName($s->nama_skpd) === $normalizedSearch) {
+                return $s->id_skpd;
+            }
+        }
+
+        // 4. Try fuzzy match (first 30 chars)
+        $skpdFuzzy = Skpd::where('nama_skpd', 'LIKE', substr($originalName, 0, 30) . '%')->first();
         return $skpdFuzzy ? $skpdFuzzy->id_skpd : null;
+    }
+
+    private function normalizeName($name)
+    {
+        $name = strtoupper(trim($name));
+        $name = str_replace(['DINAS ', 'BADAN ', 'SEKRETARIAT ', 'DAERAH ', 'PROVINSI ', 'KALIMANTAN SELATAN', 'PROV. ', 'KALSEL'], '', $name);
+        $name = preg_replace('/[^A-Z0-9]/', '', $name); // Strip everything else
+        return $name;
     }
 
     private function cleanNum($val)

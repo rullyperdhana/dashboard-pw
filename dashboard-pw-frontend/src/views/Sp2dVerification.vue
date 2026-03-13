@@ -207,7 +207,21 @@
             </template>
             
             <template v-slot:item.nama_skpd_sipd="{ item }">
-              <div class="text-caption" style="max-width: 150px;">{{ item.nama_skpd_sipd }}</div>
+              <div class="d-flex align-center gap-2">
+                <div class="text-caption" style="max-width: 150px;">{{ item.nama_skpd_sipd }}</div>
+                <v-tooltip v-if="!item.skpd_id" text="Hubungkan SKPD">
+                  <template v-slot:activator="{ props }">
+                    <v-btn 
+                      v-bind="props"
+                      icon="mdi-link-plus" 
+                      size="x-small" 
+                      color="error" 
+                      variant="text" 
+                      @click="openResolveDialog(item)"
+                    ></v-btn>
+                  </template>
+                </v-tooltip>
+              </div>
             </template>
 
             <template v-slot:item.actions="{ item }">
@@ -460,6 +474,137 @@
         </div>
       </div>
     </v-snackbar>
+    <!-- Import Preview Dialog -->
+    <v-dialog v-model="importDialog" persistent max-width="900px">
+      <v-card class="rounded-xl pa-2">
+        <v-card-title class="pa-4 d-flex align-center">
+          <v-icon color="primary" class="mr-3">mdi-file-import-outline</v-icon>
+          <span class="font-weight-bold">Preview Impor Data SP2D</span>
+          <v-spacer></v-spacer>
+          <v-btn icon="mdi-close" variant="text" @click="importDialog = false"></v-btn>
+        </v-card-title>
+        
+        <v-card-text class="pa-4">
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-select
+                v-model="importTargetType"
+                :items="importTargetTypes"
+                label="Jenis Data Target"
+                variant="outlined"
+                density="compact"
+                rounded="lg"
+                hint="Pilih jenis data jika deteksi otomatis kurang akurat"
+                persistent-hint
+                @update:model-value="fetchImportPreview"
+              ></v-select>
+            </v-col>
+            <v-col cols="12" md="6" v-if="importSummary" class="d-flex align-center">
+              <v-chip color="primary" variant="tonal" class="mr-2">Total: {{ importSummary.total_rows }}</v-chip>
+              <v-chip :color="importSummary.unmapped_rows > 0 ? 'error' : 'success'" variant="tonal">
+                Belum Terhubung: {{ importSummary.unmapped_rows }}
+              </v-chip>
+            </v-col>
+          </v-row>
+
+          <v-divider class="my-4 border-opacity-10"></v-divider>
+
+          <div v-if="previewLoading" class="pa-10 text-center">
+            <v-progress-circular indeterminate color="primary"></v-progress-circular>
+            <div class="mt-4 text-caption">Membaca data file...</div>
+          </div>
+          
+          <v-data-table
+            v-else
+            :headers="[
+              { title: 'No SP2D', key: 'nomor_sp2d' },
+              { title: 'Unit SIPD', key: 'nama_skpd' },
+              { title: 'Mapping Internal', key: 'skpd_match' },
+              { title: 'Jenis', key: 'jenis_data' },
+              { title: 'Netto', key: 'netto', align: 'end' },
+            ]"
+            :items="importPreview"
+            density="compact"
+            max-height="400px"
+            fixed-header
+            class="rounded-lg border"
+          >
+            <template v-slot:item.skpd_match="{ item }">
+              <div v-if="item.skpd_match" class="text-success d-flex align-center">
+                <v-icon size="small" class="mr-1">mdi-link-variant</v-icon>
+                <div class="text-caption">{{ item.skpd_match }}</div>
+              </div>
+              <div v-else class="text-error font-weight-bold text-caption d-flex align-center">
+                <v-icon size="small" class="mr-1">mdi-link-variant-off</v-icon>
+                Tidak Terdeteksi
+              </div>
+            </template>
+            <template v-slot:item.netto="{ item }">
+              {{ formatCurrency(item.netto) }}
+            </template>
+            <template v-slot:item.jenis_data="{ item }">
+              <v-chip size="x-small" :color="getTypeColor(item.jenis_data)" variant="flat">
+                {{ item.jenis_data }}
+              </v-chip>
+            </template>
+          </v-data-table>
+        </v-card-text>
+
+        <v-card-actions class="pa-4">
+          <v-spacer></v-spacer>
+          <v-btn variant="text" color="grey" @click="importDialog = false">Batal</v-btn>
+          <v-btn 
+            color="primary" 
+            variant="flat" 
+            rounded="lg" 
+            :loading="uploading"
+            :disabled="previewLoading"
+            @click="processImport"
+          >Konfirmasi & Impor Data</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Resolve Mapping Dialog -->
+    <v-dialog v-model="resolveDialog" max-width="500px">
+      <v-card class="rounded-xl pa-2">
+        <v-card-title class="pa-4 font-weight-bold">Hubungkan SKPD SIPD</v-card-title>
+        <v-card-text>
+          <div class="mb-4">
+            <div class="text-caption text-medium-emphasis mb-1">Nama Unit di SIPD:</div>
+            <div class="text-body-1 font-weight-black color-primary">{{ resolveItem?.nama_skpd_sipd }}</div>
+          </div>
+          
+          <v-autocomplete
+            v-model="selectedSkpdId"
+            :items="skpds"
+            item-title="nama_skpd"
+            item-value="id_skpd"
+            label="Pilih SKPD Internal yang Sesuai"
+            placeholder="Ketik untuk mencari SKPD..."
+            variant="outlined"
+            density="compact"
+            rounded="lg"
+            clearable
+            persistent-hint
+            hint="Sistem akan mengingat pilihan ini untuk impor berikutnya"
+          ></v-autocomplete>
+        </v-card-text>
+        <v-card-actions class="pa-4">
+          <v-spacer></v-spacer>
+          <v-btn variant="text" color="grey" @click="resolveDialog = false">Batal</v-btn>
+          <v-btn 
+            color="primary" 
+            variant="flat" 
+            rounded="lg"
+            :loading="mappingLoading"
+            :disabled="!selectedSkpdId"
+            @click="saveMapping"
+          >Simpan Mapping</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     </v-container>
     </v-main>
   </div>
@@ -491,6 +636,38 @@ const transactions = ref([])
 const reconData = ref([])
 const skpds = ref([])
 const isEdit = ref(false)
+
+// Resolve Mapping Logic
+const resolveDialog = ref(false)
+const resolveItem = ref(null)
+const selectedSkpdId = ref(null)
+const mappingLoading = ref(false)
+
+const openResolveDialog = (item) => {
+  resolveItem.value = item
+  selectedSkpdId.value = null
+  resolveDialog.value = true
+}
+
+const saveMapping = async () => {
+    if (!selectedSkpdId.value || !resolveItem.value) return
+    
+    mappingLoading.value = true
+    try {
+        await api.post('/skpd-mapping', {
+            source_name: resolveItem.value.nama_skpd_sipd,
+            skpd_id: selectedSkpdId.value,
+            type: 'all'
+        })
+        showSnackbar('Mapping berhasil disimpan dan data diperbarui')
+        resolveDialog.value = false
+        fetchData()
+    } catch (err) {
+        showSnackbar('Gagal menyimpan mapping', 'error')
+    } finally {
+        mappingLoading.value = false
+    }
+}
 
 const toggleSort = (key) => {
   if (sortBy.value === key) {
@@ -601,6 +778,80 @@ const months = [
   { title: 'November', value: 11 }, { title: 'Desember', value: 12 }
 ]
 const years = [2024, 2025, 2026]
+
+// Import Preview & Type selection
+const importDialog = ref(false)
+const importFile = ref(null)
+const importTargetType = ref('AUTO') // AUTO, PNS-INDUK, PPPK-INDUK, PPPK-PW-INDUK, TPP-INDUK
+const importPreview = ref([])
+const importSummary = ref(null)
+const previewLoading = ref(false)
+const importTargetTypes = [
+  { title: 'Deteksi Otomatis', value: 'AUTO' },
+  { title: 'Gaji PNS (Induk)', value: 'PNS-INDUK' },
+  { title: 'Gaji PPPK (Induk)', value: 'PPPK-INDUK' },
+  { title: 'Gaji PPPK-PW', value: 'PPPK-PW-INDUK' },
+  { title: 'TPP / Tukin', value: 'TPP-INDUK' },
+]
+
+const openImportDialog = (file) => {
+  importFile.value = file
+  importDialog.value = true
+  fetchImportPreview()
+}
+
+const fetchImportPreview = async () => {
+  if (!importFile.value) return
+  
+  const formData = new FormData()
+  formData.append('file', importFile.value)
+  formData.append('bulan', selectedMonth.value)
+  formData.append('tahun', selectedYear.value)
+  formData.append('preview', '1')
+  if (importTargetType.value !== 'AUTO') {
+    formData.append('target_type', importTargetType.value)
+  }
+
+  previewLoading.value = true
+  try {
+    const response = await api.post('/sp2d/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    importPreview.value = response.data.preview
+    importSummary.value = response.data.summary
+  } catch (err) {
+    showSnackbar(err.response?.data?.message || 'Gagal mengambil preview', 'error')
+    importDialog.value = false
+  } finally {
+    previewLoading.value = false
+  }
+}
+
+const processImport = async () => {
+  if (!importFile.value) return
+
+  const formData = new FormData()
+  formData.append('file', importFile.value)
+  formData.append('bulan', selectedMonth.value)
+  formData.append('tahun', selectedYear.value)
+  if (importTargetType.value !== 'AUTO') {
+    formData.append('target_type', importTargetType.value)
+  }
+  
+  uploading.value = true
+  try {
+    const response = await api.post('/sp2d/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    showSnackbar(response.data.message || 'File berhasil diunggah')
+    importDialog.value = false
+    fetchData()
+  } catch (err) {
+    showSnackbar(err.response?.data?.message || 'Gagal mengunggah file', 'error')
+  } finally {
+    uploading.value = false
+  }
+}
 
 const headers = [
   { title: 'Unit SKPD', key: 'nama_skpd', align: 'start', sortable: true },
@@ -781,20 +1032,25 @@ const confirmDelete = async (item) => {
 
 const handleFileSelect = (e) => {
   const file = e.target.files[0]
-  if (file) uploadFile(file)
+  if (file) openImportDialog(file)
 }
 
 const handleDrop = (e) => {
   isDragging.value = false
   const file = e.dataTransfer.files[0]
-  if (file) uploadFile(file)
+  if (file) openImportDialog(file)
 }
 
-const uploadFile = async (file) => {
+const uploadFile = async () => {
+  if (!importFile.value) return
+
   const formData = new FormData()
-  formData.append('file', file)
+  formData.append('file', importFile.value)
   formData.append('bulan', selectedMonth.value)
   formData.append('tahun', selectedYear.value)
+  if (importTargetType.value !== 'AUTO') {
+    formData.append('target_type', importTargetType.value)
+  }
   
   uploading.value = true
   try {
@@ -802,6 +1058,7 @@ const uploadFile = async (file) => {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
     showSnackbar(response.data.message || 'Data berhasil diimpor')
+    importDialog.value = false
     fetchData()
   } catch (err) {
     showSnackbar(err.response?.data?.message || 'Gagal mengunggah file', 'error')
@@ -810,6 +1067,7 @@ const uploadFile = async (file) => {
     // Clear input
     const input = document.querySelector('input[type="file"]')
     if (input) input.value = ''
+    importFile.value = null
   }
 }
 

@@ -73,7 +73,7 @@
 
         <v-form @submit.prevent="handleLogin" ref="form" class="login-form">
           <div class="input-group">
-            <label class="input-label">Username</label>
+            <label class="input-label text-medium-emphasis">Username</label>
             <v-text-field
               v-model="username"
               placeholder="Masukkan username"
@@ -88,7 +88,7 @@
           </div>
 
           <div class="input-group">
-            <label class="input-label">Password</label>
+            <label class="input-label text-medium-emphasis">Password</label>
             <v-text-field
               v-model="password"
               placeholder="Masukkan password"
@@ -106,7 +106,7 @@
           </div>
 
           <div class="input-group">
-            <label class="input-label">
+            <label class="input-label text-medium-emphasis">
               Verifikasi
               <span class="captcha-badge">{{ captchaQuestion }}</span>
             </label>
@@ -159,7 +159,7 @@
           </v-btn>
         </v-form>
 
-        <div class="form-footer">
+        <div class="form-footer text-disabled">
           &copy; {{ new Date().getFullYear() }} Pemprov Kalimantan Selatan
         </div>
       </div>
@@ -510,11 +510,12 @@ const handleLogin = async () => {
   font-weight: 800;
   margin-bottom: 4px;
   letter-spacing: -0.5px;
+  color: rgb(var(--v-theme-on-surface));
 }
 
 .form-subtitle {
   font-size: 0.9rem;
-  opacity: 0.6;
+  color: rgb(var(--v-theme-on-surface), 0.6);
 }
 
 /* Input Groups */
@@ -530,7 +531,6 @@ const handleLogin = async () => {
   font-weight: 600;
   margin-bottom: 6px;
   margin-left: 4px;
-  opacity: 0.7;
 }
 
 .captcha-badge {
@@ -559,7 +559,6 @@ const handleLogin = async () => {
   text-align: center;
   margin-top: 28px;
   font-size: 0.75rem;
-  opacity: 0.4;
 }
 
 /* ====== Animations ====== */

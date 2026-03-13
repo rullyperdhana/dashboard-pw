@@ -134,6 +134,13 @@ class SkpdMappingController extends Controller
                 ['source_name' => $request->source_name, 'type' => $request->type],
                 ['skpd_id' => $request->skpd_id, 'source_code' => null]
             );
+
+            // Update existing unmapped realizations with this name
+            if ($request->type === 'all') {
+                \App\Models\Sp2dRealization::where('nama_skpd_sipd', $request->source_name)
+                    ->whereNull('skpd_id')
+                    ->update(['skpd_id' => $request->skpd_id]);
+            }
         }
 
         $mapping->load('skpd');
