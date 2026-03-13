@@ -259,11 +259,11 @@ const menuItems = ref([
     title: 'Data Referensi',
     icon: 'mdi-database-outline',
     children: [
-      { title: 'Instansi / SKPD', icon: 'mdi-office-building-outline', value: 'skpd', to: '/skpd' },
+      { title: 'SKPD PW', icon: 'mdi-office-building-outline', value: 'skpd', to: '/skpd' },
       { title: 'SKPD Mapping', icon: 'mdi-swap-horizontal', value: 'skpd-mapping', to: '/settings/skpd-mapping' },
-      { title: 'Referensi Satker', icon: 'mdi-office-building-cog', value: 'satker-setting', to: '/settings/satker' },
-      { title: 'Status Pajak (PTKP)', icon: 'mdi-account-cash-outline', value: 'tax-status', to: '/settings/tax-status' },
-      { title: 'Sumber Dana SKPD', icon: 'mdi-cash-multiple', value: 'sumber-dana', to: '/settings/sumber-dana' },
+      { title: 'Ref Satker PNS', icon: 'mdi-office-building-cog', value: 'satker-setting', to: '/settings/satker' },
+      { title: 'PTKP PNS', icon: 'mdi-account-cash-outline', value: 'tax-status', to: '/settings/tax-status' },
+      { title: 'Sumber Dana PW', icon: 'mdi-cash-multiple', value: 'sumber-dana', to: '/settings/sumber-dana' },
     ]
   },
   {

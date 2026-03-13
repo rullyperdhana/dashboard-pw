@@ -6,16 +6,16 @@
     <v-main class="bg-dashboard">
       <v-container fluid class="pa-6 pa-md-10">
         <!-- Header -->
-        <header class="dashboard-header mb-8">
+        <header class="dashboard-header mb-12">
           <v-row align="center">
             <v-col cols="12">
               <div class="d-flex align-center mb-2">
-                <v-avatar color="primary-lighten-4" size="48" class="mr-4">
-                  <v-icon color="primary" size="28">mdi-account-plus-outline</v-icon>
-                </v-avatar>
+                <div class="header-icon-wrapper mr-5">
+                  <v-icon color="primary" size="32">mdi-account-plus-outline</v-icon>
+                </div>
                 <div>
-                  <h1 class="text-h4 font-weight-black tracking-tight text-high-emphasis">Update NIK Master Pegawai</h1>
-                  <p class="text-subtitle-1 text-medium-emphasis">Memasukan NIK secara massal ke dalam data Master Pegawai berdasarkan NIP.</p>
+                  <h1 class="text-h3 font-weight-black tracking-tight text-high-emphasis">Update NIK Pegawai</h1>
+                  <p class="text-subtitle-1 text-medium-emphasis">Sinkronisasi nomor identitas kependudukan secara massal.</p>
                 </div>
               </div>
             </v-col>
@@ -90,46 +90,46 @@
           </v-col>
 
           <v-col cols="12" md="5">
-             <v-card class="glass-panel pa-8 border-dashed" elevation="0">
-                <div class="d-flex align-center mb-6">
-                  <v-avatar color="info-lighten-4" size="36" class="mr-4">
-                    <v-icon color="info" size="20">mdi-script-text-outline</v-icon>
-                  </v-avatar>
+             <v-card class="glass-panel pa-8 border-dashed h-100" elevation="0">
+                <div class="d-flex align-center mb-8">
+                  <div class="instruction-icon-wrapper mr-4">
+                    <v-icon color="info" size="24">mdi-script-text-outline</v-icon>
+                  </div>
                   <h3 class="text-h6 font-weight-black text-high-emphasis">Petunjuk Format</h3>
                 </div>
                 
                 <v-list density="compact" class="bg-transparent pa-0">
-                  <v-list-item class="px-0 mb-4 align-start">
+                  <v-list-item class="px-0 mb-6 align-start">
                     <template v-slot:prepend>
-                      <v-avatar color="surface" size="24" class="mr-3 border">
-                        <span class="text-caption font-weight-bold">1</span>
+                      <v-avatar color="primary" size="28" class="mr-4 text-caption font-weight-black" variant="tonal">
+                        1
                       </v-avatar>
                     </template>
-                    <v-list-item-title class="text-body-2 font-weight-bold mb-1">Tipe File Didukung</v-list-item-title>
-                    <v-list-item-subtitle class="text-caption text-medium-emphasis text-wrap">Gunakan format **.xlsx** (Excel Modern) atau **.csv**.</v-list-item-subtitle>
+                    <v-list-item-title class="text-body-1 font-weight-black mb-1">Tipe File Didukung</v-list-item-title>
+                    <v-list-item-subtitle class="text-body-2 text-medium-emphasis text-wrap">Gunakan format **.xlsx** (Excel Modern) atau **.csv**.</v-list-item-subtitle>
                   </v-list-item>
-
-                  <v-list-item class="px-0 mb-4 align-start">
+ 
+                  <v-list-item class="px-0 mb-6 align-start">
                     <template v-slot:prepend>
-                      <v-avatar color="surface" size="24" class="mr-3 border">
-                        <span class="text-caption font-weight-bold">2</span>
+                      <v-avatar color="primary" size="28" class="mr-4 text-caption font-weight-black" variant="tonal">
+                        2
                       </v-avatar>
                     </template>
-                    <v-list-item-title class="text-body-2 font-weight-bold mb-1">Header Wajib</v-list-item-title>
-                    <v-list-item-subtitle class="text-caption text-medium-emphasis text-wrap">Baris pertama harus berisi kolom **nip** dan **nik** (Case Sensitive).</v-list-item-subtitle>
+                    <v-list-item-title class="text-body-1 font-weight-black mb-1">Header Wajib</v-list-item-title>
+                    <v-list-item-subtitle class="text-body-2 text-medium-emphasis text-wrap">Baris pertama harus berisi kolom **nip** dan **nik** (Case Sensitive).</v-list-item-subtitle>
                   </v-list-item>
-
-                  <v-list-item class="px-0 mb-4 align-start">
+ 
+                  <v-list-item class="px-0 mb-2 align-start">
                     <template v-slot:prepend>
-                      <v-avatar color="surface" size="24" class="mr-3 border">
-                        <span class="text-caption font-weight-bold">3</span>
+                      <v-avatar color="primary" size="28" class="mr-4 text-caption font-weight-black" variant="tonal">
+                        3
                       </v-avatar>
                     </template>
-                    <v-list-item-title class="text-body-2 font-weight-bold mb-1">Mekanisme Update</v-list-item-title>
-                    <v-list-item-subtitle class="text-caption text-medium-emphasis text-wrap">Sistem akan mencocokkan NIP dan memperbarui kolom **noktp** di tabel Master Pegawai.</v-list-item-subtitle>
+                    <v-list-item-title class="text-body-1 font-weight-black mb-1">Mekanisme Update</v-list-item-title>
+                    <v-list-item-subtitle class="text-body-2 text-medium-emphasis text-wrap">Sistem akan mencocokkan NIP dan memperbarui kolom **noktp** di tabel Master Pegawai.</v-list-item-subtitle>
                   </v-list-item>
                 </v-list>
-             </v-card>
+              </v-card>
           </v-col>
         </v-row>
       
@@ -362,21 +362,37 @@ const showSnackbar = (msg, color = 'success') => {
 .bg-dashboard {
   background-color: rgb(var(--v-theme-background));
   background-image: 
-    radial-gradient(at 0% 0%, rgba(var(--v-theme-primary), 0.05) 0, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(var(--v-theme-info), 0.05) 0, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(var(--v-theme-primary), 0.08) 0, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(var(--v-theme-info), 0.08) 0, transparent 50%);
 }
 
 .glass-panel {
-  background: rgba(var(--v-theme-surface), 0.7) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(var(--v-theme-surface), 0.8) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(var(--v-border-color), 0.1) !important;
-  border-radius: 28px !important;
-  box-shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.03), 0 2px 5px -2px rgba(0, 0, 0, 0.02) !important;
+  border-radius: 24px !important;
+}
+
+.header-icon-wrapper, .instruction-icon-wrapper {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--v-theme-primary), 0.1);
+  border-radius: 16px;
+}
+
+.instruction-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  background: rgba(var(--v-theme-info), 0.1);
+  border-radius: 12px;
 }
 
 .border-dashed {
-  border-style: dashed !important;
+  border: 2px dashed rgba(var(--v-border-color), 0.2) !important;
 }
 
 .custom-file-input :deep(.v-field) {
