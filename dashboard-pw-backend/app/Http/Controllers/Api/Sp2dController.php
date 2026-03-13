@@ -22,14 +22,11 @@ class Sp2dController extends Controller
         ]);
 
         try {
-            // Clear existing AUTOMATED data for the period before importing new ones
-            Sp2dRealization::where('bulan', $request->bulan)
-                ->where('tahun', $request->tahun)
-                ->where('is_manual', 0)
-                ->delete();
+            // Removed: Bulk delete for the month to allow multiple file imports.
+            // Logic moved to a safer 'updateOrCreate' in Sp2dImport.
 
             Excel::import(new Sp2dImport, $request->file('file'));
-            return response()->json(['message' => 'Data SP2D berhasil diimpor (Data lama telah dibersihkan)']);
+            return response()->json(['message' => 'Data SP2D berhasil diimpor/sinkronisasi.']);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Gagal impor: ' . $e->getMessage()], 500);
         }

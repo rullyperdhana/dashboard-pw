@@ -35,20 +35,24 @@ class Sp2dImport implements ToModel, WithHeadingRow
         $namaSkpdSipd = $row['unit_skpd'] ?? '';
         $skpdId = $this->findSkpdId($namaSkpdSipd);
 
-        return new Sp2dRealization([
-            'nomor_sp2d' => $row['nomor_sp2d'],
-            'tanggal_sp2d' => $tanggalSp2d->format('Y-m-d'),
-            'tanggal_cair' => $tanggalCair ? $tanggalCair->format('Y-m-d') : null,
-            'nama_skpd_sipd' => $namaSkpdSipd,
-            'skpd_id' => $skpdId,
-            'keterangan' => $keterangan,
-            'jenis_data' => $jenisData,
-            'brutto' => $this->cleanNum($row['brutto'] ?? 0),
-            'potongan' => $this->cleanNum($row['potongan'] ?? 0),
-            'netto' => $this->cleanNum($row['netto'] ?? 0),
-            'bulan' => $tanggalSp2d->month,
-            'tahun' => $tanggalSp2d->year,
-        ]);
+        return Sp2dRealization::updateOrCreate(
+            [
+                'nomor_sp2d' => $row['nomor_sp2d'],
+                'jenis_data' => $jenisData,
+            ],
+            [
+                'tanggal_sp2d' => $tanggalSp2d->format('Y-m-d'),
+                'tanggal_cair' => $tanggalCair ? $tanggalCair->format('Y-m-d') : null,
+                'nama_skpd_sipd' => $namaSkpdSipd,
+                'skpd_id' => $skpdId,
+                'keterangan' => $keterangan,
+                'brutto' => $this->cleanNum($row['brutto'] ?? 0),
+                'potongan' => $this->cleanNum($row['potongan'] ?? 0),
+                'netto' => $this->cleanNum($row['netto'] ?? 0),
+                'bulan' => $tanggalSp2d->month,
+                'tahun' => $tanggalSp2d->year,
+            ]
+        );
     }
 
     private function parseDate($dateStr)
