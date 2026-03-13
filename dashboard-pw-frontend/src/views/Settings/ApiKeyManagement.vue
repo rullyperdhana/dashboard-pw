@@ -150,6 +150,149 @@
       <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="3000" location="bottom right">
         {{ snackbarText }}
       </v-snackbar>
+
+      <!-- Documentation Section -->
+      <v-row class="mt-12 mb-4">
+        <v-col cols="12">
+          <h2 class="text-h5 font-weight-bold mb-1">
+            <v-icon start color="primary">mdi-book-open-variant</v-icon>
+            Katalog & Dokumentasi API
+          </h2>
+          <p class="text-body-2 text-grey-darken-1">Panduan integrasi SIMGAJI menggunakan API Key.</p>
+        </v-col>
+      </v-row>
+
+      <v-expansion-panels variant="accordion" class="rounded-xl border shadow-sm mb-12">
+        <!-- Endpoint 1 -->
+        <v-expansion-panel elevation="0">
+          <v-expansion-panel-title class="font-weight-bold py-4">
+            <v-chip color="success" size="small" class="mr-3" label>GET</v-chip>
+            /api/listinstansi
+            <v-spacer></v-spacer>
+            <span class="text-caption text-grey">Daftar SKPD / Instansi</span>
+          </v-expansion-panel-title>
+          <v-expansion-panel-text class="bg-grey-lighten-4 pa-4">
+            <div class="mb-4">
+              <div class="font-weight-bold mb-2">Deskripsi:</div>
+              <div class="text-body-2">Mengambil daftar instansi/SKPD yang memiliki data gaji di sistem.</div>
+            </div>
+            <div class="mb-4">
+              <div class="font-weight-bold mb-2">Parameter Query:</div>
+              <ul class="text-body-2 ml-4">
+                <li><code>kode_instansi</code> (opsional) - Memfilter berdasarkan kode instansi tertentu.</li>
+              </ul>
+            </div>
+            <v-row>
+              <v-col cols="12" md="6">
+                <div class="font-weight-bold mb-2">Endpoint URL:</div>
+                <code class="pa-2 d-inline-block bg-grey-darken-4 text-white rounded w-100">{{ baseUrl }}/api/listinstansi</code>
+              </v-col>
+            </v-row>
+            <div class="mt-4">
+              <div class="font-weight-bold mb-2">Contoh JSON Response:</div>
+              <pre class="pa-3 bg-grey-darken-4 text-green-accent-3 rounded-lg overflow-x-auto" style="font-size: 11px; white-space: pre-wrap;">
+{
+  "status": true,
+  "message": "Success",
+  "data": [
+    {
+      "kode_instansi": "1.01.01",
+      "nama_instansi": "DINAS PENDIDIKAN DAN KEBUDAYAAN"
+    }
+  ]
+}</pre>
+            </div>
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+
+        <!-- Endpoint 2 -->
+        <v-expansion-panel elevation="0">
+          <v-expansion-panel-title class="font-weight-bold py-4">
+            <v-chip color="success" size="small" class="mr-3" label>GET</v-chip>
+            /api/listpegawai
+            <v-spacer></v-spacer>
+            <span class="text-caption text-grey">Data Master Pegawai (NIK/NIP)</span>
+          </v-expansion-panel-title>
+          <v-expansion-panel-text class="bg-grey-lighten-4 pa-4">
+            <div class="mb-4">
+              <div class="font-weight-bold mb-2">Deskripsi:</div>
+              <div class="text-body-2">Mencari data dasar pegawai berdasarkan NIK atau NIP dari Master Data.</div>
+            </div>
+            <div class="mb-4">
+              <div class="font-weight-bold mb-2">Parameter Query:</div>
+              <ul class="text-body-2 ml-4">
+                <li><code>nip</code> (opsional) - Mencari berdasarkan NIP.</li>
+                <li><code>nik</code> (opsional) - Mencari berdasarkan NIK.</li>
+              </ul>
+            </div>
+            <div class="mt-4">
+              <div class="font-weight-bold mb-2">Contoh JSON Response:</div>
+              <pre class="pa-3 bg-grey-darken-4 text-green-accent-3 rounded-lg overflow-x-auto" style="font-size: 11px; white-space: pre-wrap;">
+{
+  "status": true,
+  "message": "Success",
+  "data": [
+    {
+      "nik": "6310xxxxxxxxxxxx",
+      "nip": "1982xxxxxxxxxxxxxx",
+      "nama": "NAMA PEGAWAI",
+      "npwp": "xxxxxxxxxxxxxxx",
+      "tanggal_lahir": "1982-xx-xx"
+    }
+  ]
+}</pre>
+            </div>
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+
+        <!-- Endpoint 3 -->
+        <v-expansion-panel elevation="0">
+          <v-expansion-panel-title class="font-weight-bold py-4">
+            <v-chip color="success" size="small" class="mr-3" label>GET</v-chip>
+            /api/listgaji
+            <v-spacer></v-spacer>
+            <span class="text-caption text-grey">Rincian Komponen Gaji Lengkap</span>
+          </v-expansion-panel-title>
+          <v-expansion-panel-text class="bg-grey-lighten-4 pa-4">
+            <div class="mb-4">
+              <div class="font-weight-bold mb-2">Deskripsi:</div>
+              <div class="text-body-2">Mengambil rincian data gaji (komponen tunjangan, potongan, dll) PNS dan PPPK.</div>
+            </div>
+            <div class="mb-4">
+              <div class="font-weight-bold mb-2">Parameter Query:</div>
+              <ul class="text-body-2 ml-4">
+                <li><code>periode</code> (wajib) - Format <code>YYYY-MM</code> (Contoh: 2026-03).</li>
+                <li><code>kode_instansi</code> (opsional) - Filter berdasarkan kode instansi.</li>
+                <li><code>nip</code> (opsional) - Filter berdasarkan NIP pegawai.</li>
+                <li><code>jenis_gaji</code> (opsional) - Filter jenis gaji (Induk, THR, Gaji-13).</li>
+              </ul>
+            </div>
+            <div class="mt-4">
+              <div class="font-weight-bold mb-2">Contoh JSON Response (Potongan Komponen):</div>
+              <pre class="pa-3 bg-grey-darken-4 text-green-accent-3 rounded-lg overflow-x-auto" style="font-size: 11px; white-space: pre-wrap;">
+{
+  "status": true,
+  "message": "Success",
+  "data": [
+    {
+      "periode": "2026-03-01",
+      "nip": "1982...",
+      "nama_skpd": "DINAS...",
+      "tipe_jabatan": "1",
+      "nama_jabatan": "KEPALA BIDANG...",
+      "gaji_pokok": "4500000",
+      "jlh_kotor": "5600000",
+      "jlh_potongan": "600000",
+      "jlh_bersih": "5000000",
+      "status_pajak": "K/2",
+      "..." : "..."
+    }
+  ]
+}</pre>
+            </div>
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+      </v-expansion-panels>
     </v-container>
   </v-main>
 </div>

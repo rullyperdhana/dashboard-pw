@@ -203,7 +203,7 @@ class ThrController extends Controller
                     'date' => $printDate,
                     'sub_giat' => $subGiat['sub_giat_name']
                 ];
-                $verifyUrl = "https://sipgaji.my.id/api/verify-thr?" . http_build_query($params);
+                $verifyUrl = url('/api/verify-thr') . "?" . http_build_query($params);
                 $cacheKey = md5($verifyUrl);
 
                 if (isset($qrCache[$cacheKey])) {
