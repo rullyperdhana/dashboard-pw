@@ -275,6 +275,7 @@ const menuItems = ref([
       { title: 'API Keys', icon: 'mdi-key-chain', value: 'api-keys', to: '/settings/api-keys', roles: ['superadmin'] },
       { title: 'Riwayat Ekspor', icon: 'mdi-history', value: 'export-logs', to: '/settings/export-logs', roles: ['superadmin'] },
       { title: 'Pemeliharaan', icon: 'mdi-database-wrench', value: 'data-maintenance', to: '/settings/maintenance', roles: ['superadmin'] },
+      { title: 'Pusat Bantuan', icon: 'mdi-help-circle-outline', value: 'help-center', to: '/settings/help', roles: ['superadmin'] },
     ]
   },
 ])

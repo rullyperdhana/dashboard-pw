@@ -205,6 +205,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/tax-status/initialize', [App\Http\Controllers\Api\TaxStatusController::class, 'initializeYear']);
     Route::get('/tax-status/export', [App\Http\Controllers\Api\TaxStatusController::class, 'export']);
     Route::post('/tax-status/import', [App\Http\Controllers\Api\TaxStatusController::class, 'import']);
+    // Help Center (Manual Book)
+    Route::get('/help', [App\Http\Controllers\HelpArticleController::class, 'index']);
+    Route::get('/help/{slug}', [App\Http\Controllers\HelpArticleController::class, 'show']);
+    Route::post('/help', [App\Http\Controllers\HelpArticleController::class, 'store']);
+    Route::put('/help/{id}', [App\Http\Controllers\HelpArticleController::class, 'update']);
+    Route::delete('/help/{id}', [App\Http\Controllers\HelpArticleController::class, 'destroy']);
 });
 
 // Simgaji Integration API (protected by API Key)

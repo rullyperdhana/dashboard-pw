@@ -188,6 +188,12 @@ const router = createRouter({
             component: () => import('../views/Settings/ExportLogs.vue'),
             meta: { requiresAuth: true, breadcrumb: 'Riwayat Ekspor', roles: ['superadmin'] },
         },
+        {
+            path: '/settings/help',
+            name: 'HelpCenter',
+            component: () => import('../views/Settings/HelpCenter.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Pusat Bantuan', roles: ['superadmin'] },
+        },
     ],
 })
 
