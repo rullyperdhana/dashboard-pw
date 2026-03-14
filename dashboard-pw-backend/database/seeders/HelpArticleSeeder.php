@@ -71,5 +71,15 @@ class HelpArticleSeeder extends Seeder
                 'content' => "### Level Akses:\n1. **Superadmin:** Akses penuh ke seluruh fitur dan pengaturan sistem.\n2. **Operator SKPD:** Hanya bisa melihat data dan laporan sesuai SKPD yang ditugaskan.\n\n### Cara Menambah User:\n1. Menu **Manajemen Sistem > Manajemen User**.\n2. Klik **Tambah User**.\n3. Pilih Role dan tentukan SKPD jika role-nya adalah Operator.",
             ]
         );
+
+        \App\Models\HelpArticle::updateOrCreate(
+            ['slug' => 'peta-navigasi-struktur-menu'],
+            [
+                'title' => 'Peta Navigasi & Struktur Menu',
+                'category' => 'Sistem',
+                'keywords' => 'menu, navigasi, fitur, struktur',
+                'content' => "### Ikhtisar Menu Aplikasi\nAplikasi ini dibagi menjadi 5 kategori utama di Sidebar:\n\n#### 1. PPPK-PW (Paruh Waktu)\nKhusus untuk pengelolaan data PPPK Paruh Waktu.\n- **Dashboard PW:** Ringkasan data real-time.\n- **Pegawai PW:** Daftar personil PPPK-PW.\n- **Payroll PW:** Pengelolaan pembayaran/gaji.\n- **Trace Gaji:** Pelacakan detail riwayat gaji.\n- **THR PPPK-PW:** Cetak laporan THR khusus Paruh Waktu.\n\n#### 2. PNS & PPPK\nPengelolaan data pegawai ASN (PNS dan PPPK).\n- **Dashboard PNS:** Statistik pegawai ASN.\n- **Update NIK Massal:** Perbaikan data NIK via Excel.\n- **Master Pegawai (DBF):** Sinkronisasi data dari aplikasi Simgaji.\n- **Upload TPP:** Pengunggahan data TPP khusus.\n\n#### 3. Laporan & Verif\nKumpulan fitur audit dan pelaporan bulanan.\n- **Verifikasi SP2D:** Pencocokan data SIPD dan Simgaji.\n- **Laporan SKPD:** Rekapitulasi laporan per instansi.\n- **Rekon BPJS 4%:** Sinkronisasi iuran BPJS.\n- **Dashboard/Upload TPG:** Pengelolaan Tunjangan Profesi Guru.\n\n#### 4. Data Referensi\nPengaturan master data pendukung.\n- **SKPD Mapping:** Pemetaan nama dinas SIPD ke Simgaji.\n- **Ref Satker PNS:** Pengaturan Satuan Kerja.\n- **Sumber Dana PW:** Pengaturan kode pendanaan.\n\n#### 5. Manajemen Sistem\nPengaturan teknis dan keamanan.\n- **Posting Data:** Penguncian data agar tidak bisa diubah.\n- **Manajemen User:** Pengelolaan login dan hak akses.\n- **Riwayat Ekspor:** Audit aktivitas unduh data.\n- **Pusat Bantuan:** (Halaman ini) Dokumentasi mandiri.",
+            ]
+        );
     }
 }
