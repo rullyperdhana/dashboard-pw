@@ -92,17 +92,45 @@ class SkpdMappingController extends Controller
             ]);
 
         // Unique SKPD names from sp2d_realizations not yet mapped
+        $allSkpds = Skpd::select('id_skpd', 'nama_skpd')->get();
+        
         $unmappedSp2d = DB::table('sp2d_realizations')
             ->whereNull('skpd_id')
             ->select('nama_skpd_sipd as source_name')
             ->distinct()
             ->get()
-            ->map(fn($item) => [
-                'source_code' => '',
-                'source_name' => $item->source_name,
-                'suggestion' => null,
-                'type' => 'all'
-            ]);
+            ->map(function ($item) use ($allSkpds) {
+                // Try to find a suggestion using the same normalization logic
+                $suggestion = null;
+                $suggestionId = null;
+                $normalizedSource = $this->normalizeName($item->source_name);
+                
+                foreach ($allSkpds as $skpd) {
+                    if ($this->normalizeName($skpd->nama_skpd) === $normalizedSource) {
+                        $suggestion = $skpd->nama_skpd;
+                        $suggestionId = $skpd->id_skpd;
+                        break;
+                    }
+                }
+
+                // If no exact match after normalization, try fuzzy (starts with)
+                if (!$suggestion) {
+                    $prefix = substr($item->source_name, 0, 15);
+                    $fuzzy = $allSkpds->filter(fn($s) => str_starts_with($s->nama_skpd, $prefix))->first();
+                    if ($fuzzy) {
+                        $suggestion = $fuzzy->nama_skpd;
+                        $suggestionId = $fuzzy->id_skpd;
+                    }
+                }
+
+                return [
+                    'source_code' => '',
+                    'source_name' => $item->source_name,
+                    'suggestion' => $suggestion,
+                    'suggestion_id' => $suggestionId,
+                    'type' => 'all'
+                ];
+            });
 
         return response()->json([
             'success' => true,
@@ -113,6 +141,23 @@ class SkpdMappingController extends Controller
                 'sp2d' => $unmappedSp2d,
             ]
         ]);
+    }
+
+    /**
+     * Normalize SKPD names for better matching
+     */
+    private function normalizeName($name)
+    {
+        $name = strtoupper(trim($name));
+        $name = str_replace([
+            'DINAS ', 'BADAN ', 'SEKRETARIAT ', 'DAERAH ', 'PROVINSI ', 
+            'KALIMANTAN SELATAN', 'PROV. ', 'KALSEL',
+            'UPTD ', 'UPPD ', 'BLUD ', 'UNIT ', 'PELAKSANA ', 'TEKNIS ',
+            'UNIT PELAYANAN PENDAPATAN DAERAH ',
+            'BALAI ', 'KANTOR '
+        ], '', $name);
+        
+        return preg_replace('/[^A-Z0-9]/', '', $name);
     }
 
     /**

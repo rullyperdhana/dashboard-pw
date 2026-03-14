@@ -11,7 +11,7 @@ bash push.sh "Pesan commit deskriptif"
 3. Login ke VPS melalui SSH atau Terminal aaPanel.
 4. Masuk ke direktori aplikasi:
 ```bash
-cd /www/wwwroot/dashboard-pw
+cd /www/wwwroot/sip-gaji
 ```
 // turbo
 5. Jalankan perintah deploy di VPS:

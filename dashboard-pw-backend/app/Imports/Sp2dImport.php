@@ -230,7 +230,15 @@ class Sp2dImport implements ToModel, WithHeadingRow
     private function normalizeName($name)
     {
         $name = strtoupper(trim($name));
-        $name = str_replace(['DINAS ', 'BADAN ', 'SEKRETARIAT ', 'DAERAH ', 'PROVINSI ', 'KALIMANTAN SELATAN', 'PROV. ', 'KALSEL'], '', $name);
+        // Remove common prefixes and suffixes
+        $name = str_replace([
+            'DINAS ', 'BADAN ', 'SEKRETARIAT ', 'DAERAH ', 'PROVINSI ', 
+            'KALIMANTAN SELATAN', 'PROV. ', 'KALSEL',
+            'UPTD ', 'UPPD ', 'BLUD ', 'UNIT ', 'PELAKSANA ', 'TEKNIS ',
+            'UNIT PELAYANAN PENDAPATAN DAERAH ',
+            'BALAI ', 'KANTOR '
+        ], '', $name);
+        
         $name = preg_replace('/[^A-Z0-9]/', '', $name); // Strip everything else
         return $name;
     }

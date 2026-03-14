@@ -16,7 +16,7 @@ bash push.sh "Pesan perubahan Anda di sini"
 
 ### Langkah B: Di VPS (Tarik dari GitHub)
 1. Masuk ke VPS melalui Terminal/SSH.
-2. Masuk ke folder project: `cd /www/wwwroot/dashboard-pw`
+2. Masuk ke folder project: `cd /www/wwwroot/sip-gaji`
 3. Jalankan script `deploy.sh`:
 ```bash
 # Script ini otomatis menjalankan git pull, composer install, artisan migrate, dan npm build
@@ -60,7 +60,7 @@ php artisan config:cache
 - **Database Backup:** Pastikan script `backup_db.sh` telah dikonfigurasi di `crontab` VPS untuk backup otomatis.
   ```bash
   # Contoh setup crontab (setiap jam 01:00 pagi)
-  0 1 * * * /www/wwwroot/dashboard-pw/backup_db.sh >> /www/wwwroot/dashboard-pw/backup.log 2>&1
+  0 1 * * * /www/wwwroot/sip-gaji/backup_db.sh >> /www/wwwroot/sip-gaji/backup.log 2>&1
   ```
 - **Cache Management:** Jika data tidak berubah setelah update, jalankan `php artisan optimize:clear`.
 

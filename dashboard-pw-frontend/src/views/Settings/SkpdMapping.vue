@@ -216,6 +216,9 @@
                         <v-list-item-title class="text-body-2 font-weight-medium">
                           {{ item.source_name }}
                         </v-list-item-title>
+                        <v-list-item-subtitle v-if="item.suggestion" class="text-caption text-primary">
+                          Saran: {{ item.suggestion }}
+                        </v-list-item-subtitle>
                         <template v-slot:append>
                           <v-btn size="small" color="primary" variant="tonal" @click="quickMap(item)">
                             <v-icon start icon="mdi-link-variant" size="16"></v-icon>
@@ -512,7 +515,7 @@ const tableHeaders = [
   { title: 'Aksi', key: 'actions', sortable: false, align: 'center', width: '100px' },
 ]
 
-const unmappedCount = computed(() => unmappedPns.value.length + unmappedPppk.value.length + unmappedPppkPw.value.length)
+const unmappedCount = computed(() => unmappedPns.value.length + unmappedPppk.value.length + unmappedPppkPw.value.length + unmappedSp2d.value.length)
 
 const filteredMappings = computed(() => {
   if (!filterType.value) return mappings.value
@@ -623,7 +626,14 @@ const openEditDialog = (item) => {
 }
 
 const quickMap = (item) => {
-  form.value = { id: null, source_name: item.source_name, source_code: item.source_code, skpd_id: null, skpd_2026_id: null, type: item.type }
+  form.value = { 
+    id: null, 
+    source_name: item.source_name, 
+    source_code: item.source_code, 
+    skpd_id: item.suggestion_id || null, 
+    skpd_2026_id: null, 
+    type: item.type 
+  }
   editMode.value = false
   editSourceName.value = true
   loadSkpd()
