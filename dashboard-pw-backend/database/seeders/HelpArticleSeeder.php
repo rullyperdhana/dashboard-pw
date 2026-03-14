@@ -93,6 +93,36 @@ class HelpArticleSeeder extends Seeder
         );
 
         \App\Models\HelpArticle::updateOrCreate(
+            ['slug' => 'panduan-perhitungan-thr-gaji-13'],
+            [
+                'title' => 'Panduan Perhitungan THR & Gaji-13',
+                'category' => 'Financial',
+                'keywords' => 'thr, gaji 13, perhitungan, pppk pw, pns',
+                'content' => "### 1. THR PPPK Paruh Waktu\nTerdapat dua metode perhitungan yang dapat diatur di Setting:\n- **Metode Proporsional:** Rumusnya adalah `Gaji Pokok Februari x (n/12)`. Nilai `n` adalah masa kerja tahun berjalan (maksimal 2 bulan untuk April 2026).\n- **Metode Tetap (Fixed):** Menggunakan nilai rupiah pasti (misal Rp 600.000) untuk seluruh pegawai.\n\n### 2. THR & Gaji-13 ASN (PNS/PPPK)\nPerhitungan mengikuti regulasi terbaru yang diimpor dari Simgaji. Komponennya biasanya meliputi:\n- Gaji Pokok + Tunjangan Keluarga.\n- Tunjangan Jabatan/Umum.\n- Tunjangan Beras.\n- TPP (Tunjangan Perbaikan Penghasilan) sesuai kebijakan Pemda.\n\n*Gunakan filter 'Jenis Gaji' di Dashboard untuk melihat total realisasi.*",
+            ]
+        );
+
+        \App\Models\HelpArticle::updateOrCreate(
+            ['slug' => 'monitoring-pensiun-pegawai'],
+            [
+                'title' => 'Monitoring & Estimasi Pensiun',
+                'category' => 'Management',
+                'keywords' => 'pensiun, retirement, monitor, batasan usia',
+                'content' => "### Batasan Usia Pensiun (BUP)\nSistem secara otomatis menghitung estimasi pensiun berdasarkan tanggal lahir:\n- **Umum:** Estimasi BUP adalah 58 tahun.\n- **Notifikasi:** Di Dashboard Analytics, sistem akan menampilkan daftar pegawai yang memasuki usia kritis (57 tahun ke atas) agar segera diproses administrasinya.\n\n### Dampak ke Payroll:\nPegawai yang telah melewati BUP secara otomatis akan disaring (filter) keluar dari perhitungan payroll bulanan dan estimasi untuk periode mendatang.",
+            ]
+        );
+
+        \App\Models\HelpArticle::updateOrCreate(
+            ['slug' => 'posting-data-penguncian'],
+            [
+                'title' => 'Posting Data (Penguncian Periode)',
+                'category' => 'Keamanan',
+                'keywords' => 'posting, kunci, lock, periode, finalisasi',
+                'content' => "### Fungsi Posting:\nFitur ini berfungsi untuk mengunci data payroll pada bulan/tahun tertentu agar tidak dapat diubah lagi oleh operator manapun.\n\n### Cara Melakukan Posting:\n1. Masuk ke menu **Manajemen Sistem > Posting Data**.\n2. Pilih Bulan, Tahun, dan Jenis Gaji yang ingin dikunci.\n3. Klik **Kunci Data**.\n\n### Catatan Penting:\nData yang sudah diposting bersifat FINAL. Jika terdapat kesalahan data setelah diposting, Bapak harus membuka kunci (Unposting) terlebih dahulu melalui menu yang sama.",
+            ]
+        );
+
+        \App\Models\HelpArticle::updateOrCreate(
             ['slug' => 'peta-navigasi-struktur-menu'],
             [
                 'title' => 'Peta Navigasi & Struktur Menu',
