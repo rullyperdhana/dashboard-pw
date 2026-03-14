@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Drop table if it partially exists from a failed migration attempt on production
+        Schema::dropIfExists('export_logs');
+
         Schema::create('export_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            // Using bigInteger without constrained foreign key to avoid type mismatch on older production databases
+            $table->unsignedBigInteger('user_id')->index();
             $table->string('report_name');
             $table->string('action'); // e.g., 'Cetak PDF', 'Ekspor Excel'
             $table->string('description')->nullable();
