@@ -99,6 +99,13 @@
               </div>
             </template>
 
+            <!-- SKPD Column -->
+            <template v-slot:item.skpd="{ item }">
+              <div class="text-body-2 font-weight-medium">
+                {{ item.user?.skpd?.nama_skpd || (item.user?.role === 'superadmin' ? 'Provinsi / Superadmin' : 'N/A') }}
+              </div>
+            </template>
+
             <!-- Action Column -->
             <template v-slot:item.action="{ item }">
               <v-chip
@@ -163,6 +170,7 @@ const filters = ref({
 const headers = [
   { title: 'Waktu Ekspor', key: 'created_at', width: '200px' },
   { title: 'Pengguna', key: 'user', width: '250px' },
+  { title: 'SKPD', key: 'skpd', width: '200px' },
   { title: 'Laporan', key: 'report_name', width: '200px' },
   { title: 'Aksi', key: 'action', width: '150px' },
   { title: 'Deskripsi', key: 'description' },

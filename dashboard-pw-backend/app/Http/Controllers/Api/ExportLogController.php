@@ -22,7 +22,7 @@ class ExportLogController extends Controller
             ], 403);
         }
 
-        $query = ExportLog::with('user')->latest();
+        $query = ExportLog::with('user.skpd')->latest();
 
         // Optional filtering by date or report name
         if ($request->filled('start_date') && $request->filled('end_date')) {
