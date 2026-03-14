@@ -27,6 +27,7 @@ if [ -f "composer.json" ]; then
     composer install --no-dev --optimize-autoloader
 fi
 php artisan migrate --force
+php artisan db:seed --class=HelpArticleSeeder
 php artisan optimize:clear
 php artisan config:cache
 php artisan view:cache
