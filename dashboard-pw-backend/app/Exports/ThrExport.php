@@ -14,13 +14,15 @@ class ThrExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
     protected $year;
     protected $nMonths;
     protected $thrMonthName;
+    protected $calculationBasis;
 
-    public function __construct(array $data, int $year, int $nMonths, string $thrMonthName)
+    public function __construct(array $data, int $year, int $nMonths, string $thrMonthName, ?string $calculationBasis = null)
     {
         $this->data = $data;
         $this->year = $year;
         $this->nMonths = $nMonths;
         $this->thrMonthName = $thrMonthName;
+        $this->calculationBasis = $calculationBasis ?? "Gaji Pokok Pebruari ({$nMonths}/12)";
     }
 
     public function headings(): array
@@ -28,7 +30,7 @@ class ThrExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
         return [
             ["DAFTAR PEMBAYARAN THR PEGAWAI PPPK PARUH WAKTU"],
             ["TAHUN {$this->year} (PEMBAYARAN BULAN " . strtoupper($this->thrMonthName) . ")"],
-            ["DASAR PERHITUNGAN: GAJI POKOK PEBRUARI ({$this->nMonths}/12)"],
+            ["DASAR PERHITUNGAN: " . strtoupper($this->calculationBasis)],
             [''],
             [
                 'No',

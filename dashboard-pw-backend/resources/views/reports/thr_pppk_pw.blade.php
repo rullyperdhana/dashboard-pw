@@ -98,8 +98,7 @@
             PARUH WAKTU</h2>
         <h3 style="margin:5px 0 0 0; padding:0;">TAHUN {{ $year }} (PEMBAYARAN BULAN {{ strtoupper($thrMonthName) }})
         </h3>
-        <p style="margin:5px 0 0 0; padding:0; font-size: 10px;">Dasar Perhitungan: Gaji Pokok Pebruari
-            ({{ $nMonths }}/12)</p>
+        <p style="margin:5px 0 0 0; padding:0; font-size: 10px;">Dasar Perhitungan: {{ $calculationBasis }}</p>
     </header>
 
     <main>
@@ -179,7 +178,7 @@
                                     <div class="footer" style="font-size: 10px; color: #555;">
                                         <strong>KEABSAHAN DOKUMEN:</strong><br>
                                         Dokumen ini dihasilkan secara otomatis oleh Sistem PPPK Payroll Dashboard yang
-                                        menggunakan skema n/12.<br>
+                                        menggunakan metode: {{ $thrMethod == 'tetap' ? 'Nilai Tetap' : 'Proporsional n/12' }}.<br>
                                         Keaslian dokumen dapat diverifikasi melalui kode QR di samping.<br>
                                         Dicetak pada: {{ $printDate }}
                                     </div>

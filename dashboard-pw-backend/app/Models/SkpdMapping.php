@@ -11,11 +11,17 @@ class SkpdMapping extends Model
     protected $fillable = [
         'source_name',
         'skpd_id',
+        'skpd_2026_id',
         'type',
     ];
 
     public function skpd()
     {
         return $this->belongsTo(Skpd::class, 'skpd_id', 'id_skpd');
+    }
+
+    public function skpd2026()
+    {
+        return $this->belongsTo(Skpd2026::class, 'skpd_2026_id', 'id');
     }
 }

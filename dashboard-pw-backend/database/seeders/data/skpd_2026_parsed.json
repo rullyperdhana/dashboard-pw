@@ -1,0 +1,716 @@
+[
+  {
+    "nomor": 1.0,
+    "kode_skpd": "1.01",
+    "nama_skpd": "DINAS PENDIDIKAN DAN KEBUDAYAAN",
+    "is_skpd": true
+  },
+  {
+    "nomor": 2.0,
+    "kode_skpd": "1.01.01",
+    "nama_skpd": "BALAI TEKNOLOGI INFORMASI DAN KOMUNIKASI PENDIDIKAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 3.0,
+    "kode_skpd": "1.01.02",
+    "nama_skpd": "TAMAN BUDAYA",
+    "is_skpd": false
+  },
+  {
+    "nomor": 4.0,
+    "kode_skpd": "1.01.03",
+    "nama_skpd": "MUSEUM LAMBUNG MANGKURAT",
+    "is_skpd": false
+  },
+  {
+    "nomor": 5.0,
+    "kode_skpd": "1.01.04",
+    "nama_skpd": "PUSAT LAYANAN DISABILITAS DAN PENDIDIKAN INKLUSI",
+    "is_skpd": false
+  },
+  {
+    "nomor": 6.0,
+    "kode_skpd": "1.02",
+    "nama_skpd": "DINAS KESEHATAN",
+    "is_skpd": true
+  },
+  {
+    "nomor": 7.0,
+    "kode_skpd": "1.02.01",
+    "nama_skpd": "BALAI PELATIHAN KESEHATAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 8.0,
+    "kode_skpd": "1.02.02",
+    "nama_skpd": "LABORATORIUM KESEHATAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 9.0,
+    "kode_skpd": "1.02.03",
+    "nama_skpd": "BALAI KESEHATAN OLAHRAGA MASYARAKAT",
+    "is_skpd": false
+  },
+  {
+    "nomor": 10.0,
+    "kode_skpd": "1.02.04",
+    "nama_skpd": "INSTALASI FARMASI",
+    "is_skpd": false
+  },
+  {
+    "nomor": 11.0,
+    "kode_skpd": "1.02.05",
+    "nama_skpd": "UPTD UNIT PELAYANAN KRISIS DAN EPEDEMI KESEHATAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 12.0,
+    "kode_skpd": "1.02.06",
+    "nama_skpd": "RUMAH SAKIT UMUM DAERAH ULIN BANJARMASIN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 13.0,
+    "kode_skpd": "1.02.07",
+    "nama_skpd": "RUMAH SAKIT JIWA SAMBANG LIHUM",
+    "is_skpd": false
+  },
+  {
+    "nomor": 14.0,
+    "kode_skpd": "1.02.08",
+    "nama_skpd": "RUMAH SAKIT UMUM DR. H. MOCH ANSARI SALEH",
+    "is_skpd": false
+  },
+  {
+    "nomor": 15.0,
+    "kode_skpd": "1.02.09",
+    "nama_skpd": "RUMAH SAKIT GIGI DAN MULUT GUSTI HASAN AMAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 16.0,
+    "kode_skpd": "1.03",
+    "nama_skpd": "DINAS PEKERJAAN UMUM DAN PENATAAN RUANG",
+    "is_skpd": true
+  },
+  {
+    "nomor": 17.0,
+    "kode_skpd": "1.03.01",
+    "nama_skpd": "LABORATORIUM BAHAN KONSTRUKSI",
+    "is_skpd": false
+  },
+  {
+    "nomor": 18.0,
+    "kode_skpd": "1.03.02",
+    "nama_skpd": "BLUD BALAI PENGELOLAAN AIR MINUM BANJARBAKULA",
+    "is_skpd": false
+  },
+  {
+    "nomor": 19.0,
+    "kode_skpd": "1.04",
+    "nama_skpd": "DINAS PERUMAHAN RAKYAT DAN KAWASAN PERMUKIMAN",
+    "is_skpd": true
+  },
+  {
+    "nomor": 20.0,
+    "kode_skpd": "1.05",
+    "nama_skpd": "BADAN PENANGGULANGAN BENCANA DAERAH",
+    "is_skpd": true
+  },
+  {
+    "nomor": 21.0,
+    "kode_skpd": "1.06",
+    "nama_skpd": "SATUAN POLISI PAMONG PRAJA DAN PEMADAM KEBAKARAN",
+    "is_skpd": true
+  },
+  {
+    "nomor": 22.0,
+    "kode_skpd": "1.07",
+    "nama_skpd": "DINAS SOSIAL",
+    "is_skpd": true
+  },
+  {
+    "nomor": 23.0,
+    "kode_skpd": "1.07.01",
+    "nama_skpd": "PANTI REHABILITASI SOSIAL PENYANDANG DISABILITAS NETRA DAN FISIK FAJAR HARAPAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 24.0,
+    "kode_skpd": "1.07.02",
+    "nama_skpd": "PANTI PERLINDUNGAN DAN REHABILITASI SOSIAL ANAK DAN REMAJA MULIA SATRIA",
+    "is_skpd": false
+  },
+  {
+    "nomor": 25.0,
+    "kode_skpd": "1.07.03",
+    "nama_skpd": "PANTI REHABILITASI SOSIAL PENYANDANG DISABILITAS ISKAYA BANARAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 26.0,
+    "kode_skpd": "1.07.04",
+    "nama_skpd": "PANTI REHABILITASI SOSIAL TUNA SOSIAL BARAKAT CANGKAL BACARI",
+    "is_skpd": false
+  },
+  {
+    "nomor": 27.0,
+    "kode_skpd": "1.07.05",
+    "nama_skpd": "PANTI PERLINDUNGAN DAN REHABILITASI SOSIAL LANJUT USIA BUDI SEJAHTERA",
+    "is_skpd": false
+  },
+  {
+    "nomor": 28.0,
+    "kode_skpd": "1.08",
+    "nama_skpd": "DINAS TENAGA KERJA DAN TRANSMIGRASI",
+    "is_skpd": true
+  },
+  {
+    "nomor": 29.0,
+    "kode_skpd": "1.08.01",
+    "nama_skpd": "LABORATORIUM KESEHATAN DAN KESELAMATAN KERJA",
+    "is_skpd": false
+  },
+  {
+    "nomor": 30.0,
+    "kode_skpd": "1.08.02",
+    "nama_skpd": "BALAI LATIHAN KERJA",
+    "is_skpd": false
+  },
+  {
+    "nomor": 31.0,
+    "kode_skpd": "1.08.03",
+    "nama_skpd": "BALAI PENGAWASAN KETENAGAKERJAAN DAERAH WILAYAH I",
+    "is_skpd": false
+  },
+  {
+    "nomor": 32.0,
+    "kode_skpd": "1.08.04",
+    "nama_skpd": "BALAI PENGAWASAN KETENAGAKERJAAN DAERAH WILAYAH II",
+    "is_skpd": false
+  },
+  {
+    "nomor": 33.0,
+    "kode_skpd": "1.08.05",
+    "nama_skpd": "BALAI PENGAWASAN KETENAGAKERJAAN DAERAH WILAYAH III",
+    "is_skpd": false
+  },
+  {
+    "nomor": 34.0,
+    "kode_skpd": "1.08.06",
+    "nama_skpd": "BALAI PENGAWASAN KETENAGAKERJAAN DAERAH WILAYAH IV",
+    "is_skpd": false
+  },
+  {
+    "nomor": 35.0,
+    "kode_skpd": "1.09",
+    "nama_skpd": "DINAS PEMBERDAYAAN PEREMPUAN, PERLINDUNGAN ANAK DAN KELUARGA BERENCANA",
+    "is_skpd": true
+  },
+  {
+    "nomor": 36.0,
+    "kode_skpd": "1.09.01",
+    "nama_skpd": "UPTD PERLINDUNGAN PEREMPUAN DAN ANAK",
+    "is_skpd": false
+  },
+  {
+    "nomor": 37.0,
+    "kode_skpd": "1.10",
+    "nama_skpd": "DINAS LINGKUNGAN HIDUP",
+    "is_skpd": true
+  },
+  {
+    "nomor": 38.0,
+    "kode_skpd": "1.10.01",
+    "nama_skpd": "UPTD LABORATORIUM LINGKUNGAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 39.0,
+    "kode_skpd": "1.10.02",
+    "nama_skpd": "UPTD PENGELOLAAN TEMPAT PEMROSESAN AKHIR SAMPAH DAN LIMBAH BAHAN BERBAHAYA DAN BERACUN REGIONAL BANJARBAKULA",
+    "is_skpd": false
+  },
+  {
+    "nomor": 40.0,
+    "kode_skpd": "1.11",
+    "nama_skpd": "DINAS KEPENDUDUKAN DAN PENCATATAN SIPIL",
+    "is_skpd": true
+  },
+  {
+    "nomor": 41.0,
+    "kode_skpd": "1.12",
+    "nama_skpd": "DINAS PEMBERDAYAAN MASYARAKAT DAN DESA",
+    "is_skpd": true
+  },
+  {
+    "nomor": 42.0,
+    "kode_skpd": "1.13",
+    "nama_skpd": "DINAS PERHUBUNGAN",
+    "is_skpd": true
+  },
+  {
+    "nomor": 43.0,
+    "kode_skpd": "1.13.01",
+    "nama_skpd": "UPTD TERMINAL TIPE B DAN TRANS PERKOTAAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 44.0,
+    "kode_skpd": "1.14",
+    "nama_skpd": "DINAS KOMUNIKASI DAN INFORMATIKA",
+    "is_skpd": true
+  },
+  {
+    "nomor": 45.0,
+    "kode_skpd": "1.15",
+    "nama_skpd": "DINAS KOPERASI, USAHA KECIL DAN MENENGAH",
+    "is_skpd": true
+  },
+  {
+    "nomor": 46.0,
+    "kode_skpd": "1.15.01",
+    "nama_skpd": "BALAI PELATIHAN KOPERASI DAN USAHA KECIL",
+    "is_skpd": false
+  },
+  {
+    "nomor": 47.0,
+    "kode_skpd": "1.16",
+    "nama_skpd": "DINAS PENANAMAN MODAL DAN PELAYANAN TERPADU SATU PINTU",
+    "is_skpd": true
+  },
+  {
+    "nomor": 48.0,
+    "kode_skpd": "1.17",
+    "nama_skpd": "DINAS KEPEMUDAAN DAN OLAHRAGA",
+    "is_skpd": true
+  },
+  {
+    "nomor": 49.0,
+    "kode_skpd": "1.18",
+    "nama_skpd": "DINAS PERPUSTAKAAN DAN KEARSIPAN",
+    "is_skpd": true
+  },
+  {
+    "nomor": 50.0,
+    "kode_skpd": "1.19",
+    "nama_skpd": "DINAS KELAUTAN DAN PERIKANAN",
+    "is_skpd": true
+  },
+  {
+    "nomor": 51.0,
+    "kode_skpd": "1.19.01",
+    "nama_skpd": "BALAI PENERAPAN MUTU HASIL PERIKANAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 52.0,
+    "kode_skpd": "1.19.02",
+    "nama_skpd": "PERIKANAN BUDIDAYA DAN KESEHATAN LINGKUNGAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 53.0,
+    "kode_skpd": "1.19.03",
+    "nama_skpd": "PELABUHAN PERIKANAN BANJARMASIN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 54.0,
+    "kode_skpd": "1.19.04",
+    "nama_skpd": "PELABUHAN PERIKANAN MUARA KINTAP",
+    "is_skpd": false
+  },
+  {
+    "nomor": 55.0,
+    "kode_skpd": "1.19.05",
+    "nama_skpd": "PERIKANAN BUDIDAYA AIR PAYAU DAN LAUT KOTABARU",
+    "is_skpd": false
+  },
+  {
+    "nomor": 56.0,
+    "kode_skpd": "1.19.06",
+    "nama_skpd": "PELABUHAN PERIKANAN KOTABARU",
+    "is_skpd": false
+  },
+  {
+    "nomor": 57.0,
+    "kode_skpd": "1.19.07",
+    "nama_skpd": "PELABUHAN PERIKANAN BATULICIN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 58.0,
+    "kode_skpd": "1.20",
+    "nama_skpd": "DINAS PARIWISATA",
+    "is_skpd": true
+  },
+  {
+    "nomor": 59.0,
+    "kode_skpd": "1.21",
+    "nama_skpd": "DINAS PERKEBUNAN DAN PETERNAKAN",
+    "is_skpd": true
+  },
+  {
+    "nomor": 60.0,
+    "kode_skpd": "1.21.01",
+    "nama_skpd": "BALAI PENGAWASAN DAN SERTIFIKASI BENIH PERKEBUNAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 61.0,
+    "kode_skpd": "1.21.02",
+    "nama_skpd": "BALAI INSEMINASI BUATAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 62.0,
+    "kode_skpd": "1.22",
+    "nama_skpd": "DINAS PERTANIAN DAN KETAHANAN PANGAN",
+    "is_skpd": true
+  },
+  {
+    "nomor": 63.0,
+    "kode_skpd": "1.22.01",
+    "nama_skpd": "BALAI PERLINDUNGAN TANAMAN PANGAN DAN HORTIKULTURA",
+    "is_skpd": false
+  },
+  {
+    "nomor": 64.0,
+    "kode_skpd": "1.22.02",
+    "nama_skpd": "BALAI PENGAWASAN DAN SERTIFIKASI BENIH TANAMAN PANGAN DAN HORTIKULTURA",
+    "is_skpd": false
+  },
+  {
+    "nomor": 65.0,
+    "kode_skpd": "1.22.03",
+    "nama_skpd": "BALAI BENIH TANAMAN PANGAN DAN HORTIKULTURA",
+    "is_skpd": false
+  },
+  {
+    "nomor": 66.0,
+    "kode_skpd": "1.22.04",
+    "nama_skpd": "BALAI PENGELOLAAN SARANA DAN PRASARANA TANAMAN PANGAN DAN HORTIKULTURA",
+    "is_skpd": false
+  },
+  {
+    "nomor": 67.0,
+    "kode_skpd": "1.23",
+    "nama_skpd": "DINAS KEHUTANAN",
+    "is_skpd": true
+  },
+  {
+    "nomor": 68.0,
+    "kode_skpd": "1.23.01",
+    "nama_skpd": "TAMAN HUTAN RAYA SULTAN ADAM",
+    "is_skpd": false
+  },
+  {
+    "nomor": 69.0,
+    "kode_skpd": "1.23.02",
+    "nama_skpd": "BALAI PERBENIHAN TANAMAN HUTAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 70.0,
+    "kode_skpd": "1.23.03",
+    "nama_skpd": "KESATUAN PENGELOLAAN HUTAN KAYU TANGI",
+    "is_skpd": false
+  },
+  {
+    "nomor": 71.0,
+    "kode_skpd": "1.23.04",
+    "nama_skpd": "KESATUAN PENGELOLAAN HUTAN CANTUNG",
+    "is_skpd": false
+  },
+  {
+    "nomor": 72.0,
+    "kode_skpd": "1.23.05",
+    "nama_skpd": "KESATUAN PENGELOLAAN HUTAN PULAU LAUT SEBUKU",
+    "is_skpd": false
+  },
+  {
+    "nomor": 73.0,
+    "kode_skpd": "1.23.06",
+    "nama_skpd": "KESATUAN PENGELOLAAN HUTAN TABALONG",
+    "is_skpd": false
+  },
+  {
+    "nomor": 74.0,
+    "kode_skpd": "1.23.07",
+    "nama_skpd": "KESATUAN PENGELOLAAN HUTAN KUSAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 75.0,
+    "kode_skpd": "1.23.08",
+    "nama_skpd": "KESATUAN PENGELOLAAN HUTAN TANAH LAUT",
+    "is_skpd": false
+  },
+  {
+    "nomor": 76.0,
+    "kode_skpd": "1.23.09",
+    "nama_skpd": "KESATUAN PENGELOLAAN HUTAN BALANGAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 77.0,
+    "kode_skpd": "1.23.10",
+    "nama_skpd": "KESATUAN PENGELOLAAN HUTAN HULU SUNGAI",
+    "is_skpd": false
+  },
+  {
+    "nomor": 78.0,
+    "kode_skpd": "1.23.11",
+    "nama_skpd": "KESATUAN PENGELOLAAN HUTAN SENGAYAM",
+    "is_skpd": false
+  },
+  {
+    "nomor": 79.0,
+    "kode_skpd": "1.24",
+    "nama_skpd": "DINAS ENERGI DAN SUMBER DAYA MINERAL",
+    "is_skpd": true
+  },
+  {
+    "nomor": 80.0,
+    "kode_skpd": "1.24.01",
+    "nama_skpd": "LABORATORIUM ENERGI DAN SUMBER DAYA MINERAL",
+    "is_skpd": false
+  },
+  {
+    "nomor": 81.0,
+    "kode_skpd": "1.25",
+    "nama_skpd": "DINAS PERDAGANGAN",
+    "is_skpd": true
+  },
+  {
+    "nomor": 82.0,
+    "kode_skpd": "1.25.01",
+    "nama_skpd": "BALAI PENGUJIAN DAN SERTIFIKASI MUTU BARANG",
+    "is_skpd": false
+  },
+  {
+    "nomor": 83.0,
+    "kode_skpd": "1.26",
+    "nama_skpd": "DINAS PERINDUSTRIAN",
+    "is_skpd": true
+  },
+  {
+    "nomor": 84.0,
+    "kode_skpd": "1.26.01",
+    "nama_skpd": "BALAI PENDIDIKAN DAN PELATIHAN INDUSTRI KAYU DAN LOGAM",
+    "is_skpd": false
+  },
+  {
+    "nomor": 85.0,
+    "kode_skpd": "1.27",
+    "nama_skpd": "SEKRETARIAT DAERAH",
+    "is_skpd": true
+  },
+  {
+    "nomor": 86.0,
+    "kode_skpd": "1.27.01",
+    "nama_skpd": "BIRO PEMERINTAHAN DAN OTONOMI DAERAH",
+    "is_skpd": false
+  },
+  {
+    "nomor": 87.0,
+    "kode_skpd": "1.27.02",
+    "nama_skpd": "BIRO HUKUM",
+    "is_skpd": false
+  },
+  {
+    "nomor": 88.0,
+    "kode_skpd": "1.27.03",
+    "nama_skpd": "BIRO ORGANISASI",
+    "is_skpd": false
+  },
+  {
+    "nomor": 89.0,
+    "kode_skpd": "1.27.04",
+    "nama_skpd": "BIRO ADMINISTRASI PEMBANGUNAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 90.0,
+    "kode_skpd": "1.27.05",
+    "nama_skpd": "BIRO KESEJAHTERAAN RAKYAT",
+    "is_skpd": false
+  },
+  {
+    "nomor": 91.0,
+    "kode_skpd": "1.27.06",
+    "nama_skpd": "BIRO ADMINISTRASI PIMPINAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 92.0,
+    "kode_skpd": "1.27.07",
+    "nama_skpd": "BIRO UMUM",
+    "is_skpd": false
+  },
+  {
+    "nomor": 93.0,
+    "kode_skpd": "1.27.08",
+    "nama_skpd": "BIRO PENGADAAN BARANG DAN JASA",
+    "is_skpd": false
+  },
+  {
+    "nomor": 94.0,
+    "kode_skpd": "1.27.09",
+    "nama_skpd": "BIRO PEREKONOMIAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 95.0,
+    "kode_skpd": "1.28",
+    "nama_skpd": "SEKRETARIAT DPRD",
+    "is_skpd": true
+  },
+  {
+    "nomor": 96.0,
+    "kode_skpd": "1.29",
+    "nama_skpd": "BADAN PERENCANAAN PEMBANGUNAN DAERAH",
+    "is_skpd": true
+  },
+  {
+    "nomor": 97.0,
+    "kode_skpd": "1.30",
+    "nama_skpd": "BADAN PENGELOLAAN KEUANGAN DAN ASET DAERAH",
+    "is_skpd": true
+  },
+  {
+    "nomor": 98.0,
+    "kode_skpd": "1.31",
+    "nama_skpd": "BADAN PENDAPATAN DAERAH",
+    "is_skpd": true
+  },
+  {
+    "nomor": 99.0,
+    "kode_skpd": "1.31.01",
+    "nama_skpd": "UPPD BANJARBARU",
+    "is_skpd": false
+  },
+  {
+    "nomor": 100.0,
+    "kode_skpd": "1.31.02",
+    "nama_skpd": "UPPD PELAIHARI",
+    "is_skpd": false
+  },
+  {
+    "nomor": 101.0,
+    "kode_skpd": "1.31.03",
+    "nama_skpd": "UPPD KOTABARU",
+    "is_skpd": false
+  },
+  {
+    "nomor": 102.0,
+    "kode_skpd": "1.31.04",
+    "nama_skpd": "UPPD MARTAPURA",
+    "is_skpd": false
+  },
+  {
+    "nomor": 103.0,
+    "kode_skpd": "1.31.05",
+    "nama_skpd": "UPPD MARABAHAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 104.0,
+    "kode_skpd": "1.31.06",
+    "nama_skpd": "UPPD RANTAU",
+    "is_skpd": false
+  },
+  {
+    "nomor": 105.0,
+    "kode_skpd": "1.31.07",
+    "nama_skpd": "UPPD KANDANGAN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 106.0,
+    "kode_skpd": "1.31.08",
+    "nama_skpd": "UPPD BARABAI",
+    "is_skpd": false
+  },
+  {
+    "nomor": 107.0,
+    "kode_skpd": "1.31.09",
+    "nama_skpd": "UPPD AMUNTAI",
+    "is_skpd": false
+  },
+  {
+    "nomor": 108.0,
+    "kode_skpd": "1.31.10",
+    "nama_skpd": "UPPD TANJUNG",
+    "is_skpd": false
+  },
+  {
+    "nomor": 109.0,
+    "kode_skpd": "1.31.11",
+    "nama_skpd": "UPPD BATULICIN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 110.0,
+    "kode_skpd": "1.31.12",
+    "nama_skpd": "UPPD PARINGIN",
+    "is_skpd": false
+  },
+  {
+    "nomor": 111.0,
+    "kode_skpd": "1.31.13",
+    "nama_skpd": "UPPD BANJARMASIN I",
+    "is_skpd": false
+  },
+  {
+    "nomor": 112.0,
+    "kode_skpd": "1.31.14",
+    "nama_skpd": "UPPD BANJARMASIN II",
+    "is_skpd": false
+  },
+  {
+    "nomor": 113.0,
+    "kode_skpd": "1.32",
+    "nama_skpd": "BADAN KEPEGAWAIAN DAERAH",
+    "is_skpd": true
+  },
+  {
+    "nomor": 114.0,
+    "kode_skpd": "1.33",
+    "nama_skpd": "BADAN PENGEMBANGAN SUMBER DAYA MANUSIA",
+    "is_skpd": true
+  },
+  {
+    "nomor": 115.0,
+    "kode_skpd": "1.34",
+    "nama_skpd": "BADAN RISET DAN INOVASI DAERAH",
+    "is_skpd": true
+  },
+  {
+    "nomor": 116.0,
+    "kode_skpd": "1.34.01",
+    "nama_skpd": "KEBUN RAYA BANUA",
+    "is_skpd": false
+  },
+  {
+    "nomor": 117.0,
+    "kode_skpd": "1.35",
+    "nama_skpd": "BADAN PENGHUBUNG",
+    "is_skpd": true
+  },
+  {
+    "nomor": 118.0,
+    "kode_skpd": "1.36",
+    "nama_skpd": "INSPEKTORAT DAERAH",
+    "is_skpd": true
+  },
+  {
+    "nomor": 119.0,
+    "kode_skpd": "1.37",
+    "nama_skpd": "BADAN KESATUAN BANGSA DAN POLITIK",
+    "is_skpd": true
+  }
+]

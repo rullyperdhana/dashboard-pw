@@ -24,6 +24,10 @@ class ThrController extends Controller
         // n = months from Jan 2026 to thrMonth, max 2 months
         $nMonths = min((int) $thrMonth, 2);
 
+        // THR Config Settings
+        $thrMethod = \App\Models\Setting::where('key', 'thr_pppk_pw_method')->value('value') ?? 'proporsional';
+        $thrFixedAmount = (float) (\App\Models\Setting::where('key', 'thr_pppk_pw_amount')->value('value') ?? 600000);
+
         $user = auth()->user();
 
         // Query tb_payment and tb_payment_detail for month 2, joined with pegawai_pw and rka_settings
@@ -54,19 +58,26 @@ class ThrController extends Controller
             ->orderBy('e.nama')
             ->get();
 
-        $grouped = $employees->groupBy('skpd_name')->map(function ($skpdItems, $skpdName) use ($nMonths) {
+        $grouped = $employees->groupBy('skpd_name')->map(function ($skpdItems, $skpdName) use ($nMonths, $thrMethod, $thrFixedAmount) {
             $subGiatGroups = $skpdItems->groupBy(function ($item) {
                 return '[' . $item->kode_sub_giat . '] ' . $item->nama_sub_giat;
-            })->map(function ($subGiatItems, $subGiatName) use ($nMonths) {
-                $mappedEmployees = $subGiatItems->map(function ($emp) use ($nMonths) {
+            })->map(function ($subGiatItems, $subGiatName) use ($nMonths, $thrMethod, $thrFixedAmount) {
+                $mappedEmployees = $subGiatItems->map(function ($emp) use ($nMonths, $thrMethod, $thrFixedAmount) {
                     $gapok = (float) $emp->gapok_basis;
+                    
+                    if ($thrMethod === 'tetap') {
+                        $thrAmount = $thrFixedAmount;
+                    } else {
+                        $thrAmount = round($gapok * ($nMonths / 12));
+                    }
+                    
                     return [
                         'nip' => $emp->nip,
                         'nama' => $emp->nama,
                         'jabatan' => $emp->jabatan,
                         'gapok_basis' => $gapok,
                         'n_months' => $nMonths,
-                        'thr_amount' => round($gapok * ($nMonths / 12))
+                        'thr_amount' => $thrAmount
                     ];
                 });
 
@@ -93,7 +104,8 @@ class ThrController extends Controller
                 'year' => (int) $year,
                 'thr_month' => (int) $thrMonth,
                 'n_months' => (int) $nMonths,
-                'calculation_basis' => 'Gaji Pokok Pebruari',
+                'calculation_basis' => $thrMethod === 'tetap' ? "Bernilai Tetap (Rp " . number_format($thrFixedAmount, 0, ',', '.') . ")" : 'Gaji Pokok Pebruari (Proporsional)',
+                'thr_method' => $thrMethod,
                 'total_employees' => $employees->count(),
                 'total_thr_amount' => $grouped->sum('total_thr_skpd')
             ]
@@ -134,10 +146,11 @@ class ThrController extends Controller
 
         $response = $this->pppkPwThr($request);
         $data = $response->getData()->data;
+        $calculationBasis = $response->getData()->meta->calculation_basis ?? "Gaji Pokok Pebruari ({$nMonths}/12)";
         $dataArray = json_decode(json_encode($data), true);
 
         return Excel::download(
-            new ThrExport($dataArray, $year, $nMonths, $thrMonthName),
+            new ThrExport($dataArray, $year, $nMonths, $thrMonthName, $calculationBasis),
             "THR_PPPK_PW_{$year}_{$thrMonth}.xlsx"
         );
     }
@@ -254,6 +267,8 @@ class ThrController extends Controller
                 'nMonths' => $nMonths,
                 'thrMonthName' => $thrMonthName,
                 'totalAmount' => $response->getData()->meta->total_thr_amount,
+                'calculationBasis' => $response->getData()->meta->calculation_basis,
+                'thrMethod' => $response->getData()->meta->thr_method,
                 'printDate' => $printDate,
                 'reportSettings' => $reportSettings
             ])->setPaper('a4', 'landscape')->setOption('isPhpEnabled', true)->output();

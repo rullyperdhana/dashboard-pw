@@ -15,7 +15,7 @@ class SkpdMappingController extends Controller
      */
     public function index()
     {
-        $mappings = SkpdMapping::with('skpd')
+        $mappings = SkpdMapping::with(['skpd', 'skpd2026'])
             ->orderBy('type')
             ->orderBy('source_name')
             ->get()
@@ -24,9 +24,12 @@ class SkpdMappingController extends Controller
                 'source_name' => $m->source_name,
                 'source_code' => $m->source_code,
                 'skpd_id' => $m->skpd_id,
+                'skpd_2026_id' => $m->skpd_2026_id,
                 'type' => $m->type,
                 'nama_skpd' => $m->skpd?->nama_skpd,
                 'kode_skpd' => $m->skpd?->kode_skpd,
+                'nama_skpd_2026' => $m->skpd2026?->nama_skpd,
+                'kode_skpd_2026' => $m->skpd2026?->kode_skpd,
             ]);
 
         return response()->json(['success' => true, 'data' => $mappings]);
@@ -121,18 +124,19 @@ class SkpdMappingController extends Controller
             'source_name' => 'required|string|max:255',
             'source_code' => 'nullable|string|max:50',
             'skpd_id' => 'required|integer|exists:skpd,id_skpd',
+            'skpd_2026_id' => 'nullable|integer|exists:skpd_2026,id',
             'type' => 'required|in:pns,pppk,pppk_pw,all',
         ]);
 
         if ($request->source_code) {
             $mapping = SkpdMapping::updateOrCreate(
                 ['source_code' => $request->source_code, 'type' => $request->type],
-                ['skpd_id' => $request->skpd_id, 'source_name' => $request->source_name]
+                ['skpd_id' => $request->skpd_id, 'skpd_2026_id' => $request->skpd_2026_id, 'source_name' => $request->source_name]
             );
         } else {
             $mapping = SkpdMapping::updateOrCreate(
                 ['source_name' => $request->source_name, 'type' => $request->type],
-                ['skpd_id' => $request->skpd_id, 'source_code' => null]
+                ['skpd_id' => $request->skpd_id, 'skpd_2026_id' => $request->skpd_2026_id, 'source_code' => null]
             );
 
             // Update existing unmapped realizations with this name
@@ -143,7 +147,7 @@ class SkpdMappingController extends Controller
             }
         }
 
-        $mapping->load('skpd');
+        $mapping->load(['skpd', 'skpd2026']);
 
         return response()->json([
             'success' => true,
@@ -152,9 +156,12 @@ class SkpdMappingController extends Controller
                 'id' => $mapping->id,
                 'source_name' => $mapping->source_name,
                 'skpd_id' => $mapping->skpd_id,
+                'skpd_2026_id' => $mapping->skpd_2026_id,
                 'type' => $mapping->type,
                 'nama_skpd' => $mapping->skpd?->nama_skpd,
                 'kode_skpd' => $mapping->skpd?->kode_skpd,
+                'nama_skpd_2026' => $mapping->skpd2026?->nama_skpd,
+                'kode_skpd_2026' => $mapping->skpd2026?->kode_skpd,
             ],
         ]);
     }
@@ -180,6 +187,7 @@ class SkpdMappingController extends Controller
             'mappings.*.source_name' => 'required|string|max:255',
             'mappings.*.source_code' => 'nullable|string|max:50',
             'mappings.*.skpd_id' => 'required|integer|exists:skpd,id_skpd',
+            'mappings.*.skpd_2026_id' => 'nullable|integer|exists:skpd_2026,id',
             'mappings.*.type' => 'required|in:pns,pppk,pppk_pw,all',
         ]);
 
@@ -188,12 +196,20 @@ class SkpdMappingController extends Controller
             if (!empty($item['source_code'])) {
                 SkpdMapping::updateOrCreate(
                     ['source_code' => $item['source_code'], 'type' => $item['type']],
-                    ['skpd_id' => $item['skpd_id'], 'source_name' => $item['source_name']]
+                    [
+                        'skpd_id' => $item['skpd_id'], 
+                        'skpd_2026_id' => $item['skpd_2026_id'] ?? null, 
+                        'source_name' => $item['source_name']
+                    ]
                 );
             } else {
                 SkpdMapping::updateOrCreate(
                     ['source_name' => $item['source_name'], 'type' => $item['type']],
-                    ['skpd_id' => $item['skpd_id'], 'source_code' => null]
+                    [
+                        'skpd_id' => $item['skpd_id'], 
+                        'skpd_2026_id' => $item['skpd_2026_id'] ?? null, 
+                        'source_code' => null
+                    ]
                 );
             }
             $saved++;

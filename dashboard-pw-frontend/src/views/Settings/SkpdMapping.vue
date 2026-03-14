@@ -298,6 +298,15 @@
                   </v-chip>
                 </div>
               </template>
+              <template v-slot:item.nama_skpd_2026="{ item }">
+                <div class="d-flex align-center">
+                  <v-icon icon="mdi-arrow-right-bottom" color="secondary" size="16" class="mr-2"></v-icon>
+                  <span class="font-weight-medium text-secondary">{{ item.nama_skpd_2026 ?? '—' }}</span>
+                  <v-chip v-if="item.kode_skpd_2026" size="x-small" variant="tonal" color="grey" class="ml-2">
+                    {{ item.kode_skpd_2026 }}
+                  </v-chip>
+                </div>
+              </template>
               <template v-slot:item.actions="{ item }">
                 <div class="d-flex ga-1">
                   <v-btn icon size="small" variant="text" color="primary" @click="openEditDialog(item)">
@@ -365,14 +374,29 @@
             :items="skpdList"
             item-title="label"
             item-value="id_skpd"
-            label="SKPD Master (Tujuan Mapping)"
+            label="SKPD Master Lama (Tujuan Dash/Lap)"
             variant="outlined"
             :loading="loadingSkpd"
             class="mb-4"
             clearable
             auto-select-first
-            placeholder="Ketik untuk mencari SKPD..."
+            placeholder="Ketik untuk mencari SKPD lama..."
             no-data-text="SKPD tidak ditemukan"
+          ></v-autocomplete>
+
+          <v-autocomplete
+            v-model="form.skpd_2026_id"
+            :items="skpd2026List"
+            item-title="label"
+            item-value="id"
+            label="SKPD Master 2026 (Opsional - Tujuan Simgaji)"
+            variant="outlined"
+            :loading="loadingSkpd2026"
+            class="mb-4"
+            clearable
+            auto-select-first
+            placeholder="Ketik untuk mencari SKPD 2026..."
+            no-data-text="SKPD 2026 tidak ditemukan"
           ></v-autocomplete>
 
           <v-select
@@ -438,6 +462,7 @@ import Navbar from '@/components/Navbar.vue'
 // State
 const loading = ref(false)
 const loadingSkpd = ref(false)
+const loadingSkpd2026 = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
 const dialog = ref(false)
@@ -457,6 +482,7 @@ const unmappedPppk = ref([])
 const unmappedPppkPw = ref([])
 const unmappedSp2d = ref([])
 const skpdList = ref([])
+const skpd2026List = ref([])
 const deletingItem = ref(null)
 
 const form = ref({
@@ -464,6 +490,7 @@ const form = ref({
   source_name: '',
   source_code: '',
   skpd_id: null,
+  skpd_2026_id: null,
   type: 'all',
 })
 
@@ -479,7 +506,8 @@ const typeOptions = [
 const tableHeaders = [
   { title: 'Kode', key: 'source_code', width: '100px' },
   { title: 'Nama SKPD di Excel', key: 'source_name', minWidth: '220px' },
-  { title: 'SKPD Master (Tujuan)', key: 'nama_skpd', minWidth: '220px' },
+  { title: 'SKPD Master (Lama)', key: 'nama_skpd', minWidth: '220px' },
+  { title: 'SKPD Master 2026', key: 'nama_skpd_2026', minWidth: '220px' },
   { title: 'Tipe', key: 'type', align: 'center', width: '100px' },
   { title: 'Aksi', key: 'actions', sortable: false, align: 'center', width: '100px' },
 ]
@@ -511,7 +539,7 @@ const notify = (message, color = 'success') => {
 // Load all data
 const loadAll = async () => {
   loading.value = true
-  await Promise.all([loadMappings(), loadUnmapped(), loadSkpd()])
+  await Promise.all([loadMappings(), loadUnmapped(), loadSkpd(), loadSkpd2026()])
   loading.value = false
 }
 
@@ -552,12 +580,29 @@ const loadSkpd = async () => {
   }
 }
 
+const loadSkpd2026 = async () => {
+  if (skpd2026List.value.length > 0) return
+  loadingSkpd2026.value = true
+  try {
+    const res = await api.get('/skpd-2026')
+    skpd2026List.value = (res.data.data ?? []).map(s => ({
+      ...s,
+      label: `${s.nama_skpd}${s.kode_skpd ? ' [' + s.kode_skpd + ']' : ''}`,
+    }))
+  } catch (e) {
+    notify('Gagal memuat daftar SKPD 2026', 'error')
+  } finally {
+    loadingSkpd2026.value = false
+  }
+}
+
 // Dialogs
 const openAddDialog = () => {
-  form.value = { id: null, source_name: '', source_code: '', skpd_id: null, type: 'all' }
+  form.value = { id: null, source_name: '', source_code: '', skpd_id: null, skpd_2026_id: null, type: 'all' }
   editMode.value = false
   editSourceName.value = false
   loadSkpd()
+  loadSkpd2026()
   dialog.value = true
 }
 
@@ -567,19 +612,22 @@ const openEditDialog = (item) => {
     source_name: item.source_name,
     source_code: item.source_code,
     skpd_id: item.skpd_id,
+    skpd_2026_id: item.skpd_2026_id,
     type: item.type,
   }
   editMode.value = true
   editSourceName.value = false
   loadSkpd()
+  loadSkpd2026()
   dialog.value = true
 }
 
 const quickMap = (item) => {
-  form.value = { id: null, source_name: item.source_name, source_code: item.source_code, skpd_id: null, type: item.type }
+  form.value = { id: null, source_name: item.source_name, source_code: item.source_code, skpd_id: null, skpd_2026_id: null, type: item.type }
   editMode.value = false
   editSourceName.value = true
   loadSkpd()
+  loadSkpd2026()
   dialog.value = true
 }
 
@@ -598,6 +646,7 @@ const saveMapping = async () => {
       source_name: form.value.source_name,
       source_code: form.value.source_code,
       skpd_id: form.value.skpd_id,
+      skpd_2026_id: form.value.skpd_2026_id,
       type: form.value.type,
     })
     notify('Mapping berhasil disimpan!')

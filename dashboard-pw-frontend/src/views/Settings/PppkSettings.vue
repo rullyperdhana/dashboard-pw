@@ -61,6 +61,38 @@
                     :loading="loading"
                   ></v-text-field>
                 </v-col>
+              </v-row>
+              <!-- THR PPPK PW Settings (Superadmin Only) -->
+              <div v-if="user?.role === 'superadmin'">
+                <v-divider class="my-4 border-opacity-10"></v-divider>
+                <div class="text-overline font-weight-black mb-4 text-primary px-2">KONFIGURASI PERHITUNGAN THR PPPK-PW</div>
+                <v-row align="center">
+                  <v-col cols="12" md="4">
+                    <v-select
+                      v-model="settings.thr_pppk_pw_method"
+                      :items="[
+                        { title: 'Proporsional Bulan (n/12)', value: 'proporsional' },
+                        { title: 'Bernilai Tetap (Nominal Spesifik)', value: 'tetap' }
+                      ]"
+                      label="Metode Perhitungan THR"
+                      variant="filled" flat rounded="lg"
+                      :loading="loading"
+                    ></v-select>
+                  </v-col>
+                  <v-col cols="12" md="4" v-if="settings.thr_pppk_pw_method === 'tetap'">
+                    <v-text-field
+                      v-model="settings.thr_pppk_pw_amount"
+                      label="Nominal THR (Bernilai Tetap)"
+                      type="number" min="0"
+                      hint="Contoh: 600000" persistent-hint
+                      variant="filled" flat rounded="lg"
+                      :loading="loading"
+                    ></v-text-field>
+                  </v-col>
+                </v-row>
+              </div>
+
+              <v-row align="center" class="mt-4">
                 <v-col cols="12" md="4" class="d-flex align-center pt-0">
                   <v-btn color="primary" :loading="saving" prepend-icon="mdi-content-save-outline" flat rounded="pill" block size="large" @click="saveSettings" class="font-weight-black">
                     Simpan Parameter
@@ -672,6 +704,16 @@ const showSettings = ref(false)
 const snackbar = ref(false)
 const snackbarTitle = ref('')
 
+const getUserFromStorage = () => {
+  try {
+    const stored = localStorage.getItem('user')
+    return (stored && stored !== 'null') ? JSON.parse(stored) : null
+  } catch (e) {
+    return null
+  }
+}
+const user = ref(getUserFromStorage())
+
 // Detail dialog state
 const detailDialog = ref(false)
 const detailEmployees = ref([])
@@ -751,7 +793,9 @@ const detailHeadersPw = [
 
 const settings = ref({
   pppk_jkk_percentage: 0.24,
-  pppk_jkm_percentage: 0.72
+  pppk_jkm_percentage: 0.72,
+  thr_pppk_pw_method: 'proporsional',
+  thr_pppk_pw_amount: 600000
 })
 
 const estimation = ref(null)
@@ -766,11 +810,40 @@ const fetchSettings = async () => {
             const data = response.data.data
             if (data.pppk_jkk_percentage) settings.value.pppk_jkk_percentage = parseFloat(data.pppk_jkk_percentage.value)
             if (data.pppk_jkm_percentage) settings.value.pppk_jkm_percentage = parseFloat(data.pppk_jkm_percentage.value)
+            if (data.thr_pppk_pw_method) settings.value.thr_pppk_pw_method = data.thr_pppk_pw_method.value
+            if (data.thr_pppk_pw_amount) settings.value.thr_pppk_pw_amount = parseFloat(data.thr_pppk_pw_amount.value)
         }
     } catch (error) {
         console.error('Error fetching settings:', error)
     } finally {
         loading.value = false
+    }
+}
+
+const saveSettings = async () => {
+    saving.value = true
+    successMessage.value = ''
+    try {
+        const payload = [
+            { key: 'pppk_jkk_percentage', value: settings.value.pppk_jkk_percentage },
+            { key: 'pppk_jkm_percentage', value: settings.value.pppk_jkm_percentage }
+        ]
+        
+        if (user.value?.role === 'superadmin') {
+            payload.push({ key: 'thr_pppk_pw_method', value: settings.value.thr_pppk_pw_method })
+            payload.push({ key: 'thr_pppk_pw_amount', value: settings.value.thr_pppk_pw_amount })
+        }
+
+        const response = await api.post('/settings', { settings: payload })
+        if (response.data.success) {
+            successMessage.value = 'Parameter berhasil disimpan!'
+            fetchAllEstimations() // Refresh estimation with new settings
+        }
+    } catch (error) {
+        console.error('Error saving settings:', error)
+        alert('Gagal menyimpan parameter.')
+    } finally {
+        saving.value = false
     }
 }
 
@@ -828,27 +901,6 @@ const fetchAllEstimations = async () => {
     loadingEstimation.value = false
 }
 
-const saveSettings = async () => {
-    saving.value = true
-    successMessage.value = ''
-    try {
-        const payload = {
-            settings: [
-                { key: 'pppk_jkk_percentage', value: settings.value.pppk_jkk_percentage },
-                { key: 'pppk_jkm_percentage', value: settings.value.pppk_jkm_percentage }
-            ]
-        }
-        const response = await api.post('/settings', payload)
-        if (response.data.success) {
-            successMessage.value = 'Pengaturan berhasil disimpan!'
-            fetchAllEstimations() // Refresh estimation with new settings
-        }
-    } catch (error) {
-        console.error('Error saving settings:', error)
-    } finally {
-        saving.value = false
-    }
-}
 
 // ========== Detail Dialog ==========
 
@@ -963,7 +1015,7 @@ const getMonthName = (month) => {
 
 onMounted(() => {
     fetchSettings()
-    fetchAllEstimations()
+    fetchEstimationPns()
 })
 </script>
 
