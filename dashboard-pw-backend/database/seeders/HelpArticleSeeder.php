@@ -63,6 +63,26 @@ class HelpArticleSeeder extends Seeder
         );
 
         \App\Models\HelpArticle::updateOrCreate(
+            ['slug' => 'katalog-dokumentasi-api'],
+            [
+                'title' => 'Katalog & Dokumentasi API (Integrasi)',
+                'category' => 'Developer',
+                'keywords' => 'api, integration, key, developer, endpoint',
+                'content' => "### Integrasi Simgaji\nAplikasi menyediakan API untuk integrasi data dengan pihak ketiga (seperti Puskom atau Dashboard Provinsi).\n\n### Keamanan:\nSetiap request wajib menyertakan **X-API-KEY** di header HTTP. API Key dapat dikelola di menu **Manajemen Sistem > API Keys**.\n\n### Endpoints Utama:\n1. `GET /api/listinstansi`: Mengambil daftar kode dan nama SKPD aktif.\n2. `GET /api/listpegawai`: Mengambil data master identitas pegawai (NIK, NIP, Nama).\n3. `GET /api/listgaji`: Mengambil detail komponen gaji (Induk, Gaji-13, THR) baik PNS maupun PPPK.\n\n### Parameter Utama:\n- `period`: Format YYYY-MM (mis: 2026-04).\n- `kode_instansi`: Filter berdasarkan kode SKPD.",
+            ]
+        );
+
+        \App\Models\HelpArticle::updateOrCreate(
+            ['slug' => 'logika-perhitungan-jkk-jkm-bpjs'],
+            [
+                'title' => 'Logika Perhitungan JKK, JKM, & BPJS',
+                'category' => 'Financial',
+                'keywords' => 'jkk, jkm, bpjs, perhitungan, rumus, ump',
+                'content' => "### 1. JKK & JKM (PPPK)\nPersentase dapat diatur di menu **Estimasi JKK/JKM**.\n- **JKK (Jaminan Kecelakaan Kerja):** Default 0.24% dari Gaji Pokok.\n- **JKM (Jaminan Kematian):** Default 0.72% dari Gaji Pokok.\n\n### 2. BPJS Kesehatan (ASN & PPPK)\n- **Share Pemda (Employer):** 4%.\n- **Batas Atas (Cap):** Maksimal basis perhitungan adalah Rp 12.000.000.\n- **Rumus:** `4% x MIN(Gaji Pokok + Tunjangan Keluarga + Tunjangan Jabatan + TPP, 12.000.000)`.\n\n### 3. Rekon BPJS 4% (PPPK Paruh Waktu)\nKhusus untuk Paruh Waktu, berlaku aturan ambang batas UMP:\n- Jika Gaji Pokok >= UMP → `Gaji Pokok x 4%`.\n- Jika Gaji Pokok < UMP → `UMP x 4%` (dibayar sesuai standar upah minimum).\n\n*Setting UMP dapat diubah di menu Rekon BPJS 4%.*",
+            ]
+        );
+
+        \App\Models\HelpArticle::updateOrCreate(
             ['slug' => 'manajemen-user-akses'],
             [
                 'title' => 'Manajemen User & Hak Akses',
