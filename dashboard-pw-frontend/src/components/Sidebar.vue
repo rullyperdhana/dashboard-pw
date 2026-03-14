@@ -273,6 +273,7 @@ const menuItems = ref([
       { title: 'Posting Data', icon: 'mdi-lock-check-outline', value: 'posting-data', to: '/posting-data' },
       { title: 'Manajemen User', icon: 'mdi-account-group-outline', value: 'users', to: '/settings/users', roles: ['superadmin'] },
       { title: 'API Keys', icon: 'mdi-key-chain', value: 'api-keys', to: '/settings/api-keys', roles: ['superadmin'] },
+      { title: 'Riwayat Ekspor', icon: 'mdi-history', value: 'export-logs', to: '/settings/export-logs', roles: ['superadmin'] },
       { title: 'Pemeliharaan', icon: 'mdi-database-wrench', value: 'data-maintenance', to: '/settings/maintenance', roles: ['superadmin'] },
     ]
   },

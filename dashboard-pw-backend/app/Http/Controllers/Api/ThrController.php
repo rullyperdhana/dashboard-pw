@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\ExportLog;
 
 class ThrController extends Controller
 {
@@ -149,6 +150,17 @@ class ThrController extends Controller
         $calculationBasis = $response->getData()->meta->calculation_basis ?? "Gaji Pokok Pebruari ({$nMonths}/12)";
         $dataArray = json_decode(json_encode($data), true);
 
+        // Record Export Log
+        if (auth()->check()) {
+            ExportLog::create([
+                'user_id' => auth()->id(),
+                'report_name' => 'THR PPPK Paruh Waktu',
+                'action' => 'Ekspor Excel',
+                'description' => "Periode: {$thrMonthName} {$year}",
+                'ip_address' => request()->ip(),
+            ]);
+        }
+
         return Excel::download(
             new ThrExport($dataArray, $year, $nMonths, $thrMonthName, $calculationBasis),
             "THR_PPPK_PW_{$year}_{$thrMonth}.xlsx"
@@ -272,6 +284,17 @@ class ThrController extends Controller
                 'printDate' => $printDate,
                 'reportSettings' => $reportSettings
             ])->setPaper('a4', 'landscape')->setOption('isPhpEnabled', true)->output();
+
+            // Record Export Log
+            if (auth()->check()) {
+                ExportLog::create([
+                    'user_id' => auth()->id(),
+                    'report_name' => 'THR PPPK Paruh Waktu',
+                    'action' => 'Cetak PDF',
+                    'description' => "Periode: {$thrMonthName} {$year}",
+                    'ip_address' => request()->ip(),
+                ]);
+            }
 
             return response()->streamDownload(
                 fn() => print ($pdfContent),

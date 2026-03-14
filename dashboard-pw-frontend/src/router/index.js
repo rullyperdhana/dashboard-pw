@@ -182,6 +182,12 @@ const router = createRouter({
             component: () => import('../views/Master/EmployeeNikImport.vue'),
             meta: { requiresAuth: true, breadcrumb: 'Update NIK Massal', app_access: 'employees' },
         },
+        {
+            path: '/settings/export-logs',
+            name: 'ExportLogs',
+            component: () => import('../views/Settings/ExportLogs.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Riwayat Ekspor', roles: ['superadmin'] },
+        },
     ],
 })
 

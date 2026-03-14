@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\MasterPegawaiController;
 use App\Http\Controllers\Api\DbfImportController;
 use App\Http\Controllers\Api\SatkerController;
 use App\Http\Controllers\Api\ThrController;
+use App\Http\Controllers\Api\ExportLogController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -59,6 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Reports
     Route::get('/reports', [ReportController::class, 'index']);
+    Route::get('/export-logs', [ExportLogController::class, 'index']);
     Route::get('/reports/unpaid-skpds', [ReportController::class, 'unpaidSkpds']);
     Route::get('/reports/unpaid-upts', [ReportController::class, 'unpaidUpts']);
     Route::get('/reports/unpaid-employees', [ReportController::class, 'unpaidEmployees']);
