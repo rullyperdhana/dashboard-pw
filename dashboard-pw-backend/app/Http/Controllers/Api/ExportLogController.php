@@ -25,11 +25,11 @@ class ExportLogController extends Controller
         $query = ExportLog::with('user')->latest();
 
         // Optional filtering by date or report name
-        if ($request->has('start_date') && $request->has('end_date')) {
+        if ($request->filled('start_date') && $request->filled('end_date')) {
             $query->whereBetween('created_at', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:59']);
         }
 
-        if ($request->has('report_name')) {
+        if ($request->filled('report_name')) {
             $query->where('report_name', 'like', '%' . $request->report_name . '%');
         }
 
