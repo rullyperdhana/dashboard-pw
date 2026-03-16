@@ -152,7 +152,12 @@ class ThrController extends Controller
             return response()->json(['success' => true, 'message' => 'Data THR berhasil di-generate.']);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json([
+                'success' => false, 
+                'message' => 'Gagal generate data: ' . $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ], 500);
         }
     }
 
