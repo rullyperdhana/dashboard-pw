@@ -95,6 +95,10 @@ class ThrController extends Controller
             return response()->json(['success' => false, 'message' => 'Hanya Superadmin yang dapat melakukan sinkronisasi data THR.'], 403);
         }
 
+        // Drastically increase limits for massive datasets
+        ini_set('max_execution_time', 600);
+        ini_set('memory_limit', '1024M');
+
         $year = $request->year ?? 2026;
         $thrMonth = $request->month ?? 4;
         $nMonths = min((int) $thrMonth, 2);
@@ -102,7 +106,7 @@ class ThrController extends Controller
         $thrMethod = \App\Models\Setting::where('key', 'thr_pppk_pw_method')->value('value') ?? 'proporsional';
         $thrFixedAmount = (float) (\App\Models\Setting::where('key', 'thr_pppk_pw_amount')->value('value') ?? 600000);
 
-        // Fetch basis from payment month 2
+        // Fetch basis from payment month 2, grouping by the unique constraint keys to avoid duplicates
         $employees = DB::table('tb_payment_detail as pd')
             ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
             ->join('rka_settings as rs', 'p.rka_id', '=', 'rs.id')
@@ -115,11 +119,12 @@ class ThrController extends Controller
                 'e.nip',
                 'e.nama',
                 'e.jabatan',
-                'pd.gaji_pokok as gapok_basis',
+                DB::raw('MAX(pd.gaji_pokok) as gapok_basis'),
                 DB::raw('COALESCE(s.nama_skpd, e.skpd) as skpd_name'),
                 'rs.kode_sub_giat',
                 'rs.nama_sub_giat'
             )
+            ->groupBy('e.nip', 'rs.kode_sub_giat', 'rs.nama_sub_giat', 'e.id', 'e.nama', 'e.jabatan', 'skpd_name')
             ->get();
 
         DB::beginTransaction();
@@ -127,11 +132,12 @@ class ThrController extends Controller
             // Clear existing for this specific month/year before regenerate
             ThrPppkPw::where('year', $year)->where('month', $thrMonth)->delete();
 
+            $insertData = [];
             foreach ($employees as $emp) {
                 $gapok = (float) $emp->gapok_basis;
                 $thrAmount = ($thrMethod === 'tetap') ? $thrFixedAmount : round($gapok * ($nMonths / 12));
 
-                ThrPppkPw::create([
+                $insertData[] = [
                     'employee_id' => $emp->employee_id,
                     'year' => $year,
                     'month' => $thrMonth,
@@ -144,12 +150,24 @@ class ThrController extends Controller
                     'gapok_basis' => $gapok,
                     'n_months' => $nMonths,
                     'thr_amount' => $thrAmount,
-                    'status' => 'generated'
-                ]);
+                    'status' => 'generated',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+
+                // Chunked insert to save memory and speed up
+                if (count($insertData) >= 500) {
+                    ThrPppkPw::insert($insertData);
+                    $insertData = [];
+                }
+            }
+
+            if (!empty($insertData)) {
+                ThrPppkPw::insert($insertData);
             }
 
             DB::commit();
-            return response()->json(['success' => true, 'message' => 'Data THR berhasil di-generate.']);
+            return response()->json(['success' => true, 'message' => 'Data THR berhasil di-generate. Total: ' . $employees->count() . ' pegawai.']);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
