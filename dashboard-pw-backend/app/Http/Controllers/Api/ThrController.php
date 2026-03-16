@@ -89,11 +89,12 @@ class ThrController extends Controller
         ]);
     }
 
-    /**
-     * Generate THR data from Payroll and store into persistent table
-     */
     public function generateThr(Request $request)
     {
+        if (auth()->user()->role !== 'superadmin') {
+            return response()->json(['success' => false, 'message' => 'Hanya Superadmin yang dapat melakukan sinkronisasi data THR.'], 403);
+        }
+
         $year = $request->year ?? 2026;
         $thrMonth = $request->month ?? 4;
         $nMonths = min((int) $thrMonth, 2);
@@ -124,7 +125,6 @@ class ThrController extends Controller
         DB::beginTransaction();
         try {
             // Clear existing for this specific month/year before regenerate
-            // But only if authorized (operator can only clear their own later if needed)
             ThrPppkPw::where('year', $year)->where('month', $thrMonth)->delete();
 
             foreach ($employees as $emp) {
@@ -158,6 +158,10 @@ class ThrController extends Controller
 
     public function updateThrRow(Request $request, $id)
     {
+        if (auth()->user()->role !== 'superadmin') {
+            return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+        }
+
         $record = ThrPppkPw::findOrFail($id);
         $record->update($request->only(['nama', 'nip', 'jabatan', 'thr_amount', 'notes', 'n_months']));
 
@@ -166,6 +170,10 @@ class ThrController extends Controller
 
     public function storeThrRow(Request $request)
     {
+        if (auth()->user()->role !== 'superadmin') {
+            return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+        }
+
         $data = $request->validate([
             'year' => 'required|integer',
             'month' => 'required|integer',
@@ -181,6 +189,10 @@ class ThrController extends Controller
 
     public function deleteThrRow($id)
     {
+        if (auth()->user()->role !== 'superadmin') {
+            return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+        }
+
         $record = ThrPppkPw::findOrFail($id);
         $record->delete();
         return response()->json(['success' => true, 'message' => 'Data berhasil dihapus']);

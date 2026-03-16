@@ -18,7 +18,7 @@
       <v-spacer></v-spacer>
       <div class="d-flex ga-2">
         <v-btn
-          v-if="!meta.is_generated"
+          v-if="isSuperadmin && !meta.is_generated"
           prepend-icon="mdi-sync"
           color="primary"
           rounded="lg"
@@ -28,7 +28,7 @@
           Generate Data
         </v-btn>
         <v-btn
-          v-else
+          v-else-if="isSuperadmin && meta.is_generated"
           prepend-icon="mdi-plus"
           color="primary"
           variant="tonal"
@@ -133,7 +133,7 @@
               <span class="font-weight-bold text-primary">{{ formatCurrency(item.thr_amount) }}</span>
             </template>
             <template v-slot:item.actions="{ item }">
-              <div class="d-flex ga-1">
+              <div class="d-flex ga-1" v-if="isSuperadmin">
                 <v-btn icon="mdi-pencil" size="x-small" variant="text" color="blue" @click="editItem(item)"></v-btn>
                 <v-btn icon="mdi-delete" size="x-small" variant="text" color="error" @click="deleteItem(item)"></v-btn>
               </div>
@@ -226,7 +226,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import api from '../api'
 import Sidebar from '../components/Sidebar.vue'
 import Navbar from '../components/Navbar.vue'
@@ -238,6 +238,8 @@ const items = ref([])
 const skpdGroups = ref([])
 const meta = ref({})
 const activeTab = ref('detail')
+const user = JSON.parse(localStorage.getItem('user') || '{}')
+const isSuperadmin = computed(() => user.role === 'superadmin')
 
 // CRUD Refs
 const dialogEdit = ref(false)
