@@ -18,6 +18,16 @@
       <v-spacer></v-spacer>
       <div class="d-flex ga-2">
         <v-btn
+          v-if="isSuperadmin"
+          prepend-icon="mdi-cog-outline"
+          color="secondary"
+          variant="tonal"
+          rounded="lg"
+          to="/settings/pppk"
+        >
+          Pengaturan
+        </v-btn>
+        <v-btn
           v-if="isSuperadmin && !meta.is_generated"
           prepend-icon="mdi-sync"
           color="primary"
