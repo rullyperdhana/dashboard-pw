@@ -11,12 +11,24 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('skpd_mapping', function (Blueprint $table) {
-            // Drop old unique constraint
-            $table->dropUnique('skpd_mapping_source_name_type_unique');
+        // We use a raw query because index names might vary between environments
+        $indexName = null;
+        $indexes = DB::select("SHOW INDEX FROM skpd_mapping WHERE Non_unique = 0 AND Key_name != 'PRIMARY'");
+        foreach ($indexes as $index) {
+            // We are looking for the unique index on source_name/type
+            if (str_contains($index->Key_name, 'source') || str_contains($index->Key_name, 'unique')) {
+                $indexName = $index->Key_name;
+                break;
+            }
+        }
+
+        Schema::table('skpd_mapping', function (Blueprint $table) use ($indexName) {
+            if ($indexName) {
+                $table->dropUnique($indexName);
+            }
             
             // Add new unique constraint including source_code
-            $table->unique(['source_code', 'source_name', 'type'], 'skpd_mapping_source_code_source_name_type_unique');
+            $table->unique(['source_code', 'source_name', 'type'], 'skpd_mapping_unique_v2');
         });
     }
 
@@ -26,8 +38,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('skpd_mapping', function (Blueprint $table) {
-            $table->dropUnique('skpd_mapping_source_code_source_name_type_unique');
-            $table->unique(['source_name', 'type'], 'skpd_mapping_source_name_type_unique');
+            $table->dropUnique('skpd_mapping_unique_v2');
+            $table->unique(['source_name', 'type']);
         });
     }
 };
