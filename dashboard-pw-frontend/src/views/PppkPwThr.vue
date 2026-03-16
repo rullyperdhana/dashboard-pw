@@ -74,9 +74,21 @@
             density="comfortable"
             hide-details
             prepend-inner-icon="mdi-calendar-month"
-            @update:modelValue="fetchData"
+            @update:modelValue="refreshAll"
             rounded="lg"
           ></v-select>
+        </v-col>
+        <v-col cols="12" sm="4">
+          <v-text-field
+            v-model="searchInput"
+            label="Cari Nama / NIP / SKPD..."
+            variant="outlined"
+            density="comfortable"
+            hide-details
+            prepend-inner-icon="mdi-magnify"
+            rounded="lg"
+            clearable
+          ></v-text-field>
         </v-col>
         <v-col cols="12" sm="8">
           <div class="d-flex ga-4 justify-end">
@@ -113,13 +125,16 @@
       <v-window v-model="activeTab">
         <!-- Detail Tab -->
         <v-window-item value="detail">
-          <v-data-table
+          <v-data-table-server
             :headers="headers"
             :items="items"
             :loading="loading"
             class="custom-table"
             hover
-            :items-per-page="15"
+            v-model:items-per-page="itemsPerPage"
+            :items-length="totalItems"
+            :search="search"
+            @update:options="loadItems"
           >
             <template v-slot:item.gapok_basis="{ item }">
               {{ formatCurrency(item.gapok_basis) }}
@@ -145,7 +160,7 @@
                 <p class="text-h6 text-disabled">Gagal memuat data atau data masih kosong.</p>
               </div>
             </template>
-          </v-data-table>
+          </v-data-table-server>
         </v-window-item>
 
         <!-- SKPD Tab -->
@@ -153,7 +168,7 @@
           <v-data-table
             :headers="skpdHeaders"
             :items="skpdGroups"
-            :loading="loading"
+            :loading="loadingSummary"
             class="custom-table"
             hover
             :items-per-page="-1"
@@ -232,6 +247,7 @@ import Sidebar from '../components/Sidebar.vue'
 import Navbar from '../components/Navbar.vue'
 
 const loading = ref(false)
+const loadingSummary = ref(false)
 const exportLoading = ref(false)
 const selectedMonth = ref(4) // Default to April
 const items = ref([])
@@ -240,6 +256,23 @@ const meta = ref({})
 const activeTab = ref('detail')
 const user = JSON.parse(localStorage.getItem('user') || '{}')
 const isSuperadmin = computed(() => user.role === 'superadmin')
+
+// Pagination Refs
+const itemsPerPage = ref(15)
+const totalItems = ref(0)
+const page = ref(1)
+const search = ref('')
+const searchInput = ref('')
+const serverOptions = ref({})
+
+// Debounce search
+let searchTimeout = null
+watch(searchInput, (val) => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    search.value = val
+  }, 500)
+})
 
 // CRUD Refs
 const dialogEdit = ref(false)
@@ -298,38 +331,61 @@ const showSnackbar = (text, color = 'success') => {
   snackbar.value = true
 }
 
-const fetchData = async () => {
+const refreshAll = () => {
+  if (activeTab.value === 'detail') {
+    loadItems(serverOptions.value)
+  } else {
+    fetchSummary()
+  }
+}
+
+const loadItems = async (options) => {
+  serverOptions.value = options
   loading.value = true
   try {
+    const { page, itemsPerPage, sortBy, search } = options
     const response = await api.get('/thr/pppk-pw', {
-      params: { month: selectedMonth.value }
+      params: { 
+        month: selectedMonth.value,
+        page,
+        per_page: itemsPerPage,
+        search
+      }
     })
     
-    const data = response.data.data
-    skpdGroups.value = data
-    
-    // Flatten the nested grouped data
-    const allEmployees = []
-    data.forEach(skpdGroup => {
-      skpdGroup.sub_giat_groups.forEach(subGiat => {
-        subGiat.employees.forEach(emp => {
-          allEmployees.push({
-            ...emp,
-            skpd: skpdGroup.skpd_name,
-            sub_giat: subGiat.sub_giat_name || subGiat.nama_sub_giat
-          })
-        })
-      })
-    })
-    
-    items.value = allEmployees
+    items.value = response.data.data
+    totalItems.value = response.data.meta.total
     meta.value = response.data.meta
   } catch (error) {
-    console.error('Error fetching THR data:', error)
+    console.error('Error loading THR items:', error)
+    showSnackbar('Gagal memuat data pegawai', 'error')
   } finally {
     loading.value = false
   }
 }
+
+const fetchSummary = async () => {
+  loadingSummary.value = true
+  try {
+    const response = await api.get('/thr/pppk-pw/summary', {
+      params: { month: selectedMonth.value }
+    })
+    skpdGroups.value = response.data.data
+  } catch (error) {
+    console.error('Error fetching summary:', error)
+    showSnackbar('Gagal memuat rekapitulasi', 'error')
+  } finally {
+    loadingSummary.value = false
+  }
+}
+
+// Watch for tab change
+import { watch } from 'vue'
+watch(activeTab, (newTab) => {
+  if (newTab === 'skpd' && skpdGroups.value.length === 0) {
+    fetchSummary()
+  }
+})
 
 const generateData = async () => {
   if (!confirm('Hasilkan data THR otomatis berdasarkan gaji Februari? Data yang sudah ada di periode ini akan ditimpa.')) return
@@ -341,7 +397,7 @@ const generateData = async () => {
     })
     if (response.data.success) {
       showSnackbar('Data THR berhasil di-generate')
-      fetchData()
+      refreshAll()
     }
   } catch (error) {
     showSnackbar('Gagal generate data: ' + error.message, 'error')
@@ -361,7 +417,7 @@ const saveEdit = async () => {
     await api.put(`/thr/pppk-pw/${editedItem.value.id}`, editedItem.value)
     showSnackbar('Data berhasil diperbarui')
     dialogEdit.value = false
-    fetchData()
+    refreshAll()
   } catch (error) {
     showSnackbar('Gagal menyimpan perubahan', 'error')
   } finally {
@@ -374,7 +430,7 @@ const deleteItem = async (item) => {
   try {
     await api.delete(`/thr/pppk-pw/${item.id}`)
     showSnackbar('Data berhasil dihapus')
-    fetchData()
+    refreshAll()
   } catch (error) {
     showSnackbar('Gagal menghapus data', 'error')
   }
@@ -398,7 +454,7 @@ const saveAdd = async () => {
     await api.post('/thr/pppk-pw/store', newItem.value)
     showSnackbar('Baris baru berhasil ditambahkan')
     dialogAdd.value = false
-    fetchData()
+    refreshAll()
   } catch (error) {
     showSnackbar('Gagal menambahkan data', 'error')
   } finally {
@@ -435,7 +491,7 @@ const formatCurrency = (value) => {
 }
 
 onMounted(() => {
-  fetchData()
+  // refreshAll() // v-data-table-server will call loadItems automatically on mount
 })
 </script>
 

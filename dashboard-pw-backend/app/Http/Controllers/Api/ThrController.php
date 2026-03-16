@@ -14,17 +14,13 @@ use App\Models\ExportLog;
 
 class ThrController extends Controller
 {
-    /**
-     * Calculate THR for PPPK Paruh Waktu
-     * Formula: gapok * (n/12) where n is months worked since Jan 1, 2026
-     */
-    public function pppkPwThr(Request $request)
+    private function getPppkPwThrQuery(Request $request)
     {
         $year = $request->year ?? 2026;
         $thrMonth = $request->month ?? 4;
+        $search = $request->search;
         $user = auth()->user();
 
-        // Check if data already exists in tb_thr_pppk_pw
         $query = ThrPppkPw::where('year', $year)
             ->where('month', $thrMonth);
 
@@ -34,57 +30,100 @@ class ThrController extends Controller
             $query->where('skpd_name', $skpdName);
         }
 
-        $records = $query->orderBy('skpd_name')->orderBy('nama')->get();
-
-        if ($records->isEmpty()) {
-            return response()->json([
-                'success' => true,
-                'data' => [],
-                'meta' => [
-                    'year' => (int) $year,
-                    'thr_month' => (int) $thrMonth,
-                    'total_employees' => 0,
-                    'total_thr_amount' => 0,
-                    'is_generated' => false
-                ]
-            ]);
+        // Server-side Searching
+        if (!empty($search)) {
+            $query->where(function($q) use ($search) {
+                $q->where('nama', 'like', "%{$search}%")
+                  ->orWhere('nip', 'like', "%{$search}%")
+                  ->orWhere('skpd_name', 'like', "%{$search}%");
+            });
         }
 
-        // Group the persistent records for the frontend
-        $grouped = $records->groupBy('skpd_name')->map(function ($skpdItems, $skpdName) {
-            $subGiatGroups = $skpdItems->groupBy(function ($item) {
-                return $item->nama_sub_giat;
-            })->map(function ($subGiatItems, $subGiatName) {
-                return [
-                    'sub_giat_name' => $subGiatName,
-                    'employees' => $subGiatItems,
-                    'subtotal_thr' => $subGiatItems->sum('thr_amount'),
-                    'employee_count' => $subGiatItems->count()
-                ];
-            })->values();
+        return $query;
+    }
 
+    /**
+     * Calculate THR for PPPK Paruh Waktu
+     * Formula: gapok * (n/12) where n is months worked since Jan 1, 2026
+     */
+    public function pppkPwThr(Request $request)
+    {
+        $year = $request->year ?? 2026;
+        $thrMonth = $request->month ?? 4;
+        $perPage = $request->per_page ?? 50;
+
+        $query = $this->getPppkPwThrQuery($request);
+        $records = $query->orderBy('skpd_name')->orderBy('nama')->paginate($perPage);
+
+        // Map data to match frontend expectations
+        $items = collect($records->items())->map(function($record) {
             return [
-                'skpd_name' => $skpdName,
-                'sub_giat_groups' => $subGiatGroups,
-                'total_employees_skpd' => $skpdItems->count(),
-                'total_thr_skpd' => $subGiatGroups->sum('subtotal_thr')
+                'id' => $record->id,
+                'employee_id' => $record->employee_id,
+                'nip' => $record->nip,
+                'nama' => $record->nama,
+                'jabatan' => $record->jabatan,
+                'skpd' => $record->skpd_name,
+                'sub_giat' => $record->nama_sub_giat,
+                'gapok_basis' => (float)$record->gapok_basis,
+                'n_months' => (int)$record->n_months,
+                'thr_amount' => (float)$record->thr_amount,
+                'notes' => $record->notes,
+                'status' => $record->status
             ];
-        })->values();
+        });
 
-        // Find n_months and calculation_basis from the first record
-        $first = $records->first();
+        // Get info about n_months and generation status from any record
+        $sample = ThrPppkPw::where('year', $year)->where('month', $thrMonth)->first();
 
         return response()->json([
             'success' => true,
-            'data' => $grouped,
+            'data' => $items,
             'meta' => [
+                'current_page' => $records->currentPage(),
+                'last_page' => $records->lastPage(),
+                'per_page' => $records->perPage(),
+                'total' => $records->total(),
                 'year' => (int) $year,
                 'thr_month' => (int) $thrMonth,
-                'n_months' => $first->n_months,
-                'calculation_basis' => "Data Tersimpan (Database)",
-                'total_employees' => $records->count(),
-                'total_thr_amount' => $records->sum('thr_amount'),
-                'is_generated' => true
+                'n_months' => $sample ? $sample->n_months : 2,
+                'is_generated' => $sample ? true : false,
+                'calculation_basis' => "Data Tersimpan (Database)"
+            ]
+        ]);
+    }
+
+    /**
+     * Get Aggregated Summary for SKPD
+     */
+    public function pppkPwThrSummary(Request $request)
+    {
+        $year = $request->year ?? 2026;
+        $thrMonth = $request->month ?? 4;
+        $user = auth()->user();
+
+        $query = ThrPppkPw::where('year', $year)
+            ->where('month', $thrMonth)
+            ->select(
+                'skpd_name',
+                DB::raw('count(*) as total_employees_skpd'),
+                DB::raw('sum(thr_amount) as total_thr_skpd')
+            )
+            ->groupBy('skpd_name');
+
+        if ($user && $user->role === 'operator' && !empty($user->institution)) {
+            $skpdName = DB::table('skpd')->where('id_skpd', $user->institution)->value('nama_skpd');
+            $query->where('skpd_name', $skpdName);
+        }
+
+        $summary = $query->orderBy('skpd_name')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $summary,
+            'meta' => [
+                'total_employees' => $summary->sum('total_employees_skpd'),
+                'total_thr_amount' => $summary->sum('total_thr_skpd')
             ]
         ]);
     }
@@ -253,9 +292,34 @@ class ThrController extends Controller
         ];
         $thrMonthName = $monthNames[$thrMonth] ?? 'Unknown';
 
-        $response = $this->pppkPwThr($request);
-        $data = $response->getData()->data;
-        $calculationBasis = $response->getData()->meta->calculation_basis ?? "Gaji Pokok Pebruari ({$nMonths}/12)";
+        // Get ALL data for export, not paginated
+        $records = $this->getPppkPwThrQuery($request)
+            ->orderBy('skpd_name')
+            ->orderBy('nama')
+            ->get();
+            
+        // Group data for the export format
+        $data = $records->groupBy('skpd_name')->map(function ($skpdItems, $skpdName) {
+            $subGiatGroups = $skpdItems->groupBy(function ($item) {
+                return $item->nama_sub_giat;
+            })->map(function ($subGiatItems, $subGiatName) {
+                return [
+                    'sub_giat_name' => $subGiatName,
+                    'employees' => $subGiatItems,
+                    'subtotal_thr' => $subGiatItems->sum('thr_amount'),
+                    'employee_count' => $subGiatItems->count()
+                ];
+            })->values();
+
+            return [
+                'skpd_name' => $skpdName,
+                'sub_giat_groups' => $subGiatGroups,
+                'total_employees_skpd' => $skpdItems->count(),
+                'total_thr_skpd' => $subGiatGroups->sum('subtotal_thr')
+            ];
+        })->values();
+
+        $calculationBasis = "Data Tersimpan (Database)";
         $dataArray = json_decode(json_encode($data), true);
 
         // Record Export Log
@@ -301,9 +365,35 @@ class ThrController extends Controller
         ];
         $thrMonthName = $monthNames[$thrMonth] ?? 'Unknown';
 
-        $response = $this->pppkPwThr($request);
-        $data = $response->getData()->data;
-        $dataArray = json_decode(json_encode($data), true);
+        // Get ALL data for export, not paginated
+        $records = $this->getPppkPwThrQuery($request)
+            ->orderBy('skpd_name')
+            ->orderBy('nama')
+            ->get();
+            
+        // Group data for the export format
+        $groupedData = $records->groupBy('skpd_name')->map(function ($skpdItems, $skpdName) {
+            $subGiatGroups = $skpdItems->groupBy(function ($item) {
+                return $item->nama_sub_giat;
+            })->map(function ($subGiatItems, $subGiatName) {
+                return [
+                    'sub_giat_name' => $subGiatName,
+                    'employees' => $subGiatItems,
+                    'subtotal_thr' => $subGiatItems->sum('thr_amount'),
+                    'employee_count' => $subGiatItems->count()
+                ];
+            })->values();
+
+            return [
+                'skpd_name' => $skpdName,
+                'sub_giat_groups' => $subGiatGroups,
+                'total_employees_skpd' => $skpdItems->count(),
+                'total_thr_skpd' => $subGiatGroups->sum('subtotal_thr')
+            ];
+        })->values();
+
+        $dataArray = json_decode(json_encode($groupedData), true);
+        $totalThrAmount = $records->sum('thr_amount');
 
         $printDate = now()->format('d/m/Y H:i');
 
@@ -386,9 +476,9 @@ class ThrController extends Controller
                 'year' => $year,
                 'nMonths' => $nMonths,
                 'thrMonthName' => $thrMonthName,
-                'totalAmount' => $response->getData()->meta->total_thr_amount,
-                'calculationBasis' => $response->getData()->meta->calculation_basis,
-                'thrMethod' => $response->getData()->meta->thr_method,
+                'totalAmount' => $totalThrAmount,
+                'calculationBasis' => "Data Tersimpan (Database)",
+                'thrMethod' => 'proporsional',
                 'printDate' => $printDate,
                 'reportSettings' => $reportSettings
             ])->setPaper('a4', 'landscape')->setOption('isPhpEnabled', true)->output();
