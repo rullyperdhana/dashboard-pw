@@ -79,35 +79,71 @@
       </v-row>
     </v-card>
 
-    <!-- Table Section -->
+    <!-- Tabs and Table Section -->
     <v-card class="glass-card overflow-hidden" variant="flat">
-      <v-data-table
-        :headers="headers"
-        :items="items"
-        :loading="loading"
-        class="custom-table"
-        hover
-        :items-per-page="15"
-      >
-        <template v-slot:item.gapok_basis="{ item }">
-          {{ formatCurrency(item.gapok_basis) }}
-        </template>
-        <template v-slot:item.n_months="{ item }">
-          <v-chip size="small" variant="tonal" color="info" rounded="lg">
-            {{ item.n_months }}/12
-          </v-chip>
-        </template>
-        <template v-slot:item.thr_amount="{ item }">
-          <span class="font-weight-bold text-primary">{{ formatCurrency(item.thr_amount) }}</span>
-        </template>
-        
-        <template v-slot:no-data>
-          <div class="pa-12 text-center">
-            <v-icon icon="mdi-account-search-outline" size="64" color="disabled" class="mb-4"></v-icon>
-            <p class="text-h6 text-disabled">Gagal memuat data atau data masih kosong.</p>
-          </div>
-        </template>
-      </v-data-table>
+      <v-tabs v-model="activeTab" color="primary" align-tabs="start" class="border-b px-4">
+        <v-tab value="detail" class="text-none font-weight-bold">
+          <v-icon start icon="mdi-account-details-outline"></v-icon> Daftar Pegawai
+        </v-tab>
+        <v-tab value="skpd" class="text-none font-weight-bold">
+          <v-icon start icon="mdi-domain"></v-icon> Rekapitulasi per SKPD
+        </v-tab>
+      </v-tabs>
+
+      <v-window v-model="activeTab">
+        <!-- Detail Tab -->
+        <v-window-item value="detail">
+          <v-data-table
+            :headers="headers"
+            :items="items"
+            :loading="loading"
+            class="custom-table"
+            hover
+            :items-per-page="15"
+          >
+            <template v-slot:item.gapok_basis="{ item }">
+              {{ formatCurrency(item.gapok_basis) }}
+            </template>
+            <template v-slot:item.n_months="{ item }">
+              <v-chip size="small" variant="tonal" color="info" rounded="lg">
+                {{ item.n_months }}/12
+              </v-chip>
+            </template>
+            <template v-slot:item.thr_amount="{ item }">
+              <span class="font-weight-bold text-primary">{{ formatCurrency(item.thr_amount) }}</span>
+            </template>
+            
+            <template v-slot:no-data>
+              <div class="pa-12 text-center">
+                <v-icon icon="mdi-account-search-outline" size="64" color="disabled" class="mb-4"></v-icon>
+                <p class="text-h6 text-disabled">Gagal memuat data atau data masih kosong.</p>
+              </div>
+            </template>
+          </v-data-table>
+        </v-window-item>
+
+        <!-- SKPD Tab -->
+        <v-window-item value="skpd">
+          <v-data-table
+            :headers="skpdHeaders"
+            :items="skpdGroups"
+            :loading="loading"
+            class="custom-table"
+            hover
+            :items-per-page="-1"
+            hide-default-footer
+          >
+            <template v-slot:item.total_thr_skpd="{ item }">
+              <span class="font-weight-bold text-primary">{{ formatCurrency(item.total_thr_skpd) }}</span>
+            </template>
+            <template v-slot:item.total_employees_skpd="{ item }">
+              <v-chip size="small" variant="tonal" color="secondary" rounded="lg">
+                {{ item.total_employees_skpd }} Pegawai
+              </v-chip>
+            </template>
+          </v-data-table>
+        </v-window-item>
+      </v-window>
     </v-card>
 
     <!-- Formula Info -->
@@ -135,7 +171,9 @@ const loading = ref(false)
 const exportLoading = ref(false)
 const selectedMonth = ref(4) // Default to April
 const items = ref([])
+const skpdGroups = ref([])
 const meta = ref({})
+const activeTab = ref('detail')
 
 const months = [
   { title: 'Januari', value: 1 },
@@ -153,6 +191,7 @@ const months = [
 ]
 
 const headers = [
+  { title: 'SKPD', key: 'skpd', align: 'start', sortable: true },
   { title: 'Nama Pegawai', key: 'nama', align: 'start', sortable: true },
   { title: 'NIP', key: 'nip', align: 'start' },
   { title: 'Jabatan', key: 'jabatan', align: 'start' },
@@ -162,6 +201,12 @@ const headers = [
   { title: 'Besaran THR', key: 'thr_amount', align: 'end' },
 ]
 
+const skpdHeaders = [
+  { title: 'Satuan Kerja (SKPD)', key: 'skpd_name', align: 'start', sortable: true },
+  { title: 'Jumlah Pegawai', key: 'total_employees_skpd', align: 'center', sortable: true },
+  { title: 'Total Pembayaran THR', key: 'total_thr_skpd', align: 'end', sortable: true },
+]
+
 const fetchData = async () => {
   loading.value = true
   try {
@@ -169,9 +214,12 @@ const fetchData = async () => {
       params: { month: selectedMonth.value }
     })
     
+    const data = response.data.data
+    skpdGroups.value = data
+    
     // Flatten the nested grouped data (SKPD -> Sub Giat -> Employees)
     const allEmployees = []
-    response.data.data.forEach(skpdGroup => {
+    data.forEach(skpdGroup => {
       skpdGroup.sub_giat_groups.forEach(subGiat => {
         subGiat.employees.forEach(emp => {
           allEmployees.push({
@@ -239,7 +287,7 @@ onMounted(() => {
   background: rgb(var(--v-theme-primary), 0.1);
   border-radius: 16px;
   display: flex;
-  align-center: center;
+  align-items: center;
   justify-content: center;
 }
 
