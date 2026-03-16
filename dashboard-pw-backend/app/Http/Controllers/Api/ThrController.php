@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\ThrPppkPw;
 use App\Models\ExportLog;
 
 class ThrController extends Controller
@@ -20,73 +21,45 @@ class ThrController extends Controller
     public function pppkPwThr(Request $request)
     {
         $year = $request->year ?? 2026;
-        $thrMonth = $request->month ?? 4; // Default to April (4)
-
-        // n = months from Jan 2026 to thrMonth, max 2 months
-        $nMonths = min((int) $thrMonth, 2);
-
-        // THR Config Settings
-        $thrMethod = \App\Models\Setting::where('key', 'thr_pppk_pw_method')->value('value') ?? 'proporsional';
-        $thrFixedAmount = (float) (\App\Models\Setting::where('key', 'thr_pppk_pw_amount')->value('value') ?? 600000);
-
+        $thrMonth = $request->month ?? 4;
         $user = auth()->user();
 
-        // Query tb_payment and tb_payment_detail for month 2, joined with pegawai_pw and rka_settings
-        $query = DB::table('tb_payment_detail as pd')
-            ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
-            ->join('rka_settings as rs', 'p.rka_id', '=', 'rs.id')
-            ->join('pegawai_pw as e', 'pd.employee_id', '=', 'e.id')
-            ->leftJoin('skpd as s', 'e.idskpd', '=', 's.id_skpd')
-            ->where('p.month', 2)
-            ->where('p.year', $year);
+        // Check if data already exists in tb_thr_pppk_pw
+        $query = ThrPppkPw::where('year', $year)
+            ->where('month', $thrMonth);
 
         // Filter by SKPD if user is operator
         if ($user && $user->role === 'operator' && !empty($user->institution)) {
-            $query->where('e.idskpd', $user->institution);
+            $skpdName = DB::table('skpd')->where('id_skpd', $user->institution)->value('nama_skpd');
+            $query->where('skpd_name', $skpdName);
         }
 
-        $employees = $query->select(
-            'e.nip',
-            'e.nama',
-            'e.jabatan',
-            'pd.gaji_pokok as gapok_basis',
-            DB::raw('COALESCE(s.nama_skpd, e.skpd) as skpd_name'),
-            'rs.kode_sub_giat',
-            'rs.nama_sub_giat'
-        )
-            ->orderBy('skpd_name')
-            ->orderBy('rs.kode_sub_giat')
-            ->orderBy('e.nama')
-            ->get();
+        $records = $query->orderBy('skpd_name')->orderBy('nama')->get();
 
-        $grouped = $employees->groupBy('skpd_name')->map(function ($skpdItems, $skpdName) use ($nMonths, $thrMethod, $thrFixedAmount) {
+        if ($records->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'data' => [],
+                'meta' => [
+                    'year' => (int) $year,
+                    'thr_month' => (int) $thrMonth,
+                    'total_employees' => 0,
+                    'total_thr_amount' => 0,
+                    'is_generated' => false
+                ]
+            ]);
+        }
+
+        // Group the persistent records for the frontend
+        $grouped = $records->groupBy('skpd_name')->map(function ($skpdItems, $skpdName) {
             $subGiatGroups = $skpdItems->groupBy(function ($item) {
-                return '[' . $item->kode_sub_giat . '] ' . $item->nama_sub_giat;
-            })->map(function ($subGiatItems, $subGiatName) use ($nMonths, $thrMethod, $thrFixedAmount) {
-                $mappedEmployees = $subGiatItems->map(function ($emp) use ($nMonths, $thrMethod, $thrFixedAmount) {
-                    $gapok = (float) $emp->gapok_basis;
-                    
-                    if ($thrMethod === 'tetap') {
-                        $thrAmount = $thrFixedAmount;
-                    } else {
-                        $thrAmount = round($gapok * ($nMonths / 12));
-                    }
-                    
-                    return [
-                        'nip' => $emp->nip,
-                        'nama' => $emp->nama,
-                        'jabatan' => $emp->jabatan,
-                        'gapok_basis' => $gapok,
-                        'n_months' => $nMonths,
-                        'thr_amount' => $thrAmount
-                    ];
-                });
-
+                return $item->nama_sub_giat;
+            })->map(function ($subGiatItems, $subGiatName) {
                 return [
                     'sub_giat_name' => $subGiatName,
-                    'employees' => $mappedEmployees,
-                    'subtotal_thr' => $mappedEmployees->sum('thr_amount'),
-                    'employee_count' => $mappedEmployees->count()
+                    'employees' => $subGiatItems,
+                    'subtotal_thr' => $subGiatItems->sum('thr_amount'),
+                    'employee_count' => $subGiatItems->count()
                 ];
             })->values();
 
@@ -98,19 +71,119 @@ class ThrController extends Controller
             ];
         })->values();
 
+        // Find n_months and calculation_basis from the first record
+        $first = $records->first();
+
         return response()->json([
             'success' => true,
             'data' => $grouped,
             'meta' => [
                 'year' => (int) $year,
                 'thr_month' => (int) $thrMonth,
-                'n_months' => (int) $nMonths,
-                'calculation_basis' => $thrMethod === 'tetap' ? "Bernilai Tetap (Rp " . number_format($thrFixedAmount, 0, ',', '.') . ")" : 'Gaji Pokok Pebruari (Proporsional)',
-                'thr_method' => $thrMethod,
-                'total_employees' => $employees->count(),
-                'total_thr_amount' => $grouped->sum('total_thr_skpd')
+                'n_months' => $first->n_months,
+                'calculation_basis' => "Data Tersimpan (Database)",
+                'total_employees' => $records->count(),
+                'total_thr_amount' => $records->sum('thr_amount'),
+                'is_generated' => true
             ]
         ]);
+    }
+
+    /**
+     * Generate THR data from Payroll and store into persistent table
+     */
+    public function generateThr(Request $request)
+    {
+        $year = $request->year ?? 2026;
+        $thrMonth = $request->month ?? 4;
+        $nMonths = min((int) $thrMonth, 2);
+
+        $thrMethod = \App\Models\Setting::where('key', 'thr_pppk_pw_method')->value('value') ?? 'proporsional';
+        $thrFixedAmount = (float) (\App\Models\Setting::where('key', 'thr_pppk_pw_amount')->value('value') ?? 600000);
+
+        // Fetch basis from payment month 2
+        $employees = DB::table('tb_payment_detail as pd')
+            ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
+            ->join('rka_settings as rs', 'p.rka_id', '=', 'rs.id')
+            ->join('pegawai_pw as e', 'pd.employee_id', '=', 'e.id')
+            ->leftJoin('skpd as s', 'e.idskpd', '=', 's.id_skpd')
+            ->where('p.month', 2)
+            ->where('p.year', $year)
+            ->select(
+                'e.id as employee_id',
+                'e.nip',
+                'e.nama',
+                'e.jabatan',
+                'pd.gaji_pokok as gapok_basis',
+                DB::raw('COALESCE(s.nama_skpd, e.skpd) as skpd_name'),
+                'rs.kode_sub_giat',
+                'rs.nama_sub_giat'
+            )
+            ->get();
+
+        DB::beginTransaction();
+        try {
+            // Clear existing for this specific month/year before regenerate
+            // But only if authorized (operator can only clear their own later if needed)
+            ThrPppkPw::where('year', $year)->where('month', $thrMonth)->delete();
+
+            foreach ($employees as $emp) {
+                $gapok = (float) $emp->gapok_basis;
+                $thrAmount = ($thrMethod === 'tetap') ? $thrFixedAmount : round($gapok * ($nMonths / 12));
+
+                ThrPppkPw::create([
+                    'employee_id' => $emp->employee_id,
+                    'year' => $year,
+                    'month' => $thrMonth,
+                    'nip' => $emp->nip,
+                    'nama' => $emp->nama,
+                    'jabatan' => $emp->jabatan,
+                    'skpd_name' => $emp->skpd_name,
+                    'kode_sub_giat' => $emp->kode_sub_giat,
+                    'nama_sub_giat' => '[' . $emp->kode_sub_giat . '] ' . $emp->nama_sub_giat,
+                    'gapok_basis' => $gapok,
+                    'n_months' => $nMonths,
+                    'thr_amount' => $thrAmount,
+                    'status' => 'generated'
+                ]);
+            }
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Data THR berhasil di-generate.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function updateThrRow(Request $request, $id)
+    {
+        $record = ThrPppkPw::findOrFail($id);
+        $record->update($request->only(['nama', 'nip', 'jabatan', 'thr_amount', 'notes', 'n_months']));
+
+        return response()->json(['success' => true, 'message' => 'Data berhasil diupdate', 'data' => $record]);
+    }
+
+    public function storeThrRow(Request $request)
+    {
+        $data = $request->validate([
+            'year' => 'required|integer',
+            'month' => 'required|integer',
+            'nama' => 'required|string',
+            'skpd_name' => 'required|string',
+            'nama_sub_giat' => 'required|string',
+            'thr_amount' => 'required|numeric',
+        ]);
+
+        $record = ThrPppkPw::create($request->all());
+        return response()->json(['success' => true, 'message' => 'Data berhasil ditambah', 'data' => $record]);
+    }
+
+    public function deleteThrRow($id)
+    {
+        $record = ThrPppkPw::findOrFail($id);
+        $record->delete();
+        return response()->json(['success' => true, 'message' => 'Data berhasil dihapus']);
     }
 
     public function verifyThr(Request $request)

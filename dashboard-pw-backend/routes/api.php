@@ -77,6 +77,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // THR (PPPK Paruh Waktu)
     Route::get('/thr/pppk-pw', [ThrController::class, 'pppkPwThr']);
+    Route::post('/thr/pppk-pw/generate', [ThrController::class, 'generateThr']);
+    Route::post('/thr/pppk-pw/store', [ThrController::class, 'storeThrRow']);
+    Route::put('/thr/pppk-pw/{id}', [ThrController::class, 'updateThrRow']);
+    Route::delete('/thr/pppk-pw/{id}', [ThrController::class, 'deleteThrRow']);
     Route::get('/thr/pppk-pw/excel', [ThrController::class, 'exportExcel']);
     Route::get('/thr/pppk-pw/pdf', [ThrController::class, 'exportPdf']);
 
