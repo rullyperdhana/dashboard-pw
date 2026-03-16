@@ -381,6 +381,9 @@ const fetchSummary = async () => {
       params: { month: selectedMonth.value }
     })
     skpdGroups.value = response.data.data
+    if (response.data.meta) {
+      meta.value = { ...meta.value, ...response.data.meta }
+    }
   } catch (error) {
     console.error('Error fetching summary:', error)
     showSnackbar('Gagal memuat rekapitulasi', 'error')

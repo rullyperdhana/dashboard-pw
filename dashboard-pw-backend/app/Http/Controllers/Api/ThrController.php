@@ -53,6 +53,7 @@ class ThrController extends Controller
         $perPage = $request->per_page ?? 50;
 
         $query = $this->getPppkPwThrQuery($request);
+        $totalThrAmount = (float) $query->sum('thr_amount');
         $records = $query->orderBy('skpd_name')->orderBy('nama')->paginate($perPage);
 
         // Map data to match frontend expectations
@@ -84,11 +85,14 @@ class ThrController extends Controller
                 'last_page' => $records->lastPage(),
                 'per_page' => $records->perPage(),
                 'total' => $records->total(),
+                'total_employees' => $records->total(),
+                'total_thr_amount' => $totalThrAmount,
                 'year' => (int) $year,
                 'thr_month' => (int) $thrMonth,
                 'n_months' => $sample ? $sample->n_months : 2,
                 'is_generated' => $sample ? true : false,
-                'calculation_basis' => "Data Tersimpan (Database)"
+                'calculation_basis' => "Data Tersimpan (Database)",
+                'thr_method' => DB::table('settings')->where('key', 'thr_pppk_pw_method')->value('value') ?? 'proporsional'
             ]
         ]);
     }
