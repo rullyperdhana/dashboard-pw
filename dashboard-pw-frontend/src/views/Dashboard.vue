@@ -655,14 +655,39 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, provide } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTheme } from 'vuetify'
 import api from '../api'
+
+// ECharts
+import { use } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { PieChart, BarChart, LineChart } from 'echarts/charts'
+import {
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent
+} from 'echarts/components'
+import VChart, { THEME_KEY } from 'vue-echarts'
+
+use([
+  CanvasRenderer,
+  PieChart,
+  BarChart,
+  LineChart,
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent
+])
+
 import Sidebar from '../components/Sidebar.vue'
 import Navbar from '../components/Navbar.vue'
 
 const theme = useTheme()
+provide(THEME_KEY, computed(() => theme.global.name.value === 'dark' ? 'dark' : 'light'))
 const router = useRouter()
 const user = ref(null)
 const loading = ref(true)
@@ -702,7 +727,7 @@ const fetchDashboardData = async () => {
     const response = await api.get('/dashboard')
     if (response.data.success) {
       stats.value = response.data.data.summary
-      distribution.value = response.data.data.distribution || { gender: [] }
+      distribution.value = response.data.data.distribution || { gender: [], composition: [] }
       charts.value = response.data.data.charts
     }
   } catch (err) {
@@ -711,6 +736,98 @@ const fetchDashboardData = async () => {
     loading.value = false
   }
 }
+
+// ECharts Options
+const compositionOption = computed(() => {
+  const data = distribution.value.composition || []
+  return {
+    tooltip: {
+      trigger: 'item',
+      formatter: '{b}: {c} ({d}%)'
+    },
+    legend: {
+      orient: 'vertical',
+      left: 'left',
+      bottom: '0',
+      textStyle: {
+        color: theme.global.name.value === 'dark' ? '#fff' : '#000'
+      }
+    },
+    series: [
+      {
+        name: 'Komposisi',
+        type: 'pie',
+        radius: ['40%', '70%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 10,
+          borderColor: '#fff',
+          borderWidth: 2
+        },
+        label: {
+          show: false,
+          position: 'center'
+        },
+        emphasis: {
+          label: {
+            show: true,
+            fontSize: 20,
+            fontWeight: 'bold'
+          }
+        },
+        labelLine: {
+          show: false
+        },
+        data: data.map(item => ({
+          value: item.value,
+          name: item.label
+        })),
+        color: ['#00897B', '#4DB6AC', '#80CBC4']
+      }
+    ]
+  }
+})
+
+const skpdComparisonOption = computed(() => {
+  const data = charts.value.employees_per_skpd || []
+  return {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'value',
+      show: false
+    },
+    yAxis: {
+      type: 'category',
+      data: data.map(item => item.nama_skpd.length > 20 ? item.nama_skpd.substring(0, 17) + '...' : item.nama_skpd),
+      axisLine: { show: false },
+      axisTick: { show: false }
+    },
+    series: [
+      {
+        name: 'Pegawai',
+        type: 'bar',
+        data: data.map(item => item.total),
+        itemStyle: {
+          color: '#00897B',
+          borderRadius: [0, 5, 5, 0]
+        },
+        label: {
+          show: true,
+          position: 'right'
+        }
+      }
+    ]
+  }
+})
 
 // ═══════════════════════════════════════════
 // REPORT / ANALYTICS DATA

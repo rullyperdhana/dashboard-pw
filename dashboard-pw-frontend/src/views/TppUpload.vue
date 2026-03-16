@@ -89,18 +89,63 @@
                   </v-btn>
 
                   <v-btn
-                    type="submit"
+                    v-if="!validationResult"
                     color="teal"
                     size="large"
-                    :loading="loading"
+                    :loading="validating"
                     :disabled="!valid || !file"
                     elevation="2"
+                    @click="validateFile"
                   >
-                    Upload Data
+                    Validasi File
+                  </v-btn>
+
+                  <v-btn
+                    v-else
+                    type="submit"
+                    color="success"
+                    size="large"
+                    :loading="loading"
+                    elevation="2"
+                  >
+                    Konfirmasi & Upload
                   </v-btn>
                 </div>
               </v-form>
             </v-card>
+
+            <!-- Preview Data -->
+            <v-card v-if="validationResult && validationResult.success" class="glass-card rounded-xl pa-6 mt-4 animate__animated animate__fadeIn">
+              <div class="d-flex align-center justify-space-between mb-4">
+                <h3 class="text-h6 font-weight-bold text-teal">
+                  <v-icon start>mdi-table-eye</v-icon>
+                  Preview Data (5 Baris Pertama)
+                </h3>
+                <v-btn icon="mdi-close" variant="text" size="small" @click="validationResult = null"></v-btn>
+              </div>
+              <v-table density="compact" class="preview-table">
+                <thead>
+                  <tr>
+                    <th v-for="h in validationResult.preview[0]" :key="h">{{ h }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(row, i) in validationResult.preview.slice(1)" :key="i">
+                    <td v-for="(col, j) in row" :key="j">{{ col }}</td>
+                  </tr>
+                </tbody>
+              </v-table>
+              <v-alert type="success" variant="tonal" density="compact" class="mt-4 text-caption">
+                Format Header Sesuai. Klik tombol hijau di atas untuk memproses seluruh data.
+              </v-alert>
+            </v-card>
+
+            <!-- Error Validation -->
+            <v-alert v-if="validationResult && !validationResult.success" type="error" variant="tonal" class="mt-4 rounded-xl">
+              <div class="font-weight-bold">Format File Tidak Sesuai</div>
+              <div>{{ validationResult.message }}</div>
+              <v-btn variant="text" size="small" class="mt-2" @click="validationResult = null">Ganti File</v-btn>
+            </v-alert>
           </v-col>
 
           <v-col cols="12" md="4" lg="6">
@@ -196,6 +241,9 @@ const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedYear = ref(new Date().getFullYear())
 const employeeType = ref('pns')
 
+const validating = ref(false)
+const validationResult = ref(null)
+
 const snackbar = ref({
     show: false,
     message: '',
@@ -279,6 +327,31 @@ const jobStatusLabel = computed(() => {
   }
 })
 
+const validateFile = async () => {
+    const fileToValidate = Array.isArray(file.value) ? file.value[0] : file.value
+    if (!fileToValidate) return
+
+    validating.value = true
+    const formData = new FormData()
+    formData.append('file', fileToValidate)
+
+    try {
+        const response = await api.post('/tpp/validate-upload', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        })
+        validationResult.value = response.data
+        if (response.data.success) {
+            showSnackbar('File valid! Silakan cek preview sebelum upload.', 'success')
+        } else {
+            showSnackbar(response.data.message, 'error')
+        }
+    } catch (error) {
+        showSnackbar('Gagal memvalidasi file', 'error')
+    } finally {
+        validating.value = false
+    }
+}
+
 const submitUpload = async () => {
     const fileToUpload = Array.isArray(file.value) ? file.value[0] : file.value
     if (!fileToUpload) return
@@ -304,6 +377,7 @@ const submitUpload = async () => {
         activeJobError.value = ''
         activeJobErrorDetail.value = ''
         file.value = []
+        validationResult.value = null
         
         startPolling()
         showSnackbar('File diterima, sedang diproses di background...', 'info')
@@ -369,6 +443,21 @@ const showSnackbar = (msg, color = 'success') => {
 
 .bg-light {
   background-color: rgb(var(--v-theme-background)) !important;
+}
+
+.preview-table {
+  background: transparent !important;
+}
+
+.preview-table :deep(th) {
+  font-weight: bold !important;
+  color: rgb(var(--v-theme-primary)) !important;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.preview-table :deep(td) {
+  font-size: 0.85rem;
 }
 
 .glass-card {

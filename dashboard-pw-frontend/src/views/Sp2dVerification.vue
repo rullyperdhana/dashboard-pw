@@ -23,7 +23,7 @@
         <v-card class="glass-card rounded-xl pa-4 mb-6" elevation="0">
           <v-row align="center">
             <!-- Period & Type Selection -->
-            <v-col cols="12" md="6">
+            <v-col cols="12" md="4">
               <div class="d-flex gap-2">
                 <v-select
                   v-model="selectedMonth"
@@ -33,7 +33,7 @@
                   variant="outlined"
                   rounded="lg"
                   hide-details
-                  class="flex-grow-1"
+                  style="width: 120px"
                   @update:model-value="fetchData"
                 ></v-select>
                 <v-select
@@ -44,7 +44,7 @@
                   variant="outlined"
                   rounded="lg"
                   hide-details
-                  style="width: 100px"
+                  style="width: 90px"
                   @update:model-value="fetchData"
                 ></v-select>
                 <v-select
@@ -60,6 +60,23 @@
                   @update:model-value="fetchData"
                 ></v-select>
               </div>
+            </v-col>
+
+            <!-- TPP Mode Selection -->
+            <v-col cols="12" md="2">
+              <v-btn-toggle
+                v-model="tppReconMode"
+                mandatory
+                color="teal"
+                density="compact"
+                rounded="lg"
+                variant="outlined"
+                class="w-100"
+              >
+                <v-btn value="bruto" size="x-small" title="Bandingkan dengan Bruto SIPD" class="flex-grow-1">BRUTO</v-btn>
+                <v-btn value="netto" size="x-small" title="Bandingkan dengan Netto SIPD" class="flex-grow-1">NETTO</v-btn>
+              </v-btn-toggle>
+              <div class="text-center text-overline mt-1" style="font-size: 8px !important; line-height: 1; letter-spacing: 0.1em; opacity: 0.7">MODE REKON TPP</div>
             </v-col>
 
             <!-- Upload Zone -->
@@ -136,6 +153,12 @@
               </div>
             </template>
 
+            <template v-slot:item.jenis_gaji="{ item }">
+              <v-chip size="x-small" color="secondary" variant="tonal" class="font-weight-bold">
+                {{ item.jenis_gaji }}
+              </v-chip>
+            </template>
+
             <template v-slot:item.pns="{ item }">
               <status-chip :status="item.pns" />
             </template>
@@ -144,8 +167,34 @@
               <status-chip :status="item.pppk" />
             </template>
 
+            <template v-slot:item.pppk_pw="{ item }">
+              <status-chip :status="item.pppk_pw" />
+            </template>
+
             <template v-slot:item.tpp="{ item }">
               <status-chip :status="item.tpp" />
+            </template>
+
+            <template v-slot:tfoot>
+              <tr class="font-weight-bold bg-surface-variant-light">
+                <td colspan="2" class="text-right pa-4">TOTAL KESELURUHAN</td>
+                <td class="text-center pa-2">
+                  <div class="text-caption">SIPD: {{ formatCurrency(summaryTotals.pns.netto) }}</div>
+                  <div class="text-caption text-primary">Peg: {{ summaryTotals.pns.count }}</div>
+                </td>
+                <td class="text-center pa-2">
+                  <div class="text-caption">SIPD: {{ formatCurrency(summaryTotals.pppk.netto) }}</div>
+                  <div class="text-caption text-primary">Peg: {{ summaryTotals.pppk.count }}</div>
+                </td>
+                <td class="text-center pa-2">
+                  <div class="text-caption">SIPD: {{ formatCurrency(summaryTotals.pppk_pw.netto) }}</div>
+                  <div class="text-caption text-primary">Peg: {{ summaryTotals.pppk_pw.count }}</div>
+                </td>
+                <td class="text-center pa-2">
+                  <div class="text-caption">SIPD: {{ formatCurrency(summaryTotals.tpp.netto) }}</div>
+                  <div class="text-caption text-primary">Peg: {{ summaryTotals.tpp.count }}</div>
+                </td>
+              </tr>
             </template>
           </v-data-table>
         </v-card>
@@ -265,8 +314,8 @@
             <v-table density="compact" class="recon-table" fixed-header hover>
               <thead>
                 <tr class="header-group-row">
-                  <th colspan="10" class="text-center simgaji-header">SIMGAJI</th>
-                  <th colspan="8" class="text-center sipd-header">SIPD</th>
+                  <th colspan="12" class="text-center simgaji-header">SIMGAJI</th>
+                  <th colspan="9" class="text-center sipd-header">SIPD</th>
                 </tr>
                 <tr class="header-main-row">
                   <th rowspan="2" class="border-right">No</th>
@@ -276,6 +325,7 @@
                   <th rowspan="2" class="border-right cursor-pointer" style="min-width: 100px" @click="toggleSort('jenis_gaji')">
                     Kategori <v-icon size="14">{{ getSortIcon('jenis_gaji') }}</v-icon>
                   </th>
+                  <th rowspan="2" class="border-right text-center" style="min-width: 80px">Pegawai</th>
                   <th rowspan="2" class="border-right cursor-pointer" style="min-width: 120px" @click="toggleSort('brutto')">
                     Brutto <v-icon size="14">{{ getSortIcon('brutto') }}</v-icon>
                   </th>
@@ -285,6 +335,7 @@
                   <th rowspan="2" class="border-right cursor-pointer" style="min-width: 120px" @click="toggleSort('netto')">
                     Netto <v-icon size="14">{{ getSortIcon('netto') }}</v-icon>
                   </th>
+                  <th rowspan="2" class="border-right" style="min-width: 80px">Aksi</th>
                   <th colspan="2" class="text-center border-right">GAJI</th>
                   <th colspan="2" class="text-center border-right">TPP</th>
                   <th colspan="2" class="text-center border-right">Tanggal SP2D</th>
@@ -294,6 +345,7 @@
                   <th rowspan="2" class="border-right" style="min-width: 120px">Brutto</th>
                   <th rowspan="2" class="border-right" style="min-width: 120px">Potongan</th>
                   <th rowspan="2" class="border-right" style="min-width: 120px">Netto</th>
+                  <th rowspan="2" style="min-width: 120px" class="text-center">Selisih Netto</th>
                 </tr>
                 <tr class="header-sub-row">
                   <th class="text-center border-right">PNS</th>
@@ -306,24 +358,61 @@
               </thead>
               <tbody>
                 <tr v-if="loading" class="text-center">
-                  <td colspan="17" class="pa-10">
+                  <td colspan="21" class="pa-10">
                     <v-progress-circular indeterminate color="primary"></v-progress-circular>
                   </td>
                 </tr>
                 <tr v-else-if="filteredReconData.length === 0" class="text-center">
-                  <td colspan="17" class="pa-10 text-medium-emphasis">Tidak ada data yang cocok dengan pencarian</td>
+                  <td colspan="21" class="pa-10 text-medium-emphasis">Tidak ada data yang cocok dengan pencarian</td>
                 </tr>
                 <tr v-for="(row, idx) in paginatedReconData" :key="idx">
                   <td class="text-center border-right">{{ (reconPage - 1) * reconItemsPerPage + idx + 1 }}</td>
-                  <td class="border-right text-caption truncate">{{ row.simgaji.nama_skpd }}</td>
-                  <td class="border-right text-center">
-                    <v-chip v-if="row.simgaji.jenis_gaji" size="x-small" :color="getTypeColor(row.simgaji.jenis_gaji)" variant="tonal">
+                  <td class="border-right text-caption truncate d-flex align-center gap-2">
+                    {{ row.simgaji.nama_skpd }}
+                    <v-chip 
+                      v-if="row.sipd.is_realized && Math.abs(row.simgaji.netto - row.sipd.netto) < 100" 
+                      size="x-small" color="success" variant="flat" class="px-1" style="height: 16px"
+                    >Klop</v-chip>
+                    <v-chip 
+                      v-else-if="row.sipd.is_realized" 
+                      size="x-small" color="error" variant="flat" class="px-1" style="height: 16px"
+                    >Selisih</v-chip>
+                  </td>
+                  <td class="border-right text-caption">
+                    <v-chip size="x-small" color="secondary" variant="tonal" class="font-weight-bold">
                       {{ row.simgaji.jenis_gaji }}
                     </v-chip>
+                  </td>
+                  <td class="border-right text-center text-caption font-weight-bold">
+                    {{ row.simgaji.emp_count }} Peg
                   </td>
                   <td class="border-right text-right text-caption">{{ formatCurrency(row.simgaji.brutto) }}</td>
                   <td class="border-right text-right text-caption">{{ formatCurrency(row.simgaji.potongan) }}</td>
                   <td class="border-right text-right text-caption font-weight-bold">{{ formatCurrency(row.simgaji.netto) }}</td>
+                  <td class="border-right text-center">
+                    <div class="d-flex align-center justify-center gap-1">
+                      <v-btn
+                        icon="mdi-eye"
+                        size="x-small"
+                        color="primary"
+                        variant="text"
+                        :disabled="!row.sipd.is_realized"
+                        @click="fetchReconDetail(row)"
+                      ></v-btn>
+                      <v-tooltip text="Koreksi Nominal SP2D">
+                        <template v-slot:activator="{ props }">
+                          <v-btn
+                            v-bind="props"
+                            icon="mdi-pencil-outline"
+                            size="x-small"
+                            color="orange"
+                            variant="text"
+                            @click="openEditFromRecon(row)"
+                          ></v-btn>
+                        </template>
+                      </v-tooltip>
+                    </div>
+                  </td>
                   <td class="border-right text-right text-caption">{{ formatCurrency(row.simgaji.gaji_pns) }}</td>
                   <td class="border-right text-right text-caption">{{ formatCurrency(row.simgaji.gaji_pppk) }}</td>
                   <td class="border-right text-right text-caption">{{ formatCurrency(row.simgaji.tpp_pns) }}</td>
@@ -336,9 +425,33 @@
                   <td class="border-right text-caption truncate">{{ row.sipd.keterangan }}</td>
                   <td class="border-right text-right text-caption">{{ formatCurrency(row.sipd.brutto) }}</td>
                   <td class="border-right text-right text-caption">{{ formatCurrency(row.sipd.potongan) }}</td>
-                  <td class="text-right text-caption font-weight-bold">{{ formatCurrency(row.sipd.netto) }}</td>
+                  <td class="border-right text-right text-caption font-weight-bold">{{ formatCurrency(row.sipd.netto) }}</td>
+                  <td class="text-right text-caption font-weight-bold" :class="Math.abs(row.simgaji.netto - row.sipd.netto) < 100 ? 'text-success' : 'text-error'">
+                    {{ formatCurrency(row.simgaji.netto - row.sipd.netto) }}
+                  </td>
                 </tr>
               </tbody>
+              <tfoot v-if="filteredReconData.length > 0">
+                <tr class="font-weight-bold bg-surface-variant-light">
+                  <td colspan="3" class="text-center">TOTAL PAGE</td>
+                  <td class="text-center pa-2">{{ reconTotals.emp_count }} Peg</td>
+                  <td class="text-right pa-2">{{ formatCurrency(reconTotals.simgaji_brutto) }}</td>
+                  <td class="text-right pa-2">{{ formatCurrency(reconTotals.simgaji_potongan) }}</td>
+                  <td class="text-right pa-2">{{ formatCurrency(reconTotals.simgaji_netto) }}</td>
+                  <td class="border-right"></td>
+                  <td class="text-right pa-2">{{ formatCurrency(reconTotals.gaji_pns) }}</td>
+                  <td class="text-right pa-2">{{ formatCurrency(reconTotals.gaji_pppk) }}</td>
+                  <td class="text-right pa-2">{{ formatCurrency(reconTotals.tpp_pns) }}</td>
+                  <td class="text-right pa-2">{{ formatCurrency(reconTotals.tpp_pppk) }}</td>
+                  <td colspan="5" class="border-right"></td>
+                  <td class="text-right pa-2">{{ formatCurrency(reconTotals.sipd_brutto) }}</td>
+                  <td class="text-right pa-2">{{ formatCurrency(reconTotals.sipd_potongan) }}</td>
+                  <td class="text-right pa-2">{{ formatCurrency(reconTotals.sipd_netto) }}</td>
+                  <td class="text-right pa-2" :class="Math.abs(reconTotals.simgaji_netto - reconTotals.sipd_netto) < 100 ? 'text-success' : 'text-error'">
+                    {{ formatCurrency(reconTotals.simgaji_netto - reconTotals.sipd_netto) }}
+                  </td>
+                </tr>
+              </tfoot>
             </v-table>
           </div>
           
@@ -605,6 +718,60 @@
       </v-card>
     </v-dialog>
 
+    <!-- Detail Recon Modal -->
+    <v-dialog v-model="reconDetailDialog" max-width="800px" scrollable>
+      <v-card class="rounded-xl pa-2">
+        <v-card-title class="pa-4 d-flex align-center">
+          <v-icon color="primary" class="mr-3">mdi-account-details</v-icon>
+          <div>
+            <div class="font-weight-bold">Rincian Personil</div>
+            <div class="text-caption text-medium-emphasis">SP2D: {{ activeReconSp2d?.nomor || 'N/A' }} ({{ formatCurrency(activeReconSp2d?.nominal || 0) }})</div>
+          </div>
+          <v-spacer></v-spacer>
+          <v-btn icon="mdi-close" variant="text" @click="reconDetailDialog = false"></v-btn>
+        </v-card-title>
+        
+        <v-divider></v-divider>
+        
+        <v-card-text style="height: 500px" class="pa-0">
+          <div v-if="detailLoading" class="pa-10 text-center">
+            <v-progress-circular indeterminate color="primary"></v-progress-circular>
+            <div class="mt-2 text-caption">Memuat detail personil...</div>
+          </div>
+          <v-table v-else density="compact" fixed-header hover>
+            <thead>
+              <tr>
+                <th class="text-left">NIP</th>
+                <th class="text-left">Nama</th>
+                <th class="text-center">Tipe</th>
+                <th class="text-right">Nominal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="p in reconDetails" :key="p.nip">
+                <td class="text-caption">{{ p.nip }}</td>
+                <td class="text-caption font-weight-medium">{{ p.nama }}</td>
+                <td class="text-center">
+                    <v-chip size="x-small" label :color="getTypeColor(p.tipe)">{{ p.tipe }}</v-chip>
+                </td>
+                <td class="text-right text-caption font-weight-bold">{{ formatCurrency(p.nominal) }}</td>
+              </tr>
+              <tr v-if="reconDetails.length === 0">
+                <td colspan="4" class="text-center pa-10 text-medium-emphasis">Tidak ada data rincian tersedia untuk kategori ini.</td>
+              </tr>
+            </tbody>
+          </v-table>
+        </v-card-text>
+        
+        <v-divider></v-divider>
+        
+        <v-card-actions class="pa-4 bg-light">
+          <v-spacer></v-spacer>
+          <v-btn variant="flat" color="primary" rounded="lg" @click="reconDetailDialog = false">Tutup</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     </v-container>
     </v-main>
   </div>
@@ -619,6 +786,7 @@ import Navbar from '../components/Navbar.vue'
 
 const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedYear = ref(new Date().getFullYear())
+const tppReconMode = ref('bruto')
 const search = ref('')
 const searchDetail = ref('')
 const searchRecon = ref('')
@@ -636,6 +804,56 @@ const transactions = ref([])
 const reconData = ref([])
 const skpds = ref([])
 const isEdit = ref(false)
+
+// Recon Detail State
+const reconDetailDialog = ref(false)
+const detailLoading = ref(false)
+const reconDetails = ref([])
+const activeReconSp2d = ref(null)
+
+const fetchReconDetail = async (row) => {
+    if (!row.id) return
+    
+    activeReconSp2d.value = {
+        nomor: row.sipd.nomor_sp2d,
+        nominal: row.sipd.netto,
+        jenis: row.sipd.jenis_data
+    }
+    
+    detailLoading.value = true
+    reconDetailDialog.value = true
+    reconDetails.value = []
+
+    try {
+        const response = await api.get(`/sp2d/recon/${row.id}`)
+        reconDetails.value = response.data.details
+    } catch (err) {
+        showSnackbar('Gagal mengambil detail personil', 'error')
+        reconDetailDialog.value = false
+    } finally {
+        detailLoading.value = false
+    }
+}
+
+const openEditFromRecon = (row) => {
+  isEdit.value = true
+  // Extract base type (PNS, PPPK, TPP) from potentially longer strings like PNS-INDUK
+  let baseType = row.sipd.jenis_data || 'PNS'
+  if (baseType.includes('PNS')) baseType = 'PNS'
+  else if (baseType.includes('PPPK') || baseType.includes('P3K')) baseType = 'PPPK'
+  else if (baseType.includes('TPP')) baseType = 'TPP'
+
+  editItem.value = { 
+    id: row.id,
+    nomor_sp2d: row.sipd.nomor_sp2d,
+    netto: row.sipd.netto,
+    jenis_data: baseType,
+    tanggal_sp2d: row.sipd.tanggal_sp2d,
+    skpd_id: row.simgaji.id_skpd, // Not used in edit but good for context
+    keterangan: row.sipd.keterangan
+  }
+  editDialog.value = true
+}
 
 // Resolve Mapping Logic
 const resolveDialog = ref(false)
@@ -792,6 +1010,7 @@ const importTargetTypes = [
   { title: 'Gaji PPPK (Induk)', value: 'PPPK-INDUK' },
   { title: 'Gaji PPPK-PW', value: 'PPPK-PW-INDUK' },
   { title: 'TPP / Tukin', value: 'TPP-INDUK' },
+  { title: 'Register Potongan (Pajak/IWP)', value: 'POTONGAN' },
 ]
 
 const openImportDialog = (file) => {
@@ -855,8 +1074,10 @@ const processImport = async () => {
 
 const headers = [
   { title: 'Unit SKPD', key: 'nama_skpd', align: 'start', sortable: true },
+  { title: 'Kategori Gaji', key: 'jenis_gaji', align: 'center', sortable: true },
   { title: 'Gaji PNS', key: 'pns', align: 'center', sortable: false },
   { title: 'Gaji PPPK', key: 'pppk', align: 'center', sortable: false },
+  { title: 'Gaji PPPK-PW', key: 'pppk_pw', align: 'center', sortable: false },
   { title: 'TPP', key: 'tpp', align: 'center', sortable: false },
 ]
 
@@ -869,35 +1090,32 @@ const detailHeaders = [
   { title: 'Aksi', key: 'actions', align: 'end', sortable: false },
 ]
 
-const fetchData = async () => {
-  if (viewMode.value === 'summary') {
-    await fetchStatus()
-  } else if (viewMode.value === 'details') {
-    await fetchTransactions()
-  } else if (viewMode.value === 'recon') {
-    reconPage.value = 1
-    await fetchRecon()
-  }
-}
 
-watch(viewMode, () => {
-  fetchData()
+
+watch([selectedMonth, selectedYear, tppReconMode], () => {
+  if (viewMode.value === 'summary') fetchData()
+  else if (viewMode.value === 'recon') fetchReconData()
 })
 
-const fetchStatus = async () => {
+watch(viewMode, (newVal) => {
+  if (newVal === 'summary') fetchData()
+  else if (newVal === 'details') fetchTransactions()
+  else if (newVal === 'recon') fetchReconData()
+})
+
+const fetchData = async () => {
   loading.value = true
   try {
-    const response = await api.get('/sp2d/status', {
-      params: { 
-        bulan: selectedMonth.value, 
-        tahun: selectedYear.value,
-        jenis_gaji: selectedJenisGaji.value || undefined
-      }
-    })
-    items.value = response.data.data
-  } catch (err) {
-    console.error(err)
-    showSnackbar('Gagal mengambil data status', 'error')
+    const params = {
+      bulan: selectedMonth.value,
+      tahun: selectedYear.value,
+      jenis_gaji: selectedJenisGaji.value || undefined,
+      tpp_recon_mode: tppReconMode.value
+    }
+    const res = await api.get('/sp2d/status', { params })
+    items.value = res.data.data
+  } catch (e) {
+    showSnackbar('Gagal memuat data status', 'error')
   } finally {
     loading.value = false
   }
@@ -922,20 +1140,19 @@ const fetchTransactions = async () => {
   }
 }
 
-const fetchRecon = async () => {
+const fetchReconData = async () => {
   loading.value = true
   try {
-    const response = await api.get('/sp2d/recon', {
-      params: { 
-        bulan: selectedMonth.value, 
-        tahun: selectedYear.value,
-        jenis_gaji: selectedJenisGaji.value || undefined
-      }
-    })
-    reconData.value = response.data.data
-  } catch (err) {
-    console.error(err)
-    showSnackbar('Gagal mengambil data rekonsiliasi', 'error')
+    const params = {
+      bulan: selectedMonth.value,
+      tahun: selectedYear.value,
+      jenis_gaji: selectedJenisGaji.value || undefined,
+      tpp_recon_mode: tppReconMode.value
+    }
+    const res = await api.get('/sp2d/recon', { params })
+    reconData.value = res.data.data
+  } catch (e) {
+    showSnackbar('Gagal memuat data rekonsiliasi', 'error')
   } finally {
     loading.value = false
   }
@@ -991,7 +1208,6 @@ const createTransaction = async () => {
         showSnackbar('Data manual berhasil ditambahkan')
         editDialog.value = false
         fetchData()
-        if (viewMode.value === 'details') fetchStatus()
     } catch (err) {
         showSnackbar(err.response?.data?.message || 'Gagal menambahkan data', 'error')
     } finally {
@@ -1010,7 +1226,6 @@ const updateTransaction = async () => {
     showSnackbar('Data berhasil diperbarui')
     editDialog.value = false
     fetchData()
-    if (viewMode.value === 'details') fetchStatus() // Update summary silently if in details view
   } catch (err) {
     showSnackbar('Gagal memperbarui data', 'error')
   } finally {
@@ -1107,6 +1322,48 @@ const showSnackbar = (text, color = 'success') => {
 
 onMounted(() => {
   fetchData()
+})
+const summaryTotals = computed(() => {
+  const totals = {
+    pns: { netto: 0, internal: 0, count: 0 },
+    pppk: { netto: 0, internal: 0, count: 0 },
+    pppk_pw: { netto: 0, internal: 0, count: 0 },
+    tpp: { netto: 0, internal: 0, count: 0 }
+  }
+  
+  items.value.forEach(item => {
+    ['pns', 'pppk', 'pppk_pw', 'tpp'].forEach(key => {
+      totals[key].netto += item[key]?.netto || 0
+      totals[key].internal += item[key]?.internal_amount || 0
+      totals[key].count += item[key]?.count || 0
+    })
+  })
+  return totals
+})
+
+const reconTotals = computed(() => {
+  const t = {
+    simgaji_brutto: 0, simgaji_potongan: 0, simgaji_netto: 0,
+    sipd_brutto: 0, sipd_potongan: 0, sipd_netto: 0,
+    gaji_pns: 0, gaji_pppk: 0, tpp_pns: 0, tpp_pppk: 0,
+    emp_count: 0
+  }
+  
+  paginatedReconData.value.forEach(row => {
+    t.simgaji_brutto += row.simgaji.brutto || 0
+    t.simgaji_potongan += row.simgaji.potongan || 0
+    t.simgaji_netto += row.simgaji.netto || 0
+    t.gaji_pns += row.simgaji.gaji_pns || 0
+    t.gaji_pppk += row.simgaji.gaji_pppk || 0
+    t.tpp_pns += row.simgaji.tpp_pns || 0
+    t.tpp_pppk += row.simgaji.tpp_pppk || 0
+    t.emp_count += row.simgaji.emp_count || 0
+    
+    t.sipd_brutto += row.sipd.brutto || 0
+    t.sipd_potongan += row.sipd.potongan || 0
+    t.sipd_netto += row.sipd.netto || 0
+  })
+  return t
 })
 </script>
 

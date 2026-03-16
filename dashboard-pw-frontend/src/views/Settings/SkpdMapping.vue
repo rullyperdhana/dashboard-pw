@@ -364,9 +364,9 @@
                 v-model="form.source_name"
                 label="Nama Sumber"
                 variant="outlined"
-                readonly
+                :readonly="!editSourceName && editMode"
                 persistent-hint
-                hint="Nama asli sumber"
+                hint="Nama asli sumber dari Excel/DBF"
                 class="mb-4"
               ></v-text-field>
             </v-col>

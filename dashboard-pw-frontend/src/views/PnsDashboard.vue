@@ -170,8 +170,8 @@
                   </v-card-title>
                   <v-card-text class="pa-6">
                     <div style="height: 380px">
-                      <canvas v-if="yearlyTrend.length" ref="trendChart"></canvas>
-                      <div v-else class="empty-state d-flex flex-column align-center justify-center h-100 py-12">
+                      <canvas v-show="yearlyTrend.length > 0" ref="trendChart"></canvas>
+                      <div v-if="yearlyTrend.length === 0" class="empty-state d-flex flex-column align-center justify-center h-100 py-12">
                         <v-icon size="64" color="grey-lighten-2">mdi-chart-areaspline</v-icon>
                         <span class="mt-4 text-disabled font-weight-medium">Belum ada statistik trend tahunan</span>
                       </div>
@@ -641,13 +641,45 @@ const fetchData = async () => {
 
 const fetchYearlyTrend = async () => {
   try {
-    const endpoint = employeeType.value === 'pns' ? '/pns/trend' : '/pppk/trend'
-    const res = await api.get(endpoint, { params: { year: selectedYear.value } })
-    if (res.data.success) {
-      yearlyTrend.value = res.data.data.trend
-      await nextTick(); renderChart()
+    if (employeeType.value === 'combined') {
+      const [res1, res2] = await Promise.all([
+        api.get('/pns/trend', { params: { year: selectedYear.value } }),
+        api.get('/pppk/trend', { params: { year: selectedYear.value } })
+      ])
+      
+      if (res1.data.success && res2.data.success) {
+        const trend1 = res1.data.data.trend || []
+        const trend2 = res2.data.data.trend || []
+        
+        // Merge and sum by month
+        const merged = []
+        for (let m = 1; m <= 12; m++) {
+          const item1 = trend1.find(i => i.bulan === m)
+          const item2 = trend2.find(i => i.bulan === m)
+          
+          if (item1 || item2) {
+            merged.push({
+              bulan: m,
+              total_net: (Number(item1?.total_net) || 0) + (Number(item2?.total_net) || 0),
+              total_tpp: (Number(item1?.total_tpp) || 0) + (Number(item2?.total_tpp) || 0)
+            })
+          }
+        }
+        yearlyTrend.value = merged
+      }
+    } else {
+      const endpoint = employeeType.value === 'pns' ? '/pns/trend' : '/pppk/trend'
+      const res = await api.get(endpoint, { params: { year: selectedYear.value } })
+      if (res.data.success) {
+        yearlyTrend.value = res.data.data.trend || []
+      }
     }
-  } catch (err) { console.error(err) }
+    
+    await nextTick()
+    setTimeout(renderChart, 100)
+  } catch (err) { 
+    console.error('Failed to fetch yearly trend:', err) 
+  }
 }
 
 const fetchAnnualReport = async () => {
@@ -676,43 +708,109 @@ const fetchAnnualReport = async () => {
 
 // ═════════ CHARTING ═════════
 const renderChart = () => {
-  if (!trendChart.value || !yearlyTrend.value.length) return
-  if (chartInstance) chartInstance.destroy()
+  if (!trendChart.value) {
+    console.warn('Canvas ref trendChart not found')
+    return
+  }
+  
+  if (!yearlyTrend.value.length) {
+    if (chartInstance) {
+      chartInstance.destroy()
+      chartInstance = null
+    }
+    return
+  }
+  
+  if (chartInstance) {
+    chartInstance.destroy()
+  }
   
   const ctx = trendChart.value.getContext('2d')
   const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
-  const netValues = new Array(12).fill(0); const tppValues = new Array(12).fill(0)
+  const netValues = new Array(12).fill(0)
+  const tppValues = new Array(12).fill(0)
   
   yearlyTrend.value.forEach(item => {
-    netValues[item.bulan - 1] = item.total_net / 1000000
-    tppValues[item.bulan - 1] = (item.total_tpp || 0) / 1000000
+    if (item.bulan >= 1 && item.bulan <= 12) {
+      netValues[item.bulan - 1] = (Number(item.total_net) || 0) / 1000000
+      tppValues[item.bulan - 1] = (Number(item.total_tpp) || 0) / 1000000
+    }
   })
 
-  // Get current text colors for chart labels
-  const themeColor = getComputedStyle(document.body).getPropertyValue('--v-theme-on-background')
+  // Get current text colors for chart labels with fallback
+  let themeColor = '100, 116, 139' // default slate
+  try {
+    const computed = getComputedStyle(document.body).getPropertyValue('--v-theme-on-background')
+    if (computed && computed.trim()) {
+      themeColor = computed.trim()
+    }
+  } catch (e) {}
 
   chartInstance = new Chart(ctx, {
     type: 'line',
     data: {
       labels,
       datasets: [
-        { label: 'Net Disbursed', data: netValues, borderColor: '#059669', backgroundColor: 'rgba(5,150,105,0.08)', fill: true, tension: 0.4, borderWidth: 3, pointRadius: 4, pointBackgroundColor: '#059669' },
-        { label: 'TPP (Performance)', data: tppValues, borderColor: '#3b82f6', backgroundColor: 'transparent', tension: 0.4, borderWidth: 2, borderDash: [5, 5] }
+        { 
+          label: 'Gaji Bersih (Juta)', 
+          data: netValues, 
+          borderColor: '#059669', 
+          backgroundColor: 'rgba(5,150,105,0.08)', 
+          fill: true, 
+          tension: 0.4, 
+          borderWidth: 3, 
+          pointRadius: 4, 
+          pointBackgroundColor: '#059669' 
+        },
+        { 
+          label: 'TPP/Kinerja (Juta)', 
+          data: tppValues, 
+          borderColor: '#3b82f6', 
+          backgroundColor: 'transparent', 
+          tension: 0.4, 
+          borderWidth: 2, 
+          borderDash: [5, 5] 
+        }
       ]
     },
     options: { 
-      responsive: true, maintainAspectRatio: false, 
+      responsive: true, 
+      maintainAspectRatio: false, 
       plugins: { 
-        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { weight: 'bold' }, color: `rgb(${themeColor})` } } 
+        legend: { 
+          position: 'bottom', 
+          labels: { 
+            usePointStyle: true, 
+            padding: 20, 
+            font: { weight: 'bold', size: 11 }, 
+            color: themeColor.includes(',') ? `rgb(${themeColor})` : themeColor 
+          } 
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          padding: 12,
+          bodyFont: { size: 13 },
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: Rp ${ctx.raw.toFixed(1)} Juta`
+          }
+        }
       },
       scales: { 
         y: { 
-          beginAtZero: true, grid: { color: 'rgba(var(--v-border-color), 0.1)' }, 
-          ticks: { font: { weight: '600' }, color: `rgb(${themeColor})` } 
+          beginAtZero: true, 
+          grid: { color: 'rgba(var(--v-border-color), 0.1)' }, 
+          ticks: { 
+            font: { weight: '600' }, 
+            color: themeColor.includes(',') ? `rgb(${themeColor})` : themeColor,
+            callback: (val) => val + ' Jt'
+          } 
         },
         x: { 
           grid: { display: false }, 
-          ticks: { font: { weight: '600' }, color: `rgb(${themeColor})` } 
+          ticks: { 
+            font: { weight: '600' }, 
+            color: themeColor.includes(',') ? `rgb(${themeColor})` : themeColor 
+          } 
         }
       } 
     }
