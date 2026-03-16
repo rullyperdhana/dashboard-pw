@@ -10,9 +10,15 @@
         class="font-weight-bold"
       >
         {{ chipText }}
+        <span v-if="status.count > 0" class="ml-1 opacity-80" style="font-size: 10px">({{ status.count }} Peg)</span>
       </v-chip>
     </template>
     <div class="pa-2 chip-tooltip">
+      <div v-if="status.count > 0" class="d-flex justify-space-between mb-2">
+        <span class="text-caption font-weight-bold">Jumlah Pegawai:</span>
+        <span class="text-body-2 font-weight-bold">{{ status.count }} Orang</span>
+      </div>
+
       <div class="d-flex justify-space-between mb-1 gap-4">
         <span class="text-caption font-weight-bold">Internal (Sistem):</span>
         <span class="text-body-2 font-weight-medium text-white">{{ formatCurrency(status.internal_amount) }}</span>

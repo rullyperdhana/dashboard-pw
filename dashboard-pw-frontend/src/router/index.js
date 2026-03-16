@@ -194,6 +194,12 @@ const router = createRouter({
             component: () => import('../views/Settings/HelpCenter.vue'),
             meta: { requiresAuth: true, breadcrumb: 'Pusat Bantuan', roles: ['superadmin'] },
         },
+        {
+            path: '/budget-prediction',
+            name: 'BudgetPrediction',
+            component: () => import('../views/BudgetPrediction.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Prediksi Anggaran', app_access: 'budget-prediction' },
+        },
     ],
 })
 

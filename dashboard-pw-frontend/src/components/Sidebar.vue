@@ -253,6 +253,7 @@ const menuItems = ref([
       { title: 'Rekon BPJS 4%', icon: 'mdi-hospital-box-outline', value: 'bpjs-rekon', to: '/bpjs-rekon' },
       { title: 'Dashboard TPG', icon: 'mdi-school-outline', value: 'tpg-dashboard', to: '/tpg-dashboard' },
       { title: 'Upload TPG', icon: 'mdi-file-upload-outline', value: 'tpg-upload', to: '/tpg-upload' },
+      { title: 'Prediksi Anggaran', icon: 'mdi-chart-line', value: 'budget-prediction', to: '/budget-prediction' },
     ]
   },
   {
@@ -292,7 +293,7 @@ const filteredMenuItems = computed(() => {
       }
       
       // Fallback: Show basic items by default
-      const basicItems = ['dashboard', 'pns', 'employees', 'payments', 'sp2d-verification', 'tax-status', 'master-pegawai-export']
+      const basicItems = ['dashboard', 'pns', 'employees', 'payments', 'sp2d-verification', 'tax-status', 'master-pegawai-export', 'budget-prediction']
       return basicItems.includes(item.value)
     }
     

@@ -51,7 +51,7 @@
         <!-- Transaction List -->
         <v-card class="glass-card rounded-xl overflow-hidden" elevation="0">
           <v-toolbar color="transparent" flat class="px-6 py-4 border-b">
-            <v-toolbar-title class="font-weight-bold text-h6">Riwayat Pembayaran <span class="text-caption text-grey ml-2">v2.1-debug</span></v-toolbar-title>
+            <v-toolbar-title class="font-weight-bold text-h6">Riwayat Pembayaran</v-toolbar-title>
             <v-spacer></v-spacer>
             <v-text-field
               v-model="search"
@@ -396,13 +396,7 @@ onMounted(async () => {
     if (filterMonth.value) params.month = filterMonth.value
     if (filterYear.value) params.year = filterYear.value
 
-    console.log('Fetching payments with params:', params)
     const response = await api.get('/payments', { params })
-    console.log('API Response Metadata:', {
-      total: response.data.data.total,
-      per_page: response.data.data.per_page,
-      count: response.data.data.data.length
-    })
     let data = response.data.data.data
 
     // Secondary local filter just in case or if data is already loaded

@@ -37,9 +37,7 @@ php artisan queue:restart
 # 3. Update Frontend (Vue.js)
 echo -e "${YELLOW}3. Memperbarui Frontend...${NC}"
 cd "$PROJECT_ROOT/dashboard-pw-frontend"
-if [ ! -d "node_modules" ]; then
-    npm install
-fi
+npm install
 npm run build
 
 # 4. Finalisasi Hak Akses (Opsional, sesuaikan dengan user web server Anda)
