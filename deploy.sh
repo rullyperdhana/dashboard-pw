@@ -28,6 +28,7 @@ if [ -f "composer.json" ]; then
 fi
 php artisan migrate --force
 php artisan db:seed --class=HelpArticleSeeder
+php artisan db:seed --class=SkpdMappingSeeder
 php artisan optimize:clear
 php artisan config:cache
 php artisan view:cache
