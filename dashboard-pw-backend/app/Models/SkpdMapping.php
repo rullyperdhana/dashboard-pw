@@ -10,6 +10,7 @@ class SkpdMapping extends Model
 
     protected $fillable = [
         'source_name',
+        'source_code',
         'skpd_id',
         'skpd_2026_id',
         'type',

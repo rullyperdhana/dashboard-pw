@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\BudgetPredictionController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\SkpdController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\Api\DbfImportController;
 use App\Http\Controllers\Api\SatkerController;
 use App\Http\Controllers\Api\ThrController;
 use App\Http\Controllers\Api\ExportLogController;
+use App\Http\Controllers\Api\Skpd2026Controller;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -47,6 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('/budget-prediction', [BudgetPredictionController::class, 'index']);
 
     // SKPD
     Route::get('/skpd', [SkpdController::class, 'index']);
@@ -54,6 +57,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // SKPD Mapping
     Route::get('/skpd-mapping', [SkpdMappingController::class, 'index']);
     Route::get('/skpd-mapping/unmapped', [SkpdMappingController::class, 'unmapped']);
+    Route::get('/skpd-2026', [Skpd2026Controller::class, 'index']);
     Route::post('/skpd-mapping', [SkpdMappingController::class, 'store']);
     Route::post('/skpd-mapping/bulk', [SkpdMappingController::class, 'bulkStore']);
     Route::delete('/skpd-mapping/{id}', [SkpdMappingController::class, 'destroy']);
@@ -89,6 +93,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/pppk/trend', [PnsPayrollController::class, 'yearlyTrendPppk']);
 
     // TPP Upload
+    Route::post('/tpp/validate-upload', [TppController::class, 'validateUpload']);
     Route::post('/tpp/upload', [TppController::class, 'upload']);
     Route::get('/tpp/template', [TppController::class, 'downloadTemplate']);
 
@@ -194,6 +199,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sp2d/status', [App\Http\Controllers\Api\Sp2dController::class, 'getStatus']);
     Route::get('/sp2d/transactions', [App\Http\Controllers\Api\Sp2dController::class, 'getTransactions']);
     Route::get('/sp2d/recon', [App\Http\Controllers\Api\Sp2dController::class, 'getRecon']);
+    Route::get('/sp2d/recon/{id}', [App\Http\Controllers\Api\Sp2dController::class, 'getReconDetail']);
     Route::get('/sp2d/export-recon', [App\Http\Controllers\Api\Sp2dController::class, 'exportRecon']);
     Route::post('/sp2d/realizations', [App\Http\Controllers\Api\Sp2dController::class, 'store']);
     Route::put('/sp2d/realizations/{id}', [App\Http\Controllers\Api\Sp2dController::class, 'update']);

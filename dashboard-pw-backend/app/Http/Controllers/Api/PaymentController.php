@@ -50,7 +50,11 @@ class PaymentController extends Controller
             $query->byMonth($request->month);
         }
 
-        $payments = $query->latest()->paginate($request->per_page ?? 15);
+        $perPage = $request->per_page ?? 15;
+        if ($perPage === 'all') $perPage = 10000;
+        else $perPage = min((int)$perPage, 1000);
+
+        $payments = $query->latest()->paginate($perPage);
 
         // Transform if SKPD Admin to show SKPD-specific totals
         if ($user->isAdminSkpd()) {

@@ -92,6 +92,29 @@ class DashboardController extends Controller
                 ];
             });
 
+        // Budget Composition (Current Month)
+        $composition = [];
+        if ($latestPayment) {
+            $compQuery = DB::table('tb_payment_detail')
+                ->join('tb_payment', 'tb_payment_detail.payment_id', '=', 'tb_payment.id')
+                ->where('tb_payment.year', $latestPayment->year)
+                ->where('tb_payment.month', $latestPayment->month);
+            
+            if ($user->isAdminSkpd()) {
+                $compQuery->join('pegawai_pw', 'tb_payment_detail.employee_id', '=', 'pegawai_pw.id')
+                    ->where('pegawai_pw.idskpd', $user->institution);
+            }
+
+            $compData = $compQuery->select('tb_payment_detail.gaji_pokok', 'tb_payment_detail.total_amoun')->get();
+            $totalGajiPokok = $compData->sum('gaji_pokok');
+            $totalBersih = $compData->sum('total_amoun');
+            
+            $composition = [
+                ['label' => 'Gaji Pokok', 'value' => (float) $totalGajiPokok],
+                ['label' => 'Tunjangan & Lainnya', 'value' => (float) ($totalBersih - $totalGajiPokok)],
+            ];
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -107,6 +130,7 @@ class DashboardController extends Controller
                         ->select('status', DB::raw('COUNT(*) as total'))
                         ->groupBy('status')
                         ->get(),
+                    'composition' => $composition,
                 ],
                 'charts' => [
                     'employees_per_skpd' => $employeesPerSkpd,

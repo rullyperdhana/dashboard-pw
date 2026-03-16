@@ -40,6 +40,9 @@ class SkpdMappingController extends Controller
      */
     public function unmapped()
     {
+        $this->syncMasterSkpd();
+        $allSkpds = Skpd::select('id_skpd', 'nama_skpd')->get();
+
         // Unique SKPD codes from gaji_pns not yet mapped
         $mappedPns = SkpdMapping::whereIn('type', ['pns', 'all'])->whereNotNull('source_code')->pluck('source_code')->toArray();
         $unmappedPns = DB::table('gaji_pns')
@@ -50,12 +53,21 @@ class SkpdMappingController extends Controller
             ->groupBy('gaji_pns.kdskpd', 's.nmskpd')
             ->orderBy('gaji_pns.kdskpd')
             ->get()
-            ->map(fn($item) => [
-                'source_code' => $item->source_code,
-                'source_name' => $item->source_name,
-                'suggestion' => $item->suggestion,
-                'type' => 'pns'
-            ]);
+            ->map(function($item) use ($allSkpds) {
+                $suggestionId = null;
+                if ($item->suggestion) {
+                    $normSug = $this->normalizeName($item->suggestion);
+                    $match = $allSkpds->first(fn($s) => $this->normalizeName($s->nama_skpd) === $normSug);
+                    if ($match) $suggestionId = $match->id_skpd;
+                }
+                return [
+                    'source_code' => $item->source_code,
+                    'source_name' => $item->source_name,
+                    'suggestion' => $item->suggestion,
+                    'suggestion_id' => $suggestionId,
+                    'type' => 'pns'
+                ];
+            });
 
         // Unique SKPD codes from gaji_pppk not yet mapped
         $mappedPppk = SkpdMapping::whereIn('type', ['pppk', 'all'])->whereNotNull('source_code')->pluck('source_code')->toArray();
@@ -67,12 +79,21 @@ class SkpdMappingController extends Controller
             ->groupBy('gaji_pppk.kdskpd', 's.nmskpd')
             ->orderBy('gaji_pppk.kdskpd')
             ->get()
-            ->map(fn($item) => [
-                'source_code' => $item->source_code,
-                'source_name' => $item->source_name,
-                'suggestion' => $item->suggestion,
-                'type' => 'pppk'
-            ]);
+            ->map(function($item) use ($allSkpds) {
+                $suggestionId = null;
+                if ($item->suggestion) {
+                    $normSug = $this->normalizeName($item->suggestion);
+                    $match = $allSkpds->first(fn($s) => $this->normalizeName($s->nama_skpd) === $normSug);
+                    if ($match) $suggestionId = $match->id_skpd;
+                }
+                return [
+                    'source_code' => $item->source_code,
+                    'source_name' => $item->source_name,
+                    'suggestion' => $item->suggestion,
+                    'suggestion_id' => $suggestionId,
+                    'type' => 'pppk'
+                ];
+            });
 
         // Unique SKPD codes from pegawai_pw (PPPK Paruh Waktu) not yet mapped
         $mappedPppkPw = SkpdMapping::whereIn('type', ['pppk_pw', 'all'])->whereNotNull('source_code')->pluck('source_code')->toArray();
@@ -84,12 +105,21 @@ class SkpdMappingController extends Controller
             ->groupBy('pegawai_pw.idskpd', 's.nmskpd')
             ->orderBy('pegawai_pw.idskpd')
             ->get()
-            ->map(fn($item) => [
-                'source_code' => (string) $item->source_code,
-                'source_name' => $item->source_name,
-                'suggestion' => $item->suggestion,
-                'type' => 'pppk_pw'
-            ]);
+            ->map(function($item) use ($allSkpds) {
+                $suggestionId = null;
+                if ($item->suggestion) {
+                    $normSug = $this->normalizeName($item->suggestion);
+                    $match = $allSkpds->first(fn($s) => $this->normalizeName($s->nama_skpd) === $normSug);
+                    if ($match) $suggestionId = $match->id_skpd;
+                }
+                return [
+                    'source_code' => (string) $item->source_code,
+                    'source_name' => $item->source_name,
+                    'suggestion' => $item->suggestion,
+                    'suggestion_id' => $suggestionId,
+                    'type' => 'pppk_pw'
+                ];
+            });
 
         // Unique SKPD names from sp2d_realizations not yet mapped
         $allSkpds = Skpd::select('id_skpd', 'nama_skpd')->get();
@@ -161,6 +191,32 @@ class SkpdMappingController extends Controller
     }
 
     /**
+     * Synchronize missing SKPDs from satkers to skpd table
+     */
+    private function syncMasterSkpd()
+    {
+        $missing = DB::table('satkers')
+            ->whereNotIn('kdskpd', DB::table('skpd')->whereNotNull('kode_simgaji')->pluck('kode_simgaji'))
+            ->select('kdskpd', 'nmskpd')
+            ->distinct()
+            ->get();
+
+        foreach ($missing as $item) {
+            Skpd::updateOrCreate(
+                ['kode_simgaji' => $item->kdskpd],
+                [
+                    'nama_skpd' => $item->nmskpd,
+                    'is_skpd' => 1,
+                ]
+            );
+        }
+        
+        if ($missing->isNotEmpty()) {
+            \Illuminate\Support\Facades\Cache::forget('ref_skpds');
+        }
+    }
+
+    /**
      * Create or update a mapping
      */
     public function store(Request $request)
@@ -173,23 +229,42 @@ class SkpdMappingController extends Controller
             'type' => 'required|in:pns,pppk,pppk_pw,all',
         ]);
 
+        // Cari existing mapping dengan kriteria yang lebih ketat
         if ($request->source_code) {
-            $mapping = SkpdMapping::updateOrCreate(
-                ['source_code' => $request->source_code, 'type' => $request->type],
-                ['skpd_id' => $request->skpd_id, 'skpd_2026_id' => $request->skpd_2026_id, 'source_name' => $request->source_name]
-            );
+            // Jika ada kode, cari berdasarkan kode + tipe
+            $mapping = SkpdMapping::where('source_code', $request->source_code)
+                ->where('type', $request->type)
+                ->first();
         } else {
-            $mapping = SkpdMapping::updateOrCreate(
-                ['source_name' => $request->source_name, 'type' => $request->type],
-                ['skpd_id' => $request->skpd_id, 'skpd_2026_id' => $request->skpd_2026_id, 'source_code' => null]
-            );
+            // Jika tidak ada kode, cari berdasarkan nama + tipe (dimana kode juga null)
+            $mapping = SkpdMapping::where('source_name', $request->source_name)
+                ->where('type', $request->type)
+                ->whereNull('source_code')
+                ->first();
+        }
 
-            // Update existing unmapped realizations with this name
-            if ($request->type === 'all') {
-                \App\Models\Sp2dRealization::where('nama_skpd_sipd', $request->source_name)
-                    ->whereNull('skpd_id')
-                    ->update(['skpd_id' => $request->skpd_id]);
-            }
+        if ($mapping) {
+            $mapping->update([
+                'skpd_id' => $request->skpd_id,
+                'skpd_2026_id' => $request->skpd_2026_id,
+                'source_name' => $request->source_name,
+                'source_code' => $request->source_code ?: $mapping->source_code
+            ]);
+        } else {
+            $mapping = SkpdMapping::create([
+                'source_name' => $request->source_name,
+                'source_code' => $request->source_code,
+                'skpd_id' => $request->skpd_id,
+                'skpd_2026_id' => $request->skpd_2026_id,
+                'type' => $request->type,
+            ]);
+        }
+
+        // Update existing unmapped realizations with this name
+        if ($request->type === 'all' || $request->type === 'sp2d') {
+            \App\Models\Sp2dRealization::where('nama_skpd_sipd', $request->source_name)
+                ->whereNull('skpd_id')
+                ->update(['skpd_id' => $request->skpd_id]);
         }
 
         $mapping->load(['skpd', 'skpd2026']);
@@ -200,6 +275,7 @@ class SkpdMappingController extends Controller
             'data' => [
                 'id' => $mapping->id,
                 'source_name' => $mapping->source_name,
+                'source_code' => $mapping->source_code,
                 'skpd_id' => $mapping->skpd_id,
                 'skpd_2026_id' => $mapping->skpd_2026_id,
                 'type' => $mapping->type,
@@ -238,24 +314,34 @@ class SkpdMappingController extends Controller
 
         $saved = 0;
         foreach ($request->mappings as $item) {
-            if (!empty($item['source_code'])) {
-                SkpdMapping::updateOrCreate(
-                    ['source_code' => $item['source_code'], 'type' => $item['type']],
-                    [
-                        'skpd_id' => $item['skpd_id'], 
-                        'skpd_2026_id' => $item['skpd_2026_id'] ?? null, 
-                        'source_name' => $item['source_name']
-                    ]
-                );
+            $sourceCode = !empty($item['source_code']) ? $item['source_code'] : null;
+            
+            if ($sourceCode) {
+                $mapping = SkpdMapping::where('source_code', $sourceCode)
+                    ->where('type', $item['type'])
+                    ->first();
             } else {
-                SkpdMapping::updateOrCreate(
-                    ['source_name' => $item['source_name'], 'type' => $item['type']],
-                    [
-                        'skpd_id' => $item['skpd_id'], 
-                        'skpd_2026_id' => $item['skpd_2026_id'] ?? null, 
-                        'source_code' => null
-                    ]
-                );
+                $mapping = SkpdMapping::where('source_name', $item['source_name'])
+                    ->where('type', $item['type'])
+                    ->whereNull('source_code')
+                    ->first();
+            }
+
+            if ($mapping) {
+                $mapping->update([
+                    'skpd_id' => $item['skpd_id'],
+                    'skpd_2026_id' => $item['skpd_2026_id'] ?? null,
+                    'source_name' => $item['source_name'],
+                    'source_code' => $sourceCode ?: $mapping->source_code
+                ]);
+            } else {
+                SkpdMapping::create([
+                    'source_name' => $item['source_name'],
+                    'source_code' => $sourceCode,
+                    'skpd_id' => $item['skpd_id'],
+                    'skpd_2026_id' => $item['skpd_2026_id'] ?? null,
+                    'type' => $item['type'],
+                ]);
             }
             $saved++;
         }

@@ -8,11 +8,26 @@ use App\Models\PayrollPosting;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Log;
-use App\Exports\TppTemplateExport; // We'll create a simple export for template or just serve a static file? 
-// Let's generate it on the fly using a simple array
+use App\Services\ExcelValidationService;
+use App\Exports\TppTemplateExport; 
 
 class TppController extends Controller
 {
+    public function validateUpload(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv',
+        ]);
+
+        $expectedHeaders = [
+            'NIP', 'NAMA', 'NILAI'
+        ];
+
+        $result = ExcelValidationService::validateHeaders($request->file('file'), $expectedHeaders);
+
+        return response()->json($result);
+    }
+
     public function upload(Request $request)
     {
         $request->validate([
