@@ -34,15 +34,16 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
 ---
  
-## 🔧 Fitur Terbaru (v3.1)
-
-### 📄 Laporan & Transparansi (v3.1)
+### 📄 Laporan & Transparansi (v3.2)
+- **Persistent THR Management:** Data THR kini disimpan secara permanen di database (`tb_thr_pppk_pw`), memungkinkan edit manual, penambahan catatan, dan hapus baris pegawai.
+- **Server-Side Pagination:** Optimasi performa untuk dataset besar (6.000+ pegawai). Data dimuat secara bertahap sehingga UI tetap responsif.
+- **Dedicated Summary Endpoint:** Tab Rekapitulasi menggunakan endpoint khusus yang sangat ringan untuk perhitungan total anggaran instan.
 - **Professional PDF Export:** Redesain total template slip gaji dan payroll dengan layout profesional, border rapi, dan summary box.
 - **Digital QR Verification:** Setiap PDF memiliki QR Code unik yang terhubung ke halaman verifikasi publik untuk validasi keaslian dokumen.
 - **Nested THR Reporting:** Laporan THR PPPK-PW kini dikelompokkan secara hierarkis: **SKPD -> Sub Kegiatan -> Daftar Pegawai**.
-- **Struktur Gaji PW Akurat:** Penyesuaian kolom detail (Pajak, IWP, dan tanpa Tunjangan) khusus untuk skema PPPK-PW.
 
-### 🔐 Keamanan & Audit (v3.0)
+### 🔐 Keamanan & Role-Based Access (v3.1)
+- **THR Management Restriction:** Fitur Generate, Edit, Tambah, dan Hapus data THR dibatasi khusus untuk akun **Superadmin**.
 - **Session Timeout:** Sesi otomatis berakhir setelah 30 menit tidak aktif.
 - **Audit Logging:** Pencatatan aktivitas sensitif (hapus data, upload, posting) ke database.
 - **Rate Limiting:** Pembatasan percobaan login (5 kali per 15 menit) untuk mencegah brute-force.
@@ -205,6 +206,7 @@ Lihat [README_DEPLOY.md](README_DEPLOY.md) untuk panduan update mesin dan troubl
 | `skpd_mapping` | Pemetaan nama SKPD dari Excel ke master |
 | `settings` | Konfigurasi JKK, JKM, UMP, dll |
 | `users` | Akun pengguna |
+| `tb_thr_pppk_pw` | Data THR PPPK-PW yang tersimpan (Database) |
 | `employee_statuses` | Riwayat status pegawai + SK |
 
 ### Kolom Penting `pegawai_pw`
