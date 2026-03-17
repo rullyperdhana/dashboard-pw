@@ -58,8 +58,11 @@ class BudgetPredictionController extends Controller
         $currentDate = Carbon::now();
         $targetDate = Carbon::now()->addYear();
         
-        $retiringEmployees = Employee::active()
-            ->whereNotNull('tgl_lahir')
+        $retiringEmployees = DB::table('pegawai_pw')
+            ->leftJoin('skpd', 'pegawai_pw.idskpd', '=', 'skpd.id_skpd')
+            ->where('pegawai_pw.status', 'Aktif')
+            ->whereNotNull('pegawai_pw.tgl_lahir')
+            ->select('pegawai_pw.*', 'skpd.nama_skpd as skpd_name')
             ->get()
             ->filter(function($emp) use ($currentDate, $targetDate) {
                 $bup = 58; // Default for PW
