@@ -19,6 +19,10 @@
           </v-btn-toggle>
         </div>
 
+        <v-alert v-if="error" type="info" variant="tonal" closable class="mb-6 rounded-lg border-primary" prepend-icon="mdi-information-outline">
+          {{ error }}
+        </v-alert>
+
         <!-- Simulation Panel -->
         <v-card class="glass-card rounded-xl pa-6 mb-8 border-primary" elevation="0">
           <v-row align="center">
