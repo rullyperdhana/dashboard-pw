@@ -20,17 +20,17 @@ class BudgetPredictionController extends Controller
         $category = $request->query('category', 'pw');
 
         if ($category === 'pw') {
-            return $this->predictPW($growthFactor);
+            return $this->predictPW($growthFactor, $request);
         } elseif ($category === 'pns') {
-            return $this->predictPNS($growthFactor);
+            return $this->predictPNS($growthFactor, $request);
         } elseif ($category === 'pppk') {
-            return $this->predictPPPK($growthFactor);
+            return $this->predictPPPK($growthFactor, $request);
         }
 
         return response()->json(['success' => false, 'message' => 'Kategori tidak valid.']);
     }
 
-    private function predictPW($growthFactor)
+    private function predictPW($growthFactor, Request $request)
     {
         // 1. Get last 3 unique months with data
         $last3Months = DB::table('tb_payment')
@@ -95,17 +95,17 @@ class BudgetPredictionController extends Controller
         return $this->formatResponse($growthFactor, $avgMonthlyTotal, $retiringEmployees, $totalRetirementReduction);
     }
 
-    private function predictPNS($growthFactor)
+    private function predictPNS($growthFactor, Request $request)
     {
-        return $this->predictMasterPegawai('gaji_pns', $growthFactor);
+        return $this->predictMasterPegawai('gaji_pns', $growthFactor, $request);
     }
 
-    private function predictPPPK($growthFactor)
+    private function predictPPPK($growthFactor, Request $request)
     {
-        return $this->predictMasterPegawai('gaji_pppk', $growthFactor);
+        return $this->predictMasterPegawai('gaji_pppk', $growthFactor, $request);
     }
 
-    private function predictMasterPegawai($table, $growthFactor)
+    private function predictMasterPegawai($table, $growthFactor, Request $request)
     {
         $last3Periods = DB::table($table)
             ->select('bulan', 'tahun')
@@ -173,11 +173,11 @@ class BudgetPredictionController extends Controller
         return $this->formatResponse($growthFactor, $avgMonthlyTotal, $retiringEmployees, $totalRetirementReduction);
     }
 
-    private function formatResponse($growthFactor, $avgMonthlyTotal, $retiringEmployees, $totalRetirementReduction)
+    private function formatResponse($growthFactor, $avgMonthlyTotal, $retiringEmployees, $totalRetirementReduction, $kgbCount = 0, $kgbAmount = 0, $kpCount = 0, $kpAmount = 0)
     {
         $baseYearly = $avgMonthlyTotal * 12;
-        $afterRetirement = $baseYearly - $totalRetirementReduction;
-        $finalForecast = $afterRetirement * (1 + ($growthFactor / 100));
+        $afterEvents = $baseYearly - $totalRetirementReduction + $kgbAmount + $kpAmount;
+        $finalForecast = $afterEvents * (1 + ($growthFactor / 100));
 
         return response()->json([
             'success' => true,
@@ -189,10 +189,14 @@ class BudgetPredictionController extends Controller
                 'factors' => [
                     'retiring_count' => $retiringEmployees->count(),
                     'retirement_savings' => (float) $totalRetirementReduction,
+                    'kgb_count' => $kgbCount,
+                    'kgb_investment' => (float) $kgbAmount,
+                    'kp_count' => $kpCount,
+                    'kp_investment' => (float) $kpAmount,
                 ],
                 'projection' => [
                     'base_yearly' => (float) $baseYearly,
-                    'with_retirement' => (float) $afterRetirement,
+                    'with_events' => (float) $afterEvents,
                     'final_forecast' => (float) $finalForecast,
                     'monthly_avg_forecast' => (float) ($finalForecast / 12)
                 ],

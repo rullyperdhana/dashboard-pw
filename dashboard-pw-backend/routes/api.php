@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\ThrController;
 use App\Http\Controllers\Api\Gaji13Controller;
 use App\Http\Controllers\Api\ExportLogController;
 use App\Http\Controllers\Api\Skpd2026Controller;
+use App\Http\Controllers\Api\AnalyticsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -63,6 +64,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/skpd-mapping/bulk', [SkpdMappingController::class, 'bulkStore']);
     Route::delete('/skpd-mapping/{id}', [SkpdMappingController::class, 'destroy']);
 
+    // Analytics
+    Route::get('/analytics/health', [AnalyticsController::class, 'health']);
     // Reports
     Route::get('/reports', [ReportController::class, 'index']);
     Route::get('/export-logs', [ExportLogController::class, 'index']);
