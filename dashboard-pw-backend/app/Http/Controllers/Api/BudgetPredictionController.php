@@ -199,7 +199,78 @@ class BudgetPredictionController extends Controller
             $totalRetirementReduction += (12 - $monthsRemaining) * $lastSalary;
         }
 
-        return $this->formatResponse($growthFactor, $avgMonthlyTotal, $retiringEmployees, $totalRetirementReduction);
+        // 3. KGB Simulation for PNS (Using tmtkgbyad)
+        $kgbEmployees = DB::table('master_pegawai')
+            ->whereIn('kdstapeg', [1, 2, 3, 4, 5, 11, 12]) // Aktif
+            ->whereNotNull('tmtkgbyad')
+            ->where(function($q) use ($table) {
+                if ($table === 'gaji_pns') $q->where('kd_jns_peg', '<', 3);
+                else $q->where('kd_jns_peg', '>=', 3);
+            })
+            ->get()
+            ->filter(function($emp) use ($currentDate, $targetDate) {
+                try {
+                    $nextKgbDate = Carbon::parse($emp->tmtkgbyad);
+                    return $nextKgbDate->between($currentDate, $targetDate);
+                } catch (\Exception $e) {
+                    return false;
+                }
+            });
+
+        $totalKgbIncrease = 0;
+        foreach ($kgbEmployees as $emp) {
+            $currentGapok = (float) $emp->gapok;
+            $increase = $currentGapok * 0.03; // Average KGB increase is around 3%
+            $nextKgbDate = Carbon::parse($emp->tmtkgbyad);
+            $monthsWithRaise = $nextKgbDate->diffInMonths($targetDate);
+            $totalKgbIncrease += $monthsWithRaise * $increase;
+        }
+
+        // 4. KP (Kenaikan Pangkat) Simulation (Every 4 years)
+        $kpEmployees = DB::table('master_pegawai')
+            ->whereIn('kdstapeg', [1, 2, 3, 4, 5, 11, 12])
+            ->whereNotNull('blgolt')
+            ->where(function($q) use ($table) {
+                if ($table === 'gaji_pns') $q->where('kd_jns_peg', '<', 3);
+                else $q->where('kd_jns_peg', '>=', 3);
+            })
+            ->get()
+            ->filter(function($emp) use ($currentDate, $targetDate) {
+                try {
+                    $tmt = Carbon::parse($emp->blgolt);
+                    $yearsServed = $tmt->diffInYears($currentDate);
+                    // KP is every 4 years. Check if 4-year anniversary is in next year.
+                    $nextCycleYear = (($yearsServed + 1) % 4 === 0) ? ($yearsServed + 1) : 0;
+                    if (!$nextCycleYear) return false;
+                    $nextKpDate = $tmt->copy()->addYears($nextCycleYear);
+                    return $nextKpDate->between($currentDate, $targetDate);
+                } catch (\Exception $e) {
+                    return false;
+                }
+            });
+
+        $totalKpIncrease = 0;
+        foreach ($kpEmployees as $emp) {
+            $currentGapok = (float) $emp->gapok;
+            $increase = $currentGapok * 0.05; // Average KP increase is around 5-7%
+            $tmt = Carbon::parse($emp->blgolt);
+            $yearsServed = $tmt->diffInYears($currentDate);
+            $nextCycleValue = $yearsServed + 1;
+            $nextKpDate = $tmt->copy()->addYears($nextCycleValue);
+            $monthsWithRaise = $nextKpDate->diffInMonths($targetDate);
+            $totalKpIncrease += $monthsWithRaise * $increase;
+        }
+
+        return $this->formatResponse(
+            $growthFactor, 
+            $avgMonthlyTotal, 
+            $retiringEmployees, 
+            $totalRetirementReduction,
+            $kgbEmployees->count(),
+            $totalKgbIncrease,
+            $kpEmployees->count(),
+            $totalKpIncrease
+        );
     }
 
     private function formatResponse($growthFactor, $avgMonthlyTotal, $retiringEmployees, $totalRetirementReduction, $kgbCount = 0, $kgbAmount = 0, $kpCount = 0, $kpAmount = 0)
