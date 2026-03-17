@@ -63,16 +63,17 @@ class BudgetPredictionController extends Controller
             ->leftJoin('skpd', 'pegawai_pw.idskpd', '=', 'skpd.id_skpd')
             ->where('pegawai_pw.status', 'Aktif')
             ->whereNotNull('pegawai_pw.tgl_lahir')
-            ->whereRaw("DATE_ADD(pegawai_pw.tgl_lahir, INTERVAL 58 YEAR) BETWEEN ? AND ?", [$currentDate, $targetDate])
+            ->whereRaw("DATE_ADD(pegawai_pw.tgl_lahir, INTERVAL COALESCE(pegawai_pw.usia_bup, 58) YEAR) BETWEEN ? AND ?", [$currentDate, $targetDate])
             ->select('pegawai_pw.*', 'skpd.nama_skpd as skpd_name')
             ->get();
         
         $totalRetirementReduction = 0;
         foreach ($retiringEmployees as $emp) {
             // Use gapok + tunjangan as last salary estimate to avoid N+1 queries
-            $lastSalary = (float) $emp->gapok + (float) ($emp->tunjangan ?: 0);
+            $lastSalary = (float) ($emp->gapok ?? 0) + (float) ($emp->tunjangan ?? 0);
             
-            $retirementDate = Carbon::parse($emp->tgl_lahir)->addYears(58);
+            $bup = (int) ($emp->usia_bup ?? 58);
+            $retirementDate = Carbon::parse($emp->tgl_lahir)->addYears($bup);
             $monthsRemaining = Carbon::now()->diffInMonths($retirementDate);
             $totalRetirementReduction += (12 - $monthsRemaining) * $lastSalary;
         }
@@ -146,8 +147,12 @@ class BudgetPredictionController extends Controller
 
         $totalRetirementReduction = 0;
         foreach ($retiringEmployees as $emp) {
-            $lastSalary = (float) $emp->gapok + (float) ($emp->tjsuami ?: 0) + (float) ($emp->tjanak ?: 0);
-            $bup = (int) ($emp->bup ?: 58);
+            // Estimate salary using gapok + some allowances if available
+            $lastSalary = (float) ($emp->gapok ?? 0);
+            if (isset($emp->tjfungsi)) $lastSalary += (float) $emp->tjfungsi;
+            if (isset($emp->tjistri)) $lastSalary += (float) $emp->tjistri;
+            
+            $bup = (int) ($emp->bup ?? 58);
             $retirementDate = Carbon::parse($emp->tgllhr)->addYears($bup);
             $monthsRemaining = Carbon::now()->diffInMonths($retirementDate);
             $totalRetirementReduction += (12 - $monthsRemaining) * $lastSalary;
@@ -220,16 +225,18 @@ class BudgetPredictionController extends Controller
                     'monthly_avg_forecast' => (float) ($finalForecast / 12)
                 ],
                 'retiring_list' => $retiringEmployees->values()->map(function($e) {
-                    $bup = (int) ($e->bup ?: 58);
-                    $dob = $e->tgl_lahir ?? $e->tgllhr;
+                    $bup = (int) ($e->usia_bup ?? $e->bup ?? 58);
+                    $dob = $e->tgl_lahir ?? $e->tgllhr ?? null;
                     $retirementDate = null;
-                    try {
-                        $retirementDate = Carbon::parse($dob)->addYears($bup)->format('Y-m-d');
-                    } catch (\Exception $ex) {}
+                    if ($dob) {
+                        try {
+                            $retirementDate = Carbon::parse($dob)->addYears($bup)->format('Y-m-d');
+                        } catch (\Exception $ex) {}
+                    }
                     
                     return [
-                        'nama' => $e->nama,
-                        'nip' => $e->nip,
+                        'nama' => $e->nama ?? 'N/A',
+                        'nip' => $e->nip ?? 'N/A',
                         'tgl_lahir' => $dob,
                         'retirement_date' => $retirementDate,
                         'bup' => $bup,
