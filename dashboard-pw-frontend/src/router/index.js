@@ -102,7 +102,7 @@ const router = createRouter({
             path: '/analytics/tapd',
             name: 'TapdDashboard',
             component: () => import('../views/TapdDashboard.vue'),
-            meta: { requiresAuth: true, breadcrumb: 'Dashboard TAPD', app_access: 'tapd-dashboard' },
+            meta: { requiresAuth: true, breadcrumb: 'Analitik & Prediksi TAPD', app_access: 'tapd-dashboard' },
         },
         {
             path: '/executive/mobile',
@@ -211,12 +211,6 @@ const router = createRouter({
             name: 'HelpCenter',
             component: () => import('../views/Settings/HelpCenter.vue'),
             meta: { requiresAuth: true, breadcrumb: 'Pusat Bantuan', roles: ['superadmin'] },
-        },
-        {
-            path: '/budget-prediction',
-            name: 'BudgetPrediction',
-            component: () => import('../views/BudgetPrediction.vue'),
-            meta: { requiresAuth: true, breadcrumb: 'Prediksi Anggaran', app_access: 'budget-prediction' },
         },
         {
             path: '/tpp/discrepancy-history',

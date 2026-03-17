@@ -69,7 +69,7 @@
     </div>
 
     <!-- Bottom Navigation -->
-    <v-bottom-navigation grow color="primary" grow>
+    <v-bottom-navigation grow color="primary">
       <v-btn value="summary">
         <v-icon>mdi-view-dashboard</v-icon>
         Ringkasan

@@ -93,8 +93,79 @@
           </v-col>
         </v-row>
 
-        <!-- Charts Row -->
+        <!-- Analysis Tabs/Sections -->
         <v-row>
+          <v-col cols="12" md="4">
+             <v-card class="glass-card rounded-xl pa-6 mb-6" elevation="0">
+              <h3 class="text-subtitle-1 font-weight-bold mb-4">Faktor Penyesuaian</h3>
+              <v-list bg-color="transparent" density="compact">
+                <v-list-item class="rounded-lg mb-2 border">
+                  <template v-slot:prepend>
+                    <v-icon color="error">mdi-account-minus</v-icon>
+                  </template>
+                  <v-list-item-title class="text-body-2 font-weight-bold">Estimasi Pensiun</v-list-item-title>
+                  <v-list-item-subtitle class="text-caption">{{ prediction ? prediction.factors.retiring_count : 0 }} Pegawai</v-list-item-subtitle>
+                </v-list-item>
+                <v-list-item class="rounded-lg mb-2 border">
+                  <template v-slot:prepend>
+                    <v-icon color="success">mdi-trending-up</v-icon>
+                  </template>
+                  <v-list-item-title class="text-body-2 font-weight-bold">KGB & KP</v-list-item-title>
+                  <v-list-item-subtitle class="text-caption">Otomatis Terhitung</v-list-item-subtitle>
+                </v-list-item>
+              </v-list>
+            </v-card>
+
+            <v-card class="glass-card rounded-xl pa-6" elevation="0" style="background: linear-gradient(135deg, #004d40 0%, #00695c 100%) !important; color: white;">
+              <div class="text-overline mb-2 opacity-80">Rata-rata Bulanan</div>
+              <div class="text-h4 font-weight-black mb-1">
+                {{ prediction ? formatCurrencyCompact(prediction.projection.monthly_avg_forecast) : 'Rp 0' }}
+              </div>
+              <div class="text-caption opacity-70">Beban kas daerah per bulan</div>
+              <v-btn block color="white" variant="flat" class="text-primary mt-6 rounded-lg font-weight-bold" @click="fetchPrediction">
+                PROSES ULANG
+              </v-btn>
+            </v-card>
+          </v-col>
+
+          <v-col cols="12" md="8">
+            <v-card class="glass-card rounded-xl pa-6 mb-6 h-100" elevation="0">
+              <div class="d-flex align-center mb-6">
+                <h3 class="text-h6 font-weight-bold">Daftar Pegawai Pensiun (12 Bulan)</h3>
+                <v-spacer></v-spacer>
+                <v-chip color="error" size="small" variant="flat" v-if="prediction">{{ prediction.factors.retiring_count }} Orang</v-chip>
+              </div>
+              <v-table hover density="comfortable" class="bg-transparent" v-if="prediction">
+                <thead>
+                  <tr>
+                    <th class="text-left font-weight-bold">NAMA / NIP</th>
+                    <th class="text-left font-weight-bold">SKPD</th>
+                    <th class="text-center font-weight-bold">TMT PENSIUN</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="emp in prediction.retiring_list" :key="emp.nip">
+                    <td>
+                      <div class="text-body-2 font-weight-bold">{{ emp.nama }}</div>
+                      <div class="text-caption text-grey">{{ emp.nip }}</div>
+                    </td>
+                    <td class="text-caption">{{ emp.skpd || '-' }}</td>
+                    <td class="text-center">
+                      <v-chip size="x-small" color="error" variant="tonal">{{ formatDate(emp.tgl_lahir) }}</v-chip>
+                    </td>
+                  </tr>
+                </tbody>
+              </v-table>
+              <div v-else class="text-center py-10 text-disabled">
+                <v-icon size="64">mdi-table-search</v-icon>
+                <p>Klik 'Jalankan Simulasi' untuk melihat data.</p>
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <!-- Charts Row -->
+        <v-row class="mt-4">
           <v-col cols="12" md="6">
             <v-card class="glass-card rounded-xl pa-6 h-100" elevation="0">
               <h3 class="text-h6 font-weight-bold mb-4">Struktur Usia Pegawai</h3>
@@ -175,7 +246,16 @@ const formatCurrencyCompact = (value) => {
   if (!value) return 'Rp 0'
   if (value >= 1000000000) return 'Rp ' + (value / 1000000000).toFixed(2) + ' M'
   if (value >= 1000000) return 'Rp ' + (value / 1000000).toFixed(2) + ' Jt'
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(value)
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value)
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return '-'
+  return new Date(dateString).toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  })
 }
 
 const ageChartOption = computed(() => {
