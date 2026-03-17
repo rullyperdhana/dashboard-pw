@@ -17,11 +17,10 @@ return new class extends Migration {
             $table->string('type'); // PNS, PPPK, PPPK_PW, TPG, TPP
             $table->boolean('is_posted')->default(false);
             $table->timestamp('posted_at')->nullable();
-            $table->unsignedBigInteger('posted_by')->nullable();
+            $table->unsignedBigInteger('posted_by')->nullable()->index();
             $table->timestamps();
 
             $table->unique(['year', 'month', 'type']);
-            $table->foreign('posted_by')->references('id')->on('users')->onDelete('set null');
         });
     }
 
