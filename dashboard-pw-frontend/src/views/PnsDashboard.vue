@@ -623,8 +623,8 @@ const lastMonthPppkEmployees = computed(() => {
 const lastMonthTotalEmployees = computed(() => lastMonthPnsEmployees.value + lastMonthPppkEmployees.value)
 
 // ═════════ API FETCHING ═════════
-const fetchData = async () => {
-  loading.value = true
+const fetchData = async (skipLoading = false) => {
+  if (!skipLoading) loading.value = true
   try {
     const params = { month: selectedMonth.value, year: selectedYear.value, jenis_gaji: selectedJenisGajiFilter.value || undefined }
     if (employeeType.value === 'combined') {
@@ -636,15 +636,21 @@ const fetchData = async () => {
       const res = await api.get(endpoint, { params })
       stats.value = res.data.data.summary; skpdStats.value = res.data.data.skpd_breakdown; golonganStats.value = res.data.data.golongan_breakdown || []
     }
-  } catch (err) { console.error(err) } finally { loading.value = false }
+  } catch (err) { console.error(err) } finally {
+    if (!skipLoading) loading.value = false
+  }
 }
 
 const fetchYearlyTrend = async () => {
   try {
     if (employeeType.value === 'combined') {
+      const params = { 
+        year: selectedYear.value, 
+        jenis_gaji: selectedJenisGajiFilter.value || undefined 
+      }
       const [res1, res2] = await Promise.all([
-        api.get('/pns/trend', { params: { year: selectedYear.value } }),
-        api.get('/pppk/trend', { params: { year: selectedYear.value } })
+        api.get('/pns/trend', { params }),
+        api.get('/pppk/trend', { params })
       ])
       
       if (res1.data.success && res2.data.success) {
@@ -669,14 +675,19 @@ const fetchYearlyTrend = async () => {
       }
     } else {
       const endpoint = employeeType.value === 'pns' ? '/pns/trend' : '/pppk/trend'
-      const res = await api.get(endpoint, { params: { year: selectedYear.value } })
+      const res = await api.get(endpoint, { 
+        params: { 
+          year: selectedYear.value,
+          jenis_gaji: selectedJenisGajiFilter.value || undefined
+        } 
+      })
       if (res.data.success) {
         yearlyTrend.value = res.data.data.trend || []
       }
     }
     
     await nextTick()
-    setTimeout(renderChart, 100)
+    setTimeout(renderChart, 300)
   } catch (err) { 
     console.error('Failed to fetch yearly trend:', err) 
   }
@@ -868,8 +879,19 @@ const formatCurrencyCompact = (v) => {
   return formatCurrencyShort(v)
 }
 
-onMounted(() => { fetchData(); fetchYearlyTrend(); fetchAnnualReport() })
-watch([selectedYear, employeeType], () => { fetchYearlyTrend(); fetchAnnualReport() })
+onMounted(async () => { 
+  loading.value = true
+  await Promise.all([
+    fetchData(true), 
+    fetchYearlyTrend(), 
+    fetchAnnualReport()
+  ])
+  loading.value = false
+})
+watch([selectedYear, employeeType, selectedJenisGajiFilter], () => { 
+  fetchYearlyTrend()
+  fetchAnnualReport()
+})
 </script>
 
 <style scoped>

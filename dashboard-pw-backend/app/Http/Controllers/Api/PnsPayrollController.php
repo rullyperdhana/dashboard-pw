@@ -337,9 +337,15 @@ class PnsPayrollController extends Controller
     public function yearlyTrend(Request $request)
     {
         $year = $request->year ?? date('Y');
+        $jenisGaji = $request->jenis_gaji;
 
-        $trend = GajiPns::where('tahun', $year)
-            ->select('bulan', DB::raw('COUNT(DISTINCT nip) as total_employees'), DB::raw('SUM(kotor) as total_gross'), DB::raw('SUM(bersih) as total_net'), DB::raw('SUM(tunj_tpp) as total_tpp'))
+        $query = GajiPns::where('tahun', $year);
+
+        if ($jenisGaji) {
+            $query->where('jenis_gaji', $jenisGaji);
+        }
+
+        $trend = $query->select('bulan', DB::raw('COUNT(DISTINCT nip) as total_employees'), DB::raw('SUM(kotor) as total_gross'), DB::raw('SUM(bersih) as total_net'), DB::raw('SUM(tunj_tpp) as total_tpp'))
             ->groupBy('bulan')
             ->having('total_employees', '>', 0)
             ->orderBy('bulan')
@@ -360,9 +366,15 @@ class PnsPayrollController extends Controller
     public function yearlyTrendPppk(Request $request)
     {
         $year = $request->year ?? date('Y');
+        $jenisGaji = $request->jenis_gaji;
 
-        $trend = GajiPppk::where('tahun', $year)
-            ->select('bulan', DB::raw('COUNT(DISTINCT nip) as total_employees'), DB::raw('SUM(kotor) as total_gross'), DB::raw('SUM(bersih) as total_net'), DB::raw('SUM(tunj_tpp) as total_tpp'))
+        $query = GajiPppk::where('tahun', $year);
+
+        if ($jenisGaji) {
+            $query->where('jenis_gaji', $jenisGaji);
+        }
+
+        $trend = $query->select('bulan', DB::raw('COUNT(DISTINCT nip) as total_employees'), DB::raw('SUM(kotor) as total_gross'), DB::raw('SUM(bersih) as total_net'), DB::raw('SUM(tunj_tpp) as total_tpp'))
             ->groupBy('bulan')
             ->having('total_employees', '>', 0)
             ->orderBy('bulan')
