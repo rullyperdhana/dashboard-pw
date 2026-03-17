@@ -27,7 +27,7 @@ class ThrController extends Controller
         // Filter by SKPD if user is operator
         if ($user && $user->role === 'operator' && !empty($user->institution)) {
             $skpdName = DB::table('skpd')->where('id_skpd', $user->institution)->value('nama_skpd');
-            $query->where('skpd_name', $skpdName);
+            $query->where('skpd_name', 'like', $skpdName . '%');
         }
 
         // Server-side Searching
@@ -120,7 +120,7 @@ class ThrController extends Controller
 
         if ($user && $user->role === 'operator' && !empty($user->institution)) {
             $skpdName = DB::table('skpd')->where('id_skpd', $user->institution)->value('nama_skpd');
-            $query->where('skpd_name', $skpdName);
+            $query->where('skpd_name', 'like', $skpdName . '%');
         }
 
         $summary = $query->orderBy('skpd_name')->get();
@@ -190,7 +190,7 @@ class ThrController extends Controller
             
             if ($user->role === 'operator') {
                 $skpdNameAttr = DB::table('skpd')->where('id_skpd', $user->institution)->value('nama_skpd');
-                $deleteQuery->where('skpd_name', $skpdNameAttr);
+                $deleteQuery->where('skpd_name', 'like', $skpdNameAttr . '%');
             }
             
             $deleteQuery->delete();
@@ -257,7 +257,7 @@ class ThrController extends Controller
         // If operator, check if record belongs to their SKPD
         if ($user->role === 'operator') {
             $skpdName = DB::table('skpd')->where('id_skpd', $user->institution)->value('nama_skpd');
-            if ($record->skpd_name !== $skpdName) {
+            if (!str_starts_with($record->skpd_name ?? '', $skpdName)) {
                 return response()->json(['success' => false, 'message' => 'Anda tidak memiliki akses ke data SKPD lain.'], 403);
             }
         }
@@ -308,7 +308,7 @@ class ThrController extends Controller
         // If operator, check if record belongs to their SKPD
         if ($user->role === 'operator') {
             $skpdName = DB::table('skpd')->where('id_skpd', $user->institution)->value('nama_skpd');
-            if ($record->skpd_name !== $skpdName) {
+            if (!str_starts_with($record->skpd_name ?? '', $skpdName)) {
                 return response()->json(['success' => false, 'message' => 'Anda tidak memiliki akses ke data SKPD lain.'], 403);
             }
         }

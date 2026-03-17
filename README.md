@@ -34,11 +34,12 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
 ---
  
-### 📄 Laporan & Transparansi (v3.2)
+### 📄 Laporan & Transparansi (v3.3)
+- **UPT-Aware THR Reporting:** Laporan THR kini secara otomatis mencakup pegawai yang bertugas di Unit Pelaksana Teknis (UPT) dengan menggunakan pencocokan prefix nama SKPD. Ini memastikan sinkronisasi data 100% antara Dashboard dan Laporan THR bagi operator SKPD.
 - **TPP Discrepancy Reporting:** Fitur deteksi otomatis pegawai yang ada di gaji tetapi tidak ada dalam file Excel TPP. Laporan ini kini **tersimpan permanen** dan bisa diakses kapan saja melalui menu **Riwayat Selisih TPP**.
 - **Persistent THR Management:** Data THR kini disimpan secara permanen di database (`tb_thr_pppk_pw`), memungkinkan edit manual, penambahan catatan, dan hapus baris pegawai.
 - **Improved Sidebar Layout:** Redesain navigasi samping untuk mencegah teks logo terpotong dan memastikan menu tetap terlihat jelas di bawah Navbar (offset 64px).
-- **Environment Version Indicator:** Label versi (v3.2.0) kini tampil di pojok kiri bawah menu samping untuk memudahkan pengecekan sinkronisasi antara Local, GitHub, dan VPS.
+- **Environment Version Indicator:** Label versi (v3.3.0) kini tampil di pojok kiri bawah menu samping untuk memudahkan pengecekan sinkronisasi antara Local, GitHub, dan VPS.
 - **Server-Side Pagination:** Optimasi performa untuk dataset besar (6.000+ pegawai). Data dimuat secara bertahap sehingga UI tetap responsif.
 - **Dedicated Summary Endpoint:** Tab Rekapitulasi menggunakan endpoint khusus yang sangat ringan untuk perhitungan total anggaran instan.
 - **Professional PDF Export:** Redesain total template slip gaji dan payroll dengan layout profesional, border rapi, dan summary box.
