@@ -38,8 +38,10 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 - **AI-Driven Analytics (TAPD):** Dashboard cerdas untuk Tim Anggaran Pemerintah Daerah yang mensimulasikan kenaikan anggaran berdasarkan data rill **KGB** (2 tahunan), **Kenaikan Pangkat** (4 tahunan), dan jadwal pensiun massal.
 - **Executive Mobile Dashboard:** Tampilan khusus yang dioptimalkan untuk perangkat mobile/smartphone bagi pimpinan (Kepala Dinas/Bupati) untuk memantau realisasi belanja pegawai secara *real-time*.
 - **PWA Ready:** Aplikasi kini mendukung instalasi langsung ke layar utama HP (*Add to Home Screen*) untuk akses cepat modul eksekutif.
-- **Improved Prediction Model:** Perhitungan proyeksi anggaran kini menggunakan kombinasi regresi linear data historis 12 bulan terakhir dan stimulator mutasi pegawai.
 - **Generalized Extra Payroll System:** Restrukturisasi total modul THR menjadi sistem *Extra Payroll* universal yang mendukung berbagai jenis pembayaran tambahan seperti **Gaji 13**.
+- **THR & Gaji 13 DBF Import:** Mendukung import file `GAJI.DBF` khusus untuk periode THR dan Gaji 13, memastikan data terpisah dari payroll bulanan reguler.
+- **TPP THR & TPP 13 Support:** Kemampuan untuk mengunggah dan memberlakukan data TPP (Tambahan Penghasilan Pegawai) khusus untuk pembayaran THR dan Gaji 13.
+- **Improved Prediction Model:** Perhitungan proyeksi anggaran kini menggunakan kombinasi regresi linear data historis 12 bulan terakhir (hanya data 'Induk') untuk mencegah data THR/Gaji 13 mengganggu akurasi prediksi.
 - **Data Terdeteksi Terlewat:** Fitur deteksi otomatis pegawai yang memiliki slip gaji basis namun belum masuk ke dalam laporan THR/Gaji 13, lengkap dengan **Alasan Ketidakhadiran** (misal: "Gaji basis tidak ditemukan").
 - **UPT-Aware Reporting:** Laporan otomatis mencakup pegawai di Unit Pelaksana Teknis (UPT) menggunakan prefix SKPD, memastikan sinkronisasi data 100%.
 - **TPP Discrepancy Reporting:** Deteksi otomatis selisih pegawai antara data gaji dan file Excel TPP yang tersimpan permanen.
