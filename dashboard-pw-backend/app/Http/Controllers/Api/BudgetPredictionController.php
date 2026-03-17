@@ -32,6 +32,9 @@ class BudgetPredictionController extends Controller
 
     private function predictPW($growthFactor, Request $request)
     {
+        $currentDate = Carbon::now()->format('Y-m-d');
+        $targetDate = Carbon::now()->addYear()->format('Y-m-d');
+
         // 1. Get last 3 unique months with data
         $last3Months = DB::table('tb_payment')
             ->select('year', 'month')
@@ -53,78 +56,40 @@ class BudgetPredictionController extends Controller
                 ->where('tb_payment.year', $p->year)
                 ->sum('tb_payment_detail.total_amoun');
         }
-        $avgMonthlyTotal = array_sum($monthlyTotals) / count($monthlyTotals);
+        $avgMonthlyTotal = count($monthlyTotals) > 0 ? array_sum($monthlyTotals) / count($monthlyTotals) : 0;
 
-        $currentDate = Carbon::now();
-        $targetDate = Carbon::now()->addYear();
-        
+        // 2. Optimized Retirement Search using SQL
         $retiringEmployees = DB::table('pegawai_pw')
             ->leftJoin('skpd', 'pegawai_pw.idskpd', '=', 'skpd.id_skpd')
             ->where('pegawai_pw.status', 'Aktif')
             ->whereNotNull('pegawai_pw.tgl_lahir')
+            ->whereRaw("DATE_ADD(pegawai_pw.tgl_lahir, INTERVAL 58 YEAR) BETWEEN ? AND ?", [$currentDate, $targetDate])
             ->select('pegawai_pw.*', 'skpd.nama_skpd as skpd_name')
-            ->get()
-            ->filter(function($emp) use ($currentDate, $targetDate) {
-                $bup = 58; // Default for PW
-                try {
-                    $retirementDate = Carbon::parse($emp->tgl_lahir)->addYears($bup);
-                    return $retirementDate->between($currentDate, $targetDate);
-                } catch (\Exception $e) {
-                    return false;
-                }
-            });
+            ->get();
         
         $totalRetirementReduction = 0;
         foreach ($retiringEmployees as $emp) {
-            // Find last actual salary in payment system
-            $lastSalary = DB::table('tb_payment_detail')
-                ->join('tb_payment', 'tb_payment_detail.payment_id', '=', 'tb_payment.id')
-                ->where('tb_payment_detail.employee_id', $emp->id)
-                ->orderBy('tb_payment.year', 'desc')
-                ->orderBy('tb_payment.month', 'desc')
-                ->value('tb_payment_detail.total_amoun') ?: 0;
+            // Use gapok + tunjangan as last salary estimate to avoid N+1 queries
+            $lastSalary = (float) $emp->gapok + (float) ($emp->tunjangan ?: 0);
             
-            // Fallback to gapok if not found in payment system
-            if (!$lastSalary) {
-                $lastSalary = (float) $emp->gapok + (float) ($emp->tunjangan ?: 0);
-            }
-            
-            $bup = 58;
-            $retirementDate = Carbon::parse($emp->tgl_lahir)->addYears($bup);
-            $monthsRemaining = $currentDate->diffInMonths($retirementDate);
+            $retirementDate = Carbon::parse($emp->tgl_lahir)->addYears(58);
+            $monthsRemaining = Carbon::now()->diffInMonths($retirementDate);
             $totalRetirementReduction += (12 - $monthsRemaining) * $lastSalary;
         }
 
-        // 3. KGB Simulation for PW (Every 2 years based on tmt_golru)
-        $kgbEmployees = Employee::active()
+        // 3. KGB Simulation using SQL
+        $kgbEmployeesCount = DB::table('pegawai_pw')
+            ->where('status', 'Aktif')
             ->whereNotNull('tmt_golru')
-            ->get()
-            ->filter(function($emp) use ($currentDate, $targetDate) {
-                try {
-                    $tmt = Carbon::parse($emp->tmt_golru);
-                    // KGB is every 2 years from TMT. We check if a 2-year cycle anniversary falls in the next year.
-                    $yearsServed = $tmt->diffInYears($currentDate);
-                    $nextCycleYear = (($yearsServed + 1) % 2 === 0) ? ($yearsServed + 1) : ($yearsServed + 2);
-                    $nextKgbDate = $tmt->copy()->addYears($nextCycleYear);
-                    return $nextKgbDate->between($currentDate, $targetDate);
-                } catch (\Exception $e) {
-                    return false;
-                }
-            });
+            ->whereRaw("MOD(TIMESTAMPDIFF(YEAR, tmt_golru, DATE_ADD(?, INTERVAL 1 YEAR)), 2) = 0", [$currentDate])
+            ->count();
 
-        $totalKgbIncrease = 0;
-        foreach ($kgbEmployees as $emp) {
-            // Estimate 2.5% increase for KGB if data not available
-            $increase = (float) $emp->gapok * 0.025;
-            $tmt = Carbon::parse($emp->tmt_golru);
-            $yearsServed = $tmt->diffInYears($currentDate);
-            $nextCycleYear = (($yearsServed + 1) % 2 === 0) ? ($yearsServed + 1) : ($yearsServed + 2);
-            $nextKgbDate = $tmt->copy()->addYears($nextCycleYear);
-            $monthsWithRaise = $nextKgbDate->diffInMonths($targetDate);
-            $totalKgbIncrease += $monthsWithRaise * $increase;
-        }
+        // Estimate KGB increase: 2.5% for those eligible
+        // We'll calculate an estimated total increase based on average gapok
+        $avgGapok = DB::table('pegawai_pw')->where('status', 'Aktif')->avg('gapok') ?: 0;
+        $totalKgbIncrease = $kgbEmployeesCount * ($avgGapok * 0.025) * 6; // Average 6 months of raise
 
-        return $this->formatResponse($growthFactor, $avgMonthlyTotal, $retiringEmployees, $totalRetirementReduction, $kgbEmployees->count(), $totalKgbIncrease, 0, 0);
+        return $this->formatResponse($growthFactor, $avgMonthlyTotal, $retiringEmployees, $totalRetirementReduction, $kgbEmployeesCount, $totalKgbIncrease, 0, 0);
     }
 
     private function predictPNS($growthFactor, Request $request)
@@ -139,6 +104,9 @@ class BudgetPredictionController extends Controller
 
     private function predictMasterPegawai($table, $growthFactor, Request $request)
     {
+        $currentDate = Carbon::now()->format('Y-m-d');
+        $targetDate = Carbon::now()->addYear()->format('Y-m-d');
+
         $last3Periods = DB::table($table)
             ->select('bulan', 'tahun')
             ->distinct()
@@ -158,120 +126,68 @@ class BudgetPredictionController extends Controller
                 ->where('tahun', $p->tahun)
                 ->sum('bersih');
         }
-        $avgMonthlyTotal = array_sum($monthlyTotals) / count($monthlyTotals);
+        $avgMonthlyTotal = count($monthlyTotals) > 0 ? array_sum($monthlyTotals) / count($monthlyTotals) : 0;
 
-        $currentDate = Carbon::now();
-        $targetDate = Carbon::now()->addYear();
-
+        // 2. Optimized Retirement Search using SQL
         $retiringEmployees = DB::table('master_pegawai')
             ->leftJoin('satkers', function($join) {
                 $join->on('master_pegawai.kdskpd', '=', 'satkers.kdskpd')
                     ->on('master_pegawai.kdsatker', '=', 'satkers.kdsatker');
             })
-            ->whereIn('master_pegawai.kdstapeg', [1, 2, 3, 4, 5, 11, 12]) // Aktif
+            ->whereIn('master_pegawai.kdstapeg', [1, 2, 3, 4, 5, 11, 12])
             ->whereNotNull('master_pegawai.tgllhr')
             ->where(function($q) use ($table) {
                 if ($table === 'gaji_pns') $q->where('master_pegawai.kd_jns_peg', '<', 3);
                 else $q->where('master_pegawai.kd_jns_peg', '>=', 3);
             })
+            ->whereRaw("DATE_ADD(master_pegawai.tgllhr, INTERVAL COALESCE(master_pegawai.bup, 58) YEAR) BETWEEN ? AND ?", [$currentDate, $targetDate])
             ->select('master_pegawai.*', 'satkers.nmsatker as skpd_name')
-            ->get()
-            ->filter(function($emp) use ($currentDate, $targetDate, $table) {
-                // Gunakan bup dari database, fallback ke 58 jika kosong
-                $bup = (int) ($emp->bup ?: 58);
-                
-                try {
-                    $retirementDate = Carbon::parse($emp->tgllhr)->addYears($bup);
-                    return $retirementDate->between($currentDate, $targetDate);
-                } catch (\Exception $e) {
-                    return false;
-                }
-            });
+            ->get();
 
         $totalRetirementReduction = 0;
         foreach ($retiringEmployees as $emp) {
-            $lastSalary = DB::table($table)
-                ->where('nip', $emp->nip)
-                ->orderBy('tahun', 'desc')
-                ->orderBy('bulan', 'desc')
-                ->value('bersih') ?: 0;
-            
+            $lastSalary = (float) $emp->gapok + (float) ($emp->tjsuami ?: 0) + (float) ($emp->tjanak ?: 0);
             $bup = (int) ($emp->bup ?: 58);
             $retirementDate = Carbon::parse($emp->tgllhr)->addYears($bup);
-            $monthsRemaining = $currentDate->diffInMonths($retirementDate);
+            $monthsRemaining = Carbon::now()->diffInMonths($retirementDate);
             $totalRetirementReduction += (12 - $monthsRemaining) * $lastSalary;
         }
 
-        // 3. KGB Simulation for PNS (Using tmtkgbyad)
-        $kgbEmployees = DB::table('master_pegawai')
-            ->whereIn('kdstapeg', [1, 2, 3, 4, 5, 11, 12]) // Aktif
+        // 3. KGB Simulation using SQL (Using tmtkgbyad)
+        $kgbEmployeesCount = DB::table('master_pegawai')
+            ->whereIn('kdstapeg', [1, 2, 3, 4, 5, 11, 12])
             ->whereNotNull('tmtkgbyad')
             ->where(function($q) use ($table) {
                 if ($table === 'gaji_pns') $q->where('kd_jns_peg', '<', 3);
                 else $q->where('kd_jns_peg', '>=', 3);
             })
-            ->get()
-            ->filter(function($emp) use ($currentDate, $targetDate) {
-                try {
-                    $nextKgbDate = Carbon::parse($emp->tmtkgbyad);
-                    return $nextKgbDate->between($currentDate, $targetDate);
-                } catch (\Exception $e) {
-                    return false;
-                }
-            });
+            ->whereBetween('tmtkgbyad', [$currentDate, $targetDate])
+            ->count();
 
-        $totalKgbIncrease = 0;
-        foreach ($kgbEmployees as $emp) {
-            $currentGapok = (float) $emp->gapok;
-            $increase = $currentGapok * 0.03; // Average KGB increase is around 3%
-            $nextKgbDate = Carbon::parse($emp->tmtkgbyad);
-            $monthsWithRaise = $nextKgbDate->diffInMonths($targetDate);
-            $totalKgbIncrease += $monthsWithRaise * $increase;
-        }
+        $avgGapok = DB::table('master_pegawai')->whereIn('kdstapeg', [1, 2, 3, 4, 5, 11, 12])->avg('gapok') ?: 0;
+        $totalKgbIncrease = $kgbEmployeesCount * ($avgGapok * 0.03) * 6;
 
-        // 4. KP (Kenaikan Pangkat) Simulation (Every 4 years)
-        $kpEmployees = DB::table('master_pegawai')
+        // 4. KP (Kenaikan Pangkat) Simulation using SQL
+        $kpEmployeesCount = DB::table('master_pegawai')
             ->whereIn('kdstapeg', [1, 2, 3, 4, 5, 11, 12])
             ->whereNotNull('blgolt')
             ->where(function($q) use ($table) {
                 if ($table === 'gaji_pns') $q->where('kd_jns_peg', '<', 3);
                 else $q->where('kd_jns_peg', '>=', 3);
             })
-            ->get()
-            ->filter(function($emp) use ($currentDate, $targetDate) {
-                try {
-                    $tmt = Carbon::parse($emp->blgolt);
-                    $yearsServed = $tmt->diffInYears($currentDate);
-                    // KP is every 4 years. Check if 4-year anniversary is in next year.
-                    $nextCycleYear = (($yearsServed + 1) % 4 === 0) ? ($yearsServed + 1) : 0;
-                    if (!$nextCycleYear) return false;
-                    $nextKpDate = $tmt->copy()->addYears($nextCycleYear);
-                    return $nextKpDate->between($currentDate, $targetDate);
-                } catch (\Exception $e) {
-                    return false;
-                }
-            });
+            ->whereRaw("MOD(TIMESTAMPDIFF(YEAR, blgolt, DATE_ADD(?, INTERVAL 1 YEAR)), 4) = 0", [$currentDate])
+            ->count();
 
-        $totalKpIncrease = 0;
-        foreach ($kpEmployees as $emp) {
-            $currentGapok = (float) $emp->gapok;
-            $increase = $currentGapok * 0.05; // Average KP increase is around 5-7%
-            $tmt = Carbon::parse($emp->blgolt);
-            $yearsServed = $tmt->diffInYears($currentDate);
-            $nextCycleValue = $yearsServed + 1;
-            $nextKpDate = $tmt->copy()->addYears($nextCycleValue);
-            $monthsWithRaise = $nextKpDate->diffInMonths($targetDate);
-            $totalKpIncrease += $monthsWithRaise * $increase;
-        }
+        $totalKpIncrease = $kpEmployeesCount * ($avgGapok * 0.06) * 6;
 
         return $this->formatResponse(
             $growthFactor, 
             $avgMonthlyTotal, 
             $retiringEmployees, 
             $totalRetirementReduction,
-            $kgbEmployees->count(),
+            $kgbEmployeesCount,
             $totalKgbIncrease,
-            $kpEmployees->count(),
+            $kpEmployeesCount,
             $totalKpIncrease
         );
     }
