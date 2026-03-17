@@ -351,9 +351,10 @@
                   <v-switch
                     v-model="showAnnualTable"
                     color="teal"
-                    label="Tampilkan Tabel Detail"
+                    label="Detail"
                     hide-details
                     inset
+                    density="compact"
                   ></v-switch>
                 </div>
 
@@ -375,15 +376,46 @@
                           </thead>
                           <tbody>
                             <template v-for="(month, idx) in annualReport?.monthly" :key="idx">
-                              <tr v-if="month.total_employees > 0" class="table-row-hover">
-                                <td class="sticky-left font-weight-black text-high-emphasis">{{ getMonthName(month.month) }}</td>
-                                <td class="text-right">{{ month.total_employees.toLocaleString() }}</td>
-                                <td class="text-right">{{ formatCurrencyShort(month.total_gaji_pokok) }}</td>
-                                <td class="text-right">{{ formatCurrencyShort(month.total_tunj_fungsional) }}</td>
-                                <td class="text-right">{{ formatCurrencyShort(month.total_tunj_struktural) }}</td>
-                                <td class="text-right">{{ formatCurrencyShort(month.total_tunj_tpp) }}</td>
-                                <td class="text-right highlight-col font-weight-black text-teal-darken-2">{{ formatCurrencyShort(month.total_bersih) }}</td>
-                              </tr>
+                              <template v-if="month.total_employees > 0">
+                                <!-- PNS Row -->
+                                <tr class="row-sub text-disabled">
+                                  <td class="sticky-left font-weight-bold pl-4">
+                                    <span class="text-overline mr-2">{{ getMonthName(month.month) }}</span>
+                                    <span>PNS</span>
+                                  </td>
+                                  <td class="text-right">{{ pnsAnnual?.monthly[idx]?.total_employees.toLocaleString() || 0 }}</td>
+                                  <td class="text-right">{{ formatCurrencyShort(pnsAnnual?.monthly[idx]?.total_gaji_pokok) }}</td>
+                                  <td class="text-right">{{ formatCurrencyShort(pnsAnnual?.monthly[idx]?.total_tunj_fungsional) }}</td>
+                                  <td class="text-right">{{ formatCurrencyShort(pnsAnnual?.monthly[idx]?.total_tunj_struktural) }}</td>
+                                  <td class="text-right">{{ formatCurrencyShort(pnsAnnual?.monthly[idx]?.total_tunj_tpp) }}</td>
+                                  <td class="text-right">{{ formatCurrencyShort(pnsAnnual?.monthly[idx]?.total_bersih) }}</td>
+                                </tr>
+                                <!-- PPPK Row -->
+                                <tr class="row-sub text-disabled">
+                                  <td class="sticky-left font-weight-bold pl-4">
+                                    <span class="text-overline mr-2 invisible">{{ getMonthName(month.month) }}</span>
+                                    <span>PPPK</span>
+                                  </td>
+                                  <td class="text-right">{{ pppkAnnual?.monthly[idx]?.total_employees.toLocaleString() || 0 }}</td>
+                                  <td class="text-right">{{ formatCurrencyShort(pppkAnnual?.monthly[idx]?.total_gaji_pokok) }}</td>
+                                  <td class="text-right">{{ formatCurrencyShort(pppkAnnual?.monthly[idx]?.total_tunj_fungsional) }}</td>
+                                  <td class="text-right">{{ formatCurrencyShort(pppkAnnual?.monthly[idx]?.total_tunj_struktural) }}</td>
+                                  <td class="text-right">{{ formatCurrencyShort(pppkAnnual?.monthly[idx]?.total_tunj_tpp) }}</td>
+                                  <td class="text-right">{{ formatCurrencyShort(pppkAnnual?.monthly[idx]?.total_bersih) }}</td>
+                                </tr>
+                                <!-- Total Row -->
+                                <tr class="table-row-hover row-total">
+                                  <td class="sticky-left font-weight-black text-high-emphasis">TOTAL</td>
+                                  <td class="text-right font-weight-bold">{{ month.total_employees.toLocaleString() }}</td>
+                                  <td class="text-right font-weight-bold">{{ formatCurrencyShort(month.total_gaji_pokok) }}</td>
+                                  <td class="text-right font-weight-bold">{{ formatCurrencyShort(month.total_tunj_fungsional) }}</td>
+                                  <td class="text-right font-weight-bold">{{ formatCurrencyShort(month.total_tunj_struktural) }}</td>
+                                  <td class="text-right font-weight-bold">{{ formatCurrencyShort(month.total_tunj_tpp) }}</td>
+                                  <td class="text-right highlight-col font-weight-black text-teal-darken-2">{{ formatCurrencyShort(month.total_bersih) }}</td>
+                                </tr>
+                                <!-- Spacer Row -->
+                                <tr class="spacer-row"><td colspan="7"></td></tr>
+                              </template>
                             </template>
                           </tbody>
                           <tfoot>
@@ -1027,5 +1059,17 @@ watch([selectedYear, employeeType, selectedJenisGajiFilter], () => {
 /* Global theme adjustments for chart and surface elements */
 :deep(.v-table) {
   background: transparent !important;
+}
+.row-total {
+  background-color: rgba(var(--v-theme-teal), 0.05) !important;
+  border-top: 1px dashed rgba(var(--v-border-color), 0.2) !important;
+}
+.row-sub td {
+  font-size: 0.8rem !important;
+}
+.spacer-row td {
+  padding: 0 !important;
+  height: 8px !important;
+  background-color: rgba(var(--v-border-color), 0.02);
 }
 </style>
