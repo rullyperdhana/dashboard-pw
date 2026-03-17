@@ -92,7 +92,36 @@ class BudgetPredictionController extends Controller
             $totalRetirementReduction += (12 - $monthsRemaining) * $lastSalary;
         }
 
-        return $this->formatResponse($growthFactor, $avgMonthlyTotal, $retiringEmployees, $totalRetirementReduction);
+        // 3. KGB Simulation for PW (Every 2 years based on tmt_golru)
+        $kgbEmployees = Employee::active()
+            ->whereNotNull('tmt_golru')
+            ->get()
+            ->filter(function($emp) use ($currentDate, $targetDate) {
+                try {
+                    $tmt = Carbon::parse($emp->tmt_golru);
+                    // KGB is every 2 years from TMT. We check if a 2-year cycle anniversary falls in the next year.
+                    $yearsServed = $tmt->diffInYears($currentDate);
+                    $nextCycleYear = (($yearsServed + 1) % 2 === 0) ? ($yearsServed + 1) : ($yearsServed + 2);
+                    $nextKgbDate = $tmt->copy()->addYears($nextCycleYear);
+                    return $nextKgbDate->between($currentDate, $targetDate);
+                } catch (\Exception $e) {
+                    return false;
+                }
+            });
+
+        $totalKgbIncrease = 0;
+        foreach ($kgbEmployees as $emp) {
+            // Estimate 2.5% increase for KGB if data not available
+            $increase = (float) $emp->gapok * 0.025;
+            $tmt = Carbon::parse($emp->tmt_golru);
+            $yearsServed = $tmt->diffInYears($currentDate);
+            $nextCycleYear = (($yearsServed + 1) % 2 === 0) ? ($yearsServed + 1) : ($yearsServed + 2);
+            $nextKgbDate = $tmt->copy()->addYears($nextCycleYear);
+            $monthsWithRaise = $nextKgbDate->diffInMonths($targetDate);
+            $totalKgbIncrease += $monthsWithRaise * $increase;
+        }
+
+        return $this->formatResponse($growthFactor, $avgMonthlyTotal, $retiringEmployees, $totalRetirementReduction, $kgbEmployees->count(), $totalKgbIncrease, 0, 0);
     }
 
     private function predictPNS($growthFactor, Request $request)
