@@ -304,11 +304,19 @@ class BudgetPredictionController extends Controller
                     'monthly_avg_forecast' => (float) ($finalForecast / 12)
                 ],
                 'retiring_list' => $retiringEmployees->values()->map(function($e) {
+                    $bup = (int) ($e->bup ?: 58);
+                    $dob = $e->tgl_lahir ?? $e->tgllhr;
+                    $retirementDate = null;
+                    try {
+                        $retirementDate = Carbon::parse($dob)->addYears($bup)->format('Y-m-d');
+                    } catch (\Exception $ex) {}
+                    
                     return [
                         'nama' => $e->nama,
                         'nip' => $e->nip,
-                        'tgl_lahir' => $e->tgl_lahir ?? $e->tgllhr,
-                        'bup' => (int) ($e->bup ?: 58),
+                        'tgl_lahir' => $dob,
+                        'retirement_date' => $retirementDate,
+                        'bup' => $bup,
                         'skpd' => property_exists($e, 'skpd_name') ? $e->skpd_name : (property_exists($e, 'skpd') ? $e->skpd : null)
                     ];
                 })

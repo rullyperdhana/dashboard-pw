@@ -135,27 +135,28 @@
                 <v-spacer></v-spacer>
                 <v-chip color="error" size="small" variant="flat" v-if="prediction">{{ prediction.factors.retiring_count }} Orang</v-chip>
               </div>
-              <v-table hover density="comfortable" class="bg-transparent" v-if="prediction">
-                <thead>
-                  <tr>
-                    <th class="text-left font-weight-bold">NAMA / NIP</th>
-                    <th class="text-left font-weight-bold">SKPD</th>
-                    <th class="text-center font-weight-bold">TMT PENSIUN</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="emp in prediction.retiring_list" :key="emp.nip">
-                    <td>
-                      <div class="text-body-2 font-weight-bold">{{ emp.nama }}</div>
-                      <div class="text-caption text-grey">{{ emp.nip }}</div>
-                    </td>
-                    <td class="text-caption">{{ emp.skpd || '-' }}</td>
-                    <td class="text-center">
-                      <v-chip size="x-small" color="error" variant="tonal">{{ formatDate(emp.tgl_lahir) }}</v-chip>
-                    </td>
-                  </tr>
-                </tbody>
-              </v-table>
+              <v-data-table
+                v-if="prediction"
+                :headers="retirementTableHeaders"
+                :items="prediction.retiring_list"
+                hover
+                density="comfortable"
+                class="bg-transparent"
+                :items-per-page="10"
+              >
+                <template v-slot:item.nama="{ item }">
+                  <div class="text-body-2 font-weight-bold">{{ item.nama }}</div>
+                  <div class="text-caption text-grey">{{ item.nip }}</div>
+                </template>
+                <template v-slot:item.skpd="{ item }">
+                  <div class="text-caption text-wrap" style="max-width: 300px">{{ item.skpd || '-' }}</div>
+                </template>
+                <template v-slot:item.retirement_date="{ item }">
+                  <v-chip size="x-small" color="error" variant="tonal" class="font-weight-bold">
+                    {{ formatDate(item.retirement_date) }}
+                  </v-chip>
+                </template>
+              </v-data-table>
               <div v-else class="text-center py-10 text-disabled">
                 <v-icon size="64">mdi-table-search</v-icon>
                 <p>Klik 'Jalankan Simulasi' untuk melihat data.</p>
@@ -213,6 +214,12 @@ const category = ref('pw')
 const growthFactor = ref(5)
 const prediction = ref(null)
 const healthData = ref(null)
+
+const retirementTableHeaders = [
+  { title: 'NAMA / NIP', key: 'nama', sortable: true },
+  { title: 'SKPD', key: 'skpd', sortable: true },
+  { title: 'ESTIMASI PENSIUN', key: 'retirement_date', align: 'center', sortable: true },
+]
 
 const fetchPrediction = async () => {
   loading.value = true
