@@ -1,5 +1,7 @@
 # ── File SQL (data sensitif, jangan di-push) ──────────────────────────────
 *.sql
+*.zip
+*.sql.zip
 
 # ── File PHP debug di root ─────────────────────────────────────────────────
 db_analyze.php
