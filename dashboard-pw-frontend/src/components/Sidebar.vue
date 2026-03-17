@@ -1,5 +1,5 @@
 <template>
-  <v-navigation-drawer permanent elevation="0" class="glass-sidebar pt-4" width="260" fixed>
+  <v-navigation-drawer permanent elevation="0" class="glass-sidebar" width="260" style="top: 64px; height: calc(100% - 64px)">
     <div class="px-4 mb-4 d-flex align-center">
       <div class="logo-circle bg-primary d-flex align-center justify-center mr-3">
         <v-icon icon="mdi-shield-crown-outline" color="white" size="20"></v-icon>
@@ -101,6 +101,9 @@
             Logout
           </v-btn>
         </v-card>
+        <div class="text-center mt-2">
+          <span class="text-disabled font-weight-medium" style="font-size: 10px; letter-spacing: 1px;">VERSI 3.2.0</span>
+        </div>
       </div>
     </template>
 
