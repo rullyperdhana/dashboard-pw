@@ -28,22 +28,25 @@
           Pengaturan
         </v-btn>
         <v-btn
-          v-if="isSuperadmin && !meta.is_generated"
+          v-if="isSuperadmin"
           prepend-icon="mdi-sync"
-          color="primary"
+          :color="meta.is_generated ? 'secondary' : 'primary'"
+          :variant="meta.is_generated ? 'tonal' : 'flat'"
           rounded="lg"
           @click="generateData"
           :loading="loading"
+          class="text-none"
         >
-          Generate Data
+          {{ meta.is_generated ? 'Sinkronkan Ulang' : 'Generate Data' }}
         </v-btn>
         <v-btn
-          v-else-if="isSuperadmin && meta.is_generated"
+          v-if="isSuperadmin && meta.is_generated"
           prepend-icon="mdi-plus"
           color="primary"
           variant="tonal"
           rounded="lg"
           @click="openAddDialog"
+          class="text-none"
         >
           Tambah Baris
         </v-btn>
