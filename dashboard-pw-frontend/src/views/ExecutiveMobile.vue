@@ -63,7 +63,7 @@
         Ada <strong>{{ unpaidCount }} SKPD</strong> belum memproses gaji bulan ini.
       </v-alert>
 
-      <v-btn block color="primary" rounded="xl" size="large" to="/dashboard">
+      <v-btn block color="primary" rounded="xl" size="large" to="/">
         Lihat Dashboard Lengkap
       </v-btn>
     </div>
