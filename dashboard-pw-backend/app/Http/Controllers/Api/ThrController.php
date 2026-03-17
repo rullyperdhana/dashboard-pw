@@ -138,8 +138,8 @@ class ThrController extends Controller
     public function generateThr(Request $request)
     {
         $user = auth()->user();
-        if ($user->role !== 'superadmin' && $user->role !== 'operator') {
-            return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+        if ($user->role !== 'superadmin') {
+            return response()->json(['success' => false, 'message' => 'Akses ditolak. Fitur ini hanya untuk Superadmin.'], 403);
         }
 
         // Drastically increase limits for massive datasets
@@ -248,8 +248,8 @@ class ThrController extends Controller
     public function updateThrRow(Request $request, $id)
     {
         $user = auth()->user();
-        if ($user->role !== 'superadmin' && $user->role !== 'operator') {
-            return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+        if ($user->role !== 'superadmin') {
+            return response()->json(['success' => false, 'message' => 'Akses ditolak. Fitur ini hanya untuk Superadmin.'], 403);
         }
 
         $record = ThrPppkPw::findOrFail($id);
@@ -270,8 +270,8 @@ class ThrController extends Controller
     public function storeThrRow(Request $request)
     {
         $user = auth()->user();
-        if ($user->role !== 'superadmin' && $user->role !== 'operator') {
-            return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+        if ($user->role !== 'superadmin') {
+            return response()->json(['success' => false, 'message' => 'Akses ditolak. Fitur ini hanya untuk Superadmin.'], 403);
         }
 
         $data = $request->validate([
@@ -299,8 +299,8 @@ class ThrController extends Controller
     public function deleteThrRow($id)
     {
         $user = auth()->user();
-        if ($user->role !== 'superadmin' && $user->role !== 'operator') {
-            return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+        if ($user->role !== 'superadmin') {
+            return response()->json(['success' => false, 'message' => 'Akses ditolak. Fitur ini hanya untuk Superadmin.'], 403);
         }
 
         $record = ThrPppkPw::findOrFail($id);
