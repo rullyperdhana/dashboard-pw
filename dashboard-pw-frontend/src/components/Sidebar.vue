@@ -102,7 +102,7 @@
           </v-btn>
         </v-card>
         <div class="text-center mt-2">
-          <span class="text-disabled font-weight-medium" style="font-size: 10px; letter-spacing: 1px;">VERSI 3.5.0</span>
+          <span class="text-disabled font-weight-medium" style="font-size: 10px; letter-spacing: 1px;">VERSI 3.6.0</span>
         </div>
       </div>
     </template>
