@@ -283,7 +283,7 @@ const activeTab = ref('detail')
 const user = JSON.parse(localStorage.getItem('user') || '{}')
 const isSuperadmin = computed(() => user.role === 'superadmin')
 const isOperator = computed(() => user.role === 'operator')
-const canManage = computed(() => isSuperadmin.value || isOperator.value)
+const canManage = computed(() => isSuperadmin.value)
 
 // Pagination Refs
 const itemsPerPage = ref(15)
