@@ -114,6 +114,8 @@ trait HandlesExtraPayroll
     {
         $year = $request->year ?? 2026;
         $month = $request->month ?? ($this->getPayrollType() === 'thr' ? 4 : 6);
+        $perPage = $request->per_page ?? 15;
+        $search = $request->search;
         $user = auth()->user();
 
         $query = ExtraPayrollPppkPw::where('type', $this->getPayrollType())
@@ -131,14 +133,36 @@ trait HandlesExtraPayroll
             $query->where('skpd_name', 'like', $skpdName . '%');
         }
 
-        $summary = $query->orderBy('skpd_name')->get();
+        if (!empty($search)) {
+            $query->where('skpd_name', 'like', "%{$search}%");
+        }
+
+        // Get global totals for meta
+        $totalStats = DB::table('tb_extra_payroll_pppk_pw')
+            ->where('type', $this->getPayrollType())
+            ->where('year', $year)
+            ->where('month', $month)
+            ->when($user && $user->role === 'operator' && !empty($user->institution), function($q) use ($skpdName) {
+                return $q->where('skpd_name', 'like', $skpdName . '%');
+            })
+            ->select(
+                DB::raw('count(*) as total_employees'),
+                DB::raw('sum(payroll_amount) as total_amount')
+            )
+            ->first();
+
+        $summary = $query->orderBy('skpd_name')->paginate($perPage);
 
         return response()->json([
             'success' => true,
-            'data' => $summary,
+            'data' => $summary->items(),
             'meta' => [
-                'total_employees' => $summary->sum('total_employees_skpd'),
-                'total_amount' => $summary->sum('total_amount_skpd')
+                'current_page' => $summary->currentPage(),
+                'last_page' => $summary->lastPage(),
+                'per_page' => $summary->perPage(),
+                'total' => $summary->total(),
+                'total_employees' => (int) ($totalStats->total_employees ?? 0),
+                'total_amount' => (float) ($totalStats->total_amount ?? 0)
             ]
         ]);
     }

@@ -181,14 +181,16 @@
 
             <!-- SKPD Tab -->
             <v-window-item value="skpd">
-              <v-data-table
+              <v-data-table-server
                 :headers="skpdHeaders"
                 :items="skpdGroups"
                 :loading="loadingSummary"
                 class="custom-table"
                 hover
-                :items-per-page="-1"
-                hide-default-footer
+                v-model:items-per-page="itemsPerPageSummary"
+                :items-length="totalSummary"
+                :search="search"
+                @update:options="loadSummaryItems"
               >
                 <template v-slot:item.total_amount_skpd="{ item }">
                   <span class="font-weight-bold text-primary">{{ formatCurrency(item.total_amount_skpd) }}</span>
@@ -198,7 +200,13 @@
                     {{ item.total_employees_skpd }} Pegawai
                   </v-chip>
                 </template>
-              </v-data-table>
+                <template v-slot:no-data>
+                  <div class="pa-12 text-center">
+                    <v-icon icon="mdi-domain-off" size="64" color="disabled" class="mb-4"></v-icon>
+                    <p class="text-h6 text-disabled">Belum ada data rekapitulasi.</p>
+                  </div>
+                </template>
+              </v-data-table-server>
             </v-window-item>
 
             <!-- Missing Data Tab -->
@@ -367,12 +375,15 @@ const canManage = computed(() => isSuperadmin.value)
 // Pagination Refs
 const itemsPerPage = ref(15)
 const totalItems = ref(0)
+const itemsPerPageSummary = ref(15)
+const totalSummary = ref(0)
 const itemsPerPageMissing = ref(15)
 const totalMissing = ref(0)
 const page = ref(1)
 const search = ref('')
 const searchInput = ref('')
 const serverOptions = ref({})
+const serverOptionsSummary = ref({})
 const serverOptionsMissing = ref({})
 
 // Debounce search
@@ -459,7 +470,7 @@ const refreshAll = () => {
   if (activeTab.value === 'detail') {
     loadItems(serverOptions.value)
   } else if (activeTab.value === 'skpd') {
-    fetchSummary()
+    loadSummaryItems(serverOptionsSummary.value)
   } else if (activeTab.value === 'missing') {
     loadMissingItems(serverOptionsMissing.value)
   }
@@ -490,13 +501,21 @@ const loadItems = async (options) => {
   }
 }
 
-const fetchSummary = async () => {
+const loadSummaryItems = async (options) => {
+  serverOptionsSummary.value = options
   loadingSummary.value = true
   try {
+    const { page, itemsPerPage, search } = options
     const response = await api.get(config.value.apiBase + '/summary', {
-      params: { month: selectedMonth.value }
+      params: { 
+        month: selectedMonth.value,
+        page,
+        per_page: itemsPerPage,
+        search
+      }
     })
     skpdGroups.value = response.data.data
+    totalSummary.value = response.data.meta.total
     if (response.data.meta) {
       meta.value = { ...meta.value, ...response.data.meta }
     }
@@ -534,7 +553,7 @@ const loadMissingItems = async (options) => {
 
 watch(activeTab, (newTab) => {
   if (newTab === 'skpd' && skpdGroups.value.length === 0) {
-    fetchSummary()
+    loadSummaryItems({ page: 1, itemsPerPage: 15, search: search.value })
   } else if (newTab === 'missing' && missingItems.value.length === 0) {
     loadMissingItems({ page: 1, itemsPerPage: 15, search: search.value })
   }
