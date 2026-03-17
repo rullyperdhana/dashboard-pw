@@ -596,14 +596,37 @@ const potonganFields = [
 const combinedAllowanceBreakdown = computed(() => {
   if (!pnsStats.value && !pppkStats.value) return []
   return [
-    { label: 'Gaji Pokok', pns: pnsStats.value?.total_gaji_pokok || 0, pppk: pppkStats.value?.total_gaji_pokok || 0, total: (pnsStats.value?.total_gaji_pokok || 0) + (pppkStats.value?.total_gaji_pokok || 0) },
-    ...tunjanganFields.map(f => ({ label: f.label, pns: pnsStats.value?.[f.key] || 0, pppk: pppkStats.value?.[f.key] || 0, total: (pnsStats.value?.[f.key] || 0) + (pppkStats.value?.[f.key] || 0) })),
+    { 
+      label: 'Gaji Pokok', 
+      pns: Number(pnsStats.value?.total_gaji_pokok || 0), 
+      pppk: Number(pppkStats.value?.total_gaji_pokok || 0), 
+      total: Number(pnsStats.value?.total_gaji_pokok || 0) + Number(pppkStats.value?.total_gaji_pokok || 0) 
+    },
+    ...tunjanganFields.map(f => {
+      const pnsVal = Number(pnsStats.value?.[f.key] || 0)
+      const pppkVal = Number(pppkStats.value?.[f.key] || 0)
+      return { 
+        label: f.label, 
+        pns: pnsVal, 
+        pppk: pppkVal, 
+        total: pnsVal + pppkVal 
+      }
+    }),
   ]
 })
 
 const combinedDeductionBreakdown = computed(() => {
   if (!pnsStats.value && !pppkStats.value) return []
-  return potonganFields.map(f => ({ label: f.label, pns: pnsStats.value?.[f.key] || 0, pppk: pppkStats.value?.[f.key] || 0, total: (pnsStats.value?.[f.key] || 0) + (pppkStats.value?.[f.key] || 0) }))
+  return potonganFields.map(f => {
+    const pnsVal = Number(pnsStats.value?.[f.key] || 0)
+    const pppkVal = Number(pppkStats.value?.[f.key] || 0)
+    return { 
+      label: f.label, 
+      pns: pnsVal, 
+      pppk: pppkVal, 
+      total: pnsVal + pppkVal 
+    }
+  })
 })
 
 const allowanceBreakdown = computed(() => tunjanganFields.map(f => ({ label: f.label, value: stats.value?.[f.key] || 0 })))
@@ -871,12 +894,16 @@ const exportCombinedAllowance = async () => {
 
 // ═════════ UTILITIES ═════════
 const getMonthName = (m) => months.find(item => item.value === m)?.title || ''
-const formatCurrencyShort = (v) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(v || 0)
+const formatCurrencyShort = (v) => {
+  const val = typeof v === 'string' ? parseFloat(v.replace(/,/g, '')) : v
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0)
+}
 const formatCurrencyCompact = (v) => {
-  if (!v) return 'Rp 0'
-  if (v >= 1e9) return `Rp ${(v / 1e9).toFixed(1)} M`
-  if (v >= 1e6) return `Rp ${(v / 1e6).toFixed(1)} Jt`
-  return formatCurrencyShort(v)
+  const val = typeof v === 'string' ? parseFloat(v.replace(/,/g, '')) : v
+  if (!val) return 'Rp 0'
+  if (val >= 1e9) return `Rp ${(val / 1e9).toFixed(1)} M`
+  if (val >= 1e6) return `Rp ${(val / 1e6).toFixed(1)} Jt`
+  return formatCurrencyShort(val)
 }
 
 onMounted(async () => { 
