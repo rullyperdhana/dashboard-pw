@@ -1,5 +1,12 @@
 <template>
-  <v-navigation-drawer permanent elevation="0" class="glass-sidebar" width="260" style="top: 64px; height: calc(100% - 64px)">
+  <v-navigation-drawer 
+    v-model="isSidebarOpen" 
+    elevation="0" 
+    class="glass-sidebar" 
+    width="260" 
+    :style="{ top: $vuetify.display.mdAndUp ? '64px' : '0', height: $vuetify.display.mdAndUp ? 'calc(100% - 64px)' : '100%' }"
+    :temporary="!$vuetify.display.mdAndUp"
+  >
     <div class="px-4 mb-4 d-flex align-center">
       <div class="logo-circle bg-primary d-flex align-center justify-center mr-3">
         <v-icon icon="mdi-shield-crown-outline" color="white" size="20"></v-icon>
@@ -156,6 +163,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '../api'
+import { isSidebarOpen } from '../utils/sidebarState'
 
 const router = useRouter()
 const route = useRoute()

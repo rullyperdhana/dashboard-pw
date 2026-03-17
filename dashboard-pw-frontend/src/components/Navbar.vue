@@ -1,5 +1,6 @@
 <template>
   <v-app-bar flat class="glass-nav px-4">
+    <v-app-bar-nav-icon @click="toggleSidebar" class="mr-2"></v-app-bar-nav-icon>
     <v-app-bar-title>
       <v-breadcrumbs :items="breadcrumbItems" class="pa-0 text-caption font-weight-bold">
         <template v-slot:divider>
@@ -103,6 +104,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '../api'
 import ThemeToggle from './ThemeToggle.vue'
+import { toggleSidebar } from '../utils/sidebarState'
 
 const router = useRouter()
 const route = useRoute()
