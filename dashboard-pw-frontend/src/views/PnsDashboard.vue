@@ -539,7 +539,7 @@ const showAnnualTable = ref(false)
 const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedYear = ref(new Date().getFullYear())
 const selectedJenisGajiFilter = ref(null)
-const jenisGajiOptions = ['Induk', 'Susulan', 'Kekurangan', 'Terusan']
+const jenisGajiOptions = ['Induk', 'Susulan', 'Kekurangan', 'Terusan', 'THR', 'Gaji 13']
 
 const detailDialog = ref(false)
 const detailType = ref('tunjangan')

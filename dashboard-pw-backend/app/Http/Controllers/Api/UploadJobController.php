@@ -193,12 +193,13 @@ class UploadJobController extends Controller
             'pns', 'pppk', 'payroll_dbf' => [
                 'month' => 'required|integer|min:1|max:12',
                 'year' => 'required|integer|min:2000',
-                'jenis_gaji' => 'required|in:Induk,Susulan,Kekurangan,Terusan',
+                'jenis_gaji' => 'required|in:Induk,Susulan,Kekurangan,Terusan,THR,Gaji 13',
             ],
             'tpp' => [
                 'month' => 'required|integer|min:1|max:12',
                 'year' => 'required|integer|min:2020|max:2030',
                 'tpp_type' => 'required|in:pns,pppk',
+                'jenis_gaji' => 'required|in:Induk,THR,Gaji 13',
             ],
             'tpg' => [
                 'triwulan' => 'required|integer|min:1|max:4',

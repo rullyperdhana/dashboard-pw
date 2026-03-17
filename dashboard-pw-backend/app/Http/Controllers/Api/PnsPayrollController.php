@@ -75,20 +75,18 @@ class PnsPayrollController extends Controller
             $month = $request->month;
         }
 
-        $jenisGaji = $request->jenis_gaji;
+        $jenisGaji = $request->jenis_gaji ?? 'Induk';
 
         \Log::info('PNS Dashboard Request', [
             'year' => $year,
             'month' => $month,
+            'jenis_gaji' => $jenisGaji,
             'request_params' => $request->all()
         ]);
 
         $query = GajiPns::where('tahun', $year)
-            ->where('bulan', $month);
-
-        if ($jenisGaji) {
-            $query->where('jenis_gaji', $jenisGaji);
-        }
+            ->where('bulan', $month)
+            ->where('jenis_gaji', $jenisGaji);
 
         $stats = $query->selectRaw($this->dashboardSelectRaw())
             ->first();
@@ -181,9 +179,11 @@ class PnsPayrollController extends Controller
             $month = $request->month;
         }
         $search = $request->search;
+        $jenisGaji = $request->jenis_gaji ?? 'Induk';
 
         $query = GajiPns::where('gaji_pns.tahun', $year)
             ->where('gaji_pns.bulan', $month)
+            ->where('gaji_pns.jenis_gaji', $jenisGaji)
             ->leftJoin('satkers as s1', function ($join) {
                 $join->on('gaji_pns.kdskpd', '=', 's1.kdskpd')
                     ->on('gaji_pns.kdsatker', '=', 's1.kdsatker');
@@ -241,20 +241,18 @@ class PnsPayrollController extends Controller
             $month = $request->month;
         }
 
-        $jenisGaji = $request->jenis_gaji;
+        $jenisGaji = $request->jenis_gaji ?? 'Induk';
 
         \Log::info('PPPK Dashboard Request', [
             'year' => $year,
             'month' => $month,
+            'jenis_gaji' => $jenisGaji,
             'request_params' => $request->all()
         ]);
 
         $query = GajiPppk::where('tahun', $year)
-            ->where('bulan', $month);
-
-        if ($jenisGaji) {
-            $query->where('jenis_gaji', $jenisGaji);
-        }
+            ->where('bulan', $month)
+            ->where('jenis_gaji', $jenisGaji);
 
         $stats = $query->selectRaw($this->dashboardSelectRaw())
             ->first();
@@ -337,13 +335,10 @@ class PnsPayrollController extends Controller
     public function yearlyTrend(Request $request)
     {
         $year = $request->year ?? date('Y');
-        $jenisGaji = $request->jenis_gaji;
+        $jenisGaji = $request->jenis_gaji ?? 'Induk';
 
-        $query = GajiPns::where('tahun', $year);
-
-        if ($jenisGaji) {
-            $query->where('jenis_gaji', $jenisGaji);
-        }
+        $query = GajiPns::where('tahun', $year)
+            ->where('jenis_gaji', $jenisGaji);
 
         $trend = $query->select('bulan', DB::raw('COUNT(DISTINCT nip) as total_employees'), DB::raw('SUM(kotor) as total_gross'), DB::raw('SUM(bersih) as total_net'), DB::raw('SUM(tunj_tpp) as total_tpp'))
             ->groupBy('bulan')
@@ -366,13 +361,10 @@ class PnsPayrollController extends Controller
     public function yearlyTrendPppk(Request $request)
     {
         $year = $request->year ?? date('Y');
-        $jenisGaji = $request->jenis_gaji;
+        $jenisGaji = $request->jenis_gaji ?? 'Induk';
 
-        $query = GajiPppk::where('tahun', $year);
-
-        if ($jenisGaji) {
-            $query->where('jenis_gaji', $jenisGaji);
-        }
+        $query = GajiPppk::where('tahun', $year)
+            ->where('jenis_gaji', $jenisGaji);
 
         $trend = $query->select('bulan', DB::raw('COUNT(DISTINCT nip) as total_employees'), DB::raw('SUM(kotor) as total_gross'), DB::raw('SUM(bersih) as total_net'), DB::raw('SUM(tunj_tpp) as total_tpp'))
             ->groupBy('bulan')
@@ -397,7 +389,7 @@ class PnsPayrollController extends Controller
         $year = $request->year ?? date('Y');
         $employeeType = $request->type ?? 'pns'; // 'pns' or 'pppk'
         $skpdFilter = $request->skpd ?? null;
-        $jenisGajiFilter = $request->jenis_gaji;
+        $jenisGajiFilter = $request->jenis_gaji ?? 'Induk';
 
         $model = $employeeType === 'pns' ? GajiPns::class : GajiPppk::class;
 

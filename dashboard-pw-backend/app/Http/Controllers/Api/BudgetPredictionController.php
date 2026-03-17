@@ -110,6 +110,7 @@ class BudgetPredictionController extends Controller
 
         $last3Periods = DB::table($table)
             ->select('bulan', 'tahun')
+            ->where('jenis_gaji', 'Induk')
             ->distinct()
             ->orderBy('tahun', 'desc')
             ->orderBy('bulan', 'desc')
@@ -125,6 +126,7 @@ class BudgetPredictionController extends Controller
             $monthlyTotals[] = DB::table($table)
                 ->where('bulan', $p->bulan)
                 ->where('tahun', $p->tahun)
+                ->where('jenis_gaji', 'Induk')
                 ->sum('bersih');
         }
         $avgMonthlyTotal = count($monthlyTotals) > 0 ? array_sum($monthlyTotals) / count($monthlyTotals) : 0;

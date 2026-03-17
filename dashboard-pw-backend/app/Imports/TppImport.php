@@ -14,12 +14,14 @@ class TppImport implements ToCollection, WithHeadingRow
     protected $month;
     protected $year;
     protected $type;
+    protected $jenisGaji;
 
-    public function __construct($month, $year, $type = 'pns')
+    public function __construct($month, $year, $type = 'pns', $jenisGaji = 'Induk')
     {
         $this->month = $month;
         $this->year = $year;
         $this->type = $type;
+        $this->jenisGaji = $jenisGaji;
     }
 
     public function collection(Collection $rows)
@@ -44,6 +46,7 @@ class TppImport implements ToCollection, WithHeadingRow
                 $employee = $model::where('nip', $nip)
                     ->where('bulan', $this->month)
                     ->where('tahun', $this->year)
+                    ->where('jenis_gaji', $this->jenisGaji)
                     ->first();
 
                 if ($employee) {
@@ -66,6 +69,7 @@ class TppImport implements ToCollection, WithHeadingRow
             $model = $this->type === 'pppk' ? GajiPppk::class : GajiPns::class;
             $missingEmployees = $model::where('bulan', $this->month)
                 ->where('tahun', $this->year)
+                ->where('jenis_gaji', $this->jenisGaji)
                 ->whereNotIn('nip', $excelNips)
                 ->select('nip', 'nama', 'skpd')
                 ->get();

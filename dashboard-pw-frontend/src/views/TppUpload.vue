@@ -47,7 +47,7 @@
                     </v-col>
                 </v-row>
 
-                <v-select
+                 <v-select
                   v-model="employeeType"
                   :items="employeeTypes"
                   item-title="title"
@@ -58,6 +58,17 @@
                   class="mt-2"
                   prepend-inner-icon="mdi-account-group"
                   :rules="[v => !!v || 'Tipe pegawai harus dipilih']"
+                ></v-select>
+
+                <v-select
+                  v-model="selectedJenisGaji"
+                  :items="jenisGajiOptions"
+                  label="Jenis TPP"
+                  variant="outlined"
+                  color="teal"
+                  class="mt-2"
+                  prepend-inner-icon="mdi-cash-multiple"
+                  :rules="[v => !!v || 'Jenis TPP harus dipilih']"
                 ></v-select>
 
                 <v-file-input
@@ -292,6 +303,8 @@ const file = ref([])
 const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedYear = ref(new Date().getFullYear())
 const employeeType = ref('pns')
+const selectedJenisGaji = ref('Induk')
+const jenisGajiOptions = ['Induk', 'THR', 'Gaji 13']
 
 const discrepancies = ref([])
 const loadingDiscrepancies = ref(false)
@@ -460,6 +473,7 @@ const submitUpload = async () => {
     formData.append('month', selectedMonth.value)
     formData.append('year', selectedYear.value)
     formData.append('tpp_type', employeeType.value)
+    formData.append('jenis_gaji', selectedJenisGaji.value)
 
     try {
         const response = await api.post('/upload-jobs', formData, {

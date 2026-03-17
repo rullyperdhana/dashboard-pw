@@ -218,11 +218,13 @@ class ProcessPayrollUpload implements ShouldQueue
     {
         $month = $params['month'];
         $year = $params['year'];
-        $type = $params['type']; // pns or pppk
+        $type = $params['type'] ?? 'pns'; // pns or pppk
+        if (isset($params['tpp_type'])) $type = $params['tpp_type'];
+        $jenisGaji = $params['jenis_gaji'] ?? 'Induk';
 
         $job->updateProgress(0, 100);
 
-        Excel::import(new TppImport($month, $year, $type), $filePath);
+        Excel::import(new TppImport($month, $year, $type, $jenisGaji), $filePath);
         $job->updateProgress(90, 100);
 
         $job->markCompleted([

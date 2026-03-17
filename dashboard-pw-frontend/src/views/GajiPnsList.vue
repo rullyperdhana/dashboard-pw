@@ -73,6 +73,16 @@
                   item-value="kdskpd"
                   variant="underlined"
                   density="compact"
+                  class="mb-3"
+                  clearable
+                  @update:model-value="fetchData"
+                ></v-select>
+                <v-select
+                  v-model="selectedJenisGaji"
+                  label="Jenis Gaji"
+                  :items="jenisGajiOptions"
+                  variant="underlined"
+                  density="compact"
                   clearable
                   @update:model-value="fetchData"
                 ></v-select>
@@ -399,8 +409,10 @@ const itemsPerPage = ref(20)
 const stats = ref({ total: 0, total_gaji_pokok: 0, total_kotor: 0, total_bersih: 0 })
 const selectedPeriod = ref(null)
 const selectedSkpd = ref(null)
+const selectedJenisGaji = ref('Induk')
 const periodOptions = ref([])
 const skpdOptions = ref([])
+const jenisGajiOptions = ['Induk', 'Susulan', 'Kekurangan', 'Terusan', 'THR', 'Gaji 13']
 
 // Dialogs
 const formDialog = ref(false)
@@ -489,6 +501,7 @@ const fetchData = async () => {
       per_page: itemsPerPage.value,
       page: page.value,
       kdskpd: selectedSkpd.value || undefined,
+      jenis_gaji: selectedJenisGaji.value || undefined,
     }
     if (selectedPeriod.value) {
       const [b, t] = selectedPeriod.value.split('-')
