@@ -3,7 +3,7 @@
     <Navbar />
     <Sidebar />
     
-    <v-main class="bg-light">
+    <v-main>
       <v-container fluid class="pa-8">
         <!-- Header -->
         <div class="d-flex align-center mb-8">
@@ -12,7 +12,7 @@
             <p class="text-body-2 text-medium-emphasis mt-1">Estimasi kebutuhan belanja pegawai berbasis data KGB, KP & Pensiun</p>
           </div>
           <v-spacer></v-spacer>
-          <v-btn-toggle v-model="category" mandatory color="primary" variant="outlined" rounded="pill" density="compact" class="bg-white">
+          <v-btn-toggle v-model="category" mandatory color="primary" variant="outlined" rounded="pill" density="compact">
             <v-btn value="pw">PPPK-PW</v-btn>
             <v-btn value="pns">PNS</v-btn>
             <v-btn value="pppk">PPPK-FULL</v-btn>
@@ -190,7 +190,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, provide } from 'vue'
+import { ref, onMounted, computed, provide, watch } from 'vue'
 import { useTheme } from 'vuetify'
 import Navbar from '../components/Navbar.vue'
 import Sidebar from '../components/Sidebar.vue'
@@ -294,6 +294,11 @@ const retirementChartOption = computed(() => {
   }
 })
 
+watch(category, () => {
+  fetchPrediction()
+  fetchHealthData()
+})
+
 onMounted(() => {
   fetchPrediction()
   fetchHealthData()
@@ -302,9 +307,9 @@ onMounted(() => {
 
 <style scoped>
 .glass-card {
-  background: rgba(255, 255, 255, 0.7) !important;
+  background: rgba(var(--v-theme-surface), 0.7) !important;
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(var(--v-border-color), 0.1) !important;
 }
 .border-primary {
   border: 1px solid rgb(var(--v-theme-primary), 0.3) !important;

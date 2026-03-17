@@ -1,7 +1,7 @@
 <template>
-  <div class="executive-mobile bg-slate-50 min-h-screen pb-20">
+  <div class="executive-mobile min-h-screen pb-20">
     <!-- Navbar Mobile -->
-    <v-app-bar color="white" elevation="1" flat class="px-2">
+    <v-app-bar elevation="1" flat class="px-2">
       <v-avatar color="primary" size="32" class="mr-3">
         <v-icon icon="mdi-shield-crown" color="white" size="20"></v-icon>
       </v-avatar>
@@ -29,16 +29,16 @@
 
       <v-row dense>
         <v-col cols="6">
-          <v-card class="rounded-xl pa-4 bg-white" elevation="2">
+          <v-card class="rounded-xl pa-4" elevation="2">
             <div class="text-caption text-grey mb-1">Total Pegawai</div>
-            <div class="text-h5 font-weight-bold text-slate-800">{{ stats.total_employees }}</div>
+            <div class="text-h5 font-weight-bold">{{ stats.total_employees }}</div>
             <div class="text-caption text-success mt-1">Aktif & Terintegrasi</div>
           </v-card>
         </v-col>
         <v-col cols="6">
-          <v-card class="rounded-xl pa-4 bg-white" elevation="2">
+          <v-card class="rounded-xl pa-4" elevation="2">
             <div class="text-caption text-grey mb-1">Instansi</div>
-            <div class="text-h5 font-weight-bold text-slate-800">{{ stats.total_skpd }}</div>
+            <div class="text-h5 font-weight-bold">{{ stats.total_skpd }}</div>
             <div class="text-caption text-primary mt-1">Unit Pengelola</div>
           </v-card>
         </v-col>
@@ -46,7 +46,7 @@
 
       <!-- Charts for Mobile -->
       <div class="text-subtitle-2 text-grey mb-4 mt-6">TREN PENCAIRAN</div>
-      <v-card class="rounded-xl pa-4 bg-white mb-6" elevation="2">
+      <v-card class="rounded-xl pa-4 mb-6" elevation="2">
         <div style="height: 200px">
           <v-chart v-if="charts.payment_trend" :option="trendOption" autoresize />
         </div>
@@ -101,7 +101,7 @@ import VChart, { THEME_KEY } from 'vue-echarts'
 use([CanvasRenderer, LineChart, BarChart, TitleComponent, TooltipComponent, GridComponent])
 
 const theme = useTheme()
-provide(THEME_KEY, 'light')
+provide(THEME_KEY, computed(() => theme.global.name.value === 'dark' ? 'dark' : 'light'))
 
 const currentYear = new Date().getFullYear()
 const currentMonthName = new Intl.DateTimeFormat('id-ID', { month: 'long' }).format(new Date())
