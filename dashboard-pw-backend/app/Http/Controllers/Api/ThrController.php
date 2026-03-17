@@ -137,9 +137,8 @@ class ThrController extends Controller
 
     public function generateThr(Request $request)
     {
-        $user = auth()->user();
-        if ($user->role !== 'superadmin' && $user->role !== 'operator') {
-            return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+        if (auth()->user()->role !== 'superadmin') {
+            return response()->json(['success' => false, 'message' => 'Hanya Superadmin yang dapat melakukan sinkronisasi data THR.'], 403);
         }
 
         // Drastically increase limits for massive datasets
@@ -154,46 +153,34 @@ class ThrController extends Controller
         $thrFixedAmount = (float) (\App\Models\Setting::where('key', 'thr_pppk_pw_amount')->value('value') ?? 600000);
 
         // Fetch basis from payment month 2, grouping by the unique constraint keys to avoid duplicates
-        $employeesQuery = DB::table('tb_payment_detail as pd')
+        $employees = DB::table('tb_payment_detail as pd')
             ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
             ->join('rka_settings as rs', 'p.rka_id', '=', 'rs.id')
             ->join('pegawai_pw as e', 'pd.employee_id', '=', 'e.id')
             ->leftJoin('skpd as s', 'e.idskpd', '=', 's.id_skpd')
             ->leftJoin('pptk_settings as ps', 'rs.pptk_id', '=', 'ps.id')
             ->where('p.month', 2)
-            ->where('p.year', $year);
-
-        if ($user->role === 'operator') {
-            $employeesQuery->where('e.idskpd', $user->institution);
-        }
-
-        $employees = $employeesQuery->select(
-            'e.id as employee_id',
-            'e.nip',
-            'e.nama',
-            'e.jabatan',
-            DB::raw('MAX(pd.gaji_pokok) as gapok_basis'),
-            DB::raw('COALESCE(s.nama_skpd, e.skpd) as skpd_name'),
-            'rs.kode_sub_giat',
-            'rs.nama_sub_giat',
-            'ps.nama_pptk',
-            'ps.nip_pptk',
-            'ps.pangkat_pptk'
-        )
-        ->groupBy('e.nip', 'rs.kode_sub_giat', 'rs.nama_sub_giat', 'e.id', 'e.nama', 'e.jabatan', 'skpd_name', 'ps.nama_pptk', 'ps.nip_pptk', 'ps.pangkat_pptk')
-        ->get();
+            ->where('p.year', $year)
+            ->select(
+                'e.id as employee_id',
+                'e.nip',
+                'e.nama',
+                'e.jabatan',
+                DB::raw('MAX(pd.gaji_pokok) as gapok_basis'),
+                DB::raw('COALESCE(s.nama_skpd, e.skpd) as skpd_name'),
+                'rs.kode_sub_giat',
+                'rs.nama_sub_giat',
+                'ps.nama_pptk',
+                'ps.nip_pptk',
+                'ps.pangkat_pptk'
+            )
+            ->groupBy('e.nip', 'rs.kode_sub_giat', 'rs.nama_sub_giat', 'e.id', 'e.nama', 'e.jabatan', 'skpd_name', 'ps.nama_pptk', 'ps.nip_pptk', 'ps.pangkat_pptk')
+            ->get();
 
         DB::beginTransaction();
         try {
             // Clear existing for this specific month/year before regenerate
-            $deleteQuery = ThrPppkPw::where('year', $year)->where('month', $thrMonth);
-            
-            if ($user->role === 'operator') {
-                $skpdNameAttr = DB::table('skpd')->where('id_skpd', $user->institution)->value('nama_skpd');
-                $deleteQuery->where('skpd_name', $skpdNameAttr);
-            }
-            
-            $deleteQuery->delete();
+            ThrPppkPw::where('year', $year)->where('month', $thrMonth)->delete();
 
             $insertData = [];
             foreach ($employees as $emp) {
@@ -247,21 +234,11 @@ class ThrController extends Controller
 
     public function updateThrRow(Request $request, $id)
     {
-        $user = auth()->user();
-        if ($user->role !== 'superadmin' && $user->role !== 'operator') {
+        if (auth()->user()->role !== 'superadmin') {
             return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
         }
 
         $record = ThrPppkPw::findOrFail($id);
-
-        // If operator, check if record belongs to their SKPD
-        if ($user->role === 'operator') {
-            $skpdName = DB::table('skpd')->where('id_skpd', $user->institution)->value('nama_skpd');
-            if ($record->skpd_name !== $skpdName) {
-                return response()->json(['success' => false, 'message' => 'Anda tidak memiliki akses ke data SKPD lain.'], 403);
-            }
-        }
-
         $record->update($request->only(['nama', 'nip', 'jabatan', 'thr_amount', 'notes', 'n_months', 'pptk_nama', 'pptk_nip', 'pptk_jabatan']));
 
         return response()->json(['success' => true, 'message' => 'Data berhasil diupdate', 'data' => $record]);
@@ -269,8 +246,7 @@ class ThrController extends Controller
 
     public function storeThrRow(Request $request)
     {
-        $user = auth()->user();
-        if ($user->role !== 'superadmin' && $user->role !== 'operator') {
+        if (auth()->user()->role !== 'superadmin') {
             return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
         }
 
@@ -286,33 +262,17 @@ class ThrController extends Controller
             'pptk_jabatan' => 'nullable|string',
         ]);
 
-        // If operator, force SKPD match
-        if ($user->role === 'operator') {
-            $skpdName = DB::table('skpd')->where('id_skpd', $user->institution)->value('nama_skpd');
-            $data['skpd_name'] = $skpdName;
-        }
-
-        $record = ThrPppkPw::create($data);
+        $record = ThrPppkPw::create($request->all());
         return response()->json(['success' => true, 'message' => 'Data berhasil ditambah', 'data' => $record]);
     }
 
     public function deleteThrRow($id)
     {
-        $user = auth()->user();
-        if ($user->role !== 'superadmin' && $user->role !== 'operator') {
+        if (auth()->user()->role !== 'superadmin') {
             return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
         }
 
         $record = ThrPppkPw::findOrFail($id);
-
-        // If operator, check if record belongs to their SKPD
-        if ($user->role === 'operator') {
-            $skpdName = DB::table('skpd')->where('id_skpd', $user->institution)->value('nama_skpd');
-            if ($record->skpd_name !== $skpdName) {
-                return response()->json(['success' => false, 'message' => 'Anda tidak memiliki akses ke data SKPD lain.'], 403);
-            }
-        }
-
         $record->delete();
         return response()->json(['success' => true, 'message' => 'Data berhasil dihapus']);
     }

@@ -18,7 +18,7 @@
       <v-spacer></v-spacer>
       <div class="d-flex ga-2">
         <v-btn
-          v-if="canManage"
+          v-if="isSuperadmin"
           prepend-icon="mdi-cog-outline"
           color="secondary"
           variant="tonal"
@@ -28,7 +28,7 @@
           Pengaturan
         </v-btn>
         <v-btn
-          v-if="canManage && !meta.is_generated"
+          v-if="isSuperadmin && !meta.is_generated"
           prepend-icon="mdi-sync"
           color="primary"
           rounded="lg"
@@ -38,7 +38,7 @@
           Generate Data
         </v-btn>
         <v-btn
-          v-else-if="canManage && meta.is_generated"
+          v-else-if="isSuperadmin && meta.is_generated"
           prepend-icon="mdi-plus"
           color="primary"
           variant="tonal"
@@ -158,7 +158,7 @@
               <span class="font-weight-bold text-primary">{{ formatCurrency(item.thr_amount) }}</span>
             </template>
             <template v-slot:item.actions="{ item }">
-              <div class="d-flex ga-1" v-if="canManage">
+              <div class="d-flex ga-1" v-if="isSuperadmin">
                 <v-btn icon="mdi-pencil" size="x-small" variant="text" color="blue" @click="editItem(item)"></v-btn>
                 <v-btn icon="mdi-delete" size="x-small" variant="text" color="error" @click="deleteItem(item)"></v-btn>
               </div>
@@ -226,7 +226,7 @@
         <v-card-title class="pa-6 font-weight-bold">Tambah Baris THR</v-card-title>
         <v-card-text class="pa-6 pt-0">
           <v-text-field v-model="newItem.nama" label="Nama Pegawai" variant="outlined" placeholder="Masukkan nama" density="comfortable"></v-text-field>
-          <v-text-field v-model="newItem.skpd_name" label="SKPD" variant="outlined" placeholder="Masukkan SKPD" density="comfortable" :readonly="isOperator" :disabled="isOperator"></v-text-field>
+          <v-text-field v-model="newItem.skpd_name" label="SKPD" variant="outlined" placeholder="Masukkan SKPD" density="comfortable"></v-text-field>
           <v-text-field v-model="newItem.nama_sub_giat" label="Sub Kegiatan" variant="outlined" placeholder="Input bebas" density="comfortable"></v-text-field>
           <v-text-field v-model="newItem.thr_amount" label="Besaran THR" variant="outlined" type="number" prefix="Rp" density="comfortable"></v-text-field>
           
@@ -279,8 +279,6 @@ const meta = ref({})
 const activeTab = ref('detail')
 const user = JSON.parse(localStorage.getItem('user') || '{}')
 const isSuperadmin = computed(() => user.role === 'superadmin')
-const isOperator = computed(() => user.role === 'operator')
-const canManage = computed(() => isSuperadmin.value || isOperator.value)
 
 // Pagination Refs
 const itemsPerPage = ref(15)
@@ -471,7 +469,7 @@ const deleteItem = async (item) => {
 const openAddDialog = () => {
   newItem.value = {
     nama: '',
-    skpd_name: isOperator.value ? (user.skpd?.nama_skpd || '') : '',
+    skpd_name: '',
     nama_sub_giat: '',
     pptk_nama: '',
     pptk_nip: '',
