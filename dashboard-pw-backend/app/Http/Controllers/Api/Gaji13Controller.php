@@ -8,48 +8,41 @@ use App\Exports\ThrExport;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
-use App\Models\ExtraPayrollPppkPw;
 
-class ThrController extends Controller
+class Gaji13Controller extends Controller
 {
     use HandlesExtraPayroll;
 
     protected function getPayrollType(): string
     {
-        return 'thr';
+        return 'gaji13';
     }
 
     protected function getPayrollLabel(): string
     {
-        return 'THR';
+        return 'Gaji 13';
     }
 
     protected function getBasisMonthSettingKey(): string
     {
-        return 'thr_pppk_pw_basis_month';
+        return 'gaji13_pppk_pw_basis_month';
     }
 
-    /**
-     * Export to Excel (Specific to THR format/naming)
-     */
     public function exportExcel(Request $request)
     {
         $year = $request->year ?? 2026;
-        $month = $request->month ?? 4;
+        $month = $request->month ?? 6;
         
         $groupedData = $this->getFormattedGroupedData($request);
         $dataArray = json_decode(json_encode($groupedData), true);
 
-        return Excel::download(new ThrExport($dataArray, $year, $month, 'THR'), "THR_PPPK_PW_{$year}_{$month}.xlsx");
+        return Excel::download(new ThrExport($dataArray, $year, $month, 'Gaji 13'), "GAJI_13_PPPK_PW_{$year}_{$month}.xlsx");
     }
 
-    /**
-     * Export to PDF (Specific to THR format/naming)
-     */
     public function exportPdf(Request $request)
     {
         $year = $request->year ?? 2026;
-        $month = $request->month ?? 4;
+        $month = $request->month ?? 6;
 
         $groupedData = $this->getFormattedGroupedData($request);
         $dataArray = json_decode(json_encode($groupedData), true);
@@ -58,19 +51,9 @@ class ThrController extends Controller
             'data' => $dataArray,
             'year' => $year,
             'month' => $month,
-            'title' => 'Tunjangan Hari Raya (THR)'
+            'title' => 'Gaji Ketiga Belas (Gaji-13)'
         ])->setPaper('a4', 'landscape');
 
-        return $pdf->download("THR_PPPK_PW_{$year}_{$month}.pdf");
-    }
-
-    public function verifyThr(Request $request)
-    {
-        return view('verify_thr', [
-            'total' => $request->total,
-            'period' => $request->period,
-            'date' => $request->date,
-            'sub_giat' => $request->sub_giat
-        ]);
+        return $pdf->download("GAJI_13_PPPK_PW_{$year}_{$month}.pdf");
     }
 }

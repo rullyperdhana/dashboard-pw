@@ -1,5 +1,5 @@
 <template>
-  <ExtraPayrollTemplate type="thr" />
+  <ExtraPayrollTemplate type="gaji13" />
 </template>
 
 <script setup>

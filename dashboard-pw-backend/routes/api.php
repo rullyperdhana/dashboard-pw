@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\MasterPegawaiController;
 use App\Http\Controllers\Api\DbfImportController;
 use App\Http\Controllers\Api\SatkerController;
 use App\Http\Controllers\Api\ThrController;
+use App\Http\Controllers\Api\Gaji13Controller;
 use App\Http\Controllers\Api\ExportLogController;
 use App\Http\Controllers\Api\Skpd2026Controller;
 use Illuminate\Support\Facades\Route;
@@ -76,14 +77,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/combined-allowance-export', [ReportController::class, 'exportCombinedAllowance']);
 
     // THR (PPPK Paruh Waktu)
-    Route::get('/thr/pppk-pw', [ThrController::class, 'pppkPwThr']);
-    Route::get('/thr/pppk-pw/summary', [ThrController::class, 'pppkPwThrSummary']);
-    Route::post('/thr/pppk-pw/generate', [ThrController::class, 'generateThr']);
-    Route::post('/thr/pppk-pw/store', [ThrController::class, 'storeThrRow']);
-    Route::put('/thr/pppk-pw/{id}', [ThrController::class, 'updateThrRow']);
-    Route::delete('/thr/pppk-pw/{id}', [ThrController::class, 'deleteThrRow']);
+    Route::get('/thr/pppk-pw', [ThrController::class, 'index']);
+    Route::get('/thr/pppk-pw/summary', [ThrController::class, 'summary']);
+    Route::post('/thr/pppk-pw/generate', [ThrController::class, 'generate']);
+    Route::post('/thr/pppk-pw/store', [ThrController::class, 'storeRow']);
+    Route::put('/thr/pppk-pw/{id}', [ThrController::class, 'updateRow']);
+    Route::delete('/thr/pppk-pw/{id}', [ThrController::class, 'deleteRow']);
     Route::get('/thr/pppk-pw/excel', [ThrController::class, 'exportExcel']);
     Route::get('/thr/pppk-pw/pdf', [ThrController::class, 'exportPdf']);
+
+    // Gaji 13 (PPPK Paruh Waktu)
+    Route::get('/gaji13/pppk-pw', [Gaji13Controller::class, 'index']);
+    Route::get('/gaji13/pppk-pw/summary', [Gaji13Controller::class, 'summary']);
+    Route::post('/gaji13/pppk-pw/generate', [Gaji13Controller::class, 'generate']);
+    Route::post('/gaji13/pppk-pw/store', [Gaji13Controller::class, 'storeRow']);
+    Route::put('/gaji13/pppk-pw/{id}', [Gaji13Controller::class, 'updateRow']);
+    Route::delete('/gaji13/pppk-pw/{id}', [Gaji13Controller::class, 'deleteRow']);
+    Route::get('/gaji13/pppk-pw/excel', [Gaji13Controller::class, 'exportExcel']);
+    Route::get('/gaji13/pppk-pw/pdf', [Gaji13Controller::class, 'exportPdf']);
 
     // PNS Payroll
     Route::get('/pns/dashboard', [PnsPayrollController::class, 'dashboard']);

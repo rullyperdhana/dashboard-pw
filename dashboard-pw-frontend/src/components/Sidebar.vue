@@ -232,6 +232,7 @@ const menuItems = ref([
       { title: 'Data Gaji PPPK', icon: 'mdi-account-check-outline', value: 'gaji-pppk', to: '/gaji-pppk' },
       { title: 'Trace Gaji', icon: 'mdi-account-search-outline', value: 'employee-trace', to: '/employee-trace' },
       { title: 'THR PPPK-PW', icon: 'mdi-cash-fast', value: 'pppk-pw-thr', to: '/reports/thr-pppk-pw' },
+      { title: 'Gaji 13 PPPK-PW', icon: 'mdi-cash-check', value: 'pppk-pw-thr', to: '/reports/gaji-13-pppk-pw' },
     ]
   },
   {

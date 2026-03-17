@@ -153,6 +153,12 @@ const router = createRouter({
             meta: { requiresAuth: true, breadcrumb: 'THR PPPK-PW', app_access: 'pppk-pw-thr' },
         },
         {
+            path: '/reports/gaji-13-pppk-pw',
+            name: 'Gaji13PppkPw',
+            component: () => import('../views/Gaji13PppkPw.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Gaji 13 PPPK-PW', app_access: 'pppk-pw-thr' },
+        },
+        {
             path: '/settings/maintenance',
             name: 'DataMaintenance',
             component: () => import('../views/Settings/DataMaintenance.vue'),
