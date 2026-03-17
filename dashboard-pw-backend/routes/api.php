@@ -79,6 +79,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // THR (PPPK Paruh Waktu)
     Route::get('/thr/pppk-pw', [ThrController::class, 'index']);
     Route::get('/thr/pppk-pw/summary', [ThrController::class, 'summary']);
+    Route::get('/thr/pppk-pw/missing', [ThrController::class, 'missing']);
+    Route::get('/thr/pppk-pw/missing/export', [ThrController::class, 'exportMissing']);
     Route::post('/thr/pppk-pw/generate', [ThrController::class, 'generate']);
     Route::post('/thr/pppk-pw/store', [ThrController::class, 'storeRow']);
     Route::put('/thr/pppk-pw/{id}', [ThrController::class, 'updateRow']);
@@ -89,6 +91,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Gaji 13 (PPPK Paruh Waktu)
     Route::get('/gaji13/pppk-pw', [Gaji13Controller::class, 'index']);
     Route::get('/gaji13/pppk-pw/summary', [Gaji13Controller::class, 'summary']);
+    Route::get('/gaji13/pppk-pw/missing', [Gaji13Controller::class, 'missing']);
+    Route::get('/gaji13/pppk-pw/missing/export', [Gaji13Controller::class, 'exportMissing']);
     Route::post('/gaji13/pppk-pw/generate', [Gaji13Controller::class, 'generate']);
     Route::post('/gaji13/pppk-pw/store', [Gaji13Controller::class, 'storeRow']);
     Route::put('/gaji13/pppk-pw/{id}', [Gaji13Controller::class, 'updateRow']);

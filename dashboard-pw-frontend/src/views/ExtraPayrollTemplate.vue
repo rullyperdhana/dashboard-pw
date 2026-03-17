@@ -133,6 +133,9 @@
             <v-tab value="skpd" class="text-none font-weight-bold">
               <v-icon start icon="mdi-domain"></v-icon> Rekapitulasi per SKPD
             </v-tab>
+            <v-tab value="missing" class="text-none font-weight-bold">
+              <v-icon start icon="mdi-account-alert-outline" color="warning"></v-icon> Data Belum Terbentuk
+            </v-tab>
           </v-tabs>
 
           <v-window v-model="activeTab">
@@ -196,6 +199,56 @@
                   </v-chip>
                 </template>
               </v-data-table>
+            </v-window-item>
+
+            <!-- Missing Data Tab -->
+            <v-window-item value="missing">
+              <v-alert
+                type="warning"
+                variant="tonal"
+                class="ma-4 rounded-lg"
+                density="compact"
+                title="Daftar Terdeteksi Terlewat"
+                text="Daftar ini berisi pegawai yang memiliki slip gaji pada bulan basis (Peb/Mei) namun BELUM memiliki data di tabel laporan ini."
+              >
+                <template v-slot:append>
+                  <v-btn
+                    color="success"
+                    prepend-icon="mdi-file-excel-outline"
+                    variant="flat"
+                    size="small"
+                    class="ml-4"
+                    @click="exportMissingData"
+                    :loading="exportLoading"
+                  >
+                    Ekspor Daftar Terlewat
+                  </v-btn>
+                </template>
+              </v-alert>
+              <v-data-table-server
+                :headers="missingHeaders"
+                :items="missingItems"
+                :loading="loadingMissing"
+                class="custom-table"
+                hover
+                v-model:items-per-page="itemsPerPageMissing"
+                :items-length="totalMissing"
+                :search="search"
+                @update:options="loadMissingItems"
+              >
+                <template v-slot:item.gapok_basis="{ item }">
+                  {{ formatCurrency(item.gapok_basis) }}
+                </template>
+                <template v-slot:item.action="{ item }">
+                  <v-chip color="warning" size="small" variant="flat">Belum Terbentuk</v-chip>
+                </template>
+                <template v-slot:no-data>
+                  <div class="pa-12 text-center">
+                    <v-icon icon="mdi-check-circle-outline" size="64" color="success" class="mb-4"></v-icon>
+                    <p class="text-h6 text-success">Semua data gaji basis sudah memiliki record laporan.</p>
+                  </div>
+                </template>
+              </v-data-table-server>
             </v-window-item>
           </v-window>
         </v-card>
@@ -298,10 +351,12 @@ const config = computed(() => {
 
 const loading = ref(false)
 const loadingSummary = ref(false)
+const loadingMissing = ref(false)
 const exportLoading = ref(false)
 const selectedMonth = ref(config.value.defaultMonth)
 const items = ref([])
 const skpdGroups = ref([])
+const missingItems = ref([])
 const meta = ref({})
 const activeTab = ref('detail')
 const user = JSON.parse(localStorage.getItem('user') || '{}')
@@ -312,10 +367,13 @@ const canManage = computed(() => isSuperadmin.value)
 // Pagination Refs
 const itemsPerPage = ref(15)
 const totalItems = ref(0)
+const itemsPerPageMissing = ref(15)
+const totalMissing = ref(0)
 const page = ref(1)
 const search = ref('')
 const searchInput = ref('')
 const serverOptions = ref({})
+const serverOptionsMissing = ref({})
 
 // Debounce search
 let searchTimeout = null
@@ -381,6 +439,15 @@ const skpdHeaders = [
   { title: 'Total Pembayaran ' + config.value.label, key: 'total_amount_skpd', align: 'end', sortable: true },
 ]
 
+const missingHeaders = [
+  { title: 'SKPD', key: 'skpd_name', align: 'start' },
+  { title: 'Nama Pegawai', key: 'nama', align: 'start' },
+  { title: 'NIP', key: 'nip', align: 'start' },
+  { title: 'Jabatan', key: 'jabatan', align: 'start' },
+  { title: 'Gapok (Basis)', key: 'gapok_basis', align: 'end' },
+  { title: 'Status', key: 'action', align: 'center' },
+]
+
 const showSnackbar = (text, color = 'success') => {
   snackbarText.value = text
   snackbarColor.value = color
@@ -390,8 +457,10 @@ const showSnackbar = (text, color = 'success') => {
 const refreshAll = () => {
   if (activeTab.value === 'detail') {
     loadItems(serverOptions.value)
-  } else {
+  } else if (activeTab.value === 'skpd') {
     fetchSummary()
+  } else if (activeTab.value === 'missing') {
+    loadMissingItems(serverOptionsMissing.value)
   }
 }
 
@@ -438,9 +507,35 @@ const fetchSummary = async () => {
   }
 }
 
+const loadMissingItems = async (options) => {
+  serverOptionsMissing.value = options
+  loadingMissing.value = true
+  try {
+    const { page, itemsPerPage, search } = options
+    const response = await api.get(config.value.apiBase + '/missing', {
+      params: { 
+        month: selectedMonth.value,
+        page,
+        per_page: itemsPerPage,
+        search
+      }
+    })
+    
+    missingItems.value = response.data.data
+    totalMissing.value = response.data.meta.total
+  } catch (error) {
+    console.error('Error loading missing items:', error)
+    showSnackbar('Gagal memuat data terlewat', 'error')
+  } finally {
+    loadingMissing.value = false
+  }
+}
+
 watch(activeTab, (newTab) => {
   if (newTab === 'skpd' && skpdGroups.value.length === 0) {
     fetchSummary()
+  } else if (newTab === 'missing' && missingItems.value.length === 0) {
+    loadMissingItems({ page: 1, itemsPerPage: 15, search: search.value })
   }
 })
 
@@ -536,6 +631,25 @@ const exportData = async (type) => {
   } catch (error) {
     console.error(`Error exporting ${type}:`, error)
     alert(`Gagal mengekspor ${type}. Silakan coba lagi.`)
+  } finally {
+    exportLoading.value = false
+  }
+}
+
+const exportMissingData = async () => {
+  exportLoading.value = true
+  try {
+    const url = `${config.value.apiBase}/missing/export?month=${selectedMonth.value}`
+    const response = await api.get(url, { responseType: 'blob' })
+    
+    const blob = new Blob([response.data])
+    const link = document.createElement('a')
+    link.href = window.URL.createObjectURL(blob)
+    link.download = `DAFTAR_TERLEWAT_${config.value.label}_2026_${selectedMonth.value}.xlsx`
+    link.click()
+  } catch (error) {
+    console.error('Error exporting missing data:', error)
+    alert('Gagal mengekspor daftar terlewat.')
   } finally {
     exportLoading.value = false
   }

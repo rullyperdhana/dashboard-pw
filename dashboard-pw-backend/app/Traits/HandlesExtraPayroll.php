@@ -6,6 +6,8 @@ use App\Models\ExtraPayrollPppkPw;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Setting;
+use App\Exports\MissingPayrollExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 trait HandlesExtraPayroll
 {
@@ -281,6 +283,112 @@ trait HandlesExtraPayroll
         $record = ExtraPayrollPppkPw::where('type', $this->getPayrollType())->findOrFail($id);
         $record->delete();
         return response()->json(['success' => true, 'message' => 'Data berhasil dihapus']);
+    }
+
+    public function missing(Request $request)
+    {
+        $year = $request->year ?? 2026;
+        $payMonth = $request->month ?? ($this->getPayrollType() === 'thr' ? 4 : 6);
+        $basisMonth = (int) (Setting::where('key', $this->getBasisMonthSettingKey())->value('value') ?? 2);
+        
+        $perPage = $request->per_page ?? 50;
+        $search = $request->search;
+        $user = auth()->user();
+
+        // 1. Get IDs of employees who ALREADY HAVE payroll data
+        $existingIds = ExtraPayrollPppkPw::where('type', $this->getPayrollType())
+            ->where('year', $year)
+            ->where('month', $payMonth)
+            ->whereNotNull('employee_id')
+            ->pluck('employee_id');
+
+        // 2. Query employees from BASIS MONTH who are not in $existingIds
+        $query = DB::table('tb_payment_detail as pd')
+            ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
+            ->join('pegawai_pw as e', 'pd.employee_id', '=', 'e.id')
+            ->leftJoin('skpd as s', 'e.idskpd', '=', 's.id_skpd')
+            ->where('p.month', $basisMonth)
+            ->where('p.year', $year)
+            ->whereNotIn('e.id', $existingIds)
+            ->select(
+                'e.id',
+                'e.nip',
+                'e.nama',
+                'e.jabatan',
+                DB::raw("CASE WHEN e.upt IS NOT NULL THEN CONCAT(COALESCE(s.nama_skpd, e.skpd), ' - ', e.upt) ELSE COALESCE(s.nama_skpd, e.skpd) END as skpd_name"),
+                DB::raw('MAX(pd.gaji_pokok) as gapok_basis')
+            )
+            ->groupBy('e.id', 'e.nip', 'e.nama', 'e.jabatan', 'skpd_name');
+
+        // Filter by SKPD if user is operator
+        if ($user && $user->role === 'operator' && !empty($user->institution)) {
+            $skpdName = DB::table('skpd')->where('id_skpd', $user->institution)->value('nama_skpd');
+            // Using a simple where on the CASE expression for performance in simple cases, 
+            // or we could use having if needed. But here where should work on the calculated field in many DBs or use the expression.
+            $query->where(DB::raw("CASE WHEN e.upt IS NOT NULL THEN CONCAT(COALESCE(s.nama_skpd, e.skpd), ' - ', e.upt) ELSE COALESCE(s.nama_skpd, e.skpd) END"), 'like', $skpdName . '%');
+        }
+
+        if (!empty($search)) {
+            $query->where(function($q) use ($search) {
+                $q->where('e.nama', 'like', "%{$search}%")
+                  ->orWhere('e.nip', 'like', "%{$search}%");
+            });
+        }
+
+        $missing = $query->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'data' => $missing->items(),
+            'meta' => [
+                'current_page' => $missing->currentPage(),
+                'last_page' => $missing->lastPage(),
+                'per_page' => $missing->perPage(),
+                'total' => $missing->total(),
+            ]
+        ]);
+    }
+
+    public function exportMissing(Request $request)
+    {
+        $year = $request->year ?? 2026;
+        $payMonth = $request->month ?? ($this->getPayrollType() === 'thr' ? 4 : 6);
+        
+        $query = $this->getBasicQuery($request); // Wait, getBasicQuery is for existing records
+        // Actually I need to re-run the missing logic without pagination
+        
+        $basisMonth = (int) (Setting::where('key', $this->getBasisMonthSettingKey())->value('value') ?? 2);
+        
+        $existingIds = ExtraPayrollPppkPw::where('type', $this->getPayrollType())
+            ->where('year', $year)
+            ->where('month', $payMonth)
+            ->whereNotNull('employee_id')
+            ->pluck('employee_id');
+
+        $data = DB::table('tb_payment_detail as pd')
+            ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
+            ->join('pegawai_pw as e', 'pd.employee_id', '=', 'e.id')
+            ->leftJoin('skpd as s', 'e.idskpd', '=', 's.id_skpd')
+            ->where('p.month', $basisMonth)
+            ->where('p.year', $year)
+            ->whereNotIn('e.id', $existingIds)
+            ->select(
+                'e.nip',
+                'e.nama',
+                'e.jabatan',
+                DB::raw("CASE WHEN e.upt IS NOT NULL THEN CONCAT(COALESCE(s.nama_skpd, e.skpd), ' - ', e.upt) ELSE COALESCE(s.nama_skpd, e.skpd) END as skpd_name"),
+                DB::raw('MAX(pd.gaji_pokok) as gapok_basis')
+            )
+            ->groupBy('e.nip', 'e.nama', 'e.jabatan', 'skpd_name')
+            ->get();
+
+        $dataArray = json_decode(json_encode($data), true);
+        $title = "DAFTAR PEGAWAI TERDAMPAR (TIDAK TER-GENERATE) - " . strtoupper($this->getPayrollLabel());
+
+        return Excel::download(
+            new MissingPayrollExport($dataArray, $title),
+            "DAFTAR_TERLEWAT_" . strtoupper($this->getPayrollType()) . "_{$year}_{$payMonth}.xlsx"
+        );
     }
 
     protected function getFormattedGroupedData(Request $request)
