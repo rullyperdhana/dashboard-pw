@@ -35,13 +35,17 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 ---
  
 ### 📄 Laporan & Transparansi (v3.2)
+- **TPP Discrepancy Reporting:** Fitur deteksi otomatis pegawai yang ada di gaji tetapi tidak ada dalam file Excel TPP. Laporan ini kini **tersimpan permanen** dan bisa diakses kapan saja melalui menu **Riwayat Selisih TPP**.
 - **Persistent THR Management:** Data THR kini disimpan secara permanen di database (`tb_thr_pppk_pw`), memungkinkan edit manual, penambahan catatan, dan hapus baris pegawai.
+- **Improved Sidebar Layout:** Redesain navigasi samping untuk mencegah teks logo terpotong dan memastikan menu tetap terlihat jelas di bawah Navbar (offset 64px).
+- **Environment Version Indicator:** Label versi (v3.2.0) kini tampil di pojok kiri bawah menu samping untuk memudahkan pengecekan sinkronisasi antara Local, GitHub, dan VPS.
 - **Server-Side Pagination:** Optimasi performa untuk dataset besar (6.000+ pegawai). Data dimuat secara bertahap sehingga UI tetap responsif.
 - **Dedicated Summary Endpoint:** Tab Rekapitulasi menggunakan endpoint khusus yang sangat ringan untuk perhitungan total anggaran instan.
 - **Professional PDF Export:** Redesain total template slip gaji dan payroll dengan layout profesional, border rapi, dan summary box.
 - **Digital QR Verification:** Setiap PDF memiliki QR Code unik yang terhubung ke halaman verifikasi publik untuk validasi keaslian dokumen.
 - **Nested THR Reporting:** Laporan THR PPPK-PW kini dikelompokkan secara hierarkis: **SKPD -> Sub Kegiatan -> Daftar Pegawai**.
 - **SKPD Name Normalization:** Pembersihan otomatis dan penggabungan (merge) nama SKPD yang terduplikasi karena spasi atau perbedaan kode, memastikan filter dropdown selalu bersih dan unik.
+- **VPS Migration Resiliency:** Penyesuaian skema database untuk mendukung migrasi yang lebih stabil pada berbagai konfigurasi server VPS (Foreign Key normalization).
 
 ### 🔐 Keamanan & Role-Based Access (v3.1)
 - **THR Management Restriction:** Fitur Generate, Edit, Tambah, dan Hapus data THR dibatasi khusus untuk akun **Superadmin**.
