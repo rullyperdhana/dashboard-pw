@@ -34,13 +34,14 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
 ---
  
-### 📄 Laporan & Transparansi (v3.3)
-- **UPT-Aware THR Reporting:** Laporan THR kini secara otomatis mencakup pegawai yang bertugas di Unit Pelaksana Teknis (UPT) dengan menggunakan pencocokan prefix nama SKPD. Ini memastikan sinkronisasi data 100% antara Dashboard dan Laporan THR bagi operator SKPD.
-- **TPP Discrepancy Reporting:** Fitur deteksi otomatis pegawai yang ada di gaji tetapi tidak ada dalam file Excel TPP. Laporan ini kini **tersimpan permanen** dan bisa diakses kapan saja melalui menu **Riwayat Selisih TPP**.
-- **Persistent THR Management:** Data THR kini disimpan secara permanen di database (`tb_thr_pppk_pw`), memungkinkan edit manual, penambahan catatan, dan hapus baris pegawai.
-- **Improved Sidebar Layout:** Redesain navigasi samping untuk mencegah teks logo terpotong dan memastikan menu tetap terlihat jelas di bawah Navbar (offset 64px).
-- **Environment Version Indicator:** Label versi (v3.3.0) kini tampil di pojok kiri bawah menu samping untuk memudahkan pengecekan sinkronisasi antara Local, GitHub, dan VPS.
-- **Server-Side Pagination:** Optimasi performa untuk dataset besar (6.000+ pegawai). Data dimuat secara bertahap sehingga UI tetap responsif.
+### 📄 Laporan & Transparansi (v3.4)
+- **Generalized Extra Payroll System:** Restrukturisasi total modul THR menjadi sistem *Extra Payroll* universal yang mendukung berbagai jenis pembayaran tambahan seperti **Gaji 13**.
+- **Data Terdeteksi Terlewat:** Fitur deteksi otomatis pegawai yang memiliki slip gaji basis namun belum masuk ke dalam laporan THR/Gaji 13, lengkap dengan **Alasan Ketidakhadiran** (misal: "Gaji basis tidak ditemukan").
+- **UPT-Aware Reporting:** Laporan otomatis mencakup pegawai di Unit Pelaksana Teknis (UPT) menggunakan prefix SKPD, memastikan sinkronisasi data 100%.
+- **TPP Discrepancy Reporting:** Deteksi otomatis selisih pegawai antara data gaji dan file Excel TPP yang tersimpan permanen.
+- **Persistent Extra Payroll Management:** Data disimpan permanen di database (`tb_extra_payroll_pppk_pw`), mendukung edit manual, penambahan catatan, dan batch delete.
+- **Environment Version Indicator:** Label versi (v3.4.0) kini tampil di pojok kiri bawah menu samping.
+- **Server-Side Pagination:** Optimasi performa untuk dataset 6.000+ pegawai agar UI tetap responsif.
 - **Dedicated Summary Endpoint:** Tab Rekapitulasi menggunakan endpoint khusus yang sangat ringan untuk perhitungan total anggaran instan.
 - **Professional PDF Export:** Redesain total template slip gaji dan payroll dengan layout profesional, border rapi, dan summary box.
 - **Digital QR Verification:** Setiap PDF memiliki QR Code unik yang terhubung ke halaman verifikasi publik untuk validasi keaslian dokumen.
@@ -210,9 +211,9 @@ Lihat [README_DEPLOY.md](README_DEPLOY.md) untuk panduan update mesin dan troubl
 | `pegawai_pw` | Data master pegawai PPPK Paruh Waktu |
 | `skpd` | Master data SKPD |
 | `skpd_mapping` | Pemetaan nama SKPD dari Excel ke master |
-| `settings` | Konfigurasi JKK, JKM, UMP, dll |
+| `settings` | Konfigurasi JKK, JKM, UMP, Bulan Basis Extra Payroll, dll |
 | `users` | Akun pengguna |
-| `tb_thr_pppk_pw` | Data THR PPPK-PW yang tersimpan (Database) |
+| `tb_extra_payroll_pppk_pw` | Data THR & Gaji 13 PPPK-PW yang tersimpan (Database) |
 | `employee_statuses` | Riwayat status pegawai + SK |
 
 ### Kolom Penting `pegawai_pw`
@@ -281,7 +282,8 @@ Export Excel/PDF secara otomatis menyesuaikan kolom dengan tab yang aktif.
 | `/pns-dashboard` | Dashboard PNS & PPPK |
 | `/employees` | Daftar Pegawai PW |
 | `/employee-trace` | Trace / Riwayat Gaji Pegawai |
-| `/reports/skpd-monthly` | Laporan Bulanan per SKPD |
+| `/reports/thr-pppk-pw` | Perhitungan THR PPPK-PW |
+| `/reports/gaji-13-pppk-pw` | Perhitungan Gaji 13 PPPK-PW |
 | `/bpjs-rekon` | Rekon BPJS 4% |
 | `/settings/pppk` | Estimasi JKK/JKM/JKN |
 | `/settings/sumber-dana` | Setting Sumber Dana per SKPD |
