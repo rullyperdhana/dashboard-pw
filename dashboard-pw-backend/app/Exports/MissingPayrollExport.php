@@ -23,7 +23,7 @@ class MissingPayrollExport implements FromArray, WithHeadings, WithStyles
         return [
             [$this->title],
             [''],
-            ['No', 'SKPD', 'Nama Pegawai', 'NIP', 'Jabatan', 'Gaji Pokok Basis']
+            ['No', 'SKPD', 'Nama Pegawai', 'NIP', 'Jabatan', 'Gaji Pokok Basis', 'Keterangan/Alasan']
         ];
     }
 
@@ -40,6 +40,7 @@ class MissingPayrollExport implements FromArray, WithHeadings, WithStyles
                 "'" . ($item['nip'] ?? ''),
                 $item['jabatan'] ?? '',
                 $item['gapok_basis'] ?? 0,
+                $item['reason'] ?? ''
             ];
         }
 
@@ -48,9 +49,9 @@ class MissingPayrollExport implements FromArray, WithHeadings, WithStyles
 
     public function styles(Worksheet $sheet)
     {
-        $sheet->mergeCells('A1:F1');
+        $sheet->mergeCells('A1:G1');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
-        $sheet->getStyle('A3:F3')->getFont()->setBold(true);
-        $sheet->getStyle('A3:F3')->getFill()->setFillType('solid')->getStartColor()->setRGB('E9ECEF');
+        $sheet->getStyle('A3:G3')->getFont()->setBold(true);
+        $sheet->getStyle('A3:G3')->getFill()->setFillType('solid')->getStartColor()->setRGB('E9ECEF');
     }
 }

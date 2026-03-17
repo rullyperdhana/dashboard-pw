@@ -445,6 +445,7 @@ const missingHeaders = [
   { title: 'NIP', key: 'nip', align: 'start' },
   { title: 'Jabatan', key: 'jabatan', align: 'start' },
   { title: 'Gapok (Basis)', key: 'gapok_basis', align: 'end' },
+  { title: 'Alasan Belum Terbentuk', key: 'reason', align: 'start' },
   { title: 'Status', key: 'action', align: 'center' },
 ]
 

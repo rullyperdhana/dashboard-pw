@@ -295,20 +295,24 @@ trait HandlesExtraPayroll
         $search = $request->search;
         $user = auth()->user();
 
-        // 1. Get IDs of employees who ALREADY HAVE payroll data
+        // 1. Get IDs of employees who ALREADY HAVE payroll data for this period
         $existingIds = ExtraPayrollPppkPw::where('type', $this->getPayrollType())
             ->where('year', $year)
             ->where('month', $payMonth)
             ->whereNotNull('employee_id')
             ->pluck('employee_id');
 
-        // 2. Query employees from BASIS MONTH who are not in $existingIds
-        $query = DB::table('tb_payment_detail as pd')
-            ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
-            ->join('pegawai_pw as e', 'pd.employee_id', '=', 'e.id')
+        // 2. Query ALL employees from pegawai_pw who are NOT in $existingIds
+        $query = DB::table('pegawai_pw as e')
             ->leftJoin('skpd as s', 'e.idskpd', '=', 's.id_skpd')
-            ->where('p.month', $basisMonth)
-            ->where('p.year', $year)
+            // Join with payments to see if they HAVE basis salary
+            ->leftJoin(DB::raw("(
+                SELECT pd.employee_id, MAX(pd.gaji_pokok) as gapok_basis
+                FROM tb_payment_detail pd
+                JOIN tb_payment p ON pd.payment_id = p.id
+                WHERE p.month = $basisMonth AND p.year = $year
+                GROUP BY pd.employee_id
+            ) as basis_salary"), 'e.id', '=', 'basis_salary.employee_id')
             ->whereNotIn('e.id', $existingIds)
             ->select(
                 'e.id',
@@ -316,15 +320,13 @@ trait HandlesExtraPayroll
                 'e.nama',
                 'e.jabatan',
                 DB::raw("CASE WHEN e.upt IS NOT NULL THEN CONCAT(COALESCE(s.nama_skpd, e.skpd), ' - ', e.upt) ELSE COALESCE(s.nama_skpd, e.skpd) END as skpd_name"),
-                DB::raw('MAX(pd.gaji_pokok) as gapok_basis')
-            )
-            ->groupBy('e.id', 'e.nip', 'e.nama', 'e.jabatan', 'skpd_name');
+                'basis_salary.gapok_basis',
+                DB::raw("CASE WHEN basis_salary.gapok_basis IS NULL THEN 'Tidak ada gaji basis (" . $basisMonth . "/$year)' ELSE 'Belum ter-generate (Teknis)' END as reason")
+            );
 
         // Filter by SKPD if user is operator
         if ($user && $user->role === 'operator' && !empty($user->institution)) {
             $skpdName = DB::table('skpd')->where('id_skpd', $user->institution)->value('nama_skpd');
-            // Using a simple where on the CASE expression for performance in simple cases, 
-            // or we could use having if needed. But here where should work on the calculated field in many DBs or use the expression.
             $query->where(DB::raw("CASE WHEN e.upt IS NOT NULL THEN CONCAT(COALESCE(s.nama_skpd, e.skpd), ' - ', e.upt) ELSE COALESCE(s.nama_skpd, e.skpd) END"), 'like', $skpdName . '%');
         }
 
@@ -345,6 +347,8 @@ trait HandlesExtraPayroll
                 'last_page' => $missing->lastPage(),
                 'per_page' => $missing->perPage(),
                 'total' => $missing->total(),
+                'basis_month' => $basisMonth,
+                'pay_month' => $payMonth
             ]
         ]);
     }
@@ -353,41 +357,48 @@ trait HandlesExtraPayroll
     {
         $year = $request->year ?? 2026;
         $payMonth = $request->month ?? ($this->getPayrollType() === 'thr' ? 4 : 6);
-        
-        $query = $this->getBasicQuery($request); // Wait, getBasicQuery is for existing records
-        // Actually I need to re-run the missing logic without pagination
-        
         $basisMonth = (int) (Setting::where('key', $this->getBasisMonthSettingKey())->value('value') ?? 2);
         
+        $user = auth()->user();
+
         $existingIds = ExtraPayrollPppkPw::where('type', $this->getPayrollType())
             ->where('year', $year)
             ->where('month', $payMonth)
             ->whereNotNull('employee_id')
             ->pluck('employee_id');
 
-        $data = DB::table('tb_payment_detail as pd')
-            ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
-            ->join('pegawai_pw as e', 'pd.employee_id', '=', 'e.id')
+        $query = DB::table('pegawai_pw as e')
             ->leftJoin('skpd as s', 'e.idskpd', '=', 's.id_skpd')
-            ->where('p.month', $basisMonth)
-            ->where('p.year', $year)
+            ->leftJoin(DB::raw("(
+                SELECT pd.employee_id, MAX(pd.gaji_pokok) as gapok_basis
+                FROM tb_payment_detail pd
+                JOIN tb_payment p ON pd.payment_id = p.id
+                WHERE p.month = $basisMonth AND p.year = $year
+                GROUP BY pd.employee_id
+            ) as basis_salary"), 'e.id', '=', 'basis_salary.employee_id')
             ->whereNotIn('e.id', $existingIds)
             ->select(
                 'e.nip',
                 'e.nama',
                 'e.jabatan',
                 DB::raw("CASE WHEN e.upt IS NOT NULL THEN CONCAT(COALESCE(s.nama_skpd, e.skpd), ' - ', e.upt) ELSE COALESCE(s.nama_skpd, e.skpd) END as skpd_name"),
-                DB::raw('MAX(pd.gaji_pokok) as gapok_basis')
-            )
-            ->groupBy('e.nip', 'e.nama', 'e.jabatan', 'skpd_name')
-            ->get();
+                'basis_salary.gapok_basis',
+                DB::raw("CASE WHEN basis_salary.gapok_basis IS NULL THEN 'Gaji basis ($basisMonth/$year) tidak ditemukan' ELSE 'Belum ter-generate (Sistem)' END as reason")
+            );
+
+        if ($user && $user->role === 'operator' && !empty($user->institution)) {
+            $skpdName = DB::table('skpd')->where('id_skpd', $user->institution)->value('nama_skpd');
+            $query->where(DB::raw("CASE WHEN e.upt IS NOT NULL THEN CONCAT(COALESCE(s.nama_skpd, e.skpd), ' - ', e.upt) ELSE COALESCE(s.nama_skpd, e.skpd) END"), 'like', $skpdName . '%');
+        }
+
+        $data = $query->get();
 
         $dataArray = json_decode(json_encode($data), true);
-        $title = "DAFTAR PEGAWAI TERDAMPAR (TIDAK TER-GENERATE) - " . strtoupper($this->getPayrollLabel());
+        $title = "DAFTAR PEGAWAI TERDAMPAR (TIDAK MASUK LAPORAN) - " . strtoupper($this->getPayrollLabel());
 
         return Excel::download(
             new MissingPayrollExport($dataArray, $title),
-            "DAFTAR_TERLEWAT_" . strtoupper($this->getPayrollType()) . "_{$year}_{$payMonth}.xlsx"
+            "DAFTAR_TIDAK_TERBENTUK_" . strtoupper($this->getPayrollType()) . "_{$year}_{$payMonth}.xlsx"
         );
     }
 
