@@ -68,6 +68,25 @@ class TppController extends Controller
         }
     }
 
+    public function getDiscrepancies(Request $request)
+    {
+        $request->validate([
+            'month' => 'required|integer|min:1|max:12',
+            'year' => 'required|integer',
+            'type' => 'required|in:pns,pppk',
+        ]);
+
+        $logs = \App\Models\TppDiscrepancyLog::where('month', $request->month)
+            ->where('year', $request->year)
+            ->where('employee_type', $request->type)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $logs
+        ]);
+    }
+
     public function downloadTemplate()
     {
         return Excel::download(new TppTemplateExport, 'template_upload_tpp.xlsx');

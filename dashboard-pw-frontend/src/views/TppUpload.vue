@@ -209,6 +209,46 @@
             </v-card>
           </v-col>
         </v-row>
+
+        <!-- Discrepancy Report -->
+        <v-row v-if="discrepancies.length > 0 || (activeJobStatus === 'completed' && !loadingDiscrepancies)" class="mt-8">
+          <v-col cols="12">
+            <v-card class="glass-card rounded-xl pa-6 border-warning">
+              <div class="d-flex align-center justify-space-between mb-4">
+                <div>
+                  <h2 class="text-h5 font-weight-bold text-warning">
+                    <v-icon start color="warning" size="32">mdi-alert-circle-outline</v-icon>
+                    Laporan Selisih TPP
+                  </h2>
+                  <p class="text-caption text-grey-darken-1">Pegawai yang ada di data Gaji tapi TIDAK DITEMUKAN di file Excel TPP periode ini.</p>
+                </div>
+                <v-btn
+                  v-if="discrepancies.length > 0"
+                  color="warning"
+                  variant="tonal"
+                  prepend-icon="mdi-file-export-outline"
+                  @click="exportDiscrepancies"
+                >
+                  Export Laporan
+                </v-btn>
+              </div>
+
+              <v-data-table
+                :headers="discrepancyHeaders"
+                :items="discrepancies"
+                density="comfortable"
+                class="bg-transparent"
+                :loading="loadingDiscrepancies"
+              >
+                <template v-slot:no-data>
+                   <v-alert type="success" variant="tonal" density="compact" class="mx-4 my-2">
+                        Tidak ada selisih. Semua pegawai di database gaji terdaftar dalam file TPP.
+                   </v-alert>
+                </template>
+              </v-data-table>
+            </v-card>
+          </v-col>
+        </v-row>
       
         <!-- Snackbar for notifications -->
         <v-snackbar
@@ -240,6 +280,51 @@ const file = ref([])
 const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedYear = ref(new Date().getFullYear())
 const employeeType = ref('pns')
+
+const discrepancies = ref([])
+const loadingDiscrepancies = ref(false)
+const discrepancyHeaders = [
+  { title: 'NIP', key: 'nip', sortable: true },
+  { title: 'NAMA', key: 'nama', sortable: true },
+  { title: 'SKPD', key: 'skpd', sortable: true },
+  { title: 'KETERANGAN', key: 'reason' },
+]
+
+const fetchDiscrepancies = async () => {
+  loadingDiscrepancies.value = true
+  try {
+    const res = await api.get('/tpp/discrepancies', {
+      params: {
+        month: selectedMonth.value,
+        year: selectedYear.value,
+        type: employeeType.value
+      }
+    })
+    discrepancies.value = res.data.data
+  } catch (error) {
+    console.error('Failed to fetch discrepancies', error)
+  } finally {
+    loadingDiscrepancies.value = false
+  }
+}
+
+const exportDiscrepancies = () => {
+  // Simple CSV export
+  const headers = ['NIP', 'NAMA', 'SKPD', 'KETERANGAN']
+  const rows = discrepancies.value.map(d => [d.nip, d.nama, d.skpd, d.reason])
+  
+  let csvContent = "data:text/csv;charset=utf-8," 
+    + headers.join(",") + "\n"
+    + rows.map(e => e.join(",")).join("\n");
+
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `Laporan_Selisih_TPP_${selectedMonth.value}_${selectedYear.value}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
 
 const validating = ref(false)
 const validationResult = ref(null)
@@ -402,6 +487,7 @@ const startPolling = () => {
         clearInterval(pollInterval)
         pollInterval = null
         activeJobResult.value = job.result_summary
+        fetchDiscrepancies()
       } else if (job.status === 'failed') {
         clearInterval(pollInterval)
         pollInterval = null
@@ -422,6 +508,7 @@ const resetUpload = () => {
   activeJobResult.value = null
   activeJobError.value = ''
   activeJobErrorDetail.value = ''
+  discrepancies.value = []
 }
 
 onUnmounted(() => {
@@ -464,5 +551,9 @@ const showSnackbar = (msg, color = 'success') => {
   background-color: rgb(var(--v-theme-surface)) !important;
   border: 1px solid rgba(var(--v-border-color), 0.08) !important;
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07) !important;
+}
+
+.border-warning {
+  border-left: 6px solid rgb(var(--v-theme-warning)) !important;
 }
 </style>

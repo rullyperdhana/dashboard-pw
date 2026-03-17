@@ -25,22 +25,20 @@ class TppImport implements ToCollection, WithHeadingRow
     public function collection(Collection $rows)
     {
         try {
+            $excelNips = [];
             $updatedCount = 0;
-            $notFoundCount = 0;
+            $notFoundInDbCount = 0;
 
             foreach ($rows as $row) {
-                // Ensure required keys exist
                 if (!isset($row['nip'])) {
                     continue;
                 }
 
                 $nip = (string) $row['nip'];
-                $nama = $row['nama'] ?? '';
-                // Handle various number formats (e.g. "1.500.000", "1500000", "1,500,000")
+                $excelNips[] = $nip;
                 $nilaiRaw = $row['nilai'] ?? 0;
                 $nilai = $this->parseCurrency($nilaiRaw);
 
-                // Find employee record
                 $model = $this->type === 'pppk' ? GajiPppk::class : GajiPns::class;
 
                 $employee = $model::where('nip', $nip)
@@ -49,17 +47,42 @@ class TppImport implements ToCollection, WithHeadingRow
                     ->first();
 
                 if ($employee) {
-                    // Update TPP only, do not change kotor or bersih totals
                     $employee->tunj_tpp = $nilai;
                     $employee->save();
                     $updatedCount++;
                 } else {
-                    $notFoundCount++;
-                    Log::warning("TPP Import: Employee not found for NIP: {$nip}, Month: {$this->month}, Year: {$this->year}");
+                    $notFoundInDbCount++;
+                    Log::warning("TPP Import: Employee not found in DB for NIP: {$nip}, Month: {$this->month}, Year: {$this->year}");
                 }
             }
 
-            Log::info("TPP Import Completed. Updated: {$updatedCount}, Not Found: {$notFoundCount}");
+            // Clear previous logs for this period/type
+            \App\Models\TppDiscrepancyLog::where('month', $this->month)
+                ->where('year', $this->year)
+                ->where('employee_type', $this->type)
+                ->delete();
+
+            // Find missing employees: In DB but NOT in Excel
+            $model = $this->type === 'pppk' ? GajiPppk::class : GajiPns::class;
+            $missingEmployees = $model::where('bulan', $this->month)
+                ->where('tahun', $this->year)
+                ->whereNotIn('nip', $excelNips)
+                ->select('nip', 'nama', 'skpd')
+                ->get();
+
+            foreach ($missingEmployees as $emp) {
+                \App\Models\TppDiscrepancyLog::create([
+                    'month' => $this->month,
+                    'year' => $this->year,
+                    'employee_type' => $this->type,
+                    'nip' => $emp->nip,
+                    'nama' => $emp->nama,
+                    'skpd' => $emp->skpd,
+                    'reason' => 'Tidak ditemukan di file Excel TPP'
+                ]);
+            }
+
+            Log::info("TPP Import Completed. Updated: {$updatedCount}, Missing in Excel logged: " . $missingEmployees->count());
 
         } catch (\Exception $e) {
             Log::error('Error importing TPP: ' . $e->getMessage());

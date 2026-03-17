@@ -101,6 +101,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/tpp/validate-upload', [TppController::class, 'validateUpload']);
     Route::post('/tpp/upload', [TppController::class, 'upload']);
     Route::get('/tpp/template', [TppController::class, 'downloadTemplate']);
+    Route::get('/tpp/discrepancies', [TppController::class, 'getDiscrepancies']);
 
     // TPG (Tunjangan Profesi Guru)
     Route::post('/tpg/upload', [TpgController::class, 'upload']);
