@@ -200,6 +200,12 @@ const router = createRouter({
             component: () => import('../views/BudgetPrediction.vue'),
             meta: { requiresAuth: true, breadcrumb: 'Prediksi Anggaran', app_access: 'budget-prediction' },
         },
+        {
+            path: '/tpp/discrepancy-history',
+            name: 'TppDiscrepancyHistory',
+            component: () => import('../views/TppDiscrepancyHistory.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Riwayat Selisih TPP', app_access: 'tpp-upload' },
+        },
     ],
 })
 

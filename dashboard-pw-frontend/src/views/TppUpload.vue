@@ -158,6 +158,18 @@
                     <li class="mb-2">Sistem akan otomatis menghitung ulang Total Tunjangan, Gaji Kotor, dan Gaji Bersih.</li>
                     <li class="mb-2">Format file yang didukung: .xlsx, .xls, .csv.</li>
                 </ul>
+                <v-divider class="my-4"></v-divider>
+                <div class="text-caption mb-2">Ingin melihat laporan sebelumnya?</div>
+                <v-btn
+                  block
+                  color="warning"
+                  variant="outlined"
+                  size="small"
+                  prepend-icon="mdi-history"
+                  to="/tpp/discrepancy-history"
+                >
+                  Riwayat Selisih TPP
+                </v-btn>
              </v-card>
           </v-col>
         </v-row>

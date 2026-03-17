@@ -257,6 +257,7 @@ const menuItems = ref([
       { title: 'Dashboard TPG', icon: 'mdi-school-outline', value: 'tpg-dashboard', to: '/tpg-dashboard' },
       { title: 'Upload TPG', icon: 'mdi-file-upload-outline', value: 'tpg-upload', to: '/tpg-upload' },
       { title: 'Prediksi Anggaran', icon: 'mdi-chart-line', value: 'budget-prediction', to: '/budget-prediction' },
+      { title: 'Riwayat Selisih TPP', icon: 'mdi-history', value: 'tpp-upload', to: '/tpp/discrepancy-history' },
     ]
   },
   {
