@@ -167,7 +167,7 @@ class ThrController extends Controller
                 'e.nama',
                 'e.jabatan',
                 DB::raw('MAX(pd.gaji_pokok) as gapok_basis'),
-                DB::raw('COALESCE(s.nama_skpd, e.skpd) as skpd_name'),
+                DB::raw("CASE WHEN e.upt IS NOT NULL THEN CONCAT(COALESCE(s.nama_skpd, e.skpd), ' - ', e.upt) ELSE COALESCE(s.nama_skpd, e.skpd) END as skpd_name"),
                 'rs.kode_sub_giat',
                 'rs.nama_sub_giat',
                 'ps.nama_pptk',
