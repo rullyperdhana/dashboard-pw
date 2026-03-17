@@ -104,101 +104,124 @@
     <main>
 
         @foreach($data as $skpd)
-            @foreach($skpd['sub_giat_groups'] as $subGiat)
-                <div style="margin-bottom: 15px;">
-                    <h2
-                        style="margin-bottom: 5px; color: #000; border-bottom: 2px solid #333; padding-bottom: 5px; font-size: 14px;">
-                        SKPD: {{ $skpd['skpd_name'] }}
-                    </h2>
-                    <h4 style="margin-bottom: 10px; color: #444;">
-                        Sub Kegiatan: {{ $subGiat['sub_giat_name'] }}
-                    </h4>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th width="30">No</th>
-                                <th width="110">NIP</th>
-                                <th>Nama</th>
-                                <th>Jabatan</th>
-                                <th width="90">Gapok Basis</th>
-                                <th width="70">Masa Kerja</th>
-                                <th width="100">Besaran THR</th>
-                                <th width="140">Tanda Tangan / Penerima</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($subGiat['employees'] as $index => $item)
-                                <tr>
-                                    <td class="text-center">{{ $index + 1 }}</td>
-                                    <td>{{ $item['nip'] }}</td>
-                                    <td>{{ $item['nama'] }}</td>
-                                    <td>{{ $item['jabatan'] }}</td>
-                                    <td class="text-right">{{ number_format($item['gapok_basis'], 0, ',', '.') }}</td>
-                                    <td class="text-center">{{ $item['n_months'] }} Bln</td>
-                                    <td class="text-right">{{ number_format($item['thr_amount'], 0, ',', '.') }}</td>
-                                    <td style="padding-top: 5px; height: 35px; vertical-align: top;">
-                                        @if(($index + 1) % 2 != 0)
-                                            {{ $index + 1 }}.
-                                        @else
-                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ $index + 1 }}.
-                                        @endif
-                                    </td>
-                                </tr>
-                            @endforeach
-                            <tr class="total-row">
-                                <td colspan="6" class="text-right">SUBTOTAL SUB KEGIATAN &nbsp;</td>
-                                <td class="text-right">{{ number_format($subGiat['subtotal_thr'], 0, ',', '.') }}</td>
-                                <td></td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <div style="margin-bottom: 20px;">
+                <h1 style="text-align: center; border-bottom: 3px double #000; padding-bottom: 5px; margin-bottom: 15px;">
+                    SKPD: {{ $skpd['skpd_name'] }}
+                </h1>
 
-                    {{-- Signature and System Verification per Sub-Activity --}}
-                    <div style="page-break-inside: avoid; margin-top: 20px;">
-                        <table style="border: none; margin-top: 0; margin-bottom: 20px;">
-                            <tr style="border: none; background: none;">
-                                <td style="border: none; width: 50%; text-align: center; padding: 0;">
-                                    <p style="margin-bottom: 50px; font-weight: bold;">
-                                        Mengetahui/Menyetujui,<br>
-                                        {{ $reportSettings->jabatan_kepala ?? 'Pengguna Anggaran' }}
-                                    </p>
-                                    <p style="margin-bottom: 0;">
-                                        <span
-                                            style="text-decoration: underline; font-weight: bold;">{{ $reportSettings->nama_kepala ?? '..................................' }}</span><br>
-                                        NIP. {{ $reportSettings->nip_kepala ?? '..................................' }}
-                                    </p>
-                                </td>
-                                <td style="border: none; width: 50%;"></td>
-                            </tr>
-                        </table>
+                @foreach($skpd['pptk_groups'] as $pptk)
+                    <div style="margin-bottom: 30px; border: 1px solid #ddd; padding: 10px; page-break-inside: avoid;">
+                        <div style="background: #f9f9f9; padding: 5px 10px; margin-bottom: 10px; border-left: 5px solid #007bff;">
+                            <h3 style="margin: 0; color: #333;">PPTK: {{ $pptk['pptk_nama'] }}</h3>
+                            <p style="margin: 2px 0 0 0; font-size: 9px; color: #666;">NIP. {{ $pptk['pptk_nip'] }} | {{ $pptk['pptk_jabatan'] }}</p>
+                        </div>
 
-                        <table style="border: none;">
-                            <tr style="border: none;">
-                                <td style="border: none; width: 60%; vertical-align: bottom;">
-                                    <div class="footer" style="font-size: 10px; color: #555;">
-                                        <strong>KEABSAHAN DOKUMEN:</strong><br>
-                                        Dokumen ini dihasilkan secara otomatis oleh Sistem PPPK Payroll Dashboard yang
-                                        menggunakan metode: {{ $thrMethod == 'tetap' ? 'Nilai Tetap' : 'Proporsional n/12' }}.<br>
-                                        Keaslian dokumen dapat diverifikasi melalui kode QR di samping.<br>
-                                        Dicetak pada: {{ $printDate }}
-                                    </div>
-                                </td>
-                                <td style="border: none; width: 40%; text-align: right;">
-                                    @if(isset($subGiat['qr_code']))
-                                        <div
-                                            style="display: inline-block; text-align: center; border: 1px solid #ddd; padding: 5px; background: white;">
-                                            <img src="{{ $subGiat['qr_code'] }}" alt="QR Code Verification" width="80" height="80">
-                                            <div style="font-size: 8px; margin-top: 5px;">VERIFIKASI SISTEM</div>
-                                        </div>
-                                    @endif
-                                </td>
-                            </tr>
-                        </table>
+                        @foreach($pptk['sub_giat_groups'] as $subGiat)
+                            <div style="margin-bottom: 15px;">
+                                <h4 style="margin-top: 0; margin-bottom: 5px; color: #444; border-bottom: 1px solid #eee;">
+                                    Sub Kegiatan: {{ $subGiat['sub_giat_name'] }}
+                                </h4>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th width="30">No</th>
+                                            <th width="110">NIP</th>
+                                            <th>Nama</th>
+                                            <th>Jabatan</th>
+                                            <th width="90">Gapok Basis</th>
+                                            <th width="70">Masa Kerja</th>
+                                            <th width="100">Besaran THR</th>
+                                            <th width="140">Tanda Tangan / Penerima</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($subGiat['employees'] as $index => $item)
+                                            <tr>
+                                                <td class="text-center">{{ $index + 1 }}</td>
+                                                <td>{{ $item['nip'] }}</td>
+                                                <td>{{ $item['nama'] }}</td>
+                                                <td>{{ $item['jabatan'] }}</td>
+                                                <td class="text-right">{{ number_format($item['gapok_basis'], 0, ',', '.') }}</td>
+                                                <td class="text-center">{{ $item['n_months'] }} Bln</td>
+                                                <td class="text-right">{{ number_format($item['thr_amount'], 0, ',', '.') }}</td>
+                                                <td style="padding-top: 5px; height: 35px; vertical-align: top;">
+                                                    @if(($index + 1) % 2 != 0)
+                                                        {{ $index + 1 }}.
+                                                    @else
+                                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ $index + 1 }}.
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                        <tr class="total-row">
+                                            <td colspan="6" class="text-right">SUBTOTAL SUB KEGIATAN &nbsp;</td>
+                                            <td class="text-right">{{ number_format($subGiat['subtotal_thr'], 0, ',', '.') }}</td>
+                                            <td></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                {{-- Signature and System Verification per Sub-Activity --}}
+                                <div style="page-break-inside: avoid; margin-top: 15px;">
+                                    <table style="border: none; margin-top: 0; margin-bottom: 10px;">
+                                        <tr style="border: none; background: none;">
+                                            <td style="border: none; width: 45%; text-align: center; padding: 0;">
+                                                <p style="margin-bottom: 50px; font-weight: bold;">
+                                                    Mengetahui/Menyetujui,<br>
+                                                    {{ $reportSettings->jabatan_kepala ?? 'Pengguna Anggaran' }}
+                                                </p>
+                                                <p style="margin-bottom: 0;">
+                                                    <span style="text-decoration: underline; font-weight: bold;">{{ $reportSettings->nama_kepala ?? '..................................' }}</span><br>
+                                                    NIP. {{ $reportSettings->nip_kepala ?? '..................................' }}
+                                                </p>
+                                            </td>
+                                            <td style="border: none; width: 10%;"></td>
+                                            <td style="border: none; width: 45%; text-align: center; padding: 0;">
+                                                <p style="margin-bottom: 50px; font-weight: bold;">
+                                                    Banjarmasin, {{ $printDate }}<br>
+                                                    PPTK,
+                                                </p>
+                                                <p style="margin-bottom: 0;">
+                                                    <span style="text-decoration: underline; font-weight: bold;">{{ $pptk['pptk_nama'] }}</span><br>
+                                                    NIP. {{ $pptk['pptk_nip'] }}
+                                                </p>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <table style="border: none;">
+                                        <tr style="border: none;">
+                                            <td style="border: none; width: 70%; vertical-align: bottom;">
+                                                <div class="footer" style="font-size: 10px; color: #555;">
+                                                    <strong>KEABSAHAN DOKUMEN:</strong><br>
+                                                    Dokumen ini dihasilkan secara otomatis oleh Sistem PPPK Payroll Dashboard yang
+                                                    menggunakan metode: {{ $thrMethod == 'tetap' ? 'Nilai Tetap' : 'Proporsional n/12' }}.<br>
+                                                    Keaslian dokumen dapat diverifikasi melalui kode QR di samping.<br>
+                                                    Dicetak pada: {{ $printDate }}
+                                                </div>
+                                            </td>
+                                            <td style="border: none; width: 30%; text-align: right;">
+                                                @if(isset($subGiat['qr_code']))
+                                                    <div style="display: inline-block; text-align: center; border: 1px solid #ddd; padding: 5px; background: white;">
+                                                        <img src="{{ $subGiat['qr_code'] }}" alt="QR Code Verification" width="70" height="70">
+                                                        <div style="font-size: 7px; margin-top: 3px;">VERIFIKASI SISTEM</div>
+                                                    </div>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            @if(!$loop->last)
+                                <div style="page-break-after: always;"></div>
+                            @endif
+                        @endforeach
                     </div>
-                </div>
-                <div style="page-break-after: always;"></div>
-            @endforeach
+                @endforeach
             </div>
+            @if(!$loop->last)
+                <div style="page-break-after: always;"></div>
+            @endif
         @endforeach
     </main>
 </body>

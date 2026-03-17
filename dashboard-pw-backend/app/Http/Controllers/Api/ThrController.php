@@ -69,6 +69,9 @@ class ThrController extends Controller
                 'gapok_basis' => (float)$record->gapok_basis,
                 'n_months' => (int)$record->n_months,
                 'thr_amount' => (float)$record->thr_amount,
+                'pptk_nama' => $record->pptk_nama,
+                'pptk_nip' => $record->pptk_nip,
+                'pptk_jabatan' => $record->pptk_jabatan,
                 'notes' => $record->notes,
                 'status' => $record->status
             ];
@@ -155,6 +158,7 @@ class ThrController extends Controller
             ->join('rka_settings as rs', 'p.rka_id', '=', 'rs.id')
             ->join('pegawai_pw as e', 'pd.employee_id', '=', 'e.id')
             ->leftJoin('skpd as s', 'e.idskpd', '=', 's.id_skpd')
+            ->leftJoin('pptk_settings as ps', 'rs.pptk_id', '=', 'ps.id')
             ->where('p.month', 2)
             ->where('p.year', $year)
             ->select(
@@ -165,9 +169,12 @@ class ThrController extends Controller
                 DB::raw('MAX(pd.gaji_pokok) as gapok_basis'),
                 DB::raw('COALESCE(s.nama_skpd, e.skpd) as skpd_name'),
                 'rs.kode_sub_giat',
-                'rs.nama_sub_giat'
+                'rs.nama_sub_giat',
+                'ps.nama_pptk',
+                'ps.nip_pptk',
+                'ps.pangkat_pptk'
             )
-            ->groupBy('e.nip', 'rs.kode_sub_giat', 'rs.nama_sub_giat', 'e.id', 'e.nama', 'e.jabatan', 'skpd_name')
+            ->groupBy('e.nip', 'rs.kode_sub_giat', 'rs.nama_sub_giat', 'e.id', 'e.nama', 'e.jabatan', 'skpd_name', 'ps.nama_pptk', 'ps.nip_pptk', 'ps.pangkat_pptk')
             ->get();
 
         DB::beginTransaction();
@@ -190,6 +197,9 @@ class ThrController extends Controller
                     'skpd_name' => $emp->skpd_name,
                     'kode_sub_giat' => $emp->kode_sub_giat,
                     'nama_sub_giat' => '[' . $emp->kode_sub_giat . '] ' . $emp->nama_sub_giat,
+                    'pptk_nama' => $emp->nama_pptk,
+                    'pptk_nip' => $emp->nip_pptk,
+                    'pptk_jabatan' => $emp->pangkat_pptk,
                     'gapok_basis' => $gapok,
                     'n_months' => $nMonths,
                     'thr_amount' => $thrAmount,
@@ -229,7 +239,7 @@ class ThrController extends Controller
         }
 
         $record = ThrPppkPw::findOrFail($id);
-        $record->update($request->only(['nama', 'nip', 'jabatan', 'thr_amount', 'notes', 'n_months']));
+        $record->update($request->only(['nama', 'nip', 'jabatan', 'thr_amount', 'notes', 'n_months', 'pptk_nama', 'pptk_nip', 'pptk_jabatan']));
 
         return response()->json(['success' => true, 'message' => 'Data berhasil diupdate', 'data' => $record]);
     }
@@ -247,6 +257,9 @@ class ThrController extends Controller
             'skpd_name' => 'required|string',
             'nama_sub_giat' => 'required|string',
             'thr_amount' => 'required|numeric',
+            'pptk_nama' => 'nullable|string',
+            'pptk_nip' => 'nullable|string',
+            'pptk_jabatan' => 'nullable|string',
         ]);
 
         $record = ThrPppkPw::create($request->all());
@@ -375,24 +388,32 @@ class ThrController extends Controller
             ->orderBy('nama')
             ->get();
             
-        // Group data for the export format
+        // Group data for the export format: SKPD -> PPTK -> Sub Kegiatan -> Employees
         $groupedData = $records->groupBy('skpd_name')->map(function ($skpdItems, $skpdName) {
-            $subGiatGroups = $skpdItems->groupBy(function ($item) {
-                return $item->nama_sub_giat;
-            })->map(function ($subGiatItems, $subGiatName) {
-                return [
-                    'sub_giat_name' => $subGiatName,
-                    'employees' => $subGiatItems,
-                    'subtotal_thr' => $subGiatItems->sum('thr_amount'),
-                    'employee_count' => $subGiatItems->count()
-                ];
-            })->values();
-
             return [
                 'skpd_name' => $skpdName,
-                'sub_giat_groups' => $subGiatGroups,
+                'pptk_groups' => $skpdItems->groupBy(function ($item) {
+                    return $item->pptk_nama ?: 'Tanpa PPTK';
+                })->map(function ($pptkItems, $pptkName) {
+                    $firstItem = $pptkItems->first();
+                    return [
+                        'pptk_nama' => $pptkName,
+                        'pptk_nip' => $firstItem->pptk_nip,
+                        'pptk_jabatan' => $firstItem->pptk_jabatan,
+                        'sub_giat_groups' => $pptkItems->groupBy('nama_sub_giat')->map(function ($subGiatItems, $subGiatName) {
+                            return [
+                                'sub_giat_name' => $subGiatName,
+                                'employees' => $subGiatItems,
+                                'subtotal_thr' => $subGiatItems->sum('thr_amount'),
+                                'employee_count' => $subGiatItems->count()
+                            ];
+                        })->values(),
+                        'total_pptk_thr' => $pptkItems->sum('thr_amount'),
+                        'total_pptk_employees' => $pptkItems->count()
+                    ];
+                })->values(),
                 'total_employees_skpd' => $skpdItems->count(),
-                'total_thr_skpd' => $subGiatGroups->sum('subtotal_thr')
+                'total_thr_skpd' => $skpdItems->sum('thr_amount')
             ];
         })->values();
 
@@ -422,25 +443,27 @@ class ThrController extends Controller
         $qrCache = [];
 
         foreach ($dataArray as $sIndex => $skpd) {
-            foreach ($skpd['sub_giat_groups'] as $gIndex => $subGiat) {
-                $subTotalFormatted = number_format($subGiat['subtotal_thr'], 0, ',', '.');
-                $params = [
-                    'total' => $subTotalFormatted,
-                    'period' => $thrMonthName . ' ' . $year,
-                    'date' => $printDate,
-                    'sub_giat' => $subGiat['sub_giat_name']
-                ];
-                $verifyUrl = url('/api/verify-thr') . "?" . http_build_query($params);
-                $cacheKey = md5($verifyUrl);
+            foreach ($skpd['pptk_groups'] as $pIndex => $pptk) {
+                foreach ($pptk['sub_giat_groups'] as $gIndex => $subGiat) {
+                    $subTotalFormatted = number_format($subGiat['subtotal_thr'], 0, ',', '.');
+                    $params = [
+                        'total' => $subTotalFormatted,
+                        'period' => $thrMonthName . ' ' . $year,
+                        'date' => $printDate,
+                        'sub_giat' => $subGiat['sub_giat_name']
+                    ];
+                    $verifyUrl = url('/api/verify-thr') . "?" . http_build_query($params);
+                    $cacheKey = md5($verifyUrl);
 
-                if (isset($qrCache[$cacheKey])) {
-                    $dataArray[$sIndex]['sub_giat_groups'][$gIndex]['qr_code'] = $qrCache[$cacheKey];
-                    continue;
+                    if (isset($qrCache[$cacheKey])) {
+                        $dataArray[$sIndex]['pptk_groups'][$pIndex]['sub_giat_groups'][$gIndex]['qr_code'] = $qrCache[$cacheKey];
+                        continue;
+                    }
+
+                    // Use a larger size (200x200) for better scanability with long URLs
+                    $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode($verifyUrl);
+                    $qrRequests["{$sIndex}_{$pIndex}_{$gIndex}"] = $qrUrl;
                 }
-
-                // Use a larger size (200x200) for better scanability with long URLs
-                $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode($verifyUrl);
-                $qrRequests["{$sIndex}_{$gIndex}"] = $qrUrl;
             }
         }
 
@@ -456,11 +479,11 @@ class ThrController extends Controller
 
                 foreach ($responses as $key => $res) {
                     if ($res->successful()) {
-                        [$sIndex, $gIndex] = explode('_', $key);
+                        [$sIndex, $pIndex, $gIndex] = explode('_', $key);
                         $base64 = 'data:image/png;base64,' . base64_encode($res->body());
-                        $dataArray[$sIndex]['sub_giat_groups'][$gIndex]['qr_code'] = $base64;
+                        $dataArray[$sIndex]['pptk_groups'][$pIndex]['sub_giat_groups'][$gIndex]['qr_code'] = $base64;
 
-                        $subGiat = $dataArray[$sIndex]['sub_giat_groups'][$gIndex];
+                        $subGiat = $dataArray[$sIndex]['pptk_groups'][$pIndex]['sub_giat_groups'][$gIndex];
                         $verifyUrl = "https://sipgaji.my.id/api/verify-thr?" . http_build_query([
                             'total' => number_format($subGiat['subtotal_thr'], 0, ',', '.'),
                             'period' => $thrMonthName . ' ' . $year,

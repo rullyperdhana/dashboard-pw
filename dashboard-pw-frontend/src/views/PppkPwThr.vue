@@ -204,6 +204,13 @@
         <v-card-text class="pa-6 pt-0">
           <v-text-field v-model="editedItem.nama" label="Nama Pegawai" variant="outlined" readonly disabled density="comfortable"></v-text-field>
           <v-text-field v-model="editedItem.thr_amount" label="Besaran THR" variant="outlined" type="number" prefix="Rp" density="comfortable"></v-text-field>
+          
+          <v-divider class="my-4"></v-divider>
+          <p class="text-subtitle-2 mb-2">Informasi PPTK</p>
+          <v-text-field v-model="editedItem.pptk_nama" label="Nama PPTK" variant="outlined" placeholder="Nama Lengkap & Gelar" density="comfortable"></v-text-field>
+          <v-text-field v-model="editedItem.pptk_nip" label="NIP PPTK" variant="outlined" density="comfortable"></v-text-field>
+          <v-text-field v-model="editedItem.pptk_jabatan" label="Jabatan/Pangkat PPTK" variant="outlined" density="comfortable"></v-text-field>
+          
           <v-textarea v-model="editedItem.notes" label="Keterangan" variant="outlined" rows="2" density="comfortable"></v-textarea>
         </v-card-text>
         <v-card-actions class="pa-6 pt-0">
@@ -222,6 +229,12 @@
           <v-text-field v-model="newItem.skpd_name" label="SKPD" variant="outlined" placeholder="Masukkan SKPD" density="comfortable"></v-text-field>
           <v-text-field v-model="newItem.nama_sub_giat" label="Sub Kegiatan" variant="outlined" placeholder="Input bebas" density="comfortable"></v-text-field>
           <v-text-field v-model="newItem.thr_amount" label="Besaran THR" variant="outlined" type="number" prefix="Rp" density="comfortable"></v-text-field>
+          
+          <v-divider class="my-4"></v-divider>
+          <p class="text-subtitle-2 mb-2">Informasi PPTK</p>
+          <v-text-field v-model="newItem.pptk_nama" label="Nama PPTK" variant="outlined" density="comfortable"></v-text-field>
+          <v-text-field v-model="newItem.pptk_nip" label="NIP PPTK" variant="outlined" density="comfortable"></v-text-field>
+          <v-text-field v-model="newItem.pptk_jabatan" label="Jabatan/Pangkat PPTK" variant="outlined" density="comfortable"></v-text-field>
         </v-card-text>
         <v-card-actions class="pa-6 pt-0">
           <v-spacer></v-spacer>
@@ -293,6 +306,9 @@ const newItem = ref({
   nama: '',
   skpd_name: '',
   nama_sub_giat: '',
+  pptk_nama: '',
+  pptk_nip: '',
+  pptk_jabatan: '',
   thr_amount: 0,
   year: 2026,
   month: 4
@@ -323,6 +339,7 @@ const headers = [
   { title: 'NIP', key: 'nip', align: 'start' },
   { title: 'Jabatan', key: 'jabatan', align: 'start' },
   { title: 'Sub Kegiatan', key: 'sub_giat', align: 'start' },
+  { title: 'PPTK', key: 'pptk_nama', align: 'start' },
   { title: 'Gapok (Basis)', key: 'gapok_basis', align: 'end' },
   { title: 'Masa Kerja', key: 'n_months', align: 'center' },
   { title: 'Besaran THR', key: 'thr_amount', align: 'end' },
@@ -454,6 +471,9 @@ const openAddDialog = () => {
     nama: '',
     skpd_name: '',
     nama_sub_giat: '',
+    pptk_nama: '',
+    pptk_nip: '',
+    pptk_jabatan: '',
     thr_amount: 0,
     year: 2026,
     month: selectedMonth.value
