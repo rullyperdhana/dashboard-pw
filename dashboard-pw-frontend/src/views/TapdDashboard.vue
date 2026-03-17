@@ -210,6 +210,7 @@ const theme = useTheme()
 provide(THEME_KEY, computed(() => theme.global.name.value === 'dark' ? 'dark' : 'light'))
 
 const loading = ref(false)
+const error = ref('')
 const category = ref('pw')
 const growthFactor = ref(5)
 const prediction = ref(null)
@@ -223,6 +224,7 @@ const retirementTableHeaders = [
 
 const fetchPrediction = async () => {
   loading.value = true
+  error.value = ''
   try {
     const response = await api.get('/budget-prediction', {
       params: { 
@@ -230,9 +232,16 @@ const fetchPrediction = async () => {
         growth_factor: growthFactor.value
       }
     })
-    prediction.value = response.data.data
-  } catch (error) {
-    console.error('Error fetching prediction:', error)
+    
+    if (response.data.success) {
+      prediction.value = response.data.data
+    } else {
+      error.value = response.data.message
+      prediction.value = null
+    }
+  } catch (err) {
+    console.error('Error fetching prediction:', err)
+    error.value = 'Gagal memuat prediksi anggaran. Silakan coba lagi.'
   } finally {
     loading.value = false
   }
@@ -302,6 +311,8 @@ const retirementChartOption = computed(() => {
 })
 
 watch(category, () => {
+  prediction.value = null
+  error.value = ''
   fetchPrediction()
   fetchHealthData()
 })
