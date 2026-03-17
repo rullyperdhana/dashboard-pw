@@ -99,6 +99,18 @@ const router = createRouter({
             meta: { requiresAuth: true, breadcrumb: 'Dashboard TPG', app_access: 'tpg-dashboard' },
         },
         {
+            path: '/analytics/tapd',
+            name: 'TapdDashboard',
+            component: () => import('../views/TapdDashboard.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Dashboard TAPD', app_access: 'tapd-dashboard' },
+        },
+        {
+            path: '/executive/mobile',
+            name: 'ExecutiveMobile',
+            component: () => import('../views/ExecutiveMobile.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Executive Mobile', app_access: 'executive-mobile' },
+        },
+        {
             path: '/settings/users',
             name: 'UserManagement',
             component: () => import('../views/Settings/UserManagement.vue'),
