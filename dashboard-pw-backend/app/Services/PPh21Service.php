@@ -61,8 +61,8 @@ class PPh21Service
         $rate = 0;
 
         foreach ($relevantRates as $r) {
-            if ($grossIncome >= $r->min_gross && ($r->max_gross === null || $grossIncome < $r->max_gross)) {
-                $rate = $r->rate;
+            if ($grossIncome >= $r['min_gross'] && ($r['max_gross'] === null || $grossIncome < $r['max_gross'])) {
+                $rate = $r['rate'];
                 break;
             }
         }
