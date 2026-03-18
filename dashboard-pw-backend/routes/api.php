@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\Gaji13Controller;
 use App\Http\Controllers\Api\ExportLogController;
 use App\Http\Controllers\Api\Skpd2026Controller;
 use App\Http\Controllers\Api\AnalyticsController;
+use App\Http\Controllers\Api\PPh21Controller;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -113,7 +114,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/pppk/dashboard', [PnsPayrollController::class, 'dashboardPppk']);
     Route::get('/pppk/trend', [PnsPayrollController::class, 'yearlyTrendPppk']);
 
-    Route::get('/pppk/trend', [PnsPayrollController::class, 'yearlyTrendPppk']);
+    // PPh 21 TER (A2)
+    Route::prefix('pph21')->group(function () {
+        Route::get('/report', [PPh21Controller::class, 'report']);
+        Route::post('/calculate', [PPh21Controller::class, 'calculate']);
+        Route::get('/export-a2', [PPh21Controller::class, 'exportA2']);
+    });
 
     // TPP Upload
     Route::post('/tpp/validate-upload', [TppController::class, 'validateUpload']);
