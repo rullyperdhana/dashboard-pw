@@ -284,7 +284,16 @@ const downloadA2Specific = async (month, skpdId) => {
     link.click()
   } catch (err) {
     console.error('Download Error:', err)
-    alert('Gagal mengunduh file Excel.')
+    if (err.response?.data instanceof Blob) {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const errorData = JSON.parse(reader.result)
+        alert('Gagal mengunduh: ' + (errorData.message || 'Error tidak diketahui'))
+      }
+      reader.readAsText(err.response.data)
+    } else {
+      alert('Gagal mengunduh file Excel.')
+    }
   }
 }
 

@@ -277,7 +277,7 @@ class PPh21Controller extends Controller
         }
 
         // Load Template
-        $templatePath = '/Users/rullyperdhana/dashboard-pw/BPA2 Excel to XML.xlsx';
+        $templatePath = base_path('BPA2 Excel to XML.xlsx');
         if (!file_exists($templatePath)) {
             return response()->json(['success' => false, 'message' => 'Template file not found.'], 404);
         }
