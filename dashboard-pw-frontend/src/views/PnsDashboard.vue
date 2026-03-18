@@ -562,6 +562,8 @@ const yearlyTrend = ref([])
 const annualReport = ref(null)
 const pnsAnnual = ref(null)
 const pppkAnnual = ref(null)
+const pnsTrend = ref([])
+const pppkTrend = ref([])
 const trendChart = ref(null)
 let chartInstance = null
 
@@ -712,6 +714,9 @@ const fetchYearlyTrend = async () => {
         const trend1 = res1.data.data.trend || []
         const trend2 = res2.data.data.trend || []
         
+        pnsTrend.value = trend1
+        pppkTrend.value = trend2
+        
         // Merge and sum by month
         const merged = []
         for (let m = 1; m <= 12; m++) {
@@ -793,15 +798,38 @@ const renderChart = () => {
   
   const ctx = trendChart.value.getContext('2d')
   const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
-  const netValues = new Array(12).fill(0)
-  const tppValues = new Array(12).fill(0)
+  const datasets = []
   
-  yearlyTrend.value.forEach(item => {
-    if (item.bulan >= 1 && item.bulan <= 12) {
-      netValues[item.bulan - 1] = (Number(item.total_net) || 0) / 1000000
-      tppValues[item.bulan - 1] = (Number(item.total_tpp) || 0) / 1000000
-    }
-  })
+  if (employeeType.value === 'combined') {
+    const pnsNet = new Array(12).fill(0)
+    const pnsTpp = new Array(12).fill(0)
+    const pppkNet = new Array(12).fill(0)
+    const pppkTpp = new Array(12).fill(0)
+    
+    pnsTrend.value.forEach(item => { if (item.bulan >= 1 && item.bulan <= 12) { pnsNet[item.bulan-1] = (Number(item.total_net)||0)/1000000; pnsTpp[item.bulan-1] = (Number(item.total_tpp)||0)/1000000 } })
+    pppkTrend.value.forEach(item => { if (item.bulan >= 1 && item.bulan <= 12) { pppkNet[item.bulan-1] = (Number(item.total_net)||0)/1000000; pppkTpp[item.bulan-1] = (Number(item.total_tpp)||0)/1000000 } })
+    
+    datasets.push(
+      { label: 'Gaji PNS (Juta)', data: pnsNet, borderColor: '#059669', backgroundColor: 'rgba(5,150,105,0.08)', fill: true, tension: 0.4, borderWidth: 3, pointRadius: 4, pointBackgroundColor: '#059669' },
+      { label: 'TPP PNS (Juta)', data: pnsTpp, borderColor: '#10b981', backgroundColor: 'transparent', tension: 0.4, borderWidth: 2, borderDash: [5, 5] },
+      { label: 'Gaji PPPK (Juta)', data: pppkNet, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.05)', fill: true, tension: 0.4, borderWidth: 3, pointRadius: 4, pointBackgroundColor: '#f59e0b' },
+      { label: 'TPP PPPK (Juta)', data: pppkTpp, borderColor: '#fbbf24', backgroundColor: 'transparent', tension: 0.4, borderWidth: 2, borderDash: [5, 5] }
+    )
+  } else {
+    const netValues = new Array(12).fill(0)
+    const tppValues = new Array(12).fill(0)
+    yearlyTrend.value.forEach(item => {
+      if (item.bulan >= 1 && item.bulan <= 12) {
+        netValues[item.bulan - 1] = (Number(item.total_net) || 0) / 1000000
+        tppValues[item.bulan - 1] = (Number(item.total_tpp) || 0) / 1000000
+      }
+    })
+    
+    datasets.push(
+      { label: 'Gaji Bersih (Juta)', data: netValues, borderColor: '#059669', backgroundColor: 'rgba(5,150,105,0.08)', fill: true, tension: 0.4, borderWidth: 3, pointRadius: 4, pointBackgroundColor: '#059669' },
+      { label: 'TPP/Kinerja (Juta)', data: tppValues, borderColor: '#3b82f6', backgroundColor: 'transparent', tension: 0.4, borderWidth: 2, borderDash: [5, 5] }
+    )
+  }
 
   // Get current text colors for chart labels with fallback
   let themeColor = '100, 116, 139' // default slate
@@ -816,28 +844,7 @@ const renderChart = () => {
     type: 'line',
     data: {
       labels,
-      datasets: [
-        { 
-          label: 'Gaji Bersih (Juta)', 
-          data: netValues, 
-          borderColor: '#059669', 
-          backgroundColor: 'rgba(5,150,105,0.08)', 
-          fill: true, 
-          tension: 0.4, 
-          borderWidth: 3, 
-          pointRadius: 4, 
-          pointBackgroundColor: '#059669' 
-        },
-        { 
-          label: 'TPP/Kinerja (Juta)', 
-          data: tppValues, 
-          borderColor: '#3b82f6', 
-          backgroundColor: 'transparent', 
-          tension: 0.4, 
-          borderWidth: 2, 
-          borderDash: [5, 5] 
-        }
-      ]
+      datasets: datasets
     },
     options: { 
       responsive: true, 
