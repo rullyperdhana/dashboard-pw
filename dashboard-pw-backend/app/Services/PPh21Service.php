@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\DB;
 
 class PPh21Service
 {
+    protected $rates = [];
+
     /**
      * Map Simgaji columns to PTKP Status
      * kdstawin: 1=TK, 2=K
@@ -47,21 +49,35 @@ class PPh21Service
     }
 
     /**
-     * Calculate Monthly PPh 21 using TER
+     * Calculate Monthly PPh 21 using TER (Memory optimized)
      */
     public function calculateMonthlyTER($grossIncome, $category)
     {
-        $rateRow = DB::table('pph21_ter_rates')
-            ->where('category', $category)
-            ->where('min_gross', '<=', $grossIncome)
-            ->where(function($q) use ($grossIncome) {
-                $q->where('max_gross', '>', $grossIncome)
-                  ->orWhereNull('max_gross');
-            })
-            ->first();
+        if (empty($this->rates)) {
+            $this->preLoadRates();
+        }
 
-        $rate = $rateRow ? $rateRow->rate : 0;
+        $relevantRates = $this->rates[$category] ?? [];
+        $rate = 0;
+
+        foreach ($relevantRates as $r) {
+            if ($grossIncome >= $r->min_gross && ($r->max_gross === null || $grossIncome < $r->max_gross)) {
+                $rate = $r->rate;
+                break;
+            }
+        }
+
         return round(($grossIncome * $rate) / 100);
+    }
+
+    public function preLoadRates()
+    {
+        $allRates = DB::table('pph21_ter_rates')
+            ->orderBy('category')
+            ->orderBy('min_gross')
+            ->get();
+            
+        $this->rates = $allRates->groupBy('category')->toArray();
     }
 
     /**

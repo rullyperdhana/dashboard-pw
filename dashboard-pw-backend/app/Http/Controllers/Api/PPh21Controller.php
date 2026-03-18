@@ -32,29 +32,45 @@ class PPh21Controller extends Controller
             'type' => 'required|in:pns,pppk'
         ]);
 
+        set_time_limit(0);
+        ini_set('memory_limit', '1024M');
+
         $year = $request->year;
         $month = $request->month;
         $type = $request->type;
         $skpd = $request->skpd;
 
-        $model = ($type === 'pns') ? GajiPns::class : GajiPppk::class;
-        $query = $model::where('tahun', $year)
-            ->where('bulan', $month)
-            ->where('jenis_gaji', 'Induk');
+        $table = ($type === 'pns') ? 'gaji_pns' : 'gaji_pppk';
+        
+        $query = DB::table($table . ' as g')
+            ->join('master_pegawai as m', 'g.nip', '=', 'm.nip')
+            ->where('g.tahun', $year)
+            ->where('g.bulan', $month)
+            ->where('g.jenis_gaji', 'Induk');
 
         if ($skpd) {
-            $query->where('kdskpd', $skpd);
+            $query->where('g.kdskpd', $skpd);
         }
 
-        $records = $query->get();
+        $records = $query->select('g.*', 'm.kdstawin', 'm.janak')->get();
         $processed = 0;
+        
+        $this->service->preLoadRates();
+        
+        // Optimasi Desember: Ambil semua data perhitungan sebelumnya dalam satu query
+        $prevCalculationsGrouped = [];
+        if ($month == 12) {
+            $prevCalculationsGrouped = DB::table('pph21_calculations')
+                ->where('tahun', $year)
+                ->where('bulan', '<', 12)
+                ->where('jenis_gaji', 'Induk')
+                ->get()
+                ->groupBy('nip');
+        }
 
+        $upsertData = [];
         foreach ($records as $rec) {
-            // 1. Get PTKP Status from MasterPegawai
-            $pegawai = MasterPegawai::where('nip', $rec->nip)->first();
-            if (!$pegawai) continue;
-
-            $status = $this->service->getPTKPStatus($pegawai->kdstawin, $pegawai->janak);
+            $status = $this->service->getPTKPStatus($rec->kdstawin, $rec->janak);
             $cat = $this->service->getTERCategory($status);
 
             // 2. Determine Bruto (Simgaji + TPP)
@@ -81,11 +97,7 @@ class PPh21Controller extends Controller
                 $calcDetails['method'] = 'TER';
             } else {
                 // DEC: Annual Re-calculation (Pasal 17)
-                $prevMonths = DB::table('pph21_calculations')
-                    ->where('nip', $rec->nip)
-                    ->where('tahun', $year)
-                    ->where('bulan', '<', 12)
-                    ->get();
+                $prevMonths = $prevCalculationsGrouped->get($rec->nip, collect());
                 
                 $totalGross = $prevMonths->sum('gross_base') + $bruto;
                 $totalPaid = $prevMonths->sum('tax_amount');
@@ -116,21 +128,33 @@ class PPh21Controller extends Controller
                 $calcDetails['annual_iuran'] = $totalIuran;
             }
 
-            // 4. Save to Calculations table
-            DB::table('pph21_calculations')->updateOrInsert(
-                ['nip' => $rec->nip, 'bulan' => $month, 'tahun' => $year, 'jenis_gaji' => 'Induk'],
-                [
-                    'nama' => $rec->nama,
-                    'status_ptkp' => $status,
-                    'ter_category' => $cat,
-                    'gross_base' => $bruto,
-                    'tax_amount' => $tax,
-                    'calc_details' => json_encode($calcDetails),
-                    'updated_at' => now(),
-                    'created_at' => now()
-                ]
-            );
+            // 4. Collect for bulk upsert
+            $upsertData[] = [
+                'nip' => $rec->nip,
+                'bulan' => $month,
+                'tahun' => $year,
+                'jenis_gaji' => 'Induk',
+                'nama' => $rec->nama,
+                'status_ptkp' => $status,
+                'ter_category' => $cat,
+                'gross_base' => $bruto,
+                'tax_amount' => $tax,
+                'calc_details' => json_encode($calcDetails),
+                'updated_at' => now(),
+                'created_at' => now()
+            ];
             $processed++;
+
+            // Batch upsert every 500 records to save memory
+            if (count($upsertData) >= 500) {
+                $this->doUpsert($upsertData);
+                $upsertData = [];
+            }
+        }
+
+        // Final upsert
+        if (!empty($upsertData)) {
+            $this->doUpsert($upsertData);
         }
 
         return response()->json([
@@ -323,5 +347,14 @@ class PPh21Controller extends Controller
             Log::error('A2 Export Error: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to generate Excel: ' . $e->getMessage()], 500);
         }
+    }
+
+    private function doUpsert(array $data)
+    {
+        DB::table('pph21_calculations')->upsert(
+            $data, 
+            ['nip', 'bulan', 'tahun', 'jenis_gaji'], 
+            ['nama', 'status_ptkp', 'ter_category', 'gross_base', 'tax_amount', 'calc_details', 'updated_at']
+        );
     }
 }
