@@ -28,13 +28,22 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 | **Manajemen User** | Akun admin & admin SKPD |
 | **Status Pajak (PTKP)**| Kelola status PTKP statis tahunan (K/0, TK/1, dll) |
 | **API Integrasi**    | Endpoint API Key untuk integrasi sistem Simgaji |
+| **Pajak TER (A2)**  | Perhitungan PPh 21 TER & Export Bukti Potong A2 |
 | **Export Excel & PDF** | Export laporan sesuai tab yang aktif |
 
 ---
 
 ---
  
-### 📄 Laporan & Transparansi (v3.6)
+### 📑 Pajak TER & Bukti Potong A2 (v3.3)
+- **Automatic TER Calculation:** Sistem otomatis menggunakan tarif TER (Kategori A/B/C) untuk masa pajak Januari-November.
+- **December Final Tax:** Perhitungan Pasal 17 otomatis pada bulan Desember untuk menyeimbangkan total pajak tahunan.
+- **PTKP Intelligence:** Pemetaan otomatis status PTKP (Kawin/Anak) pegawai ke Kategori TER yang sesuai secara *real-time*.
+- **Official A2 Export:** Export Bukti Potong A2 ke Excel sesuai format resmi, lengkap dengan nama pegawai di kolom kontrol untuk verifikasi manual.
+- **SKPD-Aware Reporting:** Laporan rekapitulasi PPh 21 per bulan dan per SKPD dengan total bruto dan total pajak.
+- **Collation & Match Resiliency:** Penanganan otomatis perbedaan teknis database (collation) dan duplikasi nama SKPD untuk memastikan akurasi laporan 100%.
+
+### 📄 Laporan & Transparansi (v3.2)
 - **AI-Driven Analytics (TAPD):** Dashboard cerdas untuk Tim Anggaran Pemerintah Daerah yang mensimulasikan kenaikan anggaran berdasarkan data rill **KGB** (2 tahunan), **Kenaikan Pangkat** (4 tahunan), dan jadwal pensiun massal.
 - **Executive Mobile Dashboard:** Tampilan khusus yang dioptimalkan untuk perangkat mobile/smartphone bagi pimpinan (Kepala Dinas/Bupati) untuk memantau realisasi belanja pegawai secara *real-time*.
 - **PWA Ready:** Aplikasi kini mendukung instalasi langsung ke layar utama HP (*Add to Home Screen*) untuk akses cepat modul eksekutif.
@@ -46,7 +55,7 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 - **UPT-Aware Reporting:** Laporan otomatis mencakup pegawai di Unit Pelaksana Teknis (UPT) menggunakan prefix SKPD, memastikan sinkronisasi data 100%.
 - **TPP Discrepancy Reporting:** Deteksi otomatis selisih pegawai antara data gaji dan file Excel TPP yang tersimpan permanen.
 - **Persistent Extra Payroll Management:** Data disimpan permanen di database (`tb_extra_payroll_pppk_pw`), mendukung edit manual, penambahan catatan, dan batch delete.
-- **Environment Version Indicator:** Label versi (v3.6.1) kini tampil di pojok kiri bawah menu samping.
+- **Environment Version Indicator:** Label versi (v3.3.0) kini tampil di pojok kiri bawah menu samping.
 - **Server-Side Pagination:** Optimasi performa untuk dataset 6.000+ pegawai agar UI tetap responsif.
 - **Dedicated Summary Endpoint:** Tab Rekapitulasi menggunakan endpoint khusus yang sangat ringan untuk perhitungan total anggaran instan.
 - **Professional PDF Export:** Redesain total template slip gaji dan payroll dengan layout profesional, border rapi, dan summary box.
@@ -220,6 +229,8 @@ Lihat [README_DEPLOY.md](README_DEPLOY.md) untuk panduan update mesin dan troubl
 | `settings` | Konfigurasi JKK, JKM, UMP, Bulan Basis Extra Payroll, dll |
 | `users` | Akun pengguna |
 | `tb_extra_payroll_pppk_pw` | Data THR & Gaji 13 PPPK-PW yang tersimpan (Database) |
+| `pph21_calculations` | Hasil perhitungan pajak bulanan per pegawai |
+| `pph21_ter_rates` | Master data tarif efektif rata-rata (Cat A, B, C) |
 | `employee_statuses` | Riwayat status pegawai + SK |
 
 ### Kolom Penting `pegawai_pw`
@@ -298,6 +309,7 @@ Export Excel/PDF secara otomatis menyesuaikan kolom dengan tab yang aktif.
 | `/upload/pppk` | Upload Gaji PPPK |
 | `/upload/tpp` | Upload TPP |
 | `/upload/tpg` | Upload TPG |
+| `/reports/pph21` | Laporan PPh 21 TER & Bukti Potong A2 |
 | `/settings/tax-status` | Manajemen Status Pajak (PTKP) |
 
 ---

@@ -218,6 +218,12 @@ const router = createRouter({
             component: () => import('../views/TppDiscrepancyHistory.vue'),
             meta: { requiresAuth: true, breadcrumb: 'Riwayat Selisih TPP', app_access: 'tpp-upload' },
         },
+        {
+            path: '/reports/pph21',
+            name: 'PPh21Report',
+            component: () => import('../views/PPh21Report.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Pajak TER (A2)', app_access: 'pph21-report' },
+        },
     ],
 })
 

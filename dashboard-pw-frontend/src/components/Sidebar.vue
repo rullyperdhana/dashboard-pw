@@ -109,7 +109,7 @@
           </v-btn>
         </v-card>
         <div class="text-center mt-2">
-          <span class="text-disabled font-weight-medium" style="font-size: 10px; letter-spacing: 1px;">VERSI 3.6.1</span>
+          <span class="text-disabled font-weight-medium" style="font-size: 10px; letter-spacing: 1px;">VERSI 3.7.0</span>
         </div>
       </div>
     </template>
@@ -268,6 +268,7 @@ const menuItems = ref([
       { title: 'Dashboard TPG', icon: 'mdi-school-outline', value: 'tpg-dashboard', to: '/tpg-dashboard' },
       { title: 'Upload TPG', icon: 'mdi-file-upload-outline', value: 'tpg-upload', to: '/tpg-upload' },
       { title: 'Riwayat Selisih TPP', icon: 'mdi-history', value: 'tpp-upload', to: '/tpp/discrepancy-history' },
+      { title: 'Pajak TER (A2)', icon: 'mdi-calculator-variant-outline', value: 'pph21-report', to: '/reports/pph21' },
     ]
   },
   {
@@ -307,7 +308,7 @@ const filteredMenuItems = computed(() => {
       }
       
       // Fallback: Show basic items by default
-      const basicItems = ['dashboard', 'pns', 'employees', 'payments', 'sp2d-verification', 'tax-status', 'master-pegawai-export', 'budget-prediction']
+      const basicItems = ['dashboard', 'pns', 'employees', 'payments', 'sp2d-verification', 'tax-status', 'master-pegawai-export', 'budget-prediction', 'pph21-report']
       return basicItems.includes(item.value)
     }
     
