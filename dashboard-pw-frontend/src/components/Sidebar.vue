@@ -261,8 +261,8 @@ const menuItems = ref([
     children: [
       { title: 'Verifikasi SP2D', icon: 'mdi-file-check-outline', value: 'sp2d-verification', to: '/sp2d-verification' },
       { title: 'Laporan SKPD', icon: 'mdi-file-table-outline', value: 'skpd-monthly', to: '/reports/skpd-monthly' },
-      { title: 'Analitik TAPD', icon: 'mdi-chart-scatter-plot', value: 'tapd-analytics', to: '/analytics/tapd' },
-      { title: 'Mobile Eksekutif', icon: 'mdi-cellphone-text', value: 'exec-mobile', to: '/executive/mobile' },
+      { title: 'Analitik TAPD', icon: 'mdi-chart-scatter-plot', value: 'tapd-dashboard', to: '/analytics/tapd' },
+      { title: 'Mobile Eksekutif', icon: 'mdi-cellphone-text', value: 'executive-mobile', to: '/executive/mobile' },
       { title: 'Estimasi JKK/JKM', icon: 'mdi-shield-check-outline', value: 'pppk-settings', to: '/settings/pppk' },
       { title: 'Rekon BPJS 4%', icon: 'mdi-hospital-box-outline', value: 'bpjs-rekon', to: '/bpjs-rekon' },
       { title: 'Dashboard TPG', icon: 'mdi-school-outline', value: 'tpg-dashboard', to: '/tpg-dashboard' },
@@ -308,7 +308,7 @@ const filteredMenuItems = computed(() => {
       }
       
       // Fallback: Show basic items by default
-      const basicItems = ['dashboard', 'pns', 'employees', 'payments', 'sp2d-verification', 'tax-status', 'master-pegawai-export', 'budget-prediction', 'pph21-report']
+      const basicItems = ['dashboard', 'pns', 'employees', 'payments', 'sp2d-verification', 'tax-status', 'master-pegawai-export', 'tapd-dashboard', 'pph21-report']
       return basicItems.includes(item.value)
     }
     

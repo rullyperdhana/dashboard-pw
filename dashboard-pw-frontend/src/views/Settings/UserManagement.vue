@@ -213,6 +213,8 @@ const moduleGroups = [
     items: [
       { title: 'Dashboard PPPK-PW', value: 'dashboard' },
       { title: 'Dashboard PNS', value: 'pns' },
+      { title: 'Analitik TAPD', value: 'tapd-dashboard' },
+      { title: 'Mobile Eksekutif', value: 'executive-mobile' },
       { title: 'Estimasi JKK/JKM/JKN', value: 'pppk-settings' },
     ]
   },
@@ -225,6 +227,7 @@ const moduleGroups = [
       { title: 'Instansi / SKPD', value: 'skpd' },
       { title: 'SKPD Mapping', value: 'skpd-mapping' },
       { title: 'Master Pegawai (DBF)', value: 'master-pegawai' },
+      { title: 'Export Master (DBF)', value: 'master-pegawai-export' },
     ]
   },
   {
@@ -235,7 +238,9 @@ const moduleGroups = [
       { title: 'Upload TPP', value: 'tpp-upload' },
       { title: 'THR PPPK-PW', value: 'pppk-pw-thr' },
       { title: 'Rekon BPJS 4%', value: 'bpjs-rekon' },
+      { title: 'Verifikasi SP2D', value: 'sp2d-verification' },
       { title: 'Laporan SKPD', value: 'skpd-monthly' },
+      { title: 'Pajak TER (A2)', value: 'pph21-report' },
     ]
   },
   {
@@ -252,9 +257,11 @@ const moduleGroups = [
       { title: 'Posting Data', value: 'posting-data' },
       { title: 'Sumber Dana SKPD', value: 'sumber-dana' },
       { title: 'Referensi Satker', value: 'satker-setting' },
+      { title: 'Riwayat Ekspor', value: 'export-logs' },
       { title: 'Pemeliharaan Data', value: 'data-maintenance' },
       { title: 'Manajemen User', value: 'users' },
       { title: 'API Keys', value: 'api-keys' },
+      { title: 'Pusat Bantuan', value: 'help-center' },
     ]
   }
 ]
