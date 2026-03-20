@@ -382,7 +382,10 @@ class PPh21Controller extends Controller
                 $sheet->setCellValue('Q' . $row, $details['tpp'] ?? 0);
                 $sheet->setCellValue('R' . $row, $details['tunj_struk_fung'] ?? 0);
                 $sheet->setCellValue('S' . $row, $details['tunj_beras'] ?? 0);
-                $sheet->setCellValue('T' . $row, $details['tunj_lain'] ?? 0);
+                
+                // Tunjangan Lain includes extra salary (THR Gaji) and extra payroll (TPP THR)
+                $tunjLain = ($details['tunj_lain'] ?? 0) + ($details['extra_salary'] ?? 0) + ($details['extra_payroll'] ?? 0);
+                $sheet->setCellValue('T' . $row, $tunjLain);
                 $sheet->setCellValue('V' . $row, $details['pot_iwp'] ?? 0);
                 
                 // Tax
