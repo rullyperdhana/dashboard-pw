@@ -135,9 +135,16 @@ class PPh21Controller extends Controller
                 ->groupBy('nip');
         }
 
+        // Fetch fixed tax statuses for this year
+        $fixedTaxStatuses = DB::table('tax_statuses')
+            ->where('year', $year)
+            ->pluck('tax_status', 'nip')
+            ->toArray();
+
         $upsertData = [];
         foreach ($records as $rec) {
-            $status = $this->service->getPTKPStatus($rec->kdstawin, $rec->janak);
+            // Priority: Fixed Status -> Dynamic Calculation
+            $status = $fixedTaxStatuses[$rec->nip] ?? $this->service->getPTKPStatus($rec->kdstawin, $rec->janak);
             $cat = $this->service->getTERCategory($status);
 
             // 2. Determine Bruto (Simgaji + TPP + Extra Payroll)
