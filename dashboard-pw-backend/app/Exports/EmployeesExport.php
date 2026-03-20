@@ -39,6 +39,12 @@ class EmployeesExport implements FromCollection, WithHeadings, WithStyles, Shoul
                 DB::raw('CASE WHEN master_pegawai.kdfungsi = "00000" THEN ref_eselon.uraian ELSE ref_jabatan_fungsional.nama_jabatan END as nama_jabatan')
             );
 
+        $user = auth()->user();
+        $skpds = $user->getAccessibleSkpds();
+        if ($skpds !== null) {
+            $query->whereIn('master_pegawai.kdskpd', $skpds);
+        }
+
         if (!empty($this->filters['search'])) {
             $s = $this->filters['search'];
             $query->where(function ($q) use ($s) {

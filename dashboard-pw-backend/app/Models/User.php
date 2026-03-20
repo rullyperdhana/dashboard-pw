@@ -26,6 +26,7 @@ class User extends Authenticatable
         'role',
         'status',
         'app_access',
+        'skpd_access',
     ];
 
     /**
@@ -47,6 +48,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'app_access' => 'array',
+        'skpd_access' => 'array',
     ];
 
     /**
@@ -103,5 +105,47 @@ class User extends Authenticatable
     public function scopeBySkpd($query, $skpdId)
     {
         return $query->where('institution', $skpdId);
+    }
+
+    /**
+     * Mendapatkan daftar ID SKPD yang dapat diakses user.
+     * Jika superadmin, mengembalikan null (semua).
+     */
+    public function getAccessibleSkpds()
+    {
+        if ($this->isSuperAdmin()) {
+            return null;
+        }
+
+        $access = $this->skpd_access ?: [];
+        
+        // Backward compatibility: include institution if provided
+        if ($this->institution && !in_array($this->institution, $access)) {
+            $access[] = $this->institution;
+        }
+
+        return $access;
+    }
+
+    /**
+     * Mendapatkan daftar KODE SKPD (format 1.01.01) yang dapat diakses user.
+     * Digunakan untuk filter tabel master_pegawai, gaji_pns, dll.
+     */
+    public function getAccessibleSkpdCodes()
+    {
+        $ids = $this->getAccessibleSkpds();
+        if ($ids === null) {
+            return null;
+        }
+
+        $codes = \App\Models\Skpd::whereIn('id_skpd', $ids)->pluck('kode_skpd')->toArray();
+        $simgajiCodes = \App\Models\Skpd::whereIn('id_skpd', $ids)->whereNotNull('kode_simgaji')->pluck('kode_simgaji')->toArray();
+        
+        $mappingCodes = \Illuminate\Support\Facades\DB::table('skpd_mapping')
+            ->whereIn('skpd_id', $ids)
+            ->pluck('source_code')
+            ->toArray();
+
+        return array_unique(array_filter(array_merge($codes, $simgajiCodes, $mappingCodes)));
     }
 }

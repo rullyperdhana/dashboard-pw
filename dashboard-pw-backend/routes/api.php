@@ -114,11 +114,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/pppk/dashboard', [PnsPayrollController::class, 'dashboardPppk']);
     Route::get('/pppk/trend', [PnsPayrollController::class, 'yearlyTrendPppk']);
 
-    // PPh 21 TER (A2)
     Route::prefix('pph21')->group(function () {
         Route::get('/report', [PPh21Controller::class, 'report']);
         Route::post('/calculate', [PPh21Controller::class, 'calculate']);
         Route::get('/export-a2', [PPh21Controller::class, 'exportA2']);
+        Route::delete('/', [PPh21Controller::class, 'destroy']);
     });
 
     // TPP Upload

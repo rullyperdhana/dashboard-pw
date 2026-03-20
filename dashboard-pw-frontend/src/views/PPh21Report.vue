@@ -14,7 +14,7 @@
           <v-spacer></v-spacer>
           
           <!-- Calculation Dialog with Activator -->
-          <v-dialog v-model="calcDialog" max-width="450px">
+          <v-dialog v-if="isSuperAdmin" v-model="calcDialog" max-width="450px">
             <template v-slot:activator="{ props }">
               <v-btn
                 v-bind="props"
@@ -123,6 +123,15 @@
           <v-table class="bg-transparent modern-report-table">
             <thead>
               <tr>
+                <th v-if="isSuperAdmin" class="text-center px-2" style="width: 50px;">
+                  <v-checkbox
+                    :model-value="isAllSelected"
+                    :indeterminate="isSomeSelected"
+                    @update:model-value="toggleSelectAll"
+                    hide-details
+                    density="compact"
+                  ></v-checkbox>
+                </th>
                 <th class="text-left font-weight-bold text-medium-emphasis">Masa Pajak</th>
                 <th class="text-left font-weight-bold text-medium-emphasis">SKPD</th>
                 <th class="text-center font-weight-bold text-medium-emphasis">Pegawai</th>
@@ -134,7 +143,15 @@
             <tbody>
               <v-progress-linear v-if="loading" indeterminate color="primary" class="position-absolute"></v-progress-linear>
               <template v-else>
-                <tr v-for="(item, idx) in reports" :key="idx" class="table-row-hover">
+                <tr v-for="(item, idx) in reports" :key="idx" class="table-row-hover" :class="{'selected-row': isSelected(item)}">
+                  <td v-if="isSuperAdmin" class="text-center px-2">
+                    <v-checkbox
+                      :model-value="isSelected(item)"
+                      @update:model-value="toggleSelection(item)"
+                      hide-details
+                      density="compact"
+                    ></v-checkbox>
+                  </td>
                   <td class="font-weight-bold text-high-emphasis">{{ getMonthName(item.bulan) }}</td>
                   <td class="text-caption font-weight-medium" style="max-width: 250px;">{{ item.nama_skpd || 'Unknown' }}</td>
                   <td class="text-center">
@@ -150,18 +167,50 @@
                       prepend-icon="mdi-file-excel-outline"
                       class="text-caption font-weight-bold px-4"
                       rounded="lg"
-                      @click="downloadA2Specific(item.bulan, item.kdskpd)"
+                      @click="downloadA2Specific(item.bulan, item.skpd_id)"
+                      title="Download Bukti Potong A2"
                     >
                       A2
                     </v-btn>
+
+                    <v-btn
+                      v-if="isSuperAdmin"
+                      variant="tonal"
+                      color="error"
+                      density="compact"
+                      icon="mdi-trash-can-outline"
+                      class="ml-2"
+                      rounded="lg"
+                      @click="confirmDelete(item)"
+                      title="Hapus Data Perhitungan"
+                    ></v-btn>
                   </td>
                 </tr>
                 <tr v-if="reports.length === 0">
-                  <td colspan="6" class="text-center pa-8 text-disabled">Belum ada data perhitungan untuk tahun {{ selectedYear }}</td>
+                  <td :colspan="isSuperAdmin ? 7 : 6" class="text-center pa-8 text-disabled">Belum ada data perhitungan untuk tahun {{ selectedYear }}</td>
                 </tr>
               </template>
             </tbody>
           </v-table>
+          
+          <!-- Bulk Action Bar -->
+          <v-fade-transition>
+            <div v-if="selectedItems.length > 0" class="bulk-action-bar pa-4 d-flex align-center">
+              <span class="text-subtitle-2 font-weight-bold">{{ selectedItems.length }} item terpilih</span>
+              <v-spacer></v-spacer>
+              <v-btn
+                color="error"
+                prepend-icon="mdi-trash-can"
+                variant="flat"
+                rounded="lg"
+                class="px-4"
+                @click="confirmBulkDelete"
+              >
+                HAPUS TERPILIH
+              </v-btn>
+              <v-btn icon="mdi-close" variant="text" class="ml-2" @click="clearSelection"></v-btn>
+            </div>
+          </v-fade-transition>
         </v-card>
       </v-container>
     </v-main>
@@ -183,15 +232,40 @@
       </v-card>
     </v-dialog>
 
-    <v-snackbar v-model="snack" color="info" rounded="lg">Fitur dalam pengembangan</v-snackbar>
+    <v-dialog v-model="deleteDialog" max-width="400px">
+      <v-card class="glass-modal rounded-xl pa-4 text-center">
+        <v-card-title class="font-weight-black text-error">
+          {{ isBulkDelete ? 'Konfirmasi Hapus Massal' : 'Konfirmasi Hapus' }}
+        </v-card-title>
+        <v-card-text>
+          <template v-if="isBulkDelete">
+            Apakah Anda yakin ingin menghapus <b>{{ selectedItems.length }}</b> data perhitungan terpilih?
+          </template>
+          <template v-else>
+            Apakah Anda yakin ingin menghapus data perhitungan PPh21 untuk <b>{{ selectedItem?.nama_skpd }}</b> pada bulan <b>{{ getMonthName(selectedItem?.bulan) }} {{ selectedYear }}</b>?
+          </template>
+          <p class="text-caption text-error mt-4">Tindakan ini tidak dapat dibatalkan.</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey" variant="text" @click="deleteDialog = false">Batal</v-btn>
+          <v-btn color="error" variant="flat" rounded="lg" :loading="deleting" @click="executeDelete">Hapus</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-snackbar v-model="snack" :color="snackColor" rounded="lg">{{ snackText }}</v-snackbar>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import api from '../api'
 import Sidebar from '../components/Sidebar.vue'
 import Navbar from '../components/Navbar.vue'
+
+const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
+const isSuperAdmin = computed(() => currentUser.role === 'superadmin')
 
 const selectedYear = ref(2026)
 const selectedSkpd = ref(null)
@@ -201,7 +275,34 @@ const calculating = ref(false)
 const reports = ref([])
 const calcDialog = ref(false)
 const yearDialog = ref(false)
+const deleteDialog = ref(false)
+const selectedItem = ref(null)
+const selectedItems = ref([])
+const isBulkDelete = ref(false)
+const deleting = ref(false)
 const snack = ref(false)
+const snackText = ref('')
+const snackColor = ref('info')
+
+const isSelected = (item) => selectedItems.value.some(x => x.bulan === item.bulan && x.skpd_id === item.skpd_id)
+const toggleSelection = (item) => {
+  const idx = selectedItems.value.findIndex(x => x.bulan === item.bulan && x.skpd_id === item.skpd_id)
+  if (idx > -1) selectedItems.value.splice(idx, 1)
+  else selectedItems.value.push({ bulan: item.bulan, skpd_id: item.skpd_id })
+}
+const isAllSelected = computed(() => reports.value.length > 0 && selectedItems.value.length === reports.value.length)
+const isSomeSelected = computed(() => selectedItems.value.length > 0 && selectedItems.value.length < reports.value.length)
+const toggleSelectAll = () => {
+  if (isAllSelected.value) selectedItems.value = []
+  else selectedItems.value = reports.value.map(x => ({ bulan: x.bulan, skpd_id: x.skpd_id }))
+}
+const clearSelection = () => selectedItems.value = []
+
+const showSnack = (text, color = 'info') => {
+  snackText.value = text
+  snackColor.value = color
+  snack.value = true
+}
 
 const calcParams = ref({
   month: new Date().getMonth() + 1,
@@ -297,6 +398,45 @@ const downloadA2Specific = async (month, skpdId) => {
   }
 }
 
+const confirmDelete = (item) => {
+  selectedItem.value = item
+  isBulkDelete.value = false
+  deleteDialog.value = true
+}
+
+const confirmBulkDelete = () => {
+  isBulkDelete.value = true
+  deleteDialog.value = true
+}
+
+const executeDelete = async () => {
+  deleting.value = true
+  try {
+    const payload = {
+      year: selectedYear.value
+    }
+
+    if (isBulkDelete.value) {
+      payload.items = selectedItems.value.map(x => ({ month: x.bulan, skpd: x.skpd_id }))
+    } else {
+      payload.month = selectedItem.value.bulan
+      payload.skpd = selectedItem.value.skpd_id
+    }
+
+    await api.delete('/pph21', { params: payload })
+    
+    showSnack('Data perhitungan berhasil dihapus', 'success')
+    deleteDialog.value = false
+    selectedItems.value = []
+    fetchReport()
+  } catch (err) {
+    console.error('Delete Error:', err)
+    showSnack('Gagal menghapus data: ' + (err.response?.data?.message || err.message), 'error')
+  } finally {
+    deleting.value = false
+  }
+}
+
 const formatCurrency = (val) => {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
@@ -337,6 +477,18 @@ watch([selectedYear, selectedSkpd], fetchReport)
 }
 .table-row-hover:hover {
   background: rgba(var(--v-theme-primary), 0.02);
+}
+.selected-row {
+  background: rgba(var(--v-theme-primary), 0.05) !important;
+}
+.bulk-action-bar {
+  background: rgb(var(--v-theme-surface));
+  border-top: 1px solid rgba(var(--v-border-color), 0.1);
+  border-bottom-left-radius: 28px;
+  border-bottom-right-radius: 28px;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
 }
 .modern-report-table :deep(th) {
   padding: 16px !important;

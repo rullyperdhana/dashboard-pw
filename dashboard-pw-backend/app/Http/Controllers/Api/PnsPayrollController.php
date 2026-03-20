@@ -62,6 +62,22 @@ class PnsPayrollController extends Controller
     }
 
     /**
+     * Apply SKPD filter based on user access
+     */
+    private function applySkpdFilter($query, $table = null)
+    {
+        $user = auth()->user();
+        $skpds = $user->getAccessibleSkpdCodes();
+
+        if ($skpds !== null) {
+            $column = $table ? "$table.kdskpd" : "kdskpd";
+            $query->whereIn($column, $skpds);
+        }
+
+        return $query;
+    }
+
+    /**
      * Dashboard Summary
      */
     public function dashboard(Request $request)
@@ -88,6 +104,8 @@ class PnsPayrollController extends Controller
             ->where('bulan', $month)
             ->where('jenis_gaji', $jenisGaji);
 
+        $this->applySkpdFilter($query);
+
         $stats = $query->selectRaw($this->dashboardSelectRaw())
             ->first();
 
@@ -99,9 +117,13 @@ class PnsPayrollController extends Controller
         $projectedBudget = ($stats->total_gross_salary ?? 0) * 14;
 
         // Top 5 Earners
-        $topEarners = GajiPns::where('gaji_pns.tahun', $year)
+        $topEarnersQuery = GajiPns::where('gaji_pns.tahun', $year)
             ->where('gaji_pns.bulan', $month)
-            ->leftJoin('satkers as s1', function ($join) {
+            ->where('gaji_pns.jenis_gaji', $jenisGaji);
+        
+        $this->applySkpdFilter($topEarnersQuery, 'gaji_pns');
+
+        $topEarners = $topEarnersQuery->leftJoin('satkers as s1', function ($join) {
                 $join->on('gaji_pns.kdskpd', '=', 's1.kdskpd')
                     ->on('gaji_pns.kdsatker', '=', 's1.kdsatker');
             })
@@ -120,9 +142,13 @@ class PnsPayrollController extends Controller
             ]);
 
         // SKPD Distribution
-        $skpdStats = GajiPns::where('gaji_pns.tahun', $year)
+        $skpdStatsQuery = GajiPns::where('gaji_pns.tahun', $year)
             ->where('gaji_pns.bulan', $month)
-            ->leftJoin('satkers as s1', function ($join) {
+            ->where('gaji_pns.jenis_gaji', $jenisGaji);
+
+        $this->applySkpdFilter($skpdStatsQuery, 'gaji_pns');
+
+        $skpdStats = $skpdStatsQuery->leftJoin('satkers as s1', function ($join) {
                 $join->on('gaji_pns.kdskpd', '=', 's1.kdskpd')
                     ->on('gaji_pns.kdsatker', '=', 's1.kdsatker');
             })
@@ -139,9 +165,13 @@ class PnsPayrollController extends Controller
             ->get();
 
         // Cost by Rank (Golongan)
-        $byGolongan = GajiPns::where('tahun', $year)
+        $byGolonganQuery = GajiPns::where('tahun', $year)
             ->where('bulan', $month)
-            ->whereNotNull('kdpangkat')
+            ->where('jenis_gaji', $jenisGaji);
+            
+        $this->applySkpdFilter($byGolonganQuery);
+
+        $byGolongan = $byGolonganQuery->whereNotNull('kdpangkat')
             ->select('kdpangkat as golongan', DB::raw('COUNT(*) as total'), DB::raw('SUM(kotor) as cost'))
             ->groupBy('kdpangkat')
             ->orderBy('kdpangkat')
@@ -183,8 +213,11 @@ class PnsPayrollController extends Controller
 
         $query = GajiPns::where('gaji_pns.tahun', $year)
             ->where('gaji_pns.bulan', $month)
-            ->where('gaji_pns.jenis_gaji', $jenisGaji)
-            ->leftJoin('satkers as s1', function ($join) {
+            ->where('gaji_pns.jenis_gaji', $jenisGaji);
+
+        $this->applySkpdFilter($query, 'gaji_pns');
+
+        $query->leftJoin('satkers as s1', function ($join) {
                 $join->on('gaji_pns.kdskpd', '=', 's1.kdskpd')
                     ->on('gaji_pns.kdsatker', '=', 's1.kdsatker');
             })
@@ -254,6 +287,8 @@ class PnsPayrollController extends Controller
             ->where('bulan', $month)
             ->where('jenis_gaji', $jenisGaji);
 
+        $this->applySkpdFilter($query);
+
         $stats = $query->selectRaw($this->dashboardSelectRaw())
             ->first();
 
@@ -264,9 +299,13 @@ class PnsPayrollController extends Controller
         $projectedBudget = ($stats->total_gross_salary ?? 0) * 14;
 
         // Top 5 Earners
-        $topEarners = GajiPppk::where('gaji_pppk.tahun', $year)
+        $topEarnersQuery = GajiPppk::where('gaji_pppk.tahun', $year)
             ->where('gaji_pppk.bulan', $month)
-            ->leftJoin('satkers as s1', function ($join) {
+            ->where('gaji_pppk.jenis_gaji', $jenisGaji);
+
+        $this->applySkpdFilter($topEarnersQuery, 'gaji_pppk');
+
+        $topEarners = $topEarnersQuery->leftJoin('satkers as s1', function ($join) {
                 $join->on('gaji_pppk.kdskpd', '=', 's1.kdskpd')
                     ->on('gaji_pppk.kdsatker', '=', 's1.kdsatker');
             })
@@ -285,9 +324,13 @@ class PnsPayrollController extends Controller
             ]);
 
         // SKPD Distribution
-        $skpdStats = GajiPppk::where('gaji_pppk.tahun', $year)
+        $skpdStatsQuery = GajiPppk::where('gaji_pppk.tahun', $year)
             ->where('gaji_pppk.bulan', $month)
-            ->leftJoin('satkers as s1', function ($join) {
+            ->where('gaji_pppk.jenis_gaji', $jenisGaji);
+
+        $this->applySkpdFilter($skpdStatsQuery, 'gaji_pppk');
+
+        $skpdStats = $skpdStatsQuery->leftJoin('satkers as s1', function ($join) {
                 $join->on('gaji_pppk.kdskpd', '=', 's1.kdskpd')
                     ->on('gaji_pppk.kdsatker', '=', 's1.kdsatker');
             })
@@ -303,9 +346,13 @@ class PnsPayrollController extends Controller
             ->limit(10)
             ->get();
 
-        $byGolongan = GajiPppk::where('tahun', $year)
+        $byGolonganQuery = GajiPppk::where('tahun', $year)
             ->where('bulan', $month)
-            ->whereNotNull('kdpangkat')
+            ->where('jenis_gaji', $jenisGaji);
+
+        $this->applySkpdFilter($byGolonganQuery);
+
+        $byGolongan = $byGolonganQuery->whereNotNull('kdpangkat')
             ->select('kdpangkat as golongan', DB::raw('COUNT(*) as total'), DB::raw('SUM(kotor) as cost'))
             ->groupBy('kdpangkat')
             ->orderBy('kdpangkat')
@@ -340,6 +387,8 @@ class PnsPayrollController extends Controller
         $query = GajiPns::where('tahun', $year)
             ->where('jenis_gaji', $jenisGaji);
 
+        $this->applySkpdFilter($query);
+
         $trend = $query->select('bulan', DB::raw('COUNT(DISTINCT nip) as total_employees'), DB::raw('SUM(kotor) as total_gross'), DB::raw('SUM(bersih) as total_net'), DB::raw('SUM(tunj_tpp) as total_tpp'))
             ->groupBy('bulan')
             ->having('total_employees', '>', 0)
@@ -365,6 +414,8 @@ class PnsPayrollController extends Controller
 
         $query = GajiPppk::where('tahun', $year)
             ->where('jenis_gaji', $jenisGaji);
+
+        $this->applySkpdFilter($query);
 
         $trend = $query->select('bulan', DB::raw('COUNT(DISTINCT nip) as total_employees'), DB::raw('SUM(kotor) as total_gross'), DB::raw('SUM(bersih) as total_net'), DB::raw('SUM(tunj_tpp) as total_tpp'))
             ->groupBy('bulan')
@@ -457,6 +508,9 @@ class PnsPayrollController extends Controller
         // Single query with GROUP BY instead of 12 separate queries
         $tableName = (new $model)->getTable();
         $query = $model::where("$tableName.tahun", $year);
+
+        $this->applySkpdFilter($query, $tableName);
+
         if ($skpdFilter) {
             $query->where("$tableName.kdskpd", $skpdFilter);
         }
@@ -551,8 +605,11 @@ class PnsPayrollController extends Controller
 
         // Optimized SKPD list — join with satkers for better default names
         $tableName = (new $model)->getTable();
-        $skpdList = $model::where("$tableName.tahun", $year)
-            ->whereNotNull("$tableName.kdskpd")
+        $skpdListQuery = $model::where("$tableName.tahun", $year);
+
+        $this->applySkpdFilter($skpdListQuery, $tableName);
+
+        $skpdList = $skpdListQuery->whereNotNull("$tableName.kdskpd")
             ->leftJoin('satkers as s1', function ($join) use ($tableName) {
                 $join->on("$tableName.kdskpd", '=', 's1.kdskpd')
                     ->on("$tableName.kdsatker", '=', 's1.kdsatker');

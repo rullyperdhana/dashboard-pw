@@ -55,7 +55,7 @@
               </div>
 
               <v-btn icon="mdi-microsoft-excel" color="success" variant="tonal" @click="exportCombinedAllowance" :loading="exporting" title="Ekspor Excel" class="rounded-lg"></v-btn>
-              <v-btn color="primary" variant="flat" prepend-icon="mdi-plus" rounded="pill" class="px-6" @click="uploadDialog = true">
+              <v-btn v-if="isSuperAdmin" color="primary" variant="flat" prepend-icon="mdi-plus" rounded="pill" class="px-6" @click="uploadDialog = true">
                 Upload Data
               </v-btn>
             </v-col>
@@ -551,6 +551,9 @@ import Navbar from '../components/Navbar.vue'
 Chart.register(...registerables)
 
 // ═════════ CORE STATE ═════════
+const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
+const isSuperAdmin = computed(() => currentUser.role === 'superadmin')
+
 const loading = ref(true)
 const loadingAnnual = ref(false)
 const stats = ref(null)

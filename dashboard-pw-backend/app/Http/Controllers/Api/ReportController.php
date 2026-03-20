@@ -32,8 +32,8 @@ class ReportController extends Controller
             ->join('tb_payment', 'tb_payment_detail.payment_id', '=', 'tb_payment.id')
             ->where('tb_payment.year', $currentYear);
 
-        if ($user->isAdminSkpd()) {
-            $annualBudgetQuery->where('pegawai_pw.idskpd', $user->institution);
+        if ($user->role !== 'superadmin') {
+            $annualBudgetQuery->whereIn('pegawai_pw.idskpd', $user->getAccessibleSkpds());
         }
 
         $totalAnnual = $annualBudgetQuery->sum('tb_payment_detail.total_amoun');
@@ -68,8 +68,8 @@ class ReportController extends Controller
                 ->where('tb_payment.month', $latestFullMonth->month)
                 ->where('tb_payment.year', $latestFullMonth->year);
 
-            if ($user->isAdminSkpd()) {
-                $monthlyDetailQuery->where('pegawai_pw.idskpd', $user->institution);
+            if ($user->role !== 'superadmin') {
+                $monthlyDetailQuery->whereIn('pegawai_pw.idskpd', $user->getAccessibleSkpds());
             }
 
             $count = (clone $monthlyDetailQuery)->count();
@@ -93,8 +93,8 @@ class ReportController extends Controller
             ->groupBy('skpd.id_skpd', 'skpd.nama_skpd', 'skpd.kode_skpd')
             ->orderByDesc('total_budget');
 
-        if ($user->isAdminSkpd()) {
-            $skpdPerformanceQuery->where('skpd.id_skpd', $user->institution);
+        if ($user->role !== 'superadmin') {
+            $skpdPerformanceQuery->whereIn('skpd.id_skpd', $user->getAccessibleSkpds());
         }
 
         $skpdPerformance = $skpdPerformanceQuery->get();
@@ -114,8 +114,8 @@ class ReportController extends Controller
             ->orderBy('tb_payment.month', 'desc')
             ->limit(12);
 
-        if ($user->isAdminSkpd()) {
-            $growthTrendQuery->where('pegawai_pw.idskpd', $user->institution);
+        if ($user->role !== 'superadmin') {
+            $growthTrendQuery->whereIn('pegawai_pw.idskpd', $user->getAccessibleSkpds());
         }
 
         $growthTrend = $growthTrendQuery->get()
@@ -147,8 +147,8 @@ class ReportController extends Controller
             ->orderByDesc('total_amoun')
             ->limit(10);
 
-        if ($user->isAdminSkpd()) {
-            $topEarnersQuery->where('pegawai_pw.idskpd', $user->institution);
+        if ($user->role !== 'superadmin') {
+            $topEarnersQuery->whereIn('pegawai_pw.idskpd', $user->getAccessibleSkpds());
         }
 
         $topEarners = $topEarnersQuery->get();
@@ -180,7 +180,12 @@ class ReportController extends Controller
         $month = $request->month ?? date('n');
         $year = $request->year ?? date('Y');
 
-        $allSkpds = Skpd::where('is_skpd', 1)->get();
+        $query = Skpd::where('is_skpd', 1);
+        $user = auth()->user();
+        if ($user->role !== 'superadmin') {
+            $query->whereIn('id_skpd', $user->getAccessibleSkpds());
+        }
+        $allSkpds = $query->get();
 
         $paidSkpdIds = DB::table('tb_payment_detail')
             ->join('pegawai_pw', 'tb_payment_detail.employee_id', '=', 'pegawai_pw.id')
@@ -225,8 +230,8 @@ class ReportController extends Controller
             ->select('pegawai_pw.upt', 'skpd.nama_skpd', 'pegawai_pw.idskpd')
             ->distinct();
 
-        if ($user->isAdminSkpd()) {
-            $masterQuery->where('pegawai_pw.idskpd', $user->institution);
+        if ($user->role !== 'superadmin') {
+            $masterQuery->whereIn('pegawai_pw.idskpd', $user->getAccessibleSkpds());
         }
 
         $allUpts = $masterQuery->get();
@@ -241,8 +246,8 @@ class ReportController extends Controller
             ->select('pegawai_pw.upt')
             ->distinct();
 
-        if ($user->isAdminSkpd()) {
-            $paidQuery->where('pegawai_pw.idskpd', $user->institution);
+        if ($user->role !== 'superadmin') {
+            $paidQuery->whereIn('pegawai_pw.idskpd', $user->getAccessibleSkpds());
         }
 
         $paidUptNames = $paidQuery->pluck('upt')->toArray();
@@ -288,8 +293,8 @@ class ReportController extends Controller
                 'pegawai_pw.idskpd'
             );
 
-        if ($user->isAdminSkpd()) {
-            $allEmployeesQuery->where('pegawai_pw.idskpd', $user->institution);
+        if ($user->role !== 'superadmin') {
+            $allEmployeesQuery->whereIn('pegawai_pw.idskpd', $user->getAccessibleSkpds());
         }
 
         $allEmployees = $allEmployeesQuery->get();
@@ -301,8 +306,8 @@ class ReportController extends Controller
             ->where('tb_payment.month', $month)
             ->where('tb_payment.year', $year);
 
-        if ($user->isAdminSkpd()) {
-            $paidEmployeeIdsQuery->where('pegawai_pw.idskpd', $user->institution);
+        if ($user->role !== 'superadmin') {
+            $paidEmployeeIdsQuery->whereIn('pegawai_pw.idskpd', $user->getAccessibleSkpds());
         }
 
         $paidEmployeeIds = $paidEmployeeIdsQuery
@@ -366,8 +371,8 @@ class ReportController extends Controller
             ->having('current_age', '>=', 55) // Show from 55 to be safe and informative
             ->orderByDesc('current_age');
 
-        if ($user->isAdminSkpd()) {
-            $query->where('pegawai_pw.idskpd', $user->institution);
+        if ($user->role !== 'superadmin') {
+            $query->whereIn('pegawai_pw.idskpd', $user->getAccessibleSkpds());
         }
 
         return $query->get()->map(function ($emp) use ($retirementAge) {
@@ -462,6 +467,23 @@ class ReportController extends Controller
         $year = $request->year ?? date('Y');
         $type = $request->type ?? 'all'; // pns | pppk | pw | all
 
+        $user = auth()->user();
+        $isSuperAdmin = $user->role === 'superadmin';
+        $accessibleIds = $user->getAccessibleSkpds();
+        $accessibleCodes = $user->getAccessibleSkpdCodes();
+
+        $idFilter = "";
+        if (!$isSuperAdmin && $accessibleIds) {
+            $idList = implode(',', array_map('intval', $accessibleIds));
+            $idFilter = " AND pw.idskpd IN ($idList) ";
+        }
+
+        $codeFilter = "";
+        if (!$isSuperAdmin && $accessibleCodes) {
+            $codeList = "'" . implode("','", $accessibleCodes) . "'";
+            $codeFilter = " AND g.kdskpd IN ($codeList) ";
+        }
+
         // ── Detailed mode for PNS / PPPK Penuh Waktu ──────────────────────────
         if (in_array($type, ['pns', 'pppk'])) {
             $table = $type === 'pns' ? 'gaji_pns' : 'gaji_pppk';
@@ -497,7 +519,7 @@ class ReportController extends Controller
                     JOIN skpd s2 ON mp.skpd_id = s2.id_skpd
                     WHERE mp.type IN {$mapType}
                 ) sm ON g.kdskpd = sm.source_code
-                WHERE g.bulan = ? AND g.tahun = ?
+                WHERE g.bulan = ? AND g.tahun = ? {$codeFilter}
                 GROUP BY g.kdskpd, COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd)
                 ORDER BY nama_skpd
             ", [$month, $year]));
@@ -537,7 +559,7 @@ class ReportController extends Controller
                 JOIN pegawai_pw pw ON pd.employee_id = pw.id
                 JOIN skpd s        ON pw.idskpd = s.id_skpd
                 JOIN tb_payment p  ON pd.payment_id = p.id
-                WHERE p.month = ? AND p.year = ?
+                WHERE p.month = ? AND p.year = ? {$idFilter}
                 GROUP BY s.id_skpd, s.kode_skpd, s.nama_skpd";
             $params = array_merge($params, [$month, $year]);
         }
@@ -561,7 +583,7 @@ class ReportController extends Controller
                     JOIN skpd s2 ON mp.skpd_id = s2.id_skpd
                     WHERE mp.type IN ('pns', 'all')
                 ) sm ON g.kdskpd = sm.source_code
-                WHERE g.bulan = ? AND g.tahun = ?
+                WHERE g.bulan = ? AND g.tahun = ? {$codeFilter}
                 GROUP BY g.kdskpd, COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd)";
             $params = array_merge($params, [$month, $year]);
         }
@@ -585,7 +607,7 @@ class ReportController extends Controller
                     JOIN skpd s2 ON mp.skpd_id = s2.id_skpd
                     WHERE mp.type IN ('pppk', 'all')
                 ) sm ON g.kdskpd = sm.source_code
-                WHERE g.bulan = ? AND g.tahun = ?
+                WHERE g.bulan = ? AND g.tahun = ? {$codeFilter}
                 GROUP BY g.kdskpd, COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd)";
             $params = array_merge($params, [$month, $year]);
         }
@@ -728,8 +750,8 @@ class ReportController extends Controller
             ->orderBy('skpd.nama_skpd')
             ->orderBy('pegawai_pw.nama');
 
-        if ($user->isAdminSkpd()) {
-            $query->where('skpd.id_skpd', $user->institution);
+        if ($user->role !== 'superadmin') {
+            $query->whereIn('skpd.id_skpd', $user->getAccessibleSkpds());
         }
 
         $paidEmployees = $query->get();

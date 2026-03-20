@@ -13,7 +13,7 @@
             </h1>
             <p class="text-subtitle-1 text-medium-emphasis">Kelola data master pegawai dari file DBF.</p>
           </v-col>
-          <v-col cols="12" md="6" class="text-right">
+          <v-col v-if="isSuperAdmin" cols="12" md="6" class="text-right">
             <v-btn color="primary" prepend-icon="mdi-upload" @click="uploadDialog = true">
               Upload DBF
             </v-btn>
@@ -439,6 +439,9 @@ import { ref, onMounted, watch, computed } from 'vue'
 import api from '../api'
 import Sidebar from '../components/Sidebar.vue'
 import Navbar from '../components/Navbar.vue'
+
+const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
+const isSuperAdmin = computed(() => currentUser.role === 'superadmin')
 
 const loading = ref(false)
 const items = ref([])

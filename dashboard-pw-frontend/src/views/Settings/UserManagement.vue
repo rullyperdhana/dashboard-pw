@@ -56,7 +56,23 @@
           class="bg-transparent"
         >
           <template v-slot:item.skpd="{ item }">
-            {{ item.skpd ? item.skpd.nama_skpd : 'Semua SKPD (Superadmin)' }}
+            <template v-if="item.role === 'superadmin'">
+              Semua SKPD (Superadmin)
+            </template>
+            <template v-else-if="item.skpd_access && item.skpd_access.length > 0">
+              <v-chip v-for="id in item.skpd_access.slice(0, 2)" :key="id" size="x-small" class="mr-1" variant="tonal">
+                {{ getSkpdName(id) }}
+              </v-chip>
+              <span v-if="item.skpd_access.length > 2" class="text-caption text-grey">
+                +{{ item.skpd_access.length - 2 }} lainnya
+              </span>
+            </template>
+            <template v-else-if="item.skpd">
+              {{ item.skpd.nama_skpd }}
+            </template>
+            <template v-else>
+              -
+            </template>
           </template>
           <template v-slot:item.role="{ item }">
             <v-chip :color="item.role === 'superadmin' ? 'purple' : 'blue'" size="small" label>
@@ -105,13 +121,17 @@
                 </v-col>
                 <v-col cols="12" v-if="editedItem.role === 'operator'">
                   <v-autocomplete
-                    v-model="editedItem.institution"
+                    v-model="editedItem.skpd_access"
                     :items="skpdList"
                     item-title="nama_skpd"
                     item-value="id_skpd"
-                    label="SKPD"
+                    label="Daftar SKPD yang Diakses"
                     variant="outlined"
-                    :rules="[v => editedItem.role === 'superadmin' || !!v || 'SKPD wajib diisi for operator']"
+                    multiple
+                    chips
+                    closable-chips
+                    placeholder="Pilih satu atau lebih SKPD"
+                    :rules="[v => editedItem.role === 'superadmin' || (v && v.length > 0) || 'Minimal satu SKPD wajib dipilih']"
                   ></v-autocomplete>
                 </v-col>
 
@@ -323,6 +343,7 @@ const editedItem = ref({
   role: 'operator',
   status: 'approved',
   institution: null,
+  skpd_access: [],
   app_access: []
 })
 
@@ -342,6 +363,7 @@ const openDialog = (item = null) => {
       role: 'operator',
       status: 'approved',
       institution: null,
+      skpd_access: [],
       app_access: []
     }
   }
@@ -431,6 +453,11 @@ const doDelete = async () => {
   } finally {
     deleting.value = false
   }
+}
+
+const getSkpdName = (id) => {
+  const skpd = skpdList.value.find(s => s.id_skpd === id)
+  return skpd ? skpd.nama_skpd : `SKPD #${id}`
 }
 
 const fetchUsers = async () => {

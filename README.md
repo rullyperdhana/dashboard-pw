@@ -35,13 +35,14 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
 ---
  
-### 📑 Pajak TER & Bukti Potong A2 (v3.7)
+### 📑 Pajak TER & Bukti Potong A2 (v3.8)
+- **Unified SKPD Engine:** Perhitungan PPh 21 kini menggunakan `skpd_id` tunggal yang terintegrasi untuk seluruh jenis pegawai (PNS & PPPK), memastikan laporan akurat meskipun dari sumber data yang berbeda.
+- **Bulk Management Tools:** Fitur ceklist (multi-select) untuk penghapusan data masal, memudahkan Superadmin dalam melakukan pembersihan atau pemutakhiran data perhitungan dalam jumlah besar.
+- **Administrative Controls:** Tombol hapus khusus Superadmin per baris laporan dengan konfirmasi keamanan untuk mencegah kesalahan operasional.
 - **Automatic TER Calculation:** Sistem otomatis menggunakan tarif TER (Kategori A/B/C) untuk masa pajak Januari-November.
 - **December Final Tax:** Perhitungan Pasal 17 otomatis pada bulan Desember untuk menyeimbangkan total pajak tahunan.
 - **PTKP Intelligence:** Pemetaan otomatis status PTKP (Kawin/Anak) pegawai ke Kategori TER yang sesuai secara *real-time*.
-- **Official A2 Export:** Export Bukti Potong A2 ke Excel sesuai format resmi, lengkap dengan nama pegawai di kolom kontrol untuk verifikasi manual.
-- **SKPD-Aware Reporting:** Laporan rekapitulasi PPh 21 per bulan dan per SKPD dengan total bruto dan total pajak.
-- **Collation & Match Resiliency:** Penanganan otomatis perbedaan teknis database (collation) dan duplikasi nama SKPD untuk memastikan akurasi laporan 100%.
+- **Official A2 Export:** Export Bukti Potong A2 ke Excel sesuai format resmi.
 
 ### 📄 Laporan & Transparansi (v3.6)
 - **AI-Driven Analytics (TAPD):** Dashboard cerdas untuk Tim Anggaran Pemerintah Daerah yang mensimulasikan kenaikan anggaran berdasarkan data rill **KGB** (2 tahunan), **Kenaikan Pangkat** (4 tahunan), dan jadwal pensiun massal.

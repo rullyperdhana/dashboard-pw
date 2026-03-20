@@ -17,10 +17,14 @@ class AnalyticsController extends Controller
     {
         $category = $request->query('category', 'all');
         
+        $user = auth()->user();
+        $skpdIds = $user->getAccessibleSkpds();
+        $skpdCodes = $user->getAccessibleSkpdCodes();
+
         $data = [
-            'age_distribution' => $this->getAgeDistribution($category),
-            'retirement_schedule' => $this->getRetirementSchedule($category),
-            'budget_utilization' => $this->getBudgetUtilization(),
+            'age_distribution' => $this->getAgeDistribution($category, $skpdIds, $skpdCodes),
+            'retirement_schedule' => $this->getRetirementSchedule($category, $skpdIds, $skpdCodes),
+            'budget_utilization' => $this->getBudgetUtilization($skpdIds),
             'growth_trends' => $this->getGrowthTrends()
         ];
 
@@ -30,7 +34,7 @@ class AnalyticsController extends Controller
         ]);
     }
 
-    private function getAgeDistribution($category)
+    private function getAgeDistribution($category, $skpdIds = null, $skpdCodes = null)
     {
         // Define age ranges
         $ranges = [
@@ -43,8 +47,11 @@ class AnalyticsController extends Controller
         $results = [];
 
         if ($category === 'all' || $category === 'pw') {
-            $pwAges = DB::table('pegawai_pw')
-                ->select(DB::raw('TIMESTAMPDIFF(YEAR, tgl_lahir, CURDATE()) AS age'))
+            $pwQuery = DB::table('pegawai_pw');
+            if ($skpdIds !== null) {
+                $pwQuery->whereIn('idskpd', $skpdIds);
+            }
+            $pwAges = $pwQuery->select(DB::raw('TIMESTAMPDIFF(YEAR, tgl_lahir, CURDATE()) AS age'))
                 ->get();
             
             foreach ($ranges as $range) {
@@ -54,8 +61,11 @@ class AnalyticsController extends Controller
         }
 
         if ($category === 'all' || $category === 'pns_pppk') {
-            $pnsAges = DB::table('master_pegawai')
-                ->select(DB::raw('TIMESTAMPDIFF(YEAR, tgllhr, CURDATE()) AS age'))
+            $pnsQuery = DB::table('master_pegawai');
+            if ($skpdCodes !== null) {
+                $pnsQuery->whereIn('kdskpd', $skpdCodes);
+            }
+            $pnsAges = $pnsQuery->select(DB::raw('TIMESTAMPDIFF(YEAR, tgllhr, CURDATE()) AS age'))
                 ->get();
 
             foreach ($ranges as $range) {
@@ -67,7 +77,7 @@ class AnalyticsController extends Controller
         return $results;
     }
 
-    private function getRetirementSchedule($category)
+    private function getRetirementSchedule($category, $skpdIds = null, $skpdCodes = null)
     {
         $schedule = [];
         $currentYear = Carbon::now()->year;
@@ -77,14 +87,20 @@ class AnalyticsController extends Controller
             $count = 0;
 
             if ($category === 'all' || $category === 'pw') {
-                $count += DB::table('pegawai_pw')
-                    ->whereRaw("YEAR(DATE_ADD(tgl_lahir, INTERVAL 58 YEAR)) = ?", [$year])
+                $pwQuery = DB::table('pegawai_pw');
+                if ($skpdIds !== null) {
+                    $pwQuery->whereIn('idskpd', $skpdIds);
+                }
+                $count += $pwQuery->whereRaw("YEAR(DATE_ADD(tgl_lahir, INTERVAL 58 YEAR)) = ?", [$year])
                     ->count();
             }
 
             if ($category === 'all' || $category === 'pns_pppk') {
-                $count += DB::table('master_pegawai')
-                    ->whereRaw("YEAR(DATE_ADD(tgllhr, INTERVAL COALESCE(bup, 58) YEAR)) = ?", [$year])
+                $pnsQuery = DB::table('master_pegawai');
+                if ($skpdCodes !== null) {
+                    $pnsQuery->whereIn('kdskpd', $skpdCodes);
+                }
+                $count += $pnsQuery->whereRaw("YEAR(DATE_ADD(tgllhr, INTERVAL COALESCE(bup, 58) YEAR)) = ?", [$year])
                     ->count();
             }
 
@@ -94,12 +110,19 @@ class AnalyticsController extends Controller
         return $schedule;
     }
 
-    private function getBudgetUtilization()
+    private function getBudgetUtilization($skpdIds = null)
     {
         // Last 6 months actual vs base avg
-        $trends = DB::table('tb_payment_detail')
-            ->join('tb_payment', 'tb_payment_detail.payment_id', '=', 'tb_payment.id')
-            ->select('tb_payment.month', 'tb_payment.year', DB::raw('SUM(tb_payment_detail.total_amoun) as total'))
+        $query = DB::table('tb_payment_detail')
+            ->join('tb_payment', 'tb_payment_detail.payment_id', '=', 'tb_payment.id');
+            
+        if ($skpdIds !== null) {
+            $query->join('rka_settings', 'tb_payment.rka_id', '=', 'rka_settings.id')
+                  ->join('pptk_settings', 'rka_settings.pptk_id', '=', 'pptk_settings.id')
+                  ->whereIn('pptk_settings.skpd_id', $skpdIds);
+        }
+
+        $trends = $query->select('tb_payment.month', 'tb_payment.year', DB::raw('SUM(tb_payment_detail.total_amoun) as total'))
             ->groupBy('tb_payment.year', 'tb_payment.month')
             ->orderBy('tb_payment.year', 'desc')
             ->orderBy('tb_payment.month', 'desc')

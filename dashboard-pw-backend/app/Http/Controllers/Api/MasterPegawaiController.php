@@ -11,6 +11,18 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class MasterPegawaiController extends Controller
 {
+    private function applySkpdFilter($query, $table = 'master_pegawai')
+    {
+        $user = auth()->user();
+        $skpds = $user->getAccessibleSkpdCodes();
+
+        if ($skpds !== null) {
+            $query->whereIn("$table.kdskpd", $skpds);
+        }
+
+        return $query;
+    }
+
     public function export(Request $request)
     {
         $filters = $request->only(['search', 'kdskpd', 'kd_jns_peg', 'kdstapeg']);
@@ -21,8 +33,10 @@ class MasterPegawaiController extends Controller
 
     public function index(Request $request)
     {
-        $query = MasterPegawai::query()
-            ->leftJoin('satkers', function ($join) {
+        $query = MasterPegawai::query();
+        $this->applySkpdFilter($query);
+
+        $query->leftJoin('satkers', function ($join) {
                 $join->on('master_pegawai.kdskpd', '=', 'satkers.kdskpd')
                     ->on('master_pegawai.kdsatker', '=', 'satkers.kdsatker');
             })
@@ -94,8 +108,10 @@ class MasterPegawaiController extends Controller
 
     public function show($id)
     {
-        $pegawai = MasterPegawai::query()
-            ->leftJoin('satkers', function ($join) {
+        $query = MasterPegawai::query();
+        $this->applySkpdFilter($query);
+
+        $pegawai = $query->leftJoin('satkers', function ($join) {
                 $join->on('master_pegawai.kdskpd', '=', 'satkers.kdskpd')
                     ->on('master_pegawai.kdsatker', '=', 'satkers.kdsatker');
             })
@@ -120,8 +136,10 @@ class MasterPegawaiController extends Controller
 
     public function showByNip($nip)
     {
-        $pegawai = MasterPegawai::query()
-            ->leftJoin('satkers', function ($join) {
+        $query = MasterPegawai::query();
+        $this->applySkpdFilter($query);
+
+        $pegawai = $query->leftJoin('satkers', function ($join) {
                 $join->on('master_pegawai.kdskpd', '=', 'satkers.kdskpd')
                     ->on('master_pegawai.kdsatker', '=', 'satkers.kdsatker');
             })
@@ -147,8 +165,15 @@ class MasterPegawaiController extends Controller
 
     public function stats()
     {
-        $summary = \Illuminate\Support\Facades\DB::table('master_pegawai')
-            ->selectRaw('
+        $query = DB::table('master_pegawai');
+        
+        $user = auth()->user();
+        $skpds = $user->getAccessibleSkpdCodes();
+        if ($skpds !== null) {
+            $query->whereIn('kdskpd', $skpds);
+        }
+
+        $summary = $query->selectRaw('
                 COUNT(*) as total,
                 SUM(CASE WHEN kdstapeg IN (1, 2, 3, 4, 5, 11, 12) AND kd_jns_peg = 2 THEN 1 ELSE 0 END) as pns_aktif,
                 SUM(CASE WHEN kdstapeg IN (1, 2, 3, 4, 5, 11, 12) AND kd_jns_peg = 4 THEN 1 ELSE 0 END) as pppk_aktif,
@@ -161,8 +186,10 @@ class MasterPegawaiController extends Controller
             ')
             ->first();
 
-        $byCode = MasterPegawai::select('master_pegawai.kdstapeg', 'ref_stapeg.nmstapeg', DB::raw('count(*) as count'))
-            ->leftJoin('ref_stapeg', 'master_pegawai.kdstapeg', '=', 'ref_stapeg.kdstapeg')
+        $byCodeQuery = MasterPegawai::select('master_pegawai.kdstapeg', 'ref_stapeg.nmstapeg', DB::raw('count(*) as count'));
+        $this->applySkpdFilter($byCodeQuery);
+        
+        $byCode = $byCodeQuery->leftJoin('ref_stapeg', 'master_pegawai.kdstapeg', '=', 'ref_stapeg.kdstapeg')
             ->groupBy('master_pegawai.kdstapeg', 'ref_stapeg.nmstapeg')
             ->get();
 

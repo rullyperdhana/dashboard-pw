@@ -48,23 +48,37 @@ class BudgetPredictionController extends Controller
             return response()->json(['success' => false, 'message' => 'Data pembayaran PW tidak mencukupi.']);
         }
 
+        $user = auth()->user();
+        $isSuperAdmin = $user->role === 'superadmin';
+
         $monthlyTotals = [];
         foreach ($last3Months as $p) {
-            $monthlyTotals[] = DB::table('tb_payment_detail')
+            $query = DB::table('tb_payment_detail')
                 ->join('tb_payment', 'tb_payment_detail.payment_id', '=', 'tb_payment.id')
+                ->join('pegawai_pw', 'tb_payment_detail.employee_id', '=', 'pegawai_pw.id')
                 ->where('tb_payment.month', $p->month)
-                ->where('tb_payment.year', $p->year)
-                ->sum('tb_payment_detail.total_amoun');
+                ->where('tb_payment.year', $p->year);
+            
+            if (!$isSuperAdmin) {
+                $query->whereIn('pegawai_pw.idskpd', $user->getAccessibleSkpds());
+            }
+
+            $monthlyTotals[] = $query->sum('total_amoun');
         }
         $avgMonthlyTotal = count($monthlyTotals) > 0 ? array_sum($monthlyTotals) / count($monthlyTotals) : 0;
 
         // 2. Optimized Retirement Search using SQL
-        $retiringEmployees = DB::table('pegawai_pw')
+        $retiredQuery = DB::table('pegawai_pw')
             ->leftJoin('skpd', 'pegawai_pw.idskpd', '=', 'skpd.id_skpd')
             ->where('pegawai_pw.status', 'Aktif')
             ->whereNotNull('pegawai_pw.tgl_lahir')
-            ->whereRaw("DATE_ADD(pegawai_pw.tgl_lahir, INTERVAL COALESCE(pegawai_pw.usia_bup, 58) YEAR) BETWEEN ? AND ?", [$currentDate, $targetDate])
-            ->select('pegawai_pw.*', 'skpd.nama_skpd as skpd_name')
+            ->whereRaw("DATE_ADD(pegawai_pw.tgl_lahir, INTERVAL COALESCE(pegawai_pw.usia_bup, 58) YEAR) BETWEEN ? AND ?", [$currentDate, $targetDate]);
+        
+        if (!$isSuperAdmin) {
+            $retiredQuery->whereIn('pegawai_pw.idskpd', $user->getAccessibleSkpds());
+        }
+
+        $retiringEmployees = $retiredQuery->select('pegawai_pw.*', 'skpd.nama_skpd as skpd_name')
             ->get();
         
         $totalRetirementReduction = 0;
@@ -79,11 +93,16 @@ class BudgetPredictionController extends Controller
         }
 
         // 3. KGB Simulation using SQL
-        $kgbEmployeesCount = DB::table('pegawai_pw')
+        $kgbQuery = DB::table('pegawai_pw')
             ->where('status', 'Aktif')
             ->whereNotNull('tmt_golru')
-            ->whereRaw("MOD(TIMESTAMPDIFF(YEAR, tmt_golru, DATE_ADD(?, INTERVAL 1 YEAR)), 2) = 0", [$currentDate])
-            ->count();
+            ->whereRaw("MOD(TIMESTAMPDIFF(YEAR, tmt_golru, DATE_ADD(?, INTERVAL 1 YEAR)), 2) = 0", [$currentDate]);
+
+        if (!$isSuperAdmin) {
+            $kgbQuery->whereIn('idskpd', $user->getAccessibleSkpds());
+        }
+
+        $kgbEmployeesCount = $kgbQuery->count();
 
         // Estimate KGB increase: 2.5% for those eligible
         // We'll calculate an estimated total increase based on average gapok
@@ -121,18 +140,26 @@ class BudgetPredictionController extends Controller
             return response()->json(['success' => false, 'message' => "Data {$table} tidak mencukupi."]);
         }
 
+        $user = auth()->user();
+        $isSuperAdmin = $user->role === 'superadmin';
+
         $monthlyTotals = [];
         foreach ($last3Periods as $p) {
-            $monthlyTotals[] = DB::table($table)
+            $query = DB::table($table)
                 ->where('bulan', $p->bulan)
                 ->where('tahun', $p->tahun)
-                ->where('jenis_gaji', 'Induk')
-                ->sum('bersih');
+                ->where('jenis_gaji', 'Induk');
+            
+            if (!$isSuperAdmin) {
+                $query->whereIn('kdskpd', $user->getAccessibleSkpdCodes());
+            }
+
+            $monthlyTotals[] = $query->sum('bersih');
         }
         $avgMonthlyTotal = count($monthlyTotals) > 0 ? array_sum($monthlyTotals) / count($monthlyTotals) : 0;
 
         // 2. Optimized Retirement Search using SQL
-        $retiringEmployees = DB::table('master_pegawai')
+        $retiredQuery = DB::table('master_pegawai')
             ->leftJoin('satkers', function($join) {
                 $join->on('master_pegawai.kdskpd', '=', 'satkers.kdskpd')
                     ->on('master_pegawai.kdsatker', '=', 'satkers.kdsatker');
@@ -143,8 +170,13 @@ class BudgetPredictionController extends Controller
                 if ($table === 'gaji_pns') $q->where('master_pegawai.kd_jns_peg', '<', 3);
                 else $q->where('master_pegawai.kd_jns_peg', '>=', 3);
             })
-            ->whereRaw("DATE_ADD(master_pegawai.tgllhr, INTERVAL COALESCE(master_pegawai.bup, 58) YEAR) BETWEEN ? AND ?", [$currentDate, $targetDate])
-            ->select('master_pegawai.*', 'satkers.nmsatker as skpd_name')
+            ->whereRaw("DATE_ADD(master_pegawai.tgllhr, INTERVAL COALESCE(master_pegawai.bup, 58) YEAR) BETWEEN ? AND ?", [$currentDate, $targetDate]);
+
+        if (!$isSuperAdmin) {
+            $retiredQuery->whereIn('master_pegawai.kdskpd', $user->getAccessibleSkpdCodes());
+        }
+
+        $retiringEmployees = $retiredQuery->select('master_pegawai.*', 'satkers.nmsatker as skpd_name')
             ->get();
 
         $totalRetirementReduction = 0;
@@ -161,29 +193,39 @@ class BudgetPredictionController extends Controller
         }
 
         // 3. KGB Simulation using SQL (Using tmtkgbyad)
-        $kgbEmployeesCount = DB::table('master_pegawai')
+        $kgbQuery = DB::table('master_pegawai')
             ->whereIn('kdstapeg', [1, 2, 3, 4, 5, 11, 12])
             ->whereNotNull('tmtkgbyad')
             ->where(function($q) use ($table) {
                 if ($table === 'gaji_pns') $q->where('kd_jns_peg', '<', 3);
                 else $q->where('kd_jns_peg', '>=', 3);
             })
-            ->whereBetween('tmtkgbyad', [$currentDate, $targetDate])
-            ->count();
+            ->whereBetween('tmtkgbyad', [$currentDate, $targetDate]);
+
+        if (!$isSuperAdmin) {
+            $kgbQuery->whereIn('kdskpd', $user->getAccessibleSkpdCodes());
+        }
+
+        $kgbEmployeesCount = $kgbQuery->count();
 
         $avgGapok = DB::table('master_pegawai')->whereIn('kdstapeg', [1, 2, 3, 4, 5, 11, 12])->avg('gapok') ?: 0;
         $totalKgbIncrease = $kgbEmployeesCount * ($avgGapok * 0.03) * 6;
 
         // 4. KP (Kenaikan Pangkat) Simulation using SQL
-        $kpEmployeesCount = DB::table('master_pegawai')
+        $kpQuery = DB::table('master_pegawai')
             ->whereIn('kdstapeg', [1, 2, 3, 4, 5, 11, 12])
             ->whereNotNull('blgolt')
             ->where(function($q) use ($table) {
                 if ($table === 'gaji_pns') $q->where('kd_jns_peg', '<', 3);
                 else $q->where('kd_jns_peg', '>=', 3);
             })
-            ->whereRaw("MOD(TIMESTAMPDIFF(YEAR, blgolt, DATE_ADD(?, INTERVAL 1 YEAR)), 4) = 0", [$currentDate])
-            ->count();
+            ->whereRaw("MOD(TIMESTAMPDIFF(YEAR, blgolt, DATE_ADD(?, INTERVAL 1 YEAR)), 4) = 0", [$currentDate]);
+
+        if (!$isSuperAdmin) {
+            $kpQuery->whereIn('kdskpd', $user->getAccessibleSkpdCodes());
+        }
+
+        $kpEmployeesCount = $kpQuery->count();
 
         $totalKpIncrease = $kpEmployeesCount * ($avgGapok * 0.06) * 6;
 

@@ -40,8 +40,17 @@ class PPh21Controller extends Controller
         $type = $request->type;
         $skpd = $request->skpd;
 
-        $table = ($type === 'pns') ? 'gaji_pns' : 'gaji_pppk';
+        $user = auth()->user();
+        $records = collect();
         
+        // Comprehensive SKPD Mapping: 
+        // 1. From skpd_mapping (source_code -> skpd_id)
+        // 2. From skpd table directly (kode_simgaji -> id_skpd)
+        $skpdIdMap = DB::table('skpd_mapping')->pluck('skpd_id', 'source_code')->toArray();
+        $directSimGajiMap = DB::table('skpd')->whereNotNull('kode_simgaji')->pluck('id_skpd', 'kode_simgaji')->toArray();
+        $skpdIdMap = $skpdIdMap + $directSimGajiMap; // Mapping takes priority if duplicates
+
+        $table = ($type === 'pns') ? 'gaji_pns' : 'gaji_pppk';
         $query = DB::table($table . ' as g')
             ->join('master_pegawai as m', 'g.nip', '=', 'm.nip')
             ->where('g.tahun', $year)
@@ -49,14 +58,72 @@ class PPh21Controller extends Controller
             ->where('g.jenis_gaji', 'Induk');
 
         if ($skpd) {
-            $query->where('g.kdskpd', $skpd);
+            if (!$user->isSuperAdmin()) {
+                $allowedIds = $user->getAccessibleSkpds();
+                // Resolve ID to codes if needed, or just check inclusion in IDs
+                $allowedIds = $user->getAccessibleSkpds();
+                if (!in_array($skpd, $allowedIds)) {
+                    return response()->json(['success' => false, 'message' => 'Unauthorized SKPD access.'], 403);
+                }
+            }
+            
+            // Resolve the provided skpd_id to its SimGaji codes for filtering the legacy table
+            $targetCodes = DB::table('skpd')
+                ->where('id_skpd', $skpd)
+                ->whereNotNull('kode_simgaji')
+                ->pluck('kode_simgaji')
+                ->merge(
+                    DB::table('skpd_mapping')
+                        ->where('skpd_id', $skpd)
+                        ->pluck('source_code')
+                )
+                ->unique()
+                ->toArray();
+            
+            if (empty($targetCodes)) {
+                // Fallback to kode_skpd if no mapping/simgaji code
+                $kodeSkpd = DB::table('skpd')->where('id_skpd', $skpd)->value('kode_skpd');
+                if ($kodeSkpd) $targetCodes = [$kodeSkpd];
+            }
+
+            $query->whereIn('g.kdskpd', $targetCodes);
+        } else {
+            $skpds = $user->getAccessibleSkpdCodes();
+            if ($skpds !== null) {
+                $query->whereIn('g.kdskpd', $skpds);
+            }
         }
 
-        $records = $query->select('g.*', 'm.kdstawin', 'm.janak')->get();
-        $processed = 0;
+        $records = $query->select('g.*', 'm.kdstawin', 'm.janak')->get()->map(function($r) use ($skpdIdMap) {
+            $code = trim((string)$r->kdskpd);
+            $r->skpd_id = $skpdIdMap[$code] ?? null;
+            return $r;
+        });
         
+        $processed = 0;
         $this->service->preLoadRates();
         
+        // Fetch extra payrolls
+        // Note: For PW, we currently don't have separate extra payroll records in SimGaji tables
+        $extraGaji = collect()->groupBy('nip');
+        if (isset($table)) {
+            $extraGaji = DB::table($table)
+                ->where('tahun', $year)
+                ->where('bulan', $month)
+                ->where('jenis_gaji', '!=', 'Induk')
+                ->get()
+                ->groupBy('nip');
+        }
+
+        $extraPayroll = collect();
+        if ($type === 'pppk') {
+            $extraPayroll = DB::table('tb_extra_payroll_pppk_pw')
+                ->where('year', $year)
+                ->where('month', $month)
+                ->get()
+                ->groupBy('nip');
+        }
+
         // Optimasi Desember: Ambil semua data perhitungan sebelumnya dalam satu query
         $prevCalculationsGrouped = [];
         if ($month == 12) {
@@ -73,13 +140,18 @@ class PPh21Controller extends Controller
             $status = $this->service->getPTKPStatus($rec->kdstawin, $rec->janak);
             $cat = $this->service->getTERCategory($status);
 
-            // 2. Determine Bruto (Simgaji + TPP)
-            $bruto = (float)$rec->kotor + (float)$rec->tunj_tpp;
+            // 2. Determine Bruto (Simgaji + TPP + Extra Payroll)
+            $extraSum = $extraGaji->get($rec->nip, collect())->sum('kotor');
+            $extraPayrollSum = $extraPayroll->get($rec->nip, collect())->sum('payroll_amount');
+            
+            $bruto = (float)$rec->kotor + (float)$rec->tunj_tpp + $extraSum + $extraPayrollSum;
             
             $tax = 0;
             $calcDetails = [
                 'gross_simgaji' => (float)$rec->kotor,
                 'tpp' => (float)$rec->tunj_tpp,
+                'extra_salary' => $extraSum,
+                'extra_payroll' => $extraPayrollSum,
                 'status_ptkp' => $status,
                 'ter_category' => $cat,
                 'gaji_pokok' => (float)$rec->gaji_pokok,
@@ -88,7 +160,9 @@ class PPh21Controller extends Controller
                 'tunj_struk_fung' => (float)$rec->tunj_struktural + (float)$rec->tunj_fungsional,
                 'tunj_beras' => (float)$rec->tunj_beras,
                 'tunj_lain' => (float)$rec->tunj_umum + (float)$rec->tunj_khusus + (float)$rec->tunj_langka + (float)$rec->tunj_pph,
-                'pot_iwp' => (float)$rec->pot_iwp
+                'pot_iwp' => (float)$rec->pot_iwp,
+                'extra_records' => $extraGaji->get($rec->nip, collect())->toArray(),
+                'extra_payroll_records' => $extraPayroll->get($rec->nip, collect())->toArray(),
             ];
 
             if ($month < 12) {
@@ -131,6 +205,7 @@ class PPh21Controller extends Controller
             // 4. Collect for bulk upsert
             $upsertData[] = [
                 'nip' => $rec->nip,
+                'skpd_id' => $rec->skpd_id,
                 'bulan' => $month,
                 'tahun' => $year,
                 'jenis_gaji' => 'Induk',
@@ -176,50 +251,35 @@ class PPh21Controller extends Controller
         $skpd = $request->skpd;
 
         $query = DB::table('pph21_calculations as c')
-            ->join('master_pegawai as m', 'c.nip', '=', 'm.nip')
-            ->leftJoin('skpd as s', function($join) {
-                $join->on(DB::raw('m.kdskpd COLLATE utf8mb4_unicode_ci'), '=', DB::raw('s.kode_simgaji COLLATE utf8mb4_unicode_ci'));
-            })
+            ->leftJoin('skpd as s', 'c.skpd_id', '=', 's.id_skpd')
             ->where('c.tahun', $year)
             ->where('c.jenis_gaji', 'Induk');
+
+        $user = auth()->user();
+        $skpdIds = $user->getAccessibleSkpds();
+        if ($skpdIds !== null) {
+            $query->whereIn('c.skpd_id', $skpdIds);
+        }
             
         if ($month) {
             $query->where('c.bulan', $month);
         }
 
         if ($skpd) {
-            // Priority 1: Match by SimGaji Code or SKPD Code (Precise for table buttons)
-            $s = DB::table('skpd')
-                ->where('kode_simgaji', $skpd)
-                ->orWhere('kode_skpd', $skpd)
-                ->first();
-                
-            if ($s) {
-                // Use Name to handle duplicates (multiple IDs for same SKPD name)
-                $query->where('s.nama_skpd', $s->nama_skpd);
-            } else {
-                // Priority 2: Match by ID (Top filter fallback)
-                $s2 = DB::table('skpd')->where('id_skpd', $skpd)->first();
-                if ($s2) {
-                    $query->where('s.nama_skpd', $s2->nama_skpd);
-                } else {
-                    // Priority 3: Raw kdskpd fallback
-                    $query->where('m.kdskpd', $skpd);
-                }
-            }
+            $query->where('c.skpd_id', $skpd);
         }
 
         $summary = $query->selectRaw('
             c.bulan, 
-            m.kdskpd,
-            MAX(s.nama_skpd) as nama_skpd,
+            c.skpd_id,
+            COALESCE(MAX(s.nama_skpd), CONCAT("SKPD ID: ", c.skpd_id)) as nama_skpd,
             COUNT(*) as total_records, 
             SUM(c.gross_base) as total_gross, 
             SUM(c.tax_amount) as total_tax
         ')
-        ->groupBy('c.bulan', 'm.kdskpd')
+        ->groupBy('c.bulan', 'c.skpd_id')
         ->orderBy('c.bulan')
-        ->orderBy('m.kdskpd')
+        ->orderBy('c.skpd_id')
         ->get();
 
         return response()->json([
@@ -244,33 +304,22 @@ class PPh21Controller extends Controller
         $skpd = $request->skpd;
 
         $query = DB::table('pph21_calculations as c')
-            ->join('master_pegawai as m', 'c.nip', '=', 'm.nip')
-            ->leftJoin('skpd as s', function($join) {
-                $join->on(DB::raw('m.kdskpd COLLATE utf8mb4_unicode_ci'), '=', DB::raw('s.kode_simgaji COLLATE utf8mb4_unicode_ci'));
-            })
+            ->leftJoin('skpd as s', 'c.skpd_id', '=', 's.id_skpd')
             ->where('c.tahun', $year)
             ->where('c.bulan', $month)
             ->where('c.jenis_gaji', 'Induk');
 
-        if ($skpd) {
-            $s = DB::table('skpd')
-                ->where('kode_simgaji', $skpd)
-                ->orWhere('kode_skpd', $skpd)
-                ->first();
-
-            if ($s) {
-                $query->where('s.nama_skpd', $s->nama_skpd);
-            } else {
-                $s2 = DB::table('skpd')->where('id_skpd', $skpd)->first();
-                if ($s2) {
-                    $query->where('s.nama_skpd', $s2->nama_skpd);
-                } else {
-                    $query->where('m.kdskpd', $skpd);
-                }
-            }
+        $user = auth()->user();
+        $skpdIds = $user->getAccessibleSkpds();
+        if ($skpdIds !== null) {
+            $query->whereIn('c.skpd_id', $skpdIds);
         }
 
-        $calcRecords = $query->select('c.*', 'm.nama', 'm.npwp', 'm.noktp', 'm.kdpangkat', 'm.janak', 'm.kdstawin')->get();
+        if ($skpd) {
+            $query->where('c.skpd_id', $skpd);
+        }
+
+        $calcRecords = $query->select('c.*')->get();
 
         if ($calcRecords->isEmpty()) {
             return response()->json(['success' => false, 'message' => 'No calculation records found for export.'], 404);
@@ -307,8 +356,8 @@ class PPh21Controller extends Controller
                 $sheet->setCellValue('D' . $row, $month);
                 $sheet->setCellValue('E' . $row, $year);
 
-                // Identitas (Explicitly use NIK / noktp as NPWP based on user request)
-                $sheet->setCellValueExplicit('F' . $row, (string)$rec->noktp, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                // Identitas
+                $sheet->setCellValueExplicit('F' . $row, (string)($details['nik'] ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
                 $sheet->setCellValueExplicit('G' . $row, (string)$rec->nip, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
 
                 $sheet->setCellValue('H' . $row, $rec->status_ptkp);
@@ -349,12 +398,69 @@ class PPh21Controller extends Controller
         }
     }
 
+    /**
+     * Delete PPh 21 calculation records (Superadmin only)
+     */
+    public function destroy(Request $request)
+    {
+        if (auth()->user()->role !== 'superadmin') {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        }
+
+        $request->validate([
+            'year' => 'required|integer',
+            'month' => 'nullable|integer',
+            'skpd' => 'nullable',
+            'items' => 'nullable|array'
+        ]);
+
+        $year = $request->year;
+        $totalDeleted = 0;
+
+        if ($request->has('items') && is_array($request->items)) {
+            foreach ($request->items as $item) {
+                $m = $item['month'] ?? null;
+                $s = $item['skpd'] ?? null;
+                
+                if ($m) {
+                    $q = DB::table('pph21_calculations')
+                        ->where('tahun', $year)
+                        ->where('bulan', $m);
+                    
+                    if ($s !== null) {
+                        $q->where('skpd_id', $s);
+                    }
+                    
+                    $totalDeleted += $q->delete();
+                }
+            }
+        } else {
+            $query = DB::table('pph21_calculations')
+                ->where('tahun', $year);
+
+            if ($request->month) {
+                $query->where('bulan', $request->month);
+            }
+
+            if ($request->skpd) {
+                $query->where('skpd_id', $request->skpd);
+            }
+
+            $totalDeleted = $query->delete();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Successfully deleted $totalDeleted records."
+        ]);
+    }
+
     private function doUpsert(array $data)
     {
         DB::table('pph21_calculations')->upsert(
             $data, 
             ['nip', 'bulan', 'tahun', 'jenis_gaji'], 
-            ['nama', 'status_ptkp', 'ter_category', 'gross_base', 'tax_amount', 'calc_details', 'updated_at']
+            ['nama', 'skpd_id', 'status_ptkp', 'ter_category', 'gross_base', 'tax_amount', 'calc_details', 'updated_at']
         );
     }
 }

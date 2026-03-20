@@ -37,6 +37,7 @@ class UserController extends Controller
             'institution' => 'nullable|exists:skpd,id_skpd',
             'status' => 'required|string|in:approved,pending',
             'app_access' => 'nullable|array',
+            'skpd_access' => 'nullable|array',
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
@@ -75,6 +76,7 @@ class UserController extends Controller
             'status' => 'required|string|in:approved,pending',
             'password' => 'nullable|string|min:6',
             'app_access' => 'nullable|array',
+            'skpd_access' => 'nullable|array',
         ]);
 
         if (!empty($validated['password'])) {

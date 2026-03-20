@@ -14,6 +14,10 @@ use App\Imports\TaxStatusImport;
 
 class TaxStatusController extends Controller
 {
+    private function buildPlaceholders($array) {
+        return "'" . implode("','", $array) . "'";
+    }
+
     public function index(Request $request)
     {
         $request->validate([
@@ -25,6 +29,21 @@ class TaxStatusController extends Controller
 
         if ($request->type) {
             $query->where('employee_type', $request->type);
+        }
+
+        $user = auth()->user();
+        if (!$user->isSuperAdmin()) {
+            $skpdIds = $user->getAccessibleSkpds();
+            $skpdCodes = $user->getAccessibleSkpdCodes();
+            
+            $query->where(function($q) use ($skpdIds, $skpdCodes) {
+                $q->whereIn('nip', function($sq) use ($skpdCodes) {
+                    $sq->select('nip')->from('master_pegawai')->whereIn('kdskpd', $sq->raw($this->buildPlaceholders($skpdCodes)));
+                })
+                ->orWhereIn('nip', function($sq) use ($skpdIds) {
+                    $sq->select('nip')->from('pegawai_pw')->whereIn('idskpd', $skpdIds);
+                });
+            });
         }
 
         if ($request->search) {
