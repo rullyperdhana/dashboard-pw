@@ -94,7 +94,7 @@ class PPh21Controller extends Controller
             }
         }
 
-        $records = $query->select('g.*', 'm.kdstawin', 'm.janak')->get()->map(function($r) use ($skpdIdMap) {
+        $records = $query->select('g.*', 'm.kdstawin', 'm.janak', 'm.kdpangkat', 'm.noktp')->get()->map(function($r) use ($skpdIdMap) {
             $code = trim((string)$r->kdskpd);
             $r->skpd_id = $skpdIdMap[$code] ?? null;
             return $r;
@@ -205,12 +205,14 @@ class PPh21Controller extends Controller
             // 4. Collect for bulk upsert
             $upsertData[] = [
                 'nip' => $rec->nip,
+                'nik' => $rec->noktp,
                 'skpd_id' => $rec->skpd_id,
                 'bulan' => $month,
                 'tahun' => $year,
                 'jenis_gaji' => 'Induk',
                 'nama' => $rec->nama,
                 'status_ptkp' => $status,
+                'kdpangkat' => $rec->kdpangkat,
                 'ter_category' => $cat,
                 'gross_base' => $bruto,
                 'tax_amount' => $tax,
@@ -357,12 +359,12 @@ class PPh21Controller extends Controller
                 $sheet->setCellValue('E' . $row, $year);
 
                 // Identitas
-                $sheet->setCellValueExplicit('F' . $row, (string)($details['nik'] ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit('F' . $row, (string)($rec->nik ?? ($details['nik'] ?? '')), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
                 $sheet->setCellValueExplicit('G' . $row, (string)$rec->nip, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
 
                 $sheet->setCellValue('H' . $row, $rec->status_ptkp);
                 $sheet->setCellValue('I' . $row, 'Pegawai Tetap');
-                $sheet->setCellValue('J' . $row, $rec->kdpangkat);
+                $sheet->setCellValue('J' . $row, $rec->kdpangkat ?? '');
                 $sheet->setCellValue('K' . $row, '21-100-01');
                 $sheet->setCellValue('L' . $row, $month == 12 ? 'Biasa' : 'Biasa'); // Default status
                 
