@@ -109,7 +109,7 @@
           </v-btn>
         </v-card>
         <div class="text-center mt-2">
-          <span class="text-disabled font-weight-medium" style="font-size: 10px; letter-spacing: 1px;">VERSI 3.7.0</span>
+          <span class="text-disabled font-weight-medium" style="font-size: 10px; letter-spacing: 1px;">VERSI {{ appVersion }}</span>
         </div>
       </div>
     </template>
@@ -164,6 +164,8 @@ import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '../api'
 import { isSidebarOpen } from '../utils/sidebarState'
+
+const appVersion = APP_VERSION
 
 const router = useRouter()
 const route = useRoute()
