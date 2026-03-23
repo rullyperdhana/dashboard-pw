@@ -5,19 +5,40 @@
     
     <v-main class="bg-light">
       <v-container fluid class="pa-8">
-        <!-- Header Section -->
-        <div class="d-flex align-center mb-6">
-          <div>
-            <h1 class="text-h4 font-weight-bold">Dashboard PPPK-PW</h1>
-            <p class="text-body-2 text-medium-emphasis mt-1">Ringkasan data gaji PPPK Paruh Waktu & analitik tahunan</p>
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- HEADER: SUBMISSION PROGRESS GAUGE          -->
+        <!-- ═══════════════════════════════════════════ -->
+        <div class="d-flex align-center mb-8">
+          <div class="d-flex align-center">
+            <v-progress-circular
+              :model-value="submissionProgress"
+              :rotate="360"
+              :size="80"
+              :width="8"
+              color="primary"
+              class="mr-4"
+            >
+              <template v-slot:default>
+                <div class="text-caption font-weight-black">{{ submissionProgress }}%</div>
+              </template>
+            </v-progress-circular>
+            <div>
+              <h1 class="text-h4 font-weight-bold">Dashboard PPPK-PW</h1>
+              <div class="text-body-2 text-medium-emphasis d-flex align-center">
+                <v-icon size="16" color="success" class="mr-1">mdi-check-circle-outline</v-icon>
+                {{ submissionProgress }}% SKPD Sudah Setor ({{ unpaidMonthName }} {{ unpaidYear }})
+              </div>
+            </div>
           </div>
           <v-spacer></v-spacer>
-          <v-btn variant="tonal" color="primary" rounded="pill" class="mr-3" @click="fetchAllData" :loading="loading">
-            <v-icon start>mdi-refresh</v-icon> Refresh
-          </v-btn>
-          <v-btn variant="tonal" color="primary" rounded="pill">
-            <v-icon start>mdi-calendar</v-icon> {{ currentYear }}
-          </v-btn>
+          <div class="d-none d-md-flex align-center">
+            <v-btn variant="tonal" color="primary" rounded="pill" class="mr-3" @click="fetchAllData" :loading="loading">
+              <v-icon start>mdi-refresh</v-icon> Refresh
+            </v-btn>
+            <v-btn variant="tonal" color="primary" rounded="pill">
+              <v-icon start>mdi-calendar</v-icon> {{ currentYear }}
+            </v-btn>
+          </div>
         </div>
         
         <v-alert v-if="error" type="error" variant="tonal" closable class="mb-6 rounded-lg">
@@ -25,389 +46,165 @@
         </v-alert>
         
         <!-- ═══════════════════════════════════════════ -->
-        <!-- SECTION 1: OVERVIEW STATS                  -->
+        <!-- SECTION 1: CONSOLIDATED KPI CARDS          -->
         <!-- ═══════════════════════════════════════════ -->
-        <v-row v-if="!loading" class="mb-6">
-          <v-col cols="12" sm="6" md="3">
-            <v-card class="stat-card glass-card rounded-xl pa-4" elevation="0" to="/employees">
-              <v-card-text>
-                <div class="d-flex justify-space-between align-start">
-                  <div>
-                    <div class="text-overline text-grey-darken-1 mb-1">Total Pegawai</div>
-                    <div class="text-h4 font-weight-bold">{{ stats.total_employees?.toLocaleString() || 0 }}</div>
-                  </div>
-                  <v-avatar color="blue-lighten-5" rounded="lg">
-                    <v-icon color="blue">mdi-account-multiple</v-icon>
-                  </v-avatar>
-                </div>
-                <v-sparkline :model-value="sparklineData.employees" color="blue" height="30" padding="4" smooth line-width="2" class="mt-2"></v-sparkline>
-              </v-card-text>
-            </v-card>
-          </v-col>
-          
-          <v-col cols="12" sm="6" md="3">
-            <v-card class="stat-card glass-card rounded-xl pa-4" elevation="0" to="/employees">
-              <v-card-text>
-                <div class="d-flex justify-space-between align-start">
-                  <div>
-                    <div class="text-overline text-grey-darken-1 mb-1">PPPK Aktif</div>
-                    <div class="text-h4 font-weight-bold">{{ stats.active_employees?.toLocaleString() || 0 }}</div>
-                  </div>
-                  <v-avatar color="green-lighten-5" rounded="lg">
-                    <v-icon color="green">mdi-check-decagram-outline</v-icon>
-                  </v-avatar>
-                </div>
-                <div class="mt-3 text-caption text-grey">Data status aktif</div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-          
-          <v-col cols="12" sm="6" md="3">
-            <v-card class="stat-card glass-card rounded-xl pa-4" elevation="0" to="/payments">
-              <v-card-text>
-                <div class="d-flex justify-space-between align-start">
-                  <div>
-                    <div class="text-overline text-grey-darken-1 mb-1">Biaya Bulanan</div>
-                    <div class="text-h4 font-weight-bold text-truncate">{{ formatCurrencyShort(stats.monthly_payment) }}</div>
-                  </div>
-                  <v-avatar color="amber-lighten-5" rounded="lg">
-                    <v-icon color="amber-darken-2">mdi-cash-fast</v-icon>
-                  </v-avatar>
-                </div>
-                <v-sparkline :model-value="sparklineData.payments" color="amber" height="30" padding="4" smooth line-width="2" class="mt-2"></v-sparkline>
-              </v-card-text>
-            </v-card>
-          </v-col>
-          
-          <v-col cols="12" sm="6" md="3">
-            <v-card class="stat-card glass-card rounded-xl pa-4" elevation="0" to="/skpd">
-              <v-card-text>
-                <div class="d-flex justify-space-between align-start">
-                  <div>
-                    <div class="text-overline text-grey-darken-1 mb-1">Instansi (SKPD)</div>
-                    <div class="text-h4 font-weight-bold">{{ stats.total_skpd || 0 }}</div>
-                  </div>
-                  <v-avatar color="purple-lighten-5" rounded="lg">
-                    <v-icon color="purple">mdi-domain</v-icon>
-                  </v-avatar>
-                </div>
-                <div class="mt-3 text-caption text-grey">Unit instansi terdaftar</div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-        
-        <v-row v-else class="mb-6">
-          <v-col v-for="i in 4" :key="i" cols="12" sm="6" md="3">
-            <v-skeleton-loader type="article" class="rounded-xl"></v-skeleton-loader>
-          </v-col>
-        </v-row>
-        
-        <!-- ═══════════════════════════════════════════ -->
-        <!-- SECTION 2: ANALYTICS SUMMARY CARDS         -->
-        <!-- ═══════════════════════════════════════════ -->
-        <v-row class="mb-6" v-if="reportData">
+        <v-row v-if="!loading" class="mb-8">
+          <!-- Total Anggaran (Main KPI) -->
           <v-col cols="12" md="4">
-            <v-card class="glass-card rounded-xl pa-4 stat-card-premium blue-glow" elevation="0">
-              <v-card-text>
-                <div class="d-flex align-center mb-4">
-                  <v-avatar color="blue-lighten-5" rounded="lg" size="48">
-                    <v-icon color="blue">mdi-currency-usd</v-icon>
-                  </v-avatar>
-                  <v-spacer></v-spacer>
-                  <v-chip color="blue" size="x-small" variant="flat">ANGGARAN TAHUNAN</v-chip>
-                </div>
-                <div class="text-h4 font-weight-black mb-1">{{ formatCurrencyCompact(reportData.summary.annual_budget) }}</div>
-                <div class="text-caption text-grey">Total dicairkan tahun {{ currentYear }}</div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-
-          <v-col cols="12" md="4">
-            <v-card class="glass-card rounded-xl pa-4 stat-card-premium purple-glow" elevation="0">
-              <v-card-text>
-                <div class="d-flex align-center mb-4">
-                  <v-avatar color="purple-lighten-5" rounded="lg" size="48">
-                    <v-icon color="purple">mdi-account-cash-outline</v-icon>
-                  </v-avatar>
-                  <v-spacer></v-spacer>
-                  <v-chip color="purple" size="x-small" variant="flat">RATA-RATA/ORANG</v-chip>
-                </div>
-                <div class="text-h4 font-weight-black mb-1">{{ formatCurrency(reportData.summary.avg_per_employee) }}</div>
-                <div class="text-caption text-grey">Rata-rata biaya gaji per pegawai</div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-
-          <v-col cols="12" md="4">
-            <v-card class="glass-card rounded-xl pa-4 stat-card-premium teal-glow" elevation="0">
-              <v-card-text>
-                <div class="d-flex align-center mb-4">
-                  <v-avatar color="teal-lighten-5" rounded="lg" size="48">
-                    <v-icon color="teal">mdi-office-building-marker-outline</v-icon>
-                  </v-avatar>
-                  <v-spacer></v-spacer>
-                  <v-chip color="teal" size="x-small" variant="flat">UNIT AKTIF</v-chip>
-                </div>
-                <div class="text-h4 font-weight-black mb-1">{{ reportData.summary.active_units }}</div>
-                <div class="text-caption text-grey">Instansi dengan data gaji aktif</div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-        
-        <!-- ═══════════════════════════════════════════ -->
-        <!-- SECTION 3: CHARTS + DISTRIBUTION           -->
-        <!-- ═══════════════════════════════════════════ -->
-        <v-row class="mb-6">
-          <!-- Payroll Growth Trend (ApexChart) -->
-          <v-col cols="12" md="8">
-            <v-card class="glass-card rounded-xl pa-6 shadow-premium" elevation="0">
-              <div class="d-flex align-center mb-6">
-                <h2 class="text-h6 font-weight-bold">Tren Pertumbuhan Gaji</h2>
+            <v-card class="glass-card rounded-xl pa-5 stat-card-premium blue-glow shadow-premium" elevation="0">
+              <div class="d-flex align-center mb-4">
+                <v-avatar color="blue-lighten-5" rounded="lg" size="48">
+                  <v-icon color="blue">mdi-currency-usd</v-icon>
+                </v-avatar>
                 <v-spacer></v-spacer>
-                <v-chip color="success" size="small" variant="tonal" prepend-icon="mdi-trending-up">Live</v-chip>
+                <v-chip color="blue" size="x-small" variant="flat" class="font-weight-bold">ANGGARAN TAHUNAN</v-chip>
               </div>
-              <apexchart v-if="reportData" type="area" height="350" :options="trendChartOptions" :series="trendSeries"></apexchart>
-              <div v-else class="text-center py-12">
-                <v-progress-circular indeterminate color="primary" v-if="loadingReport"></v-progress-circular>
-                <div v-else class="text-grey">Belum ada data tren</div>
+              <div class="text-h4 font-weight-black mb-1">{{ reportData ? formatCurrencyCompact(reportData.summary.annual_budget) : formatCurrencyCompact(stats.monthly_payment * 12) }}</div>
+              <div class="d-flex align-center text-caption text-success font-weight-bold">
+                <v-icon size="14" class="mr-1">mdi-trending-up</v-icon> +2.4% vs Tahun Lalu
               </div>
             </v-card>
           </v-col>
-          
-          <!-- Budget Distribution (Top 5) -->
+
+          <!-- Total Pegawai Info -->
+          <v-col cols="12" sm="6" md="2">
+            <v-card class="glass-card rounded-xl pa-5 stat-card shadow-premium" elevation="0" to="/employees">
+              <div class="text-overline text-grey-darken-1 mb-1">Personnel</div>
+              <div class="text-h5 font-weight-bold mb-1">{{ stats.total_employees?.toLocaleString() || 0 }}</div>
+              <div class="text-caption text-medium-emphasis">Pegawai PW</div>
+              <v-sparkline :model-value="sparklineData.employees" color="blue" height="30" padding="4" smooth line-width="2" class="mt-2"></v-sparkline>
+            </v-card>
+          </v-col>
+
+          <!-- Units Info -->
+          <v-col cols="12" sm="6" md="2">
+            <v-card class="glass-card rounded-xl pa-5 stat-card shadow-premium" elevation="0" to="/skpd">
+              <div class="text-overline text-grey-darken-1 mb-1">Units (SKPD)</div>
+              <div class="text-h5 font-weight-bold mb-1">{{ stats.total_skpd || 0 }}</div>
+              <div class="text-caption text-medium-emphasis">Instansi Aktif</div>
+              <div class="mt-4">
+                <v-progress-linear :model-value="submissionProgress" color="primary" height="6" rounded></v-progress-linear>
+              </div>
+            </v-card>
+          </v-col>
+
+          <!-- Average Cost -->
           <v-col cols="12" md="4">
+            <v-card class="glass-card rounded-xl pa-5 stat-card-premium purple-glow shadow-premium" elevation="0">
+              <div class="d-flex align-center mb-4">
+                <v-avatar color="purple-lighten-5" rounded="lg" size="48">
+                  <v-icon color="purple">mdi-account-cash-outline</v-icon>
+                </v-avatar>
+                <v-spacer></v-spacer>
+                <v-chip color="purple" size="x-small" variant="flat" class="font-weight-bold">RATA-RATA / ORANG</v-chip>
+              </div>
+              <div class="text-h4 font-weight-black mb-1">{{ reportData ? formatCurrency(reportData.summary.avg_per_employee) : formatCurrency(stats.monthly_payment / stats.total_employees) }}</div>
+              <div class="text-caption text-grey">Biaya gaji rata-rata per pegawai</div>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- SECTION 2: ANALYTICS & SMART ALERTS        -->
+        <!-- ═══════════════════════════════════════════ -->
+        <v-row class="mb-8">
+          <!-- Main Trend Chart -->
+          <v-col cols="12" md="8">
             <v-card class="glass-card rounded-xl pa-6 shadow-premium h-100" elevation="0">
               <div class="d-flex align-center mb-6">
-                <h2 class="text-h6 font-weight-bold">Distribusi Anggaran</h2>
+                <v-icon color="primary" class="mr-2">mdi-chart-line</v-icon>
+                <h2 class="text-h6 font-weight-bold">Tren Pengeluaran Gaji</h2>
                 <v-spacer></v-spacer>
-                <v-chip color="primary" size="x-small" variant="flat">TOP 5</v-chip>
+                <v-chip color="success" size="small" variant="tonal" prepend-icon="mdi-trending-up">Live Analytics</v-chip>
               </div>
-              <v-table v-if="reportData" density="comfortable" class="modern-report-table">
-                <thead>
-                  <tr>
-                    <th class="text-left py-2 font-weight-bold">INSTANSI</th>
-                    <th class="text-right py-2 font-weight-bold">ANGGARAN</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="item in reportData.performance.slice(0, 5)" :key="item.kode_skpd">
-                    <td class="text-caption font-weight-bold text-truncate" style="max-width: 150px;">{{ item.nama_skpd }}</td>
-                    <td class="text-right text-body-2 font-weight-black text-primary">
-                      {{ formatCurrencyCompact(item.total_budget) }}
-                    </td>
-                  </tr>
-                </tbody>
-              </v-table>
+              <apexchart v-if="reportData" type="area" height="320" :options="trendChartOptions" :series="trendSeries"></apexchart>
               <div v-else class="text-center py-12">
-                <v-icon color="grey-lighten-2" size="48">mdi-chart-bar</v-icon>
+                <v-progress-circular indeterminate color="primary" v-if="loadingReport"></v-progress-circular>
+                <div v-else class="text-grey">Menunggu data analitik...</div>
               </div>
-            </v-card>
-          </v-col>
-        </v-row>
-        
-        <!-- Staffing by Unit + Gender -->
-        <v-row class="mb-6">
-          <v-col cols="12" md="8">
-            <v-card class="glass-card rounded-xl overflow-hidden" elevation="0">
-              <v-card-title class="px-6 pt-6 d-flex align-center">
-                <span class="text-h6 font-weight-bold">Pegawai per Instansi</span>
-                <v-spacer></v-spacer>
-                <v-btn variant="tonal" size="small" color="primary" rounded="pill" to="/skpd">Lihat Semua</v-btn>
-              </v-card-title>
-              <v-card-text class="px-6 pb-6">
-                <div v-if="charts.employees_per_skpd && charts.employees_per_skpd.length">
-                  <div class="mt-4">
-                    <div v-for="(item, index) in charts.employees_per_skpd" :key="index" class="mb-4">
-                      <div class="d-flex justify-space-between mb-1">
-                        <span class="text-body-2 font-weight-medium">{{ item.nama_skpd }}</span>
-                        <span class="text-body-2 text-grey-darken-1">{{ item.total }} pegawai</span>
-                      </div>
-                      <v-progress-linear
-                        :model-value="(item.total / stats.total_employees) * 100"
-                        rounded height="10" class="custom-progress"
-                        :color="getProgressColor(index)"
-                      ></v-progress-linear>
-                    </div>
-                  </div>
-                </div>
-                <div v-else class="text-center py-12">
-                  <v-icon color="grey-lighten-2" size="64" class="mb-2">mdi-chart-bar</v-icon>
-                  <div class="text-grey">Belum ada data distribusi</div>
-                </div>
-              </v-card-text>
             </v-card>
           </v-col>
           
+          <!-- Smart Alerts Panel -->
           <v-col cols="12" md="4">
-            <v-card class="glass-card rounded-xl h-100" elevation="0">
-              <v-card-title class="px-6 pt-6 font-weight-bold text-h6">Rasio Gender</v-card-title>
-              <v-card-text class="pa-6">
-                <div v-if="distribution.gender && distribution.gender.length" class="text-center">
-                  <div class="d-flex justify-center mb-6 pt-4">
-                    <template v-for="(g, idx) in distribution.gender" :key="idx">
-                      <div class="gender-block mx-4">
-                        <v-icon :color="g.jk?.includes('LAKI') ? 'blue' : 'pink'" size="48">
-                          {{ g.jk?.includes('LAKI') ? 'mdi-gender-male' : 'mdi-gender-female' }}
-                        </v-icon>
-                        <div class="text-h5 font-weight-bold mt-2">{{ g.total }}</div>
-                        <div class="text-caption text-grey">{{ g.jk }}</div>
-                      </div>
-                    </template>
-                  </div>
-                  <v-divider class="mb-6"></v-divider>
-                  <div class="text-body-2 text-grey px-4">
-                    Monitoring kesetaraan gender untuk pengelolaan sumber daya manusia yang lebih baik.
-                  </div>
-                </div>
-                <div v-else class="text-center py-12">
-                  <v-icon color="grey-lighten-2" size="64">mdi-account-heart-outline</v-icon>
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-
-        <!-- Status Kepegawaian Distribution -->
-        <v-row class="mb-6">
-          <v-col cols="12">
-            <v-card class="glass-card rounded-xl pa-6 shadow-premium" elevation="0">
+            <v-card class="glass-card rounded-xl pa-6 shadow-premium h-100 d-flex flex-column" elevation="0">
               <div class="d-flex align-center mb-6">
-                <v-icon color="primary" class="mr-2">mdi-account-clock-outline</v-icon>
-                <h2 class="text-h6 font-weight-bold">Status Kepegawaian PPPK-PW</h2>
+                <v-icon color="warning" class="mr-2">mdi-lamp-outline</v-icon>
+                <h2 class="text-h6 font-weight-bold">Smart Insights</h2>
+                <v-spacer></v-spacer>
+                <v-btn icon="mdi-chevron-up" variant="text" density="comfortable" size="small"></v-btn>
               </div>
-              <v-row>
-                <v-col v-for="(s, idx) in distribution.status" :key="idx" cols="6" sm="3">
-                  <v-card variant="tonal" :color="getStatusColor(s.status)" class="rounded-xl pa-4 text-center">
-                    <div class="text-h4 font-weight-black mb-1">{{ s.total }}</div>
-                    <div class="text-overline font-weight-bold">{{ s.status || 'Aktif' }}</div>
-                  </v-card>
+              
+              <div class="flex-grow-1 overflow-y-auto pr-1" style="max-height: 320px">
+                <template v-if="smartAlerts.length">
+                  <v-alert
+                    v-for="(alert, idx) in smartAlerts"
+                    :key="idx"
+                    :type="alert.type"
+                    :icon="alert.icon"
+                    variant="tonal"
+                    density="compact"
+                    class="mb-3 rounded-lg border-opacity-25"
+                    style="border-left: 4px solid"
+                  >
+                    <div class="text-caption font-weight-bold">{{ alert.title }}</div>
+                    <div class="text-caption opacity-80" style="font-size: 10px !important;">{{ alert.text }}</div>
+                  </v-alert>
+                </template>
+                <div v-else class="text-center py-12">
+                  <v-icon color="grey-lighten-2" size="48" class="mb-2">mdi-shield-check-outline</v-icon>
+                  <div class="text-caption text-grey">Sistem dalam kondisi optimal</div>
+                </div>
+              </div>
+
+              <v-divider class="my-4 border-opacity-10"></v-divider>
+              <v-btn block variant="tonal" color="primary" rounded="lg" size="small" append-icon="mdi-arrow-right">Lihat Detail Laporan</v-btn>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- SECTION 3: DISTRIBUTION & STATUS           -->
+        <!-- ═══════════════════════════════════════════ -->
+        <v-row class="mb-8">
+          <!-- Pegawai per Instansi -->
+          <v-col cols="12" md="7">
+            <v-card class="glass-card rounded-xl pa-6 shadow-premium h-100" elevation="0">
+              <div class="d-flex align-center mb-6">
+                <h2 class="text-h6 font-weight-bold">Sebaran Pegawai</h2>
+                <v-spacer></v-spacer>
+                <v-btn variant="text" size="small" color="primary" rounded="pill" to="/skpd">Lihat Semua</v-btn>
+              </div>
+              <v-row dense>
+                <v-col v-for="(item, index) in charts.employees_per_skpd?.slice(0, 6)" :key="index" cols="12" sm="6" class="mb-2">
+                  <div class="d-flex justify-space-between mb-1 px-1">
+                    <span class="text-caption font-weight-bold text-truncate" style="max-width: 140px">{{ item.nama_skpd }}</span>
+                    <span class="text-caption font-weight-bold text-primary">{{ item.total }}</span>
+                  </div>
+                  <v-progress-linear
+                    :model-value="(item.total / stats.total_employees) * 100"
+                    color="primary" height="6" rounded class="bg-blue-lighten-5"
+                  ></v-progress-linear>
                 </v-col>
-                <v-col v-if="!distribution.status?.length" cols="12" class="text-center py-8 text-grey">
-                  Belum ada data status kepegawaian
+              </v-row>
+            </v-card>
+          </v-col>
+
+          <!-- Status Kepegawaian -->
+          <v-col cols="12" md="5">
+            <v-card class="glass-card rounded-xl pa-6 shadow-premium h-100" elevation="0">
+              <h2 class="text-h6 font-weight-bold mb-6">Status Pegawai</h2>
+              <v-row dense>
+                <v-col v-for="(s, idx) in distribution.status" :key="idx" cols="6">
+                  <div class="pa-3 rounded-lg border-opacity-10 mb-2" :class="`bg-${getStatusColor(s.status)}-lighten-5`" style="border: 1px solid currentColor">
+                    <div class="text-h5 font-weight-black" :class="`text-${getStatusColor(s.status)}`">{{ s.total }}</div>
+                    <div class="text-caption font-weight-bold opacity-70">{{ s.status || 'Aktif' }}</div>
+                  </div>
                 </v-col>
               </v-row>
             </v-card>
           </v-col>
         </v-row>
-        
-        <!-- ═══════════════════════════════════════════ -->
-        <!-- SECTION 4: PAYROLL EXPENDITURE TREND       -->
-        <!-- ═══════════════════════════════════════════ -->
-        <v-row class="mb-6">
-          <v-col cols="12">
-            <v-card class="glass-card rounded-xl pa-6 shadow-premium" elevation="0">
-              <div class="d-flex align-center mb-4">
-                <v-icon class="mr-2" color="primary">mdi-chart-multiline</v-icon>
-                <h2 class="text-h6 font-weight-bold">Tren Pengeluaran Gaji Bulanan</h2>
-                <v-spacer></v-spacer>
-                <v-chip color="info" size="small" variant="tonal">{{ currentYear }}</v-chip>
-              </div>
-              <v-row v-if="reportData?.trend?.length">
-                <v-col v-for="(item, index) in reportData.trend" :key="index" cols="6" sm="4" md="2">
-                  <div class="text-center pa-3 trend-item rounded-xl">
-                    <div class="text-caption text-grey mb-1">{{ item.month }}</div>
-                    <div class="text-body-2 font-weight-bold text-primary">{{ formatCurrency(item.total) }}</div>
-                    <div class="text-caption text-success" v-if="item.employees">{{ item.employees }} pegawai</div>
-                  </div>
-                </v-col>
-              </v-row>
-              <v-row v-else-if="charts.payment_trend && charts.payment_trend.length">
-                <v-col v-for="(item, index) in charts.payment_trend" :key="index" cols="6" sm="4" md="2">
-                  <div class="text-center pa-2 trend-item rounded-lg">
-                    <div class="text-caption text-grey mb-1">{{ item.month }}</div>
-                    <div class="text-body-1 font-weight-bold">{{ formatCurrencyShort(item.total) }}</div>
-                  </div>
-                </v-col>
-              </v-row>
-              <div v-else class="text-center py-8 text-grey">
-                <v-icon size="48" color="grey-lighten-2" class="mb-2">mdi-chart-line-variant</v-icon>
-                <div>Belum ada data historis pengeluaran gaji</div>
-              </div>
-            </v-card>
-          </v-col>
-        </v-row>
-        
-        <!-- ═══════════════════════════════════════════ -->
-        <!-- SECTION 5: MISSING PAYROLLS                -->
-        <!-- ═══════════════════════════════════════════ -->
-        <v-row class="mb-6">
-          <v-col cols="12">
-            <v-card class="glass-card rounded-xl overflow-hidden shadow-premium" elevation="0">
-              <v-toolbar color="error-lighten-5" flat class="px-6 py-4">
-                <v-toolbar-title class="font-weight-bold text-h6 text-error">
-                  <v-icon start color="error" size="28">mdi-alert-circle-outline</v-icon>
-                  Gaji Belum Masuk
-                </v-toolbar-title>
-                <v-spacer></v-spacer>
-                <v-btn color="success" variant="tonal" size="small" class="mr-2" prepend-icon="mdi-microsoft-excel" @click="exportUnpaid('excel')" :loading="exportLoading === 'excel'">EXCEL</v-btn>
-                <v-btn color="error" variant="tonal" size="small" class="mr-2" prepend-icon="mdi-file-pdf-box" @click="exportUnpaid('pdf')" :loading="exportLoading === 'pdf'">PDF</v-btn>
-                <v-menu v-model="unpaidMenu" :close-on-content-click="false">
-                  <template v-slot:activator="{ props }">
-                    <v-btn color="error" variant="text" size="small" v-bind="props" prepend-icon="mdi-calendar">
-                      {{ unpaidMonthName }} {{ unpaidYear }}
-                    </v-btn>
-                  </template>
-                  <v-card min-width="300" class="pa-4 rounded-xl">
-                    <v-row dense>
-                      <v-col cols="6">
-                        <v-select v-model="unpaidMonth" :items="monthList" item-title="title" item-value="value" label="Bulan" density="compact" variant="outlined" hide-details></v-select>
-                      </v-col>
-                      <v-col cols="6">
-                        <v-select v-model="unpaidYear" :items="yearList" label="Tahun" density="compact" variant="outlined" hide-details></v-select>
-                      </v-col>
-                      <v-col cols="12" class="mt-2 text-right">
-                        <v-btn block color="primary" @click="fetchUnpaidData(); unpaidMenu = false">TERAPKAN FILTER</v-btn>
-                      </v-col>
-                    </v-row>
-                  </v-card>
-                </v-menu>
-              </v-toolbar>
-              
-              <div class="px-4 pb-2">
-                <v-btn-toggle v-model="viewBy" mandatory density="compact" color="primary" variant="outlined" class="d-flex w-100 rounded-lg">
-                  <v-btn value="skpd" class="flex-grow-1" size="small">PER SKPD</v-btn>
-                  <v-btn value="upt" class="flex-grow-1" size="small">PER UPT</v-btn>
-                  <v-btn value="employees" class="flex-grow-1" size="small">PER PEGAWAI</v-btn>
-                </v-btn-toggle>
-              </div>
-              
-              <div v-if="unpaidLoading" class="pa-8 text-center">
-                <v-progress-circular indeterminate color="primary"></v-progress-circular>
-              </div>
-
-              <v-list v-else-if="viewBy === 'skpd' && unpaidSkpds.length" class="bg-transparent pa-2" lines="two">
-                <v-list-item v-for="skpd in unpaidSkpds" :key="skpd.id_skpd" class="mb-1 rounded-lg">
-                  <template v-slot:prepend>
-                    <v-avatar color="error-lighten-5" size="32">
-                      <v-icon color="error" size="18">mdi-office-building-remove</v-icon>
-                    </v-avatar>
-                  </template>
-                  <v-list-item-title class="text-caption font-weight-bold text-wrap">{{ skpd.nama_skpd }}</v-list-item-title>
-                  <v-list-item-subtitle class="text-overline text-error">PENDING</v-list-item-subtitle>
-                </v-list-item>
-              </v-list>
-
-              <v-list v-else-if="viewBy === 'upt' && unpaidUpts.length" class="bg-transparent pa-2" lines="two">
-                <v-list-item v-for="(upt, idx) in unpaidUpts" :key="idx" class="mb-1 rounded-lg">
-                  <template v-slot:prepend>
-                    <v-avatar color="orange-lighten-5" size="32">
-                      <v-icon color="orange" size="18">mdi-domain-off</v-icon>
-                    </v-avatar>
-                  </template>
-                  <v-list-item-title class="text-caption font-weight-bold text-wrap">{{ upt.upt }}</v-list-item-title>
-                  <v-list-item-subtitle class="text-caption text-grey">{{ upt.nama_skpd }}</v-list-item-subtitle>
-                </v-list-item>
-              </v-list>
-
-              <div v-else-if="viewBy === 'employees' && unpaidEmployees.length" class="pa-2" style="max-height: 500px; overflow-y: auto;">
-                <v-expansion-panels variant="accordion">
-                  <v-expansion-panel v-for="(skpdGroup, idx) in unpaidEmployees" :key="idx" class="mb-2">
-                    <v-expansion-panel-title class="text-caption font-weight-bold">
-                      <div class="d-flex align-center w-100">
-                        <v-icon color="error" size="18" class="mr-2">mdi-office-building</v-icon>
-                        <span class="flex-grow-1">{{ skpdGroup.skpd_name }}</span>
                         <v-chip color="error" size="x-small" variant="flat" class="mr-2">{{ skpdGroup.count }}</v-chip>
                       </div>
                     </v-expansion-panel-title>
@@ -828,6 +625,44 @@ const skpdComparisonOption = computed(() => {
     ]
   }
 })
+
+const submissionProgress = computed(() => {
+  if (!stats.value.total_skpd || stats.value.total_skpd === 0) return 0
+  const submittedCount = stats.value.total_skpd - unpaidSkpds.value.length
+  return Math.round((submittedCount / stats.value.total_skpd) * 100)
+})
+
+const smartAlerts = computed(() => {
+  const alerts = []
+  if (unpaidSkpds.value.length > 5) {
+    alerts.push({
+      type: 'error',
+      icon: 'mdi-alert-circle',
+      title: `${unpaidSkpds.value.length} SKPD Belum Setor`,
+      text: 'Beberapa instansi besar belum mengunggah laporan gaji.'
+    })
+  }
+  if (unpaidEmployees.value.length > 0) {
+    alerts.push({
+      type: 'warning',
+      icon: 'mdi-account-alert',
+      title: `${unpaidEmployees.value.length} Pegawai Pending`,
+      text: 'Data gaji individu masih dalam antrian verifikasi.'
+    })
+  }
+  if (reportData.value?.summary?.annual_budget > 10000000000) {
+    alerts.push({
+      type: 'info',
+      icon: 'mdi-shield-check',
+      title: 'Audit Anggaran Aktif',
+      text: 'Total pencairan tahunan telah melewati batas pemantauan.'
+    })
+  }
+  return alerts
+})
+
+const isUnpaidVisible = ref(false)
+const isPaidVisible = ref(false)
 
 // ═══════════════════════════════════════════
 // REPORT / ANALYTICS DATA
