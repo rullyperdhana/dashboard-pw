@@ -99,40 +99,40 @@
 
         <!-- Analysis Tabs/Sections -->
         <v-row>
-          <v-col cols="12" md="4">
-             <v-card class="glass-card rounded-xl pa-6 mb-6" elevation="0">
-              <h3 class="text-subtitle-1 font-weight-bold mb-4">Faktor Penyesuaian</h3>
-              <v-list bg-color="transparent" density="compact">
-                <v-list-item class="rounded-lg mb-2 border">
-                  <template v-slot:prepend>
-                    <v-icon color="error">mdi-account-minus</v-icon>
-                  </template>
-                  <v-list-item-title class="text-body-2 font-weight-bold">Estimasi Pensiun</v-list-item-title>
-                  <v-list-item-subtitle class="text-caption">{{ prediction ? prediction.factors.retiring_count : 0 }} Pegawai</v-list-item-subtitle>
-                </v-list-item>
-                <v-list-item class="rounded-lg mb-2 border">
-                  <template v-slot:prepend>
-                    <v-icon color="success">mdi-trending-up</v-icon>
-                  </template>
-                  <v-list-item-title class="text-body-2 font-weight-bold">KGB & KP</v-list-item-title>
-                  <v-list-item-subtitle class="text-caption">Otomatis Terhitung</v-list-item-subtitle>
-                </v-list-item>
-              </v-list>
-            </v-card>
-
-            <v-card class="glass-card rounded-xl pa-6" elevation="0" style="background: linear-gradient(135deg, #004d40 0%, #00695c 100%) !important; color: white;">
-              <div class="text-overline mb-2 opacity-80">Rata-rata Bulanan</div>
-              <div class="text-h4 font-weight-black mb-1">
-                {{ prediction ? formatCurrencyCompact(prediction.projection.monthly_avg_forecast) : 'Rp 0' }}
+          <v-col cols="12" md="6">
+            <v-card class="glass-card rounded-xl pa-6 mb-6 h-100" elevation="0">
+              <div class="d-flex align-center mb-6">
+                <h3 class="text-h6 font-weight-bold">Rincian Anggaran (Kode Rekening)</h3>
+                <v-spacer></v-spacer>
+                <v-btn icon="mdi-download" variant="text" size="small" color="primary"></v-btn>
               </div>
-              <div class="text-caption opacity-70">Beban kas daerah per bulan</div>
-              <v-btn block color="white" variant="flat" class="text-primary mt-6 rounded-lg font-weight-bold" @click="fetchPrediction">
-                PROSES ULANG
-              </v-btn>
+              <v-data-table
+                v-if="prediction && prediction.breakdown"
+                :headers="breakdownHeaders"
+                :items="prediction.breakdown"
+                density="comfortable"
+                class="bg-transparent"
+                hide-default-footer
+              >
+                <template v-slot:item.amount="{ item }">
+                  <div class="font-weight-bold">{{ formatCurrency(item.amount) }}</div>
+                </template>
+                <template v-slot:bottom>
+                  <v-divider></v-divider>
+                  <div class="pa-4 d-flex justify-space-between font-weight-black text-primary">
+                    <span>TOTAL ESTIMASI</span>
+                    <span>{{ formatCurrency(prediction.projection.final_forecast) }}</span>
+                  </div>
+                </template>
+              </v-data-table>
+              <div v-else class="text-center py-10 text-disabled">
+                <v-icon size="64">mdi-chart-tree</v-icon>
+                <p>Data rincian akan muncul setelah simulasi.</p>
+              </div>
             </v-card>
           </v-col>
 
-          <v-col cols="12" md="8">
+          <v-col cols="12" md="6">
             <v-card class="glass-card rounded-xl pa-6 mb-6 h-100" elevation="0">
               <div class="d-flex align-center mb-6">
                 <h3 class="text-h6 font-weight-bold">Daftar Pegawai Pensiun (12 Bulan)</h3>
@@ -146,19 +146,14 @@
                 hover
                 density="comfortable"
                 class="bg-transparent"
-                :items-per-page="10"
+                :items-per-page="5"
               >
                 <template v-slot:item.nama="{ item }">
                   <div class="text-body-2 font-weight-bold">{{ item.nama }}</div>
                   <div class="text-caption text-grey">{{ item.nip }}</div>
                 </template>
                 <template v-slot:item.skpd="{ item }">
-                  <div class="text-caption text-wrap" style="max-width: 300px">{{ item.skpd || '-' }}</div>
-                </template>
-                <template v-slot:item.retirement_date="{ item }">
-                  <v-chip size="x-small" color="error" variant="tonal" class="font-weight-bold">
-                    {{ formatDate(item.retirement_date) }}
-                  </v-chip>
+                  <div class="text-caption text-wrap" style="max-width: 250px">{{ item.skpd || '-' }}</div>
                 </template>
               </v-data-table>
               <div v-else class="text-center py-10 text-disabled">
@@ -220,10 +215,15 @@ const growthFactor = ref(5)
 const prediction = ref(null)
 const healthData = ref(null)
 
+const breakdownHeaders = [
+  { title: 'KODE REKENING', key: 'kode', sortable: false },
+  { title: 'NAMA REKENING', key: 'nama', sortable: false },
+  { title: 'ESTIMASI ANGGARAN', key: 'amount', align: 'end', sortable: false },
+]
+
 const retirementTableHeaders = [
   { title: 'NAMA / NIP', key: 'nama', sortable: true },
   { title: 'SKPD', key: 'skpd', sortable: true },
-  { title: 'ESTIMASI PENSIUN', key: 'retirement_date', align: 'center', sortable: true },
 ]
 
 const fetchPrediction = async () => {
@@ -262,11 +262,16 @@ const fetchHealthData = async () => {
   }
 }
 
+const formatCurrency = (value) => {
+  if (!value) return 'Rp 0'
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value)
+}
+
 const formatCurrencyCompact = (value) => {
   if (!value) return 'Rp 0'
   if (value >= 1000000000) return 'Rp ' + (value / 1000000000).toFixed(2) + ' M'
   if (value >= 1000000) return 'Rp ' + (value / 1000000).toFixed(2) + ' Jt'
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value)
+  return formatCurrency(value)
 }
 
 const formatDate = (dateString) => {

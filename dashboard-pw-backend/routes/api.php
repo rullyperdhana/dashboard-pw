@@ -118,6 +118,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/report', [PPh21Controller::class, 'report']);
         Route::post('/calculate', [PPh21Controller::class, 'calculate']);
         Route::get('/export-a2', [PPh21Controller::class, 'exportA2']);
+        Route::get('/monitoring', [PPh21Controller::class, 'monitoring']);
+        Route::get('/export-monitoring', [PPh21Controller::class, 'exportMonitoring']);
         Route::delete('/', [PPh21Controller::class, 'destroy']);
     });
 

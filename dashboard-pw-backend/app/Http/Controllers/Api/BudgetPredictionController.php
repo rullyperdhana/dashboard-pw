@@ -32,8 +32,9 @@ class BudgetPredictionController extends Controller
 
     private function predictPW($growthFactor, Request $request)
     {
-        $currentDate = Carbon::now()->format('Y-m-d');
-        $targetDate = Carbon::now()->addYear()->format('Y-m-d');
+        $now = Carbon::now()->startOfDay();
+        $currentDate = $now->format('Y-m-d');
+        $targetDate = $now->copy()->addYear()->format('Y-m-d');
 
         // 1. Get last 3 unique months with data
         $last3Months = DB::table('tb_payment')
@@ -59,13 +60,26 @@ class BudgetPredictionController extends Controller
                 ->where('tb_payment.month', $p->month)
                 ->where('tb_payment.year', $p->year);
             
-            if (!$isSuperAdmin) {
-                $query->whereIn('pegawai_pw.idskpd', $user->getAccessibleSkpds());
-            }
-
-            $monthlyTotals[] = $query->sum('total_amoun');
+            $monthlyTotals[] = $query->sum('tb_payment_detail.total_amoun');
+            $monthlyGajiPokok[] = $query->sum('tb_payment_detail.gaji_pokok');
+            $monthlyTunjangan[] = $query->sum('tb_payment_detail.tunjangan');
         }
         $avgMonthlyTotal = count($monthlyTotals) > 0 ? array_sum($monthlyTotals) / count($monthlyTotals) : 0;
+        $avgGajiPokok = count($monthlyGajiPokok) > 0 ? array_sum($monthlyGajiPokok) / count($monthlyGajiPokok) : 0;
+        $avgTunjangan = count($monthlyTunjangan) > 0 ? array_sum($monthlyTunjangan) / count($monthlyTunjangan) : 0;
+
+        $breakdown = [
+            [
+                'kode' => '5.1.01.01.0001',
+                'nama' => 'Belanja Gaji Pokok PPPK-PW',
+                'amount' => ($avgGajiPokok * 12) * (1 + ($growthFactor / 100))
+            ],
+            [
+                'kode' => '5.1.01.01.0002',
+                'nama' => 'Belanja Tunjangan PPPK-PW',
+                'amount' => ($avgTunjangan * 12) * (1 + ($growthFactor / 100))
+            ]
+        ];
 
         // 2. Optimized Retirement Search using SQL
         $retiredQuery = DB::table('pegawai_pw')
@@ -88,7 +102,7 @@ class BudgetPredictionController extends Controller
             
             $bup = (int) ($emp->usia_bup ?? 58);
             $retirementDate = Carbon::parse($emp->tgl_lahir)->addYears($bup);
-            $monthsRemaining = Carbon::now()->diffInMonths($retirementDate);
+            $monthsRemaining = $now->diffInMonths($retirementDate);
             $totalRetirementReduction += (12 - $monthsRemaining) * $lastSalary;
         }
 
@@ -109,7 +123,7 @@ class BudgetPredictionController extends Controller
         $avgGapok = DB::table('pegawai_pw')->where('status', 'Aktif')->avg('gapok') ?: 0;
         $totalKgbIncrease = $kgbEmployeesCount * ($avgGapok * 0.025) * 6; // Average 6 months of raise
 
-        return $this->formatResponse($growthFactor, $avgMonthlyTotal, $retiringEmployees, $totalRetirementReduction, $kgbEmployeesCount, $totalKgbIncrease, 0, 0);
+        return $this->formatResponse($growthFactor, $avgMonthlyTotal, $retiringEmployees, $totalRetirementReduction, $kgbEmployeesCount, $totalKgbIncrease, 0, 0, $breakdown);
     }
 
     private function predictPNS($growthFactor, Request $request)
@@ -124,8 +138,9 @@ class BudgetPredictionController extends Controller
 
     private function predictMasterPegawai($table, $growthFactor, Request $request)
     {
-        $currentDate = Carbon::now()->format('Y-m-d');
-        $targetDate = Carbon::now()->addYear()->format('Y-m-d');
+        $now = Carbon::now()->startOfDay();
+        $currentDate = $now->format('Y-m-d');
+        $targetDate = $now->copy()->addYear()->format('Y-m-d');
 
         $last3Periods = DB::table($table)
             ->select('bulan', 'tahun')
@@ -154,9 +169,60 @@ class BudgetPredictionController extends Controller
                 $query->whereIn('kdskpd', $user->getAccessibleSkpdCodes());
             }
 
-            $monthlyTotals[] = $query->sum('bersih');
+            $monthlyBersih[] = $query->sum('bersih');
+            $monthlyGajiPokok[] = $query->sum('gaji_pokok');
+            $monthlyTunjIstri[] = $query->sum('tunj_istri');
+            $monthlyTunjAnak[] = $query->sum('tunj_anak');
+            $monthlyTunjFungsional[] = $query->sum('tunj_fungsional');
+            $monthlyTunjStruktural[] = $query->sum('tunj_struktural');
+            $monthlyTunjUmum[] = $query->sum('tunj_umum');
+            $monthlyTunjBeras[] = $query->sum('tunj_beras');
+            $monthlyTunjPph[] = $query->sum('tunj_pph');
+            $monthlyTunjTpp[] = $query->sum('tunj_tpp');
+            $monthlyTunjEselon[] = $query->sum('tunj_eselon');
+            $monthlyTunjGuru[] = $query->sum('tunj_guru');
+            $monthlyPembulatan[] = $query->sum('pembulatan');
         }
-        $avgMonthlyTotal = count($monthlyTotals) > 0 ? array_sum($monthlyTotals) / count($monthlyTotals) : 0;
+        
+        $avgMonthlyTotal = count($monthlyBersih) > 0 ? array_sum($monthlyBersih) / count($monthlyBersih) : 0;
+        
+        $components = [
+            ['kode' => '5.1.01.01.0001', 'nama' => 'Gaji Pokok', 'avgs' => $monthlyGajiPokok],
+            ['kode' => '5.1.01.01.0002', 'nama' => 'Tunjangan Istri', 'avgs' => $monthlyTunjIstri],
+            ['kode' => '5.1.01.01.0003', 'nama' => 'Tunjangan Anak', 'avgs' => $monthlyTunjAnak],
+            ['kode' => '5.1.01.01.0004', 'nama' => 'Tunjangan Fungsional', 'avgs' => $monthlyTunjFungsional],
+            ['kode' => '5.1.01.01.0005', 'nama' => 'Tunjangan Struktural', 'avgs' => $monthlyTunjStruktural],
+            ['kode' => '5.1.01.01.0006', 'nama' => 'Tunjangan Umum', 'avgs' => $monthlyTunjUmum],
+            ['kode' => '5.1.01.01.0007', 'nama' => 'Tunjangan Beras', 'avgs' => $monthlyTunjBeras],
+            ['kode' => '5.1.01.01.0008', 'nama' => 'Tunjangan PPh', 'avgs' => $monthlyTunjPph],
+            ['kode' => '5.1.01.01.0009', 'nama' => 'Tunjangan TPP', 'avgs' => $monthlyTunjTpp],
+            ['kode' => '5.1.01.01.0010', 'nama' => 'Tunjangan Eselon', 'avgs' => $monthlyTunjEselon],
+            ['kode' => '5.1.01.01.0011', 'nama' => 'Tunjangan Guru', 'avgs' => $monthlyTunjGuru],
+            ['kode' => '5.1.01.01.0012', 'nama' => 'Pembulatan', 'avgs' => $monthlyPembulatan],
+        ];
+
+        $breakdown = [];
+        $calculatedSum = 0;
+        foreach ($components as $c) {
+            $avg = count($c['avgs']) > 0 ? array_sum($c['avgs']) / count($c['avgs']) : 0;
+            $amount = ($avg * 12) * (1 + ($growthFactor / 100));
+            $breakdown[] = [
+                'kode' => $c['kode'],
+                'nama' => $c['nama'],
+                'amount' => $amount
+            ];
+            $calculatedSum += $amount;
+        }
+
+        // Add "Lain-lain" for mapping errors or missing columns to ensure total matches
+        $remainder = ($avgMonthlyTotal * 12 * (1 + ($growthFactor / 100))) - $calculatedSum;
+        if ($remainder > 0) {
+            $breakdown[] = [
+                'kode' => '5.1.01.99.9999',
+                'nama' => 'Tunjangan Lainnya',
+                'amount' => $remainder
+            ];
+        }
 
         // 2. Optimized Retirement Search using SQL
         $retiredQuery = DB::table('master_pegawai')
@@ -188,7 +254,7 @@ class BudgetPredictionController extends Controller
             
             $bup = (int) ($emp->bup ?? 58);
             $retirementDate = Carbon::parse($emp->tgllhr)->addYears($bup);
-            $monthsRemaining = Carbon::now()->diffInMonths($retirementDate);
+            $monthsRemaining = $now->diffInMonths($retirementDate);
             $totalRetirementReduction += (12 - $monthsRemaining) * $lastSalary;
         }
 
@@ -237,15 +303,25 @@ class BudgetPredictionController extends Controller
             $kgbEmployeesCount,
             $totalKgbIncrease,
             $kpEmployeesCount,
-            $totalKpIncrease
+            $totalKpIncrease,
+            $breakdown
         );
     }
 
-    private function formatResponse($growthFactor, $avgMonthlyTotal, $retiringEmployees, $totalRetirementReduction, $kgbCount = 0, $kgbAmount = 0, $kpCount = 0, $kpAmount = 0)
+    private function formatResponse($growthFactor, $avgMonthlyTotal, $retiringEmployees, $totalRetirementReduction, $kgbCount = 0, $kgbAmount = 0, $kpCount = 0, $kpAmount = 0, $breakdown = [])
     {
         $baseYearly = $avgMonthlyTotal * 12;
         $afterEvents = $baseYearly - $totalRetirementReduction + $kgbAmount + $kpAmount;
         $finalForecast = $afterEvents * (1 + ($growthFactor / 100));
+
+        // Adjust breakdown total to exactly match finalForecast
+        $breakdownTotal = array_sum(array_column($breakdown, 'amount'));
+        if ($breakdownTotal > 0) {
+            $ratio = $finalForecast / $breakdownTotal;
+            foreach ($breakdown as &$item) {
+                $item['amount'] *= $ratio;
+            }
+        }
 
         return response()->json([
             'success' => true,
@@ -268,6 +344,7 @@ class BudgetPredictionController extends Controller
                     'final_forecast' => (float) $finalForecast,
                     'monthly_avg_forecast' => (float) ($finalForecast / 12)
                 ],
+                'breakdown' => $breakdown,
                 'retiring_list' => $retiringEmployees->values()->map(function($e) {
                     $bup = (int) ($e->usia_bup ?? $e->bup ?? 58);
                     $dob = $e->tgl_lahir ?? $e->tgllhr ?? null;

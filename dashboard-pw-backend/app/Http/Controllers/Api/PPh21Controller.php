@@ -475,4 +475,249 @@ class PPh21Controller extends Controller
             ['nama', 'skpd_id', 'status_ptkp', 'ter_category', 'gross_base', 'tax_amount', 'calc_details', 'updated_at']
         );
     }
+
+    /**
+     * Get monitoring matrix (Months 1-12) for A2
+     */
+    public function monitoring(Request $request)
+    {
+        $request->validate(['year' => 'required|integer', 'skpd' => 'nullable', 'per_page' => 'nullable|integer']);
+        $year = $request->year;
+        $skpd = $request->skpd;
+        $perPage = $request->per_page ?? 50;
+
+        $user = auth()->user();
+        $skpdIds = $user->getAccessibleSkpds();
+        
+        // 1. Fetch Employees (Filter out those retired for more than 1 year)
+        $empQuery = DB::table('master_pegawai')
+            ->where(function($q) {
+                $q->whereNull('tmtstop')
+                  ->orWhere('tmtstop', '>=', now()->subYear()->format('Y-m-d'));
+            });
+
+        if ($skpd) {
+            // Need to resolve skpd_id to SimGaji codes for master_pegawai
+            $targetCodes = DB::table('skpd')
+                ->where('id_skpd', $skpd)
+                ->whereNotNull('kode_simgaji')
+                ->pluck('kode_simgaji')
+                ->merge(
+                    DB::table('skpd_mapping')
+                        ->where('skpd_id', $skpd)
+                        ->pluck('source_code')
+                )
+                ->unique()
+                ->toArray();
+            
+            if (empty($targetCodes)) {
+                $kodeSkpd = DB::table('skpd')->where('id_skpd', $skpd)->value('kode_skpd');
+                if ($kodeSkpd) $targetCodes = [$kodeSkpd];
+            }
+            $empQuery->whereIn('kdskpd', $targetCodes);
+        } elseif ($skpdIds !== null) {
+            $accessibleCodes = $user->getAccessibleSkpdCodes();
+            if ($accessibleCodes !== null) {
+                $empQuery->whereIn('kdskpd', $accessibleCodes);
+            }
+        }
+        
+        $paginator = $empQuery->select('nip', 'nama', 'noktp', 'kdskpd')->paginate($perPage);
+        $employees = $paginator->items();
+
+        // 2. Fetch Calculations
+        $calcQuery = DB::table('pph21_calculations')
+            ->where('tahun', $year)
+            ->where('jenis_gaji', 'Induk');
+            
+        if ($skpd) {
+            $calcQuery->where('skpd_id', $skpd);
+        } elseif ($skpdIds !== null) {
+            $calcQuery->whereIn('skpd_id', $skpdIds);
+        }
+
+        $calcs = $calcQuery->select('nip', 'bulan', 'skpd_id')->get()->groupBy('nip');
+
+        // 3. SKPD names for display
+        $skpdNames = DB::table('skpd')->pluck('nama_skpd', 'id_skpd')->toArray();
+
+        // 4. Map Results
+        $mappedData = collect($employees)->map(function($emp) use ($calcs, $skpdNames) {
+            $myCalcs = $calcs->get($emp->nip, collect())->pluck('bulan')->toArray();
+            $months = [];
+            for ($m = 1; $m <= 12; $m++) {
+                $months[$m] = in_array($m, $myCalcs);
+            }
+            
+            $sampleSkpdId = $calcs->get($emp->nip, collect())->first()?->skpd_id;
+            
+            return [
+                'nip' => $emp->nip,
+                'nik' => $emp->noktp,
+                'nama' => $emp->nama,
+                'skpd' => $sampleSkpdId ? ($skpdNames[$sampleSkpdId] ?? 'Unknown') : 'Master Pegawai Table',
+                'months' => $months
+            ];
+        });
+
+        return response()->json([
+            'success' => true, 
+            'data' => $mappedData,
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ]
+        ]);
+    }
+
+    /**
+     * Export Monitoring Matrix to Excel
+     */
+    public function exportMonitoring(Request $request)
+    {
+        $request->validate(['year' => 'required|integer', 'skpd' => 'nullable']);
+        $year = $request->year;
+        $skpd = $request->skpd;
+
+        $user = auth()->user();
+        $skpdIds = $user->getAccessibleSkpds();
+        
+        // 1. Fetch Employees (Filter out those retired for more than 1 year)
+        $empQuery = DB::table('master_pegawai')
+            ->where(function($q) {
+                $q->whereNull('tmtstop')
+                  ->orWhere('tmtstop', '>=', now()->subYear()->format('Y-m-d'));
+            });
+
+        if ($skpd) {
+            $targetCodes = DB::table('skpd')
+                ->where('id_skpd', $skpd)
+                ->whereNotNull('kode_simgaji')
+                ->pluck('kode_simgaji')
+                ->merge(DB::table('skpd_mapping')->where('skpd_id', $skpd)->pluck('source_code'))
+                ->unique()
+                ->toArray();
+            $empQuery->whereIn('kdskpd', $targetCodes);
+        } elseif ($skpdIds !== null) {
+            $accessibleCodes = $user->getAccessibleSkpdCodes();
+            if ($accessibleCodes !== null) $empQuery->whereIn('kdskpd', $accessibleCodes);
+        }
+        
+        $employees = $empQuery->select('nip', 'nama', 'noktp', 'kdskpd')->get();
+
+        // 2. Fetch Calculations
+        $calcQuery = DB::table('pph21_calculations')->where('tahun', $year)->where('jenis_gaji', 'Induk');
+        if ($skpd) $calcQuery->where('skpd_id', $skpd);
+        elseif ($skpdIds !== null) $calcQuery->whereIn('skpd_id', $skpdIds);
+        $calcs = $calcQuery->select('nip', 'bulan', 'skpd_id')->get()->groupBy('nip');
+
+        $skpdNames = DB::table('skpd')->pluck('nama_skpd', 'id_skpd')->toArray();
+        $skpdName = $skpd ? ($skpdNames[$skpd] ?? 'Unknown') : 'SEMUA SKPD';
+
+        // 4. Map Data for Excel
+        $data = $employees->map(function($emp) use ($calcs, $skpdNames) {
+            $myCalcs = $calcs->get($emp->nip, collect())->pluck('bulan')->toArray();
+            $months = [];
+            for ($m = 1; $m <= 12; $m++) {
+                $months[$m] = in_array($m, $myCalcs);
+            }
+            $sampleSkpdId = $calcs->get($emp->nip, collect())->first()?->skpd_id;
+            return (object)[
+                'nip' => $emp->nip,
+                'nik' => $emp->noktp,
+                'nama' => $emp->nama,
+                'skpd' => $sampleSkpdId ? ($skpdNames[$sampleSkpdId] ?? 'Unknown') : 'Master Pegawai Table',
+                'months' => $months
+            ];
+        });
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Header Style
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => '000000']],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'BDD7EE']],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]]
+        ];
+
+        // Title
+        $sheet->mergeCells('A1:Q1');
+        $sheet->setCellValue('A1', "REKAPITULASI BUKTI POTONG A2 UNTUK PPh PASAL 21 TAHUN $year");
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        $sheet->setCellValue('A2', "SKPD : $skpdName");
+        $sheet->getStyle('A2')->getFont()->setBold(true);
+
+        // Table Headers
+        $sheet->setCellValue('A3', 'NO');
+        $sheet->setCellValue('B3', 'NIK');
+        $sheet->setCellValue('C3', 'NAMA');
+        $sheet->setCellValue('D3', 'NIP');
+        $sheet->setCellValue('E3', 'SKPD');
+        
+        $sheet->mergeCells('F3:Q3');
+        $sheet->setCellValue('F3', 'TEMPLATE BUKTI POTONG A2 (MASA PAJAK)');
+        
+        $sheet->setCellValue('F4', '1');
+        $sheet->setCellValue('G4', '2');
+        $sheet->setCellValue('H4', '3');
+        $sheet->setCellValue('I4', '4');
+        $sheet->setCellValue('J4', '5');
+        $sheet->setCellValue('K4', '6');
+        $sheet->setCellValue('L4', '7');
+        $sheet->setCellValue('M4', '8');
+        $sheet->setCellValue('N4', '9');
+        $sheet->setCellValue('O4', '10');
+        $sheet->setCellValue('P4', '11');
+        $sheet->setCellValue('Q4', '12');
+
+        $sheet->mergeCells('A3:A4');
+        $sheet->mergeCells('B3:B4');
+        $sheet->mergeCells('C3:C4');
+        $sheet->mergeCells('D3:D4');
+        $sheet->mergeCells('E3:E4');
+
+        $sheet->getStyle('A3:Q4')->applyFromArray($headerStyle);
+
+        // Data
+        $row = 5;
+        foreach ($data as $idx => $item) {
+            $sheet->setCellValue('A' . $row, $idx + 1);
+            $sheet->setCellValueExplicit('B' . $row, (string)$item->nik, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue('C' . $row, $item->nama);
+            $sheet->setCellValueExplicit('D' . $row, (string)$item->nip, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue('E' . $row, $item->skpd);
+            
+            $col = 'F';
+            foreach ($item->months as $m => $exists) {
+                $val = $exists ? 'Ada' : 'Tidak Ada';
+                $sheet->setCellValue($col . $row, $val);
+                if (!$exists) {
+                    $sheet->getStyle($col . $row)->getFont()->getColor()->setRGB('FF0000');
+                }
+                $col++;
+            }
+            
+            $sheet->getStyle('A' . $row . ':Q' . $row)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+            $row++;
+        }
+
+        // Auto size
+        foreach (range('A', 'Q') as $columnID) {
+            $sheet->getColumnDimension($columnID)->setAutoSize(true);
+        }
+
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $periodLabel = $skpd ? "SKPD_{$skpd}" : "SEMUA";
+        $fileName = "Monitoring_A2_{$year}_{$periodLabel}.xlsx";
+        $tempFile = tempnam(sys_get_temp_dir(), 'pph21_mon');
+        $writer->save($tempFile);
+
+        return response()->download($tempFile, $fileName)->deleteFileAfterSend(true);
+    }
 }

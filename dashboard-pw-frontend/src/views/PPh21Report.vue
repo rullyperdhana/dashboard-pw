@@ -13,6 +13,19 @@
           </div>
           <v-spacer></v-spacer>
           
+          <!-- Monitoring Button -->
+          <v-btn
+            color="secondary"
+            variant="tonal"
+            prepend-icon="mdi-monitor-dashboard"
+            rounded="xl"
+            elevation="0"
+            class="px-6 font-weight-black mr-4"
+            @click="openMonitoring"
+          >
+            MONITORING REKAP A2
+          </v-btn>
+
           <!-- Calculation Dialog with Activator -->
           <v-dialog v-if="isSuperAdmin" v-model="calcDialog" max-width="450px">
             <template v-slot:activator="{ props }">
@@ -254,6 +267,87 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog v-model="monDialog" max-width="1200px">
+      <v-card class="glass-modal rounded-xl pa-4">
+        <v-card-title class="pa-4 d-flex align-center">
+          <div>
+            <div class="text-h5 font-weight-black">Monitoring Kehadiran Wajib Pajak (A2)</div>
+            <div class="text-subtitle-2 text-medium-emphasis">Tahun {{ selectedYear }} - {{ selectedSkpd ? skpdList.find(s => s.id_skpd === selectedSkpd)?.nama_skpd : 'Semua SKPD' }}</div>
+          </div>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="success"
+            variant="flat"
+            prepend-icon="mdi-file-excel"
+            rounded="lg"
+            class="px-6 font-weight-black mr-2"
+            @click="downloadMonitoring"
+            :loading="loadingMon"
+          >
+            DOWNLOAD EXCEL
+          </v-btn>
+          <v-btn icon="mdi-close" variant="text" @click="monDialog = false"></v-btn>
+        </v-card-title>
+        
+        <v-divider></v-divider>
+        
+        <v-card-text class="pa-0 overflow-auto" style="max-height: 70vh;">
+          <v-table class="bg-transparent modern-report-table sticky-header">
+            <thead>
+              <tr>
+                <th class="text-left font-weight-bold" style="width: 50px;">NO</th>
+                <th class="text-left font-weight-bold" style="width: 150px;">NIK</th>
+                <th class="text-left font-weight-bold" style="width: 200px;">NAMA</th>
+                <th class="text-left font-weight-bold">UNIT/SKPD</th>
+                <th v-for="m in 12" :key="m" class="text-center font-weight-bold" style="width: 40px;">{{ m }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <v-progress-linear v-if="loadingMon" indeterminate color="primary" class="position-absolute"></v-progress-linear>
+              <template v-else>
+                <tr v-for="(item, idx) in monitoringData" :key="idx" class="table-row-hover">
+                  <td>{{ ((currentPage - 1) * monMeta.per_page) + idx + 1 }}</td>
+                  <td class="text-caption font-weight-bold">{{ item.nik }}</td>
+                  <td class="font-weight-bold text-high-emphasis">{{ item.nama }}</td>
+                  <td class="text-caption" style="max-width: 200px;">{{ item.skpd }}</td>
+                  <td v-for="m in 12" :key="m" class="text-center">
+                    <v-tooltip location="top">
+                      <template v-slot:activator="{ props }">
+                        <v-icon
+                          v-bind="props"
+                          :color="item.months[m] ? 'success' : 'error'"
+                          size="18"
+                        >
+                          {{ item.months[m] ? 'mdi-check-circle' : 'mdi-close-circle' }}
+                        </v-icon>
+                      </template>
+                      <span>Masa {{ getMonthName(m) }}: {{ item.months[m] ? 'ADA' : 'TIDAK ADA' }}</span>
+                    </v-tooltip>
+                  </td>
+                </tr>
+                <tr v-if="monitoringData.length === 0">
+                  <td colspan="16" class="text-center pa-8 text-disabled">Tidak ada data pegawai ditemukan.</td>
+                </tr>
+              </template>
+            </tbody>
+          </v-table>
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions class="pa-4">
+          <span class="text-caption text-medium-emphasis">Total: {{ monMeta.total }} Pegawai</span>
+          <v-spacer></v-spacer>
+          <v-pagination
+            v-model="currentPage"
+            :length="monMeta.last_page"
+            :total-visible="7"
+            density="comfortable"
+            @update:model-value="fetchMonitoring"
+            :disabled="loadingMon"
+          ></v-pagination>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-snackbar v-model="snack" :color="snackColor" rounded="lg">{{ snackText }}</v-snackbar>
   </div>
 </template>
@@ -283,6 +377,16 @@ const deleting = ref(false)
 const snack = ref(false)
 const snackText = ref('')
 const snackColor = ref('info')
+const monDialog = ref(false)
+const monitoringData = ref([])
+const loadingMon = ref(false)
+const monMeta = ref({
+  current_page: 1,
+  last_page: 1,
+  total: 0,
+  per_page: 50
+})
+const currentPage = ref(1)
 
 const isSelected = (item) => selectedItems.value.some(x => x.bulan === item.bulan && x.skpd_id === item.skpd_id)
 const toggleSelection = (item) => {
@@ -445,6 +549,58 @@ const formatCurrency = (val) => {
   }).format(val || 0)
 }
 
+const openMonitoring = () => {
+  monDialog.value = true
+  currentPage.value = 1
+  fetchMonitoring()
+}
+
+const fetchMonitoring = async () => {
+  loadingMon.value = true
+  try {
+    const res = await api.get('/pph21/monitoring', {
+      params: {
+        year: selectedYear.value,
+        skpd: selectedSkpd.value,
+        page: currentPage.value,
+        per_page: monMeta.value.per_page
+      }
+    })
+    monitoringData.value = res.data.data
+    monMeta.value = res.data.meta
+  } catch (err) {
+    console.error('Monitoring Fetch Error:', err)
+    showSnack('Gagal mengambil data monitoring', 'error')
+  } finally {
+    loadingMon.value = false
+  }
+}
+
+const downloadMonitoring = async () => {
+  loadingMon.value = true
+  try {
+    const response = await api.get('/pph21/export-monitoring', {
+      params: { 
+        year: selectedYear.value, 
+        skpd: selectedSkpd.value
+      },
+      responseType: 'blob'
+    })
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `Monitoring_A2_${selectedYear.value}.xlsx`)
+    document.body.appendChild(link)
+    link.click()
+    showSnack('Monitoring Excel berhasil diunduh', 'success')
+  } catch (err) {
+    console.error('Download Error:', err)
+    alert('Gagal mengunduh file Excel monitoring.')
+  } finally {
+    loadingMon.value = false
+  }
+}
+
 onMounted(() => {
   fetchSkpds()
   fetchReport()
@@ -498,5 +654,12 @@ watch([selectedYear, selectedSkpd], fetchReport)
 }
 .modern-report-table :deep(td) {
   padding: 16px !important;
+}
+.sticky-header :deep(thead) {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgba(var(--v-theme-surface), 0.95);
+  backdrop-filter: blur(8px);
 }
 </style>
