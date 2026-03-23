@@ -874,10 +874,17 @@ class SettingController extends Controller
                 }
             }
             
+            $mysql = 'mysql';
+            $checkMysqlPath = @exec('which mysql');
+            if ($checkMysqlPath) {
+                $mysql = $checkMysqlPath;
+            }
+
             if ($ext === 'gz') {
                 $command = sprintf(
-                    'gunzip < %s | mysql -h %s -u %s --password=%s %s 2>&1',
+                    'gunzip < %s | %s -h %s -u %s --password=%s %s 2>&1',
                     escapeshellarg($importPath),
+                    $mysql,
                     escapeshellarg($dbHost),
                     escapeshellarg($dbUser),
                     escapeshellarg($dbPass),
@@ -885,7 +892,8 @@ class SettingController extends Controller
                 );
             } else {
                 $command = sprintf(
-                    'mysql -h %s -u %s --password=%s %s < %s 2>&1',
+                    '%s -h %s -u %s --password=%s %s < %s 2>&1',
+                    $mysql,
                     escapeshellarg($dbHost),
                     escapeshellarg($dbUser),
                     escapeshellarg($dbPass),
