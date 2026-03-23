@@ -60,7 +60,7 @@ class BudgetPredictionController extends Controller
                 ->where('tb_payment.month', $p->month)
                 ->where('tb_payment.year', $p->year);
             
-            $monthlyTotals[] = $query->sum('tb_payment_detail.total_amoun');
+            $monthlyTotals[] = $query->sum(DB::raw('tb_payment_detail.gaji_pokok + tb_payment_detail.tunjangan'));
             $monthlyGajiPokok[] = $query->sum('tb_payment_detail.gaji_pokok');
             $monthlyTunjangan[] = $query->sum('tb_payment_detail.tunjangan');
         }
@@ -72,12 +72,12 @@ class BudgetPredictionController extends Controller
             [
                 'kode' => '5.1.01.01.0001',
                 'nama' => 'Belanja Gaji Pokok PPPK-PW',
-                'amount' => ($avgGajiPokok * 12) * (1 + ($growthFactor / 100))
+                'amount' => ($avgGajiPokok * 14) * (1 + ($growthFactor / 100))
             ],
             [
                 'kode' => '5.1.01.01.0002',
                 'nama' => 'Belanja Tunjangan PPPK-PW',
-                'amount' => ($avgTunjangan * 12) * (1 + ($growthFactor / 100))
+                'amount' => ($avgTunjangan * 14) * (1 + ($growthFactor / 100))
             ]
         ];
 
@@ -103,7 +103,9 @@ class BudgetPredictionController extends Controller
             $bup = (int) ($emp->usia_bup ?? 58);
             $retirementDate = Carbon::parse($emp->tgl_lahir)->addYears($bup);
             $monthsRemaining = $now->diffInMonths($retirementDate);
-            $totalRetirementReduction += (12 - $monthsRemaining) * $lastSalary;
+            if ($monthsRemaining < 12) {
+                $totalRetirementReduction += (14 - $monthsRemaining) * $lastSalary;
+            }
         }
 
         // 3. KGB Simulation using SQL
@@ -169,7 +171,7 @@ class BudgetPredictionController extends Controller
                 $query->whereIn('kdskpd', $user->getAccessibleSkpdCodes());
             }
 
-            $monthlyBersih[] = $query->sum('bersih');
+            $monthlyKotor[] = $query->sum('kotor');
             $monthlyGajiPokok[] = $query->sum('gaji_pokok');
             $monthlyTunjIstri[] = $query->sum('tunj_istri');
             $monthlyTunjAnak[] = $query->sum('tunj_anak');
@@ -184,7 +186,7 @@ class BudgetPredictionController extends Controller
             $monthlyPembulatan[] = $query->sum('pembulatan');
         }
         
-        $avgMonthlyTotal = count($monthlyBersih) > 0 ? array_sum($monthlyBersih) / count($monthlyBersih) : 0;
+        $avgMonthlyTotal = count($monthlyKotor) > 0 ? array_sum($monthlyKotor) / count($monthlyKotor) : 0;
         
         $components = [
             ['kode' => '5.1.01.01.0001', 'nama' => 'Gaji Pokok', 'avgs' => $monthlyGajiPokok],
@@ -205,7 +207,7 @@ class BudgetPredictionController extends Controller
         $calculatedSum = 0;
         foreach ($components as $c) {
             $avg = count($c['avgs']) > 0 ? array_sum($c['avgs']) / count($c['avgs']) : 0;
-            $amount = ($avg * 12) * (1 + ($growthFactor / 100));
+            $amount = ($avg * 14) * (1 + ($growthFactor / 100));
             $breakdown[] = [
                 'kode' => $c['kode'],
                 'nama' => $c['nama'],
@@ -247,15 +249,15 @@ class BudgetPredictionController extends Controller
 
         $totalRetirementReduction = 0;
         foreach ($retiringEmployees as $emp) {
-            // Estimate salary using gapok + some allowances if available
-            $lastSalary = (float) ($emp->gapok ?? 0);
-            if (isset($emp->tjfungsi)) $lastSalary += (float) $emp->tjfungsi;
-            if (isset($emp->tjistri)) $lastSalary += (float) $emp->tjistri;
+            // Estimate salary using kotor (Gross)
+            $lastSalary = (float) ($emp->kotor ?? 0);
             
             $bup = (int) ($emp->bup ?? 58);
             $retirementDate = Carbon::parse($emp->tgllhr)->addYears($bup);
             $monthsRemaining = $now->diffInMonths($retirementDate);
-            $totalRetirementReduction += (12 - $monthsRemaining) * $lastSalary;
+            if ($monthsRemaining < 12) {
+                $totalRetirementReduction += (14 - $monthsRemaining) * $lastSalary;
+            }
         }
 
         // 3. KGB Simulation using SQL (Using tmtkgbyad)
@@ -310,7 +312,7 @@ class BudgetPredictionController extends Controller
 
     private function formatResponse($growthFactor, $avgMonthlyTotal, $retiringEmployees, $totalRetirementReduction, $kgbCount = 0, $kgbAmount = 0, $kpCount = 0, $kpAmount = 0, $breakdown = [])
     {
-        $baseYearly = $avgMonthlyTotal * 12;
+        $baseYearly = $avgMonthlyTotal * 14;
         $afterEvents = $baseYearly - $totalRetirementReduction + $kgbAmount + $kpAmount;
         $finalForecast = $afterEvents * (1 + ($growthFactor / 100));
 
