@@ -785,6 +785,10 @@ class SettingController extends Controller
             if (!function_exists('exec')) {
                 return response()->json(['success' => false, 'message' => 'Fungsi exec() dinonaktifkan di server (PHP disable_functions).'], 500);
             }
+            
+            if (!function_exists('popen')) {
+                return response()->json(['success' => false, 'message' => 'Fungsi popen() dinonaktifkan di server. Beritahu admin server.'], 500);
+            }
 
             $dbName = config('database.connections.mysql.database');
             $dbUser = config('database.connections.mysql.username');
@@ -795,7 +799,7 @@ class SettingController extends Controller
 
             return response()->streamDownload(function () use ($dbHost, $dbUser, $dbPass, $dbName) {
                 $command = sprintf(
-                    'mysqldump --column-statistics=0 -h %s -u %s -p%s --no-tablespaces %s 2>&1',
+                    'mysqldump --column-statistics=0 -h %s -u %s --password=%s --no-tablespaces %s 2>&1',
                     escapeshellarg($dbHost),
                     escapeshellarg($dbUser),
                     escapeshellarg($dbPass),
