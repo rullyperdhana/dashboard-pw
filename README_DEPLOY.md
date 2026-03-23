@@ -62,6 +62,23 @@ php artisan config:cache
   # Contoh setup crontab (setiap jam 01:00 pagi)
   0 1 * * * /www/wwwroot/sip-gaji/backup_db.sh >> /www/wwwroot/sip-gaji/backup.log 2>&1
   ```
+
+---
+## 6. Sinkronisasi Database (VPS ke Localhost)
+Jika Anda ingin mengambil database terbaru dari server ke laptop lokal Anda untuk keperluan pengembangan:
+
+1.  Buka Terminal di **Laptop Lokal**.
+2.  Jalankan script sinkronisasi:
+    ```bash
+    bash scripts/sync_db_vps.sh
+    ```
+    *Script ini akan melakukan `mysqldump` di server secara remote dan merestore-nya langsung ke database localhost Anda.*
+
+> [!TIP]
+> Pastikan Anda sudah mengatur **SSH Key** (tanpa password) agar proses sinkronisasi berjalan otomatis tanpa perlu mengetik password VPS berkali-kali.
+
+---
+- **Audit Logs:** Cek tabel `audit_logs` secara berkala untuk memantau aktivitas admin.
 - **Cache Management:** Jika data tidak berubah setelah update, jalankan `php artisan optimize:clear`.
 
 ---
