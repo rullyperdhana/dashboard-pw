@@ -131,8 +131,6 @@
               <div class="d-flex align-center mb-6">
                 <v-icon color="warning" class="mr-2">mdi-lamp-outline</v-icon>
                 <h2 class="text-h6 font-weight-bold">Smart Insights</h2>
-                <v-spacer></v-spacer>
-                <v-btn icon="mdi-chevron-up" variant="text" density="comfortable" size="small"></v-btn>
               </div>
               
               <div class="flex-grow-1 overflow-y-auto pr-1" style="max-height: 320px">
@@ -171,7 +169,7 @@
           <v-col cols="12" md="7">
             <v-card class="glass-card rounded-xl pa-6 shadow-premium h-100" elevation="0">
               <div class="d-flex align-center mb-6">
-                <h2 class="text-h6 font-weight-bold">Sebaran Pegawai</h2>
+                <h2 class="text-h6 font-weight-bold">Sebaran Pegawai (Top 6)</h2>
                 <v-spacer></v-spacer>
                 <v-btn variant="text" size="small" color="primary" rounded="pill" to="/skpd">Lihat Semua</v-btn>
               </div>
@@ -205,152 +203,121 @@
             </v-card>
           </v-col>
         </v-row>
-                        <v-chip color="error" size="x-small" variant="flat" class="mr-2">{{ skpdGroup.count }}</v-chip>
-                      </div>
-                    </v-expansion-panel-title>
-                    <v-expansion-panel-text>
-                      <v-list density="compact" class="bg-transparent">
-                        <v-list-item v-for="emp in skpdGroup.employees" :key="emp.id" class="mb-1">
-                          <template v-slot:prepend>
-                            <v-avatar color="red-lighten-5" size="24">
-                              <v-icon color="red" size="14">mdi-account-off</v-icon>
-                            </v-avatar>
-                          </template>
-                          <v-list-item-title class="text-caption font-weight-medium">{{ emp.nama }}</v-list-item-title>
-                          <v-list-item-subtitle class="text-caption">
-                            <div>NIP: {{ emp.nip }}</div>
-                            <div v-if="emp.jabatan">{{ emp.jabatan }}</div>
-                            <div v-if="emp.upt" class="text-grey">UPT: {{ emp.upt }}</div>
-                          </v-list-item-subtitle>
-                        </v-list-item>
-                      </v-list>
-                    </v-expansion-panel-text>
-                  </v-expansion-panel>
-                </v-expansion-panels>
-              </div>
 
-              <div v-else class="pa-12 text-center text-grey">
-                <v-icon size="48" color="success-lighten-4">mdi-check-all</v-icon>
-                <div class="mt-2 text-caption">
-                  <span v-if="viewBy === 'employees'">Semua pegawai telah memiliki data gaji untuk {{ unpaidMonthName }} {{ unpaidYear }}!</span>
-                  <span v-else>Semua {{ viewBy.toUpperCase() }} telah memproses gaji untuk {{ unpaidMonthName }} {{ unpaidYear }}!</span>
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- SECTION 4: DETAILED REPORTS (COLLAPSIBLE)  -->
+        <!-- ═══════════════════════════════════════════ -->
+        
+        <!-- Missing Payrolls -->
+        <v-card class="glass-card rounded-xl overflow-hidden shadow-premium mb-6" elevation="0">
+          <v-toolbar color="error-lighten-5" flat class="px-6 py-3 cursor-pointer" @click="isUnpaidVisible = !isUnpaidVisible">
+            <v-icon color="error" class="mr-3">mdi-alert-octagon-outline</v-icon>
+            <v-toolbar-title class="font-weight-bold text-subtitle-1 text-error">Gaji Belum Masuk (Pending)</v-toolbar-title>
+            <v-spacer></v-spacer>
+            <v-chip color="error" size="small" variant="flat" class="mr-4">{{ unpaidSkpds.length }} SKPD</v-chip>
+            <v-btn :icon="isUnpaidVisible ? 'mdi-chevron-up' : 'mdi-chevron-down'" variant="text"></v-btn>
+          </v-toolbar>
+          
+          <v-expand-transition>
+            <div v-if="isUnpaidVisible">
+              <v-divider></v-divider>
+              <div class="pa-4 bg-error-lighten-5 border-b-sm border-error border-opacity-10">
+                <div class="d-flex align-center">
+                  <v-btn-toggle v-model="viewBy" mandatory density="compact" color="error" variant="outlined" class="rounded-lg bg-white">
+                    <v-btn value="skpd" size="small">PER SKPD</v-btn>
+                    <v-btn value="upt" size="small">PER UPT</v-btn>
+                    <v-btn value="employees" size="small">PER PEGAWAI</v-btn>
+                  </v-btn-toggle>
+                  <v-spacer></v-spacer>
+                  <v-btn color="success" variant="flat" size="small" class="mr-2" prepend-icon="mdi-microsoft-excel" @click="exportUnpaid('excel')" :loading="exportLoading === 'excel'">Export Excel</v-btn>
+                  <v-menu v-model="unpaidMenu" :close-on-content-click="false">
+                    <template v-slot:activator="{ props }">
+                      <v-btn color="error" variant="tonal" size="small" v-bind="props" prepend-icon="mdi-calendar">
+                        {{ unpaidMonthName }} {{ unpaidYear }}
+                      </v-btn>
+                    </template>
+                    <v-card min-width="300" class="pa-4 rounded-xl shadow-premium">
+                      <v-row dense>
+                        <v-col cols="6">
+                          <v-select v-model="unpaidMonth" :items="monthList" item-title="title" item-value="value" label="Bulan" density="compact" variant="outlined" hide-details></v-select>
+                        </v-col>
+                        <v-col cols="6">
+                          <v-select v-model="unpaidYear" :items="yearList" label="Tahun" density="compact" variant="outlined" hide-details></v-select>
+                        </v-col>
+                        <v-col cols="12" class="mt-2 text-right">
+                          <v-btn block color="primary" @click="fetchUnpaidData(); unpaidMenu = false">Filter</v-btn>
+                        </v-col>
+                      </v-row>
+                    </v-card>
+                  </v-menu>
                 </div>
               </div>
-            </v-card>
-          </v-col>
-        </v-row>
-        
-        <!-- ═══════════════════════════════════════════ -->
-        <!-- SECTION 6: DAFTAR GAJI (PAID)              -->
-        <!-- ═══════════════════════════════════════════ -->
-        <v-row class="mb-6">
-          <v-col cols="12">
-            <v-card class="glass-card rounded-xl overflow-hidden shadow-premium" elevation="0">
-              <v-toolbar color="success-lighten-5" flat class="px-6 py-4">
-                <v-toolbar-title class="font-weight-bold text-h6 text-success">
-                  <v-icon start color="success" size="28">mdi-check-circle-outline</v-icon>
-                  Daftar Gaji
-                </v-toolbar-title>
-                <v-spacer></v-spacer>
-                <v-btn-toggle v-model="paidViewBy" mandatory density="compact" class="mr-4">
-                  <v-btn value="skpd" size="small">PER SKPD</v-btn>
-                  <v-btn value="employees" size="small">PER PEGAWAI</v-btn>
-                </v-btn-toggle>
-                <v-btn color="success" variant="tonal" size="small" class="mr-2" prepend-icon="mdi-microsoft-excel" @click="exportPaid('excel')" :loading="paidExportLoading === 'excel'">EXCEL</v-btn>
-                <v-btn color="error" variant="tonal" size="small" class="mr-2" prepend-icon="mdi-file-pdf-box" @click="exportPaid('pdf')" :loading="paidExportLoading === 'pdf'">PDF</v-btn>
-                <v-menu v-model="paidMenu" :close-on-content-click="false">
-                  <template v-slot:activator="{ props }">
-                    <v-btn color="success" variant="text" size="small" v-bind="props" prepend-icon="mdi-calendar">
-                      {{ paidMonthName }} {{ paidYear }}
-                    </v-btn>
-                  </template>
-                  <v-card min-width="300" class="pa-4 rounded-xl">
-                    <v-row dense>
-                      <v-col cols="6">
-                        <v-select v-model="paidMonth" :items="monthList" item-title="title" item-value="value" label="Bulan" density="compact" variant="outlined" hide-details></v-select>
-                      </v-col>
-                      <v-col cols="6">
-                        <v-select v-model="paidYear" :items="yearList" label="Tahun" density="compact" variant="outlined" hide-details></v-select>
-                      </v-col>
-                      <v-col cols="12" class="mt-2 text-right">
-                        <v-btn block color="primary" @click="fetchPaidData(); paidMenu = false">TERAPKAN FILTER</v-btn>
-                      </v-col>
-                    </v-row>
-                  </v-card>
-                </v-menu>
-              </v-toolbar>
-              
-              <div v-if="paidLoading" class="pa-8 text-center">
-                <v-progress-circular indeterminate color="success"></v-progress-circular>
-              </div>
 
+              <div class="pa-2" style="max-height: 400px; overflow-y: auto;">
+                <v-list v-if="viewBy === 'skpd'" class="bg-transparent" lines="one">
+                  <v-list-item v-for="skpd in unpaidSkpds" :key="skpd.id_skpd" class="mb-1 rounded-lg">
+                    <template v-slot:prepend><v-icon color="error" size="18">mdi-office-building-remove</v-icon></template>
+                    <v-list-item-title class="text-caption font-weight-bold">{{ skpd.nama_skpd }}</v-list-item-title>
+                    <template v-slot:append><v-chip size="x-small" color="error" variant="tonal">BELUM LAPOR</v-chip></template>
+                  </v-list-item>
+                </v-list>
+                <div v-if="!unpaidSkpds.length" class="text-center py-8 text-grey text-caption">Semua SKPD sudah mengunggah data gaji.</div>
+              </div>
+            </div>
+          </v-expand-transition>
+        </v-card>
+
+        <!-- Paid Payrolls -->
+        <v-card class="glass-card rounded-xl overflow-hidden shadow-premium mb-8" elevation="0">
+          <v-toolbar color="success-lighten-5" flat class="px-6 py-3 cursor-pointer" @click="isPaidVisible = !isPaidVisible">
+            <v-icon color="success" class="mr-3">mdi-check-decagram-outline</v-icon>
+            <v-toolbar-title class="font-weight-bold text-subtitle-1 text-success">Daftar Gaji Terbayar (Verified)</v-toolbar-title>
+            <v-spacer></v-spacer>
+            <v-chip color="success" size="small" variant="flat" class="mr-4">{{ paidSkpds.length }} SKPD</v-chip>
+            <v-btn :icon="isPaidVisible ? 'mdi-chevron-up' : 'mdi-chevron-down'" variant="text"></v-btn>
+          </v-toolbar>
+
+          <v-expand-transition>
+            <div v-if="isPaidVisible">
+              <v-divider></v-divider>
+              <div class="pa-4 bg-success-lighten-5 border-b-sm border-success border-opacity-10">
+                <div class="d-flex align-center">
+                  <v-btn color="success" variant="flat" size="small" prepend-icon="mdi-microsoft-excel" @click="exportPaid('excel')" :loading="paidExportLoading === 'excel'">Export Excel</v-btn>
+                  <v-spacer></v-spacer>
+                  <v-menu v-model="paidMenu" :close-on-content-click="false">
+                    <template v-slot:activator="{ props }">
+                      <v-btn color="success" variant="tonal" size="small" v-bind="props" prepend-icon="mdi-calendar">
+                        {{ paidMonthName }} {{ paidYear }}
+                      </v-btn>
+                    </template>
+                    <v-card min-width="300" class="pa-4 rounded-xl shadow-premium">
+                      <v-row dense>
+                        <v-col cols="6"><v-select v-model="paidMonth" :items="monthList" item-title="title" item-value="value" label="Bulan" density="compact" variant="outlined" hide-details></v-select></v-col>
+                        <v-col cols="6"><v-select v-model="paidYear" :items="yearList" label="Tahun" density="compact" variant="outlined" hide-details></v-select></v-col>
+                        <v-col cols="12" class="mt-2 text-right"><v-btn block color="success" @click="fetchPaidData(); paidMenu = false">Filter</v-btn></v-col>
+                      </v-row>
+                    </v-card>
+                  </v-menu>
+                </div>
+              </div>
               <v-data-table
-                v-else-if="paidViewBy === 'skpd' && paidSkpds.length"
                 :headers="paidHeaders"
                 :items="paidSkpds"
+                :loading="paidLoading"
+                density="comfortable"
                 class="modern-report-table"
-                hover
-                :items-per-page="10"
+                max-height="400"
               >
-                <template v-slot:item.nama_skpd="{ item }">
-                  <router-link :to="`/employees?skpd_id=${item.id_skpd}`" class="text-decoration-none">
-                    <span class="font-weight-bold text-success text-decoration-underline-hover">{{ item.nama_skpd }}</span>
-                    <v-icon size="x-small" color="success" class="ml-1">mdi-open-in-new</v-icon>
-                  </router-link>
-                </template>
-                <template v-slot:item.employee_count="{ item }">
-                  <v-chip size="x-small" color="success" variant="tonal" class="rounded-lg">{{ item.employee_count }}</v-chip>
-                </template>
-                <template v-slot:item.total_gaji_pokok="{ item }">
-                  <span class="font-weight-medium">{{ formatCurrency(item.total_gaji_pokok) }}</span>
-                </template>
                 <template v-slot:item.total_bersih="{ item }">
-                  <router-link :to="`/payments?month=${paidMonth}&year=${paidYear}&skpd_id=${item.id_skpd}`" class="text-decoration-none">
-                    <span class="font-weight-black text-success">{{ formatCurrency(item.total_bersih) }}</span>
-                    <v-icon size="x-small" color="success" class="ml-1">mdi-receipt-text-outline</v-icon>
-                  </router-link>
+                  <span class="font-weight-black text-primary">{{ formatCurrencyCompact(item.total_bersih) }}</span>
                 </template>
               </v-data-table>
+            </div>
+          </v-expand-transition>
+        </v-card>
 
-              <v-data-table
-                v-else-if="paidViewBy === 'employees' && paidEmployees.length"
-                :headers="paidEmployeesHeaders"
-                :items="paidEmployees"
-                class="modern-report-table"
-                hover
-                :items-per-page="15"
-              >
-                <template v-slot:item.nama="{ item }">
-                  <router-link :to="`/employees?skpd_id=${item.id_skpd}`" class="text-decoration-none">
-                    <div class="font-weight-bold text-primary">{{ item.nama }}</div>
-                    <div class="text-caption text-grey">{{ item.nip }}</div>
-                  </router-link>
-                </template>
-                <template v-slot:item.jabatan="{ item }">
-                  <div class="text-body-2">{{ item.jabatan }}</div>
-                  <div class="text-caption text-primary">{{ item.nama_skpd }}</div>
-                </template>
-                <template v-slot:item.gaji_pokok="{ item }">
-                  <span class="font-weight-medium">{{ formatCurrency(item.gaji_pokok) }}</span>
-                </template>
-                <template v-slot:item.total_bersih="{ item }">
-                  <router-link :to="`/payments?month=${paidMonth}&year=${paidYear}&skpd_id=${item.id_skpd}`" class="text-decoration-none">
-                    <span class="font-weight-black text-success">{{ formatCurrency(item.total_bersih) }}</span>
-                    <v-icon size="x-small" color="success" class="ml-1">mdi-receipt-text-outline</v-icon>
-                  </router-link>
-                </template>
-              </v-data-table>
-
-              <div v-else class="pa-12 text-center text-grey">
-                <v-icon size="48" color="grey-lighten-2">mdi-file-document-remove-outline</v-icon>
-                <div class="mt-2 text-caption">Belum ada data daftar gaji untuk {{ paidMonthName }} {{ paidYear }}</div>
-              </div>
-            </v-card>
-          </v-col>
-        </v-row>
-        
         <!-- ═══════════════════════════════════════════ -->
-        <!-- SECTION 7: TOP EARNERS                     -->
+        <!-- SECTION 5: TOP EARNERS                     -->
         <!-- ═══════════════════════════════════════════ -->
         <v-row class="mb-6" v-if="reportData">
           <v-col cols="12">
@@ -390,7 +357,7 @@
         </v-row>
         
         <!-- ═══════════════════════════════════════════ -->
-        <!-- SECTION 8: RETIREMENT MONITOR              -->
+        <!-- SECTION 6: RETIREMENT MONITOR              -->
         <!-- ═══════════════════════════════════════════ -->
         <v-row v-if="reportData">
           <v-col cols="12">

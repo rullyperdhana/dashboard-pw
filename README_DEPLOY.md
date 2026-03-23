@@ -24,7 +24,7 @@ bash deploy.sh
 ```
 
 > [!IMPORTANT]
-> Jika ada penambahan fitur besar (seperti Master Data DBF), script `deploy.sh` akan otomatis mendeteksi perubahan tabel dan menjalankan `php artisan migrate`. Pastikan koneksi database di `.env` VPS sudah benar.
+> Jika ada penambahan fitur besar (seperti Master Data DBF atau **Redesain Dashboard v3.9.0**), script `deploy.sh` akan otomatis mendeteksi perubahan tabel dan menjalankan `php artisan migrate` serta melakukan build ulang untuk frontend.
 
 ## 3. Daftar Migration Terbaru (Maret 2026)
 

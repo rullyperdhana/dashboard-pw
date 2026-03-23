@@ -39,13 +39,17 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
 ---
  
-### 🚀 Welcome Hub & Pengumuman (v3.9.0)
-- **Welcome Hub Experience:** Landing page baru dengan desain premium *glassmorphism*, menampilkan statistik ringkas dan pengumuman terbaru secara dinamis.
-- **Integrated Account Management:** Dialog pengaturan akun (Profil & Keamanan) yang dapat diakses dari sidebar maupun navbar, mendukung update nama, email, dan ganti password dalam satu tempat.
-- **Announcement System:** Modul manajemen pengumuman yang mendukung teks panjang (auto-scroll) dan format yang rapi untuk penyampaian informasi ke seluruh user.
-- **Enhanced Dashboard Filtering:** Dashboard PPPK-PW kini secara cerdas hanya menampilkan data yang benar-benar relevan dengan PPPK Paruh Waktu, menyaring data PNS/PPPK agar laporan tetap fokus.
+### 🚀 Executive Dashboard & Welcome Hub (v3.9.0)
+- **"Simple but Informative" Dashboard:** Redesain total dashboard PPPK-PW dengan fokus pada metrik utama dan kemudahan navigasi.
+- **Submission Progress Gauge:** Meteran progres radial yang memantau status pelaporan SKPD secara *real-time* di header.
+- **Consolidated KPI Cards:** Ringkasan statistik (Anggaran, Pegawai, Unit, Rata-rata Biaya) dalam format kartu premium dengan efek *glassmorphism*.
+- **Smart Insights Panel:** Panel peringatan cerdas yang menampilkan item tindakan (misal: SKPD terlambat, data pending) untuk mempercepat pengambilan keputusan.
+- **Collapsible Detailed Reports:** Layout tabel yang lebih bersih dengan bagian yang dapat disiutkan (*collapsible*) untuk daftar gaji yang belum masuk dan sudah terbayar.
+- **Welcome Hub Experience:** Landing page interaktif dengan desain modern untuk akses cepat ke seluruh modul aplikasi.
+- **Integrated Account Management:** Pengaturan profil dan keamanan (Ganti Password) yang terintegrasi dangan mulus di sidebar dan navbar.
+- **Enhanced Dashboard Filtering:** Dashboard secara cerdas memisahkan data PPPK-PW dari PNS/PPPK Penuh Waktu untuk akurasi laporan.
 - **Global Help Access:** Halaman Pusat Bantuan kini dapat diakses oleh semua level pengguna (Admin & Operator).
-- **Environment Version Indicator:** Label versi (v3.9.0) kini tampil di pojok kiri bawah menu samping.
+- **Environment Version Indicator:** Label versi aplikasi (v3.9.0) yang transparan di sidebar.
 
 ---
  
