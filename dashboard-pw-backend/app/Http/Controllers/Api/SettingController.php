@@ -794,6 +794,7 @@ class SettingController extends Controller
             $dbUser = config('database.connections.mysql.username');
             $dbPass = config('database.connections.mysql.password');
             $dbHost = config('database.connections.mysql.host');
+            $dbPort = config('database.connections.mysql.port', '3306');
             
             $filename = "backup_db_" . now()->format('Y-m-d_His') . ".sql";
 
@@ -819,11 +820,12 @@ class SettingController extends Controller
                 if ($checkPath) $mysqldump = $checkPath;
             }
 
-            return response()->streamDownload(function () use ($dbHost, $dbUser, $dbPass, $dbName, $mysqldump) {
+            return response()->streamDownload(function () use ($dbHost, $dbPort, $dbUser, $dbPass, $dbName, $mysqldump) {
                 $command = sprintf(
-                    '%s --column-statistics=0 -h %s -u %s --password=%s --no-tablespaces %s 2>&1',
+                    '%s --column-statistics=0 -h %s -P %s -u %s --password=%s --no-tablespaces %s 2>&1',
                     $mysqldump,
                     escapeshellarg($dbHost),
+                    escapeshellarg($dbPort),
                     escapeshellarg($dbUser),
                     escapeshellarg($dbPass),
                     escapeshellarg($dbName)
@@ -865,6 +867,7 @@ class SettingController extends Controller
             $dbUser = config('database.connections.mysql.username');
             $dbPass = config('database.connections.mysql.password');
             $dbHost = config('database.connections.mysql.host');
+            $dbPort = config('database.connections.mysql.port', '3306');
 
             $ext = strtolower($file->getClientOriginalExtension());
             $tempSqlPath = null;
@@ -922,19 +925,21 @@ class SettingController extends Controller
 
             if ($ext === 'gz') {
                 $command = sprintf(
-                    'gunzip < %s | %s -h %s -u %s --password=%s %s 2>&1',
+                    'gunzip < %s | %s -h %s -P %s -u %s --password=%s %s 2>&1',
                     escapeshellarg($importPath),
                     $mysql,
                     escapeshellarg($dbHost),
+                    escapeshellarg($dbPort),
                     escapeshellarg($dbUser),
                     escapeshellarg($dbPass),
                     escapeshellarg($dbName)
                 );
             } else {
                 $command = sprintf(
-                    '%s -h %s -u %s --password=%s %s < %s 2>&1',
+                    '%s -h %s -P %s -u %s --password=%s %s < %s 2>&1',
                     $mysql,
                     escapeshellarg($dbHost),
+                    escapeshellarg($dbPort),
                     escapeshellarg($dbUser),
                     escapeshellarg($dbPass),
                     escapeshellarg($dbName),
