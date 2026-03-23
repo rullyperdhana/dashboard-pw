@@ -781,100 +781,119 @@ class SettingController extends Controller
 
     public function backupDatabase()
     {
-        $dbName = config('database.connections.mysql.database');
-        $dbUser = config('database.connections.mysql.username');
-        $dbPass = config('database.connections.mysql.password');
-        $dbHost = config('database.connections.mysql.host');
-        
-        $filename = "backup_" . now()->format('Y-m-d_His') . ".sql.gz";
-        $path = storage_path("app/backups/" . $filename);
-        
-        if (!file_exists(storage_path("app/backups"))) {
-            mkdir(storage_path("app/backups"), 0755, true);
-        }
+        try {
+            $dbName = config('database.connections.mysql.database');
+            $dbUser = config('database.connections.mysql.username');
+            $dbPass = config('database.connections.mysql.password');
+            $dbHost = config('database.connections.mysql.host');
+            
+            $filename = "backup_" . now()->format('Y-m-d_His') . ".sql.gz";
+            $path = storage_path("app/backups/" . $filename);
+            
+            if (!file_exists(storage_path("app/backups"))) {
+                if (!mkdir(storage_path("app/backups"), 0755, true)) {
+                    return response()->json(['success' => false, 'message' => 'Gagal membuat folder storage/app/backups. Cek permission.'], 500);
+                }
+            }
 
-        if (!function_exists('exec')) {
-            return response()->json(['success' => false, 'message' => 'Fungsi exec() dinonaktifkan di server (php.ini). Hubungi admin server.'], 500);
-        }
+            if (!function_exists('exec')) {
+                return response()->json(['success' => false, 'message' => 'Fungsi exec() dinonaktifkan di server (php.ini).'], 500);
+            }
 
-        $mysqldump = 'mysqldump';
-        // Cek path mysqldump
-        $checkPath = exec('which mysqldump');
-        if ($checkPath) {
-            $mysqldump = $checkPath;
-        }
+            $mysqldump = 'mysqldump';
+            // Cek path mysqldump
+            $checkPath = @exec('which mysqldump');
+            if ($checkPath) {
+                $mysqldump = $checkPath;
+            }
 
-        $command = sprintf(
-            '%s --column-statistics=0 -h %s -u %s -p%s --no-tablespaces %s 2>&1 | gzip > %s',
-            $mysqldump,
-            escapeshellarg($dbHost),
-            escapeshellarg($dbUser),
-            escapeshellarg($dbPass),
-            escapeshellarg($dbName),
-            escapeshellarg($path)
-        );
-
-        exec($command, $output, $returnVar);
-
-        if ($returnVar !== 0) {
-            Log::error("Database backup failed", [
-                'command' => str_replace($dbPass, '******', $command),
-                'output' => $output,
-                'return_var' => $returnVar
-            ]);
-            $errorMsg = implode(' ', $output);
-            return response()->json([
-                'success' => false, 
-                'message' => 'Gagal backup: ' . ($errorMsg ?: 'Unknown error (Return Code: ' . $returnVar . ')')
-            ], 500);
-        }
-
-        return response()->download($path)->deleteFileAfterSend(true);
-    }
-
-    public function importDatabase(Request $request)
-    {
-        if (!function_exists('exec')) {
-            return response()->json(['success' => false, 'message' => 'Fungsi exec() dinonaktifkan di server (php.ini).'], 500);
-        }
-
-        $request->validate(['file' => 'required|file']);
-        $file = $request->file('file');
-        $path = $file->getRealPath();
-        
-        $dbName = config('database.connections.mysql.database');
-        $dbUser = config('database.connections.mysql.username');
-        $dbPass = config('database.connections.mysql.password');
-        $dbHost = config('database.connections.mysql.host');
-
-        $ext = $file->getClientOriginalExtension();
-        
-        if ($ext === 'gz') {
             $command = sprintf(
-                'gunzip < %s | mysql -h %s -u %s -p%s %s',
-                escapeshellarg($path),
-                escapeshellarg($dbHost),
-                escapeshellarg($dbUser),
-                escapeshellarg($dbPass),
-                escapeshellarg($dbName)
-            );
-        } else {
-            $command = sprintf(
-                'mysql -h %s -u %s -p%s %s < %s',
+                '%s --column-statistics=0 -h %s -u %s -p%s --no-tablespaces %s 2>&1 | gzip > %s',
+                $mysqldump,
                 escapeshellarg($dbHost),
                 escapeshellarg($dbUser),
                 escapeshellarg($dbPass),
                 escapeshellarg($dbName),
                 escapeshellarg($path)
             );
+
+            exec($command, $output, $returnVar);
+
+            if ($returnVar !== 0) {
+                Log::error("Database backup failed", [
+                    'command' => str_replace($dbPass, '******', $command),
+                    'output' => $output,
+                    'return_var' => $returnVar
+                ]);
+                $errorMsg = implode(' ', $output);
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Gagal backup: ' . ($errorMsg ?: 'Return Code: ' . $returnVar)
+                ], 500);
+            }
+
+            return response()->download($path)->deleteFileAfterSend(true);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Fatal Error: ' . $e->getMessage()
+            ], 500);
         }
+    }
 
-        exec($command, $output, $returnVar);
+    public function importDatabase(Request $request)
+    {
+        try {
+            if (!function_exists('exec')) {
+                return response()->json(['success' => false, 'message' => 'Fungsi exec() dinonaktifkan di server (php.ini).'], 500);
+            }
 
-        if ($returnVar !== 0) {
-             return response()->json(['success' => false, 'message' => 'Import failed. Check SQL file format and MySQL connection.'], 500);
+            $request->validate(['file' => 'required|file']);
+            $file = $request->file('file');
+            $path = $file->getRealPath();
+            
+            $dbName = config('database.connections.mysql.database');
+            $dbUser = config('database.connections.mysql.username');
+            $dbPass = config('database.connections.mysql.password');
+            $dbHost = config('database.connections.mysql.host');
+
+            $ext = $file->getClientOriginalExtension();
+            
+            if ($ext === 'gz') {
+                $command = sprintf(
+                    'gunzip < %s | mysql -h %s -u %s -p%s %s 2>&1',
+                    escapeshellarg($path),
+                    escapeshellarg($dbHost),
+                    escapeshellarg($dbUser),
+                    escapeshellarg($dbPass),
+                    escapeshellarg($dbName)
+                );
+            } else {
+                $command = sprintf(
+                    'mysql -h %s -u %s -p%s %s < %s 2>&1',
+                    escapeshellarg($dbHost),
+                    escapeshellarg($dbUser),
+                    escapeshellarg($dbPass),
+                    escapeshellarg($dbName),
+                    escapeshellarg($path)
+                );
+            }
+
+            exec($command, $output, $returnVar);
+
+            if ($returnVar !== 0) {
+                 return response()->json([
+                     'success' => false, 
+                     'message' => 'Gagal impor: ' . implode(' ', $output)
+                 ], 500);
+            }
+
+            return response()->json(['success' => true, 'message' => 'Database restored successfully!']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Fatal Error: ' . $e->getMessage()
+            ], 500);
         }
-
-        return response()->json(['success' => true, 'message' => 'Database restored successfully!']);
     }
 }
