@@ -797,9 +797,27 @@ class SettingController extends Controller
             
             $filename = "backup_db_" . now()->format('Y-m-d_His') . ".sql";
 
-            return response()->streamDownload(function () use ($dbHost, $dbUser, $dbPass, $dbName) {
+            $mysqldump = 'mysqldump';
+            $possiblePaths = [
+                '/Applications/MAMP/Library/bin/mysqldump',
+                '/usr/local/bin/mysqldump',
+                '/opt/homebrew/bin/mysqldump'
+            ];
+            foreach ($possiblePaths as $p) {
+                if (file_exists($p)) {
+                    $mysqldump = $p;
+                    break;
+                }
+            }
+            if ($mysqldump === 'mysqldump') {
+                $checkPath = @exec('which mysqldump');
+                if ($checkPath) $mysqldump = $checkPath;
+            }
+
+            return response()->streamDownload(function () use ($dbHost, $dbUser, $dbPass, $dbName, $mysqldump) {
                 $command = sprintf(
-                    'mysqldump --column-statistics=0 -h %s -u %s --password=%s --no-tablespaces %s 2>&1',
+                    '%s --column-statistics=0 -h %s -u %s --password=%s --no-tablespaces %s 2>&1',
+                    $mysqldump,
                     escapeshellarg($dbHost),
                     escapeshellarg($dbUser),
                     escapeshellarg($dbPass),
@@ -875,9 +893,21 @@ class SettingController extends Controller
             }
             
             $mysql = 'mysql';
-            $checkMysqlPath = @exec('which mysql');
-            if ($checkMysqlPath) {
-                $mysql = $checkMysqlPath;
+            // Cek path mysql (termasuk path MAMP)
+            $possibleMysqlPaths = [
+                '/Applications/MAMP/Library/bin/mysql',
+                '/usr/local/bin/mysql',
+                '/opt/homebrew/bin/mysql'
+            ];
+            foreach ($possibleMysqlPaths as $p) {
+                if (file_exists($p)) {
+                    $mysql = $p;
+                    break;
+                }
+            }
+            if ($mysql === 'mysql') {
+                $checkMysqlPath = @exec('which mysql');
+                if ($checkMysqlPath) $mysql = $checkMysqlPath;
             }
 
             if ($ext === 'gz') {
