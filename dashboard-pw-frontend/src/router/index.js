@@ -234,7 +234,7 @@ const router = createRouter({
             path: '/settings/bkd-recon',
             name: 'BkdRecon',
             component: () => import('../views/Settings/BkdRecon.vue'),
-            meta: { requiresAuth: true, breadcrumb: 'Rekon Data BKD', roles: ['superadmin'] },
+            meta: { requiresAuth: true, breadcrumb: 'Rekon Data BKD', roles: ['superadmin', 'operator'], app_access: 'bkd-recon' },
         },
     ],
 })
