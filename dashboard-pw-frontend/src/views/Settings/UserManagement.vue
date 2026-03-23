@@ -321,6 +321,7 @@ const moduleGroups = [
       { title: 'Pemeliharaan Data', value: 'data-maintenance' },
       { title: 'Manajemen User', value: 'users' },
       { title: 'API Keys', value: 'api-keys' },
+      { title: 'Rekon Data BKD', value: 'bkd-recon' },
       { title: 'Pusat Bantuan', value: 'help-center' },
     ]
   }
