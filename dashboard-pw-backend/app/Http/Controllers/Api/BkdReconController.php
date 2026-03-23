@@ -407,7 +407,7 @@ class BkdReconController extends Controller
 
         // Map Roman numerals to numbers (longest first to avoid partial match)
         $romanMap = [
-            'VIII' => '8', 'VII' => '7', 'VI' => '6',
+            'XII' => '12', 'XI' => '11', 'VIII' => '8', 'VII' => '7', 'VI' => '6',
             'IV' => '4', 'IX' => '9', 'V' => '5',
             'III' => '3', 'II' => '2', 'X' => '10', 'I' => '1',
         ];
