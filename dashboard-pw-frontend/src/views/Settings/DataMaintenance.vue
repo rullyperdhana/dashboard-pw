@@ -94,6 +94,66 @@
                 </v-form>
               </v-card-text>
             </v-card>
+
+            <v-card class="rounded-xl overflow-hidden mb-6" elevation="2">
+              <v-card-title class="pa-4 bg-primary text-white d-flex align-center">
+                <v-icon start icon="mdi-database-sync" color="white"></v-icon>
+                <span>Backup & Restore Database</span>
+              </v-card-title>
+              <v-card-text class="pa-6">
+                <v-row>
+                  <v-col cols="12" sm="6">
+                    <div class="text-subtitle-1 font-weight-bold mb-2">Ekspor Database (Backup)</div>
+                    <p class="text-caption text-medium-emphasis mb-4">
+                      Buat salinan database saat ini dalam format SQL (Gzip). Gunakan file ini untuk sinkronisasi ke laptop lokal.
+                    </p>
+                    <v-btn
+                      color="primary"
+                      variant="flat"
+                      prepend-icon="mdi-download"
+                      block
+                      size="large"
+                      :loading="isBackingUp"
+                      @click="handleBackup"
+                    >
+                      UNDUH BACKUP (.SQL.GZ)
+                    </v-btn>
+                  </v-col>
+                  
+                  <v-divider vertical class="hidden-xs-only mx-4"></v-divider>
+                  
+                  <v-col cols="12" sm="6" class="pt-6 pt-sm-0">
+                    <div class="text-subtitle-1 font-weight-bold mb-2">Impor Database (Restore)</div>
+                    <p class="text-caption text-medium-emphasis mb-4">
+                      Pulihkan data dari file .sql atau .sql.gz. HANYA lakukan ini di localhost untuk sinkronisasi data dari VPS.
+                    </p>
+                    <v-file-input
+                      v-model="selectedBackupFile"
+                      label="Pilih File Database"
+                      variant="outlined"
+                      density="comfortable"
+                      accept=".sql,.gz"
+                      prepend-icon=""
+                      prepend-inner-icon="mdi-file-database"
+                      hide-details
+                      class="mb-4"
+                    ></v-file-input>
+                    <v-btn
+                      color="secondary"
+                      variant="tonal"
+                      prepend-icon="mdi-upload"
+                      block
+                      size="large"
+                      :disabled="!selectedBackupFile"
+                      :loading="isImporting"
+                      @click="handleImport"
+                    >
+                      MULAI IMPOR DATA
+                    </v-btn>
+                  </v-col>
+                </v-row>
+              </v-card-text>
+            </v-card>
           </v-col>
 
           <v-col cols="12" md="4">
@@ -174,6 +234,10 @@ const clearParams = reactive({
   year: new Date().getFullYear()
 })
 
+const isBackingUp = ref(false)
+const isImporting = ref(false)
+const selectedBackupFile = ref(null)
+
 const snackbar = reactive({
   show: false,
   text: '',
@@ -235,6 +299,63 @@ const handleClearData = async () => {
     snackbar.show = true
   } finally {
     isSubmitting.value = false
+  }
+}
+
+const handleBackup = async () => {
+  isBackingUp.value = true
+  try {
+    const response = await api.get('/settings/db-backup', {
+      responseType: 'blob'
+    })
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `backup_db_${new Date().toISOString().slice(0,10)}.sql.gz`)
+    document.body.appendChild(link)
+    link.click()
+    snackbar.text = 'Backup berhasil dibuat dan diunduh'
+    snackbar.color = 'success'
+    snackbar.show = true
+  } catch (error) {
+    console.error('Backup error:', error)
+    snackbar.text = 'Gagal membuat backup database'
+    snackbar.color = 'error'
+    snackbar.show = true
+  } finally {
+    isBackingUp.value = false
+  }
+}
+
+const handleImport = async () => {
+  if (!selectedBackupFile.value) return
+  
+  if (!confirm('Apakah Anda yakin ingin memulihkan database? Data saat ini mungkin akan tertimpa.')) return
+
+  isImporting.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', selectedBackupFile.value)
+
+    const response = await api.post('/settings/db-import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+
+    if (response.data.success) {
+      snackbar.text = 'Database berhasil dipulihkan!'
+      snackbar.color = 'success'
+      snackbar.show = true
+      selectedBackupFile.value = null
+    }
+  } catch (error) {
+    console.error('Import error:', error)
+    snackbar.text = error.response?.data?.message || 'Gagal memulihkan database'
+    snackbar.color = 'error'
+    snackbar.show = true
+  } finally {
+    isImporting.value = false
   }
 }
 </script>

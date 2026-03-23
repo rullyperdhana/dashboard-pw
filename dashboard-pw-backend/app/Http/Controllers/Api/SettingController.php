@@ -778,4 +778,78 @@ class SettingController extends Controller
         $filename = "estimasi_pppk_pw_{$month}_{$year}.xlsx";
         return Excel::download(new EstimationExport($data, $month, $year, 'pppk_pw', $skpdName), $filename);
     }
+
+    public function backupDatabase()
+    {
+        $dbName = config('database.connections.mysql.database');
+        $dbUser = config('database.connections.mysql.username');
+        $dbPass = config('database.connections.mysql.password');
+        $dbHost = config('database.connections.mysql.host');
+        
+        $filename = "backup_" . now()->format('Y-m-d_His') . ".sql.gz";
+        $path = storage_path("app/backups/" . $filename);
+        
+        if (!file_exists(storage_path("app/backups"))) {
+            mkdir(storage_path("app/backups"), 0755, true);
+        }
+
+        $command = sprintf(
+            'mysqldump -h %s -u %s -p%s --no-tablespaces %s | gzip > %s',
+            escapeshellarg($dbHost),
+            escapeshellarg($dbUser),
+            escapeshellarg($dbPass),
+            escapeshellarg($dbName),
+            escapeshellarg($path)
+        );
+
+        exec($command, $output, $returnVar);
+
+        if ($returnVar !== 0) {
+            return response()->json(['success' => false, 'message' => 'Backup failed. Make sure mysqldump is installed.'], 500);
+        }
+
+        return response()->download($path)->deleteFileAfterSend(true);
+    }
+
+    public function importDatabase(Request $request)
+    {
+        $request->validate(['file' => 'required|file']);
+        $file = $request->file('file');
+        $path = $file->getRealPath();
+        
+        $dbName = config('database.connections.mysql.database');
+        $dbUser = config('database.connections.mysql.username');
+        $dbPass = config('database.connections.mysql.password');
+        $dbHost = config('database.connections.mysql.host');
+
+        $ext = $file->getClientOriginalExtension();
+        
+        if ($ext === 'gz') {
+            $command = sprintf(
+                'gunzip < %s | mysql -h %s -u %s -p%s %s',
+                escapeshellarg($path),
+                escapeshellarg($dbHost),
+                escapeshellarg($dbUser),
+                escapeshellarg($dbPass),
+                escapeshellarg($dbName)
+            );
+        } else {
+            $command = sprintf(
+                'mysql -h %s -u %s -p%s %s < %s',
+                escapeshellarg($dbHost),
+                escapeshellarg($dbUser),
+                escapeshellarg($dbPass),
+                escapeshellarg($dbName),
+                escapeshellarg($path)
+            );
+        }
+
+        exec($command, $output, $returnVar);
+
+        if ($returnVar !== 0) {
+             return response()->json(['success' => false, 'message' => 'Import failed. Check SQL file format and MySQL connection.'], 500);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Database restored successfully!']);
+    }
 }

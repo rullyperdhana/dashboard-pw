@@ -182,6 +182,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Data Maintenance
         Route::post('/settings/clear-payroll', [SettingController::class, 'clearPayrollData']);
+        Route::get('/settings/db-backup', [SettingController::class, 'backupDatabase']);
+        Route::post('/settings/db-import', [SettingController::class, 'importDatabase']);
 
         // API Key Management
         Route::prefix('api-keys')->group(function () {
