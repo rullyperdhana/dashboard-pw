@@ -94,7 +94,7 @@ class PPh21Controller extends Controller
             }
         }
 
-        $records = $query->select('g.*', 'm.kdstawin', 'm.janak', 'm.kdpangkat', 'm.noktp')->get()->map(function($r) use ($skpdIdMap) {
+        $records = $query->select('g.*', 'm.kdstawin', 'm.janak', 'm.kdpangkat', 'm.noktp', 'm.npwp')->get()->map(function($r) use ($skpdIdMap) {
             $code = trim((string)$r->kdskpd);
             $r->skpd_id = $skpdIdMap[$code] ?? null;
             return $r;
@@ -212,7 +212,7 @@ class PPh21Controller extends Controller
             // 4. Collect for bulk upsert
             $upsertData[] = [
                 'nip' => $rec->nip,
-                'nik' => $rec->noktp,
+                'nik' => (string)($rec->noktp ?? $rec->npwp),
                 'skpd_id' => $rec->skpd_id,
                 'bulan' => $month,
                 'tahun' => $year,
@@ -328,7 +328,9 @@ class PPh21Controller extends Controller
             $query->where('c.skpd_id', $skpd);
         }
 
-        $calcRecords = $query->select('c.*')->get();
+        $calcRecords = $query->select('c.*', 'm.noktp as master_nik', 'm.npwp as master_npwp')
+            ->leftJoin('master_pegawai as m', 'c.nip', '=', 'm.nip')
+            ->get();
 
         if ($calcRecords->isEmpty()) {
             return response()->json(['success' => false, 'message' => 'No calculation records found for export.'], 404);
@@ -365,8 +367,10 @@ class PPh21Controller extends Controller
                 $sheet->setCellValue('D' . $row, $month);
                 $sheet->setCellValue('E' . $row, $year);
 
-                // Identitas
-                $sheet->setCellValueExplicit('F' . $row, (string)($rec->nik ?? ($details['nik'] ?? '')), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                // Identitas: BP A2 Column F is NPWP, Column G is NIP/NRP
+                // Use nik from calculation, fallback to master_nik or master_npwp
+                $finalNik = $rec->nik ?: ($rec->master_nik ?: $rec->master_npwp);
+                $sheet->setCellValueExplicit('F' . $row, (string)$finalNik, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
                 $sheet->setCellValueExplicit('G' . $row, (string)$rec->nip, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
 
                 $sheet->setCellValue('H' . $row, $rec->status_ptkp);
