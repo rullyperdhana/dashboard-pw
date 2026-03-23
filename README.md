@@ -62,15 +62,15 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 - **UPT-Aware Reporting:** Laporan otomatis mencakup pegawai di Unit Pelaksana Teknis (UPT) menggunakan prefix SKPD, memastikan sinkronisasi data 100%.
 - **TPP Discrepancy Reporting:** Deteksi otomatis selisih pegawai antara data gaji dan file Excel TPP yang tersimpan permanen.
 - **Persistent Extra Payroll Management:** Data disimpan permanen di database (`tb_extra_payroll_pppk_pw`), mendukung edit manual, penambahan catatan, dan batch delete.
-- **Environment Version Indicator:** Label versi (v3.7.0) kini tampil di pojok kiri bawah menu samping.
+- **Environment Version Indicator:** Label versi (v3.9.0) kini tampil di pojok kiri bawah menu samping.
 - **Server-Side Pagination:** Optimasi performa untuk dataset 6.000+ pegawai agar UI tetap responsif.
 - **Dedicated Summary Endpoint:** Tab Rekapitulasi menggunakan endpoint khusus yang sangat ringan untuk perhitungan total anggaran instan.
 - **Professional PDF Export:** Redesain total template slip gaji dan payroll dengan layout profesional, border rapi, dan summary box.
 - **Digital QR Verification:** Setiap PDF memiliki QR Code unik yang terhubung ke halaman verifikasi publik untuk validasi keaslian dokumen.
 - **Nested THR Reporting:** Laporan THR PPPK-PW kini dikelompokkan secara hierarkis: **SKPD -> Sub Kegiatan -> Daftar Pegawai**.
-- **Welcome Hub Experience:** Landing page baru dengan desain premium *glassmorphism*, menampilkan statistik ringkas dan pengumuman terbaru secara dinamis.
+- **Welcome Hub Experience (v3.9.0):** Landing page baru dengan desain premium *glassmorphism*, menampilkan statistik ringkas dan pengumuman terbaru secara dinamis.
 - **Integrated Account Management:** Dialog pengaturan akun (Profil & Keamanan) yang dapat diakses dari sidebar maupun navbar, mendukung update nama, email, dan ganti password dalam satu tempat.
-- **Announcement System (v3.9):** Modul manajemen pengumuman yang mendukung teks panjang (auto-scroll) dan format yang rapi untuk penyampaian informasi ke seluruh user.
+- **Announcement System (v3.9.0):** Modul manajemen pengumuman yang mendukung teks panjang (auto-scroll) dan format yang rapi untuk penyampaian informasi ke seluruh user.
 - **Enhanced Dashboard Filtering:** Dashboard PPPK-PW kini secara cerdas hanya menampilkan data yang benar-benar relevan dengan PPPK Paruh Waktu, menyaring data PNS/PPPK agar laporan tetap fokus.
 - **Global Help Access:** Halaman Pusat Bantuan kini dapat diakses oleh semua level pengguna (Admin & Operator).
 - **SKPD Name Normalization:** Pembersihan otomatis dan penggabungan (merge) nama SKPD yang terduplikasi karena spasi atau perbedaan kode, memastikan filter dropdown selalu bersih dan unik.
