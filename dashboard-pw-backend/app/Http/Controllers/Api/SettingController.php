@@ -781,63 +781,41 @@ class SettingController extends Controller
 
     public function backupDatabase()
     {
-        Log::info("GUI Backup initiated by user: " . (auth()->user()->username ?? 'unknown'));
         try {
+            if (!function_exists('exec')) {
+                return response()->json(['success' => false, 'message' => 'Fungsi exec() dinonaktifkan di server (PHP disable_functions).'], 500);
+            }
+
             $dbName = config('database.connections.mysql.database');
             $dbUser = config('database.connections.mysql.username');
             $dbPass = config('database.connections.mysql.password');
             $dbHost = config('database.connections.mysql.host');
             
-            $filename = "backup_" . now()->format('Y-m-d_His') . ".sql.gz";
-            $path = storage_path("app/backups/" . $filename);
-            
-            if (!file_exists(storage_path("app/backups"))) {
-                if (!mkdir(storage_path("app/backups"), 0755, true)) {
-                    return response()->json(['success' => false, 'message' => 'Gagal membuat folder storage/app/backups. Cek permission.'], 500);
+            $filename = "backup_db_" . now()->format('Y-m-d_His') . ".sql";
+
+            return response()->streamDownload(function () use ($dbHost, $dbUser, $dbPass, $dbName) {
+                $command = sprintf(
+                    'mysqldump --column-statistics=0 -h %s -u %s -p%s --no-tablespaces %s 2>&1',
+                    escapeshellarg($dbHost),
+                    escapeshellarg($dbUser),
+                    escapeshellarg($dbPass),
+                    escapeshellarg($dbName)
+                );
+                
+                $handle = popen($command, 'r');
+                if ($handle) {
+                    while (!feof($handle)) {
+                        echo fread($handle, 1024 * 8); // 8kb buffer
+                        flush();
+                    }
+                    pclose($handle);
+                } else {
+                    echo "Gagal menjalankan perintah mysqldump.";
                 }
-            }
+            }, $filename);
 
-            if (!function_exists('exec')) {
-                return response()->json(['success' => false, 'message' => 'Fungsi exec() dinonaktifkan di server (php.ini).'], 500);
-            }
-
-            $mysqldump = 'mysqldump';
-            // Cek path mysqldump
-            $checkPath = @exec('which mysqldump');
-            if ($checkPath) {
-                $mysqldump = $checkPath;
-            }
-
-            $command = sprintf(
-                '%s --column-statistics=0 -h %s -u %s -p%s --no-tablespaces %s 2>&1 | gzip > %s',
-                $mysqldump,
-                escapeshellarg($dbHost),
-                escapeshellarg($dbUser),
-                escapeshellarg($dbPass),
-                escapeshellarg($dbName),
-                escapeshellarg($path)
-            );
-
-            exec($command, $output, $returnVar);
-
-            if ($returnVar !== 0) {
-                Log::error("Database backup failed", [
-                    'command' => str_replace($dbPass, '******', $command),
-                    'output' => $output,
-                    'return_var' => $returnVar
-                ]);
-                $errorMsg = implode(' ', $output);
-                return response()->json([
-                    'success' => false, 
-                    'message' => 'Gagal backup: ' . ($errorMsg ?: 'Return Code: ' . $returnVar)
-                ], 500);
-            }
-
-            return response()->download($path)->deleteFileAfterSend(true);
         } catch (\Throwable $e) {
-            Log::error("Fatal error in backupDatabase: " . $e->getMessage(), [
-                'trace' => substr($e->getTraceAsString(), 0, 500)
-            ]);
+            Log::error("Fatal error in backupDatabase: " . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Fatal Error: ' . $e->getMessage()
