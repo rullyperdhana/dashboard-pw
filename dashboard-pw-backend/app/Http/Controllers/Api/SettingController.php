@@ -893,14 +893,16 @@ class SettingController extends Controller
             }
             
             $mysql = 'mysql';
-            // Cek path mysql (termasuk path MAMP)
+            // Cek path mysql (termasuk path MAMP & MAMP PRO)
             $possibleMysqlPaths = [
                 '/Applications/MAMP/Library/bin/mysql',
+                '/Applications/MAMP PRO/Contents/Resources/bin/mysql',
+                '/usr/local/mysql/bin/mysql',
                 '/usr/local/bin/mysql',
                 '/opt/homebrew/bin/mysql'
             ];
             foreach ($possibleMysqlPaths as $p) {
-                if (file_exists($p)) {
+                if (@file_exists($p)) {
                     $mysql = $p;
                     break;
                 }
@@ -942,7 +944,7 @@ class SettingController extends Controller
             if ($returnVar !== 0) {
                  return response()->json([
                      'success' => false, 
-                     'message' => 'Gagal impor: ' . implode(' ', $output)
+                     'message' => 'Gagal impor (CMD: ' . (strpos($mysql, '/') !== false ? 'Full Path' : 'Short Name') . '): ' . implode(' ', $output)
                  ], 500);
             }
 
