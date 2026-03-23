@@ -224,20 +224,16 @@ class BkdReconController extends Controller
 
     /**
      * Check if a matched row has differences
+     * Note: Nama is display-only, not compared.
      */
     private function hasDifferences($row): bool
     {
-        // Compare Nama (case-insensitive, trim)
-        $bkdNama = strtoupper(trim($row->bkd_nama ?? ''));
-        $sgNama = strtoupper(trim($row->sg_nama ?? ''));
-        if ($bkdNama && $sgNama && $bkdNama !== $sgNama) return true;
-
         // Compare NIK
         $bkdNik = trim(str_replace("'", '', $row->bkd_nik ?? ''));
         $sgNik = trim($row->sg_nik ?? '');
         if ($bkdNik && $sgNik && $bkdNik !== $sgNik) return true;
 
-        // Compare Golongan (extract roman numeral + letter from both)
+        // Compare Golongan (smart normalization: III/d == 3D)
         $bkdGol = $this->normalizeGolongan($row->bkd_golongan ?? '');
         $sgGol = $this->normalizeGolongan($row->sg_golongan ?? '');
         if ($bkdGol && $sgGol && $bkdGol !== $sgGol) return true;
@@ -246,8 +242,8 @@ class BkdReconController extends Controller
     }
 
     /**
-     * Normalize golongan string for comparison.
-     * Handles formats like "IV/e", "4e", "IVe", etc.
+     * Normalize golongan to unified numeric format.
+     * "III/d" -> "3D", "3D" -> "3D", "IV/e" -> "4E", "4E" -> "4E"
      */
     private function normalizeGolongan(string $gol): string
     {
@@ -255,7 +251,19 @@ class BkdReconController extends Controller
         if (!$gol) return '';
 
         // Remove separators
-        $gol = str_replace(['/', ' ', '-'], '', $gol);
+        $gol = str_replace(['/', ' ', '-', '.'], '', $gol);
+
+        // Map Roman numerals to numbers
+        $romanMap = ['IV' => '4', 'III' => '3', 'II' => '2', 'I' => '1'];
+
+        // Try to replace Roman prefix (check longest first to avoid I matching III)
+        foreach ($romanMap as $roman => $number) {
+            if (str_starts_with($gol, $roman)) {
+                $gol = $number . substr($gol, strlen($roman));
+                break;
+            }
+        }
+
         return $gol;
     }
 
@@ -266,12 +274,8 @@ class BkdReconController extends Controller
     {
         $result = (array) $row;
 
-        // Determine differences per field
+        // Determine differences per field (nama is display-only, not compared)
         $diffs = [];
-        
-        $bkdNama = strtoupper(trim($row->bkd_nama ?? ''));
-        $sgNama = strtoupper(trim($row->sg_nama ?? ''));
-        if ($bkdNama && $sgNama && $bkdNama !== $sgNama) $diffs[] = 'nama';
 
         $bkdNik = trim(str_replace("'", '', $row->bkd_nik ?? ''));
         $sgNik = trim($row->sg_nik ?? '');
