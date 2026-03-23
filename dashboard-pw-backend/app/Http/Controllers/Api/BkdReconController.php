@@ -409,7 +409,7 @@ class BkdReconController extends Controller
         $romanMap = [
             'VIII' => '8', 'VII' => '7', 'VI' => '6',
             'IV' => '4', 'IX' => '9', 'V' => '5',
-            'III' => '3', 'II' => '2', 'I' => '1',
+            'III' => '3', 'II' => '2', 'X' => '10', 'I' => '1',
         ];
 
         foreach ($romanMap as $roman => $number) {
