@@ -164,31 +164,50 @@ class BudgetPredictionController extends Controller
         $currentDate = $now->format('Y-m-d');
         $targetDate = $now->copy()->addYear()->format('Y-m-d');
 
-        $last3Periods = DB::table($table)
+        $user = auth()->user();
+        $isSuperAdmin = $user->role === 'superadmin';
+        $accessibleCodes = !$isSuperAdmin ? $user->getAccessibleSkpdCodes('pns') : null;
+
+        $last3PeriodsQuery = DB::table($table)
             ->select('bulan', 'tahun')
             ->where('jenis_gaji', 'Induk')
-            ->distinct()
-            ->orderBy('tahun', 'desc')
+            ->distinct();
+        
+        if ($accessibleCodes !== null) {
+            $last3PeriodsQuery->whereIn('kdskpd', $accessibleCodes);
+        }
+
+        $last3Periods = $last3PeriodsQuery->orderBy('tahun', 'desc')
             ->orderBy('bulan', 'desc')
             ->limit(3)
             ->get();
 
         if ($last3Periods->isEmpty()) {
-            return response()->json(['success' => false, 'message' => "Data {$table} tidak mencukupi."]);
+            return response()->json(['success' => false, 'message' => "Data {$table} tidak mencukupi untuk SKPD ini."]);
         }
 
-        $user = auth()->user();
-        $isSuperAdmin = $user->role === 'superadmin';
+        $monthlyKotor = [];
+        $monthlyGajiPokok = [];
+        $monthlyTunjIstri = [];
+        $monthlyTunjAnak = [];
+        $monthlyTunjFungsional = [];
+        $monthlyTunjStruktural = [];
+        $monthlyTunjUmum = [];
+        $monthlyTunjBeras = [];
+        $monthlyTunjPph = [];
+        $monthlyTunjTpp = [];
+        $monthlyTunjEselon = [];
+        $monthlyTunjGuru = [];
+        $monthlyPembulatan = [];
 
-        $monthlyTotals = [];
         foreach ($last3Periods as $p) {
             $query = DB::table($table)
                 ->where('bulan', $p->bulan)
                 ->where('tahun', $p->tahun)
                 ->where('jenis_gaji', 'Induk');
             
-            if (!$isSuperAdmin) {
-                $query->whereIn('kdskpd', $user->getAccessibleSkpdCodes('pns'));
+            if ($accessibleCodes !== null) {
+                $query->whereIn('kdskpd', $accessibleCodes);
             }
 
             $monthlyKotor[] = $query->sum('kotor');
@@ -237,7 +256,7 @@ class BudgetPredictionController extends Controller
         }
 
         // Add "Lain-lain" for mapping errors or missing columns to ensure total matches
-        $remainder = ($avgMonthlyTotal * 12 * (1 + ($growthFactor / 100))) - $calculatedSum;
+        $remainder = ($avgMonthlyTotal * 14 * (1 + ($growthFactor / 100))) - $calculatedSum;
         if ($remainder > 0) {
             $breakdown[] = [
                 'kode' => '5.1.01.99.9999',
