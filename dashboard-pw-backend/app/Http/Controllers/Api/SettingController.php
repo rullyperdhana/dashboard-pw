@@ -794,7 +794,7 @@ class SettingController extends Controller
         }
 
         $command = sprintf(
-            'mysqldump -h %s -u %s -p%s --no-tablespaces %s | gzip > %s',
+            'mysqldump --column-statistics=0 -h %s -u %s -p%s --no-tablespaces %s 2>&1 | gzip > %s',
             escapeshellarg($dbHost),
             escapeshellarg($dbUser),
             escapeshellarg($dbPass),
@@ -805,7 +805,15 @@ class SettingController extends Controller
         exec($command, $output, $returnVar);
 
         if ($returnVar !== 0) {
-            return response()->json(['success' => false, 'message' => 'Backup failed. Make sure mysqldump is installed.'], 500);
+            Log::error("Database backup failed", [
+                'command' => str_replace($dbPass, '******', $command),
+                'output' => $output,
+                'return_var' => $returnVar
+            ]);
+            return response()->json([
+                'success' => false, 
+                'message' => 'Backup failed. Error: ' . implode(' ', $output)
+            ], 500);
         }
 
         return response()->download($path)->deleteFileAfterSend(true);

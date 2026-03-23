@@ -53,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index']);
     Route::get('/budget-prediction', [BudgetPredictionController::class, 'index']);
+    Route::apiResource('upload-jobs', UploadJobController::class);
 
     // SKPD
     Route::get('/skpd', [SkpdController::class, 'index']);
