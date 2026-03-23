@@ -76,6 +76,10 @@ class BudgetPredictionController extends Controller
                 ->where('tb_payment.month', $p->month)
                 ->where('tb_payment.year', $p->year);
             
+            if (!$isSuperAdmin) {
+                $query->whereIn('pegawai_pw.idskpd', $user->getAccessibleSkpds('pw'));
+            }
+            
             $monthlyTotals[] = $query->sum(DB::raw('tb_payment_detail.gaji_pokok + tb_payment_detail.tunjangan'));
             $monthlyGajiPokok[] = $query->sum('tb_payment_detail.gaji_pokok');
             $monthlyTunjangan[] = $query->sum('tb_payment_detail.tunjangan');
@@ -105,7 +109,7 @@ class BudgetPredictionController extends Controller
             ->whereRaw("DATE_ADD(pegawai_pw.tgl_lahir, INTERVAL COALESCE(pegawai_pw.usia_bup, 58) YEAR) BETWEEN ? AND ?", [$currentDate, $targetDate]);
         
         if (!$isSuperAdmin) {
-            $retiredQuery->whereIn('pegawai_pw.idskpd', $user->getAccessibleSkpds());
+            $retiredQuery->whereIn('pegawai_pw.idskpd', $user->getAccessibleSkpds('pw'));
         }
 
         $retiringEmployees = $retiredQuery->select('pegawai_pw.*', 'skpd.nama_skpd as skpd_name')
@@ -131,7 +135,7 @@ class BudgetPredictionController extends Controller
             ->whereRaw("MOD(TIMESTAMPDIFF(YEAR, tmt_golru, DATE_ADD(?, INTERVAL 1 YEAR)), 2) = 0", [$currentDate]);
 
         if (!$isSuperAdmin) {
-            $kgbQuery->whereIn('idskpd', $user->getAccessibleSkpds());
+            $kgbQuery->whereIn('idskpd', $user->getAccessibleSkpds('pw'));
         }
 
         $kgbEmployeesCount = $kgbQuery->count();
@@ -184,7 +188,7 @@ class BudgetPredictionController extends Controller
                 ->where('jenis_gaji', 'Induk');
             
             if (!$isSuperAdmin) {
-                $query->whereIn('kdskpd', $user->getAccessibleSkpdCodes());
+                $query->whereIn('kdskpd', $user->getAccessibleSkpdCodes('pns'));
             }
 
             $monthlyKotor[] = $query->sum('kotor');
@@ -257,7 +261,7 @@ class BudgetPredictionController extends Controller
             ->whereRaw("DATE_ADD(master_pegawai.tgllhr, INTERVAL COALESCE(master_pegawai.bup, 58) YEAR) BETWEEN ? AND ?", [$currentDate, $targetDate]);
 
         if (!$isSuperAdmin) {
-            $retiredQuery->whereIn('master_pegawai.kdskpd', $user->getAccessibleSkpdCodes());
+            $retiredQuery->whereIn('master_pegawai.kdskpd', $user->getAccessibleSkpdCodes('pns'));
         }
 
         $retiringEmployees = $retiredQuery->select('master_pegawai.*', 'satkers.nmsatker as skpd_name')
@@ -287,7 +291,7 @@ class BudgetPredictionController extends Controller
             ->whereBetween('tmtkgbyad', [$currentDate, $targetDate]);
 
         if (!$isSuperAdmin) {
-            $kgbQuery->whereIn('kdskpd', $user->getAccessibleSkpdCodes());
+            $kgbQuery->whereIn('kdskpd', $user->getAccessibleSkpdCodes('pns'));
         }
 
         $kgbEmployeesCount = $kgbQuery->count();
@@ -306,7 +310,7 @@ class BudgetPredictionController extends Controller
             ->whereRaw("MOD(TIMESTAMPDIFF(YEAR, blgolt, DATE_ADD(?, INTERVAL 1 YEAR)), 4) = 0", [$currentDate]);
 
         if (!$isSuperAdmin) {
-            $kpQuery->whereIn('kdskpd', $user->getAccessibleSkpdCodes());
+            $kpQuery->whereIn('kdskpd', $user->getAccessibleSkpdCodes('pns'));
         }
 
         $kpEmployeesCount = $kpQuery->count();

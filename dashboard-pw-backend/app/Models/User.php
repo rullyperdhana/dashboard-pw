@@ -109,19 +109,65 @@ class User extends Authenticatable
 
     /**
      * Mendapatkan daftar ID SKPD yang dapat diakses user.
-     * Jika superadmin, mengembalikan null (semua).
+     * @param string|null $type 'pns' or 'pw'
      */
-    public function getAccessibleSkpds()
+    public function getAccessibleSkpds($type = null)
     {
         if ($this->isSuperAdmin()) {
             return null;
         }
 
-        $access = $this->skpd_access ?: [];
+        $rawAccess = $this->skpd_access ?: [];
+        $access = [];
+
+        // Normalize access based on type
+        if (is_array($rawAccess)) {
+            foreach ($rawAccess as $item) {
+                if (is_array($item) || is_object($item)) {
+                    $item = (object) $item;
+                    $pns = property_exists($item, 'pns') ? $item->pns : true;
+                    $pw = property_exists($item, 'pw') ? $item->pw : true;
+                    $id = property_exists($item, 'id') ? $item->id : (property_exists($item, 'id_skpd') ? $item->id_skpd : null);
+                    
+                    if (!$id) continue;
+
+                    if ($type === 'pns' && $pns) $access[] = $id;
+                    elseif ($type === 'pw' && $pw) $access[] = $id;
+                    elseif ($type === null) $access[] = $id;
+                } else {
+                    // Backward compatibility for simple ID list
+                    $access[] = $item;
+                }
+            }
+        }
         
         // Backward compatibility: include institution if provided
         if ($this->institution && !in_array($this->institution, $access)) {
             $access[] = $this->institution;
+        }
+
+        // Smart Hierarchy Logic: Include children/sub-units of assigned SKPDs
+        if (!empty($access)) {
+            $parentCodes = \App\Models\Skpd::whereIn('id_skpd', $access)
+                ->where('is_skpd', 1)
+                ->pluck('kode_skpd')
+                ->map(function($code) {
+                    $lastDot = strrpos($code, '.');
+                    if ($lastDot === false) return null;
+                    return substr($code, 0, $lastDot + 1);
+                })
+                ->filter()
+                ->unique();
+
+            if ($parentCodes->isNotEmpty()) {
+                $childIds = \App\Models\Skpd::where(function($query) use ($parentCodes) {
+                    foreach ($parentCodes as $prefix) {
+                        $query->orWhere('kode_skpd', 'like', $prefix . '%');
+                    }
+                })->pluck('id_skpd')->toArray();
+                
+                $access = array_unique(array_merge($access, array_map('intval', $childIds)));
+            }
         }
 
         return $access;
@@ -129,11 +175,11 @@ class User extends Authenticatable
 
     /**
      * Mendapatkan daftar KODE SKPD (format 1.01.01) yang dapat diakses user.
-     * Digunakan untuk filter tabel master_pegawai, gaji_pns, dll.
+     * @param string|null $type 'pns' or 'pw'
      */
-    public function getAccessibleSkpdCodes()
+    public function getAccessibleSkpdCodes($type = null)
     {
-        $ids = $this->getAccessibleSkpds();
+        $ids = $this->getAccessibleSkpds($type);
         if ($ids === null) {
             return null;
         }

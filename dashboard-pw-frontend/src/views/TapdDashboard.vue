@@ -13,7 +13,7 @@
           </div>
           <v-spacer></v-spacer>
           <v-btn-toggle v-model="category" mandatory color="primary" variant="outlined" rounded="pill" density="compact">
-            <v-btn value="pw">PPPK-PW</v-btn>
+            <v-btn v-if="user?.role === 'superadmin'" value="pw">PPPK-PW</v-btn>
             <v-btn value="pns">PNS</v-btn>
             <v-btn value="pppk">PPPK-FULL</v-btn>
           </v-btn-toggle>
@@ -55,7 +55,7 @@
           <v-col cols="12" md="4">
             <v-card class="glass-card rounded-xl pa-6 h-100" elevation="0">
               <div class="text-overline mb-2">Estimasi Total Tahun Depan</div>
-              <div class="text-h3 font-weight-black text-primary mb-2">
+              <div class="text-h4 font-weight-black text-primary mb-2">
                 {{ formatCurrencyCompact(prediction.projection.final_forecast) }}
               </div>
               <v-divider class="mb-4"></v-divider>
@@ -208,9 +208,10 @@ use([CanvasRenderer, BarChart, PieChart, LineChart, TitleComponent, TooltipCompo
 const theme = useTheme()
 provide(THEME_KEY, computed(() => theme.global.name.value === 'dark' ? 'dark' : 'light'))
 
+const user = JSON.parse(localStorage.getItem('user') || '{}')
 const loading = ref(false)
 const error = ref('')
-const category = ref('pw')
+const category = ref(user.role === 'superadmin' ? 'pw' : 'pns')
 const growthFactor = ref(5)
 const prediction = ref(null)
 const healthData = ref(null)
@@ -268,9 +269,6 @@ const formatCurrency = (value) => {
 }
 
 const formatCurrencyCompact = (value) => {
-  if (!value) return 'Rp 0'
-  if (value >= 1000000000) return 'Rp ' + (value / 1000000000).toFixed(2) + ' M'
-  if (value >= 1000000) return 'Rp ' + (value / 1000000).toFixed(2) + ' Jt'
   return formatCurrency(value)
 }
 

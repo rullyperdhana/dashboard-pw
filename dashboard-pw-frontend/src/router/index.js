@@ -224,6 +224,12 @@ const router = createRouter({
             component: () => import('../views/PPh21Report.vue'),
             meta: { requiresAuth: true, breadcrumb: 'Pajak TER (A2)', app_access: 'pph21-report' },
         },
+        {
+            path: '/settings/login-logs',
+            name: 'LoginLogs',
+            component: () => import('../views/Settings/LoginLogs.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Log Login Pengguna', roles: ['superadmin'] },
+        },
     ],
 })
 

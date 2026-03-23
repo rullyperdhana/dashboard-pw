@@ -121,18 +121,58 @@
                 </v-col>
                 <v-col cols="12" v-if="editedItem.role === 'operator'">
                   <v-autocomplete
-                    v-model="editedItem.skpd_access"
+                    v-model="selectedSkpdIds"
                     :items="skpdList"
                     item-title="nama_skpd"
                     item-value="id_skpd"
-                    label="Daftar SKPD yang Diakses"
+                    label="Pilih Unit Organisasi (SKPD)"
                     variant="outlined"
                     multiple
                     chips
                     closable-chips
                     placeholder="Pilih satu atau lebih SKPD"
-                    :rules="[v => editedItem.role === 'superadmin' || (v && v.length > 0) || 'Minimal satu SKPD wajib dipilih']"
+                    hide-details
+                    class="mb-4"
                   ></v-autocomplete>
+
+                  <div v-if="selectedSkpdIds.length > 0" class="border rounded-lg overflow-hidden mb-4">
+                    <div class="bg-grey-lighten-4 pa-2 text-subtitle-2 font-weight-bold border-b">
+                      Pembagian Wilayah Kerja User
+                    </div>
+                    <v-table density="compact">
+                      <thead>
+                        <tr>
+                          <th class="text-left">SKPD</th>
+                          <th class="text-center" width="100">PNS/PPPK</th>
+                          <th class="text-center" width="100">PPPK-PW</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="id in selectedSkpdIds" :key="id">
+                          <td class="text-caption py-2 font-weight-bold">{{ getSkpdName(id) }}</td>
+                          <td class="text-center">
+                            <v-checkbox-btn
+                              v-model="getGranularAccess(id).pns"
+                              color="primary"
+                              density="compact"
+                              hide-details
+                            ></v-checkbox-btn>
+                          </td>
+                          <td class="text-center">
+                            <v-checkbox-btn
+                              v-model="getGranularAccess(id).pw"
+                              color="primary"
+                              density="compact"
+                              hide-details
+                            ></v-checkbox-btn>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </v-table>
+                  </div>
+                  <div v-if="editedItem.role === 'operator' && selectedSkpdIds.length === 0" class="text-caption text-error mb-4">
+                    Minimal satu SKPD wajib dipilih
+                  </div>
                 </v-col>
 
                 <!-- Menu Access Selection -->
@@ -215,7 +255,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import Sidebar from '../../components/Sidebar.vue'
 import Navbar from '../../components/Navbar.vue'
 import api from '../../api'
@@ -347,14 +387,69 @@ const editedItem = ref({
   app_access: []
 })
 
+const selectedSkpdIds = ref([])
+
+const getGranularAccess = (id) => {
+  let access = editedItem.value.skpd_access.find(a => 
+    (typeof a === 'object' ? (a.id === id || a.id_skpd === id) : a === id)
+  )
+  
+  if (!access || typeof access !== 'object') {
+    // If it was a simple ID or not found, convert/create
+    const newAccess = { id: id, pns: true, pw: true }
+    // Update the array without triggering full reactivity loops if possible
+    const index = editedItem.value.skpd_access.findIndex(a => 
+      (typeof a === 'object' ? (a.id === id || a.id_skpd === id) : a === id)
+    )
+    if (index > -1) editedItem.value.skpd_access[index] = newAccess
+    else editedItem.value.skpd_access.push(newAccess)
+    return newAccess
+  }
+  
+  // Ensure ID is set correctly if it was missing in the object
+  if (!access.id) access.id = id
+  
+  return access
+}
+
+watch(selectedSkpdIds, (newIds) => {
+  // Sync editedItem.skpd_access (array of objects) with selectedSkpdIds (array of IDs)
+  const currentAccess = [...editedItem.value.skpd_access]
+  
+  // 1. Remove IDs that are no longer selected
+  editedItem.value.skpd_access = currentAccess.filter(a => {
+    const id = typeof a === 'object' ? (a.id || a.id_skpd) : a
+    return newIds.includes(parseInt(id))
+  })
+  
+  // 2. Add IDs that are newly selected
+  newIds.forEach(id => {
+    const exists = editedItem.value.skpd_access.some(a => {
+      const aid = typeof a === 'object' ? (a.id || a.id_skpd) : a
+      return parseInt(aid) === parseInt(id)
+    })
+    if (!exists) {
+      editedItem.value.skpd_access.push({ id: id, pns: true, pw: true })
+    }
+  })
+}, { deep: true })
+
 const openDialog = (item = null) => {
   if (item) {
     editedIndex.value = users.value.indexOf(item)
     editedItem.value = JSON.parse(JSON.stringify(item))
     if (!editedItem.value.app_access) editedItem.value.app_access = []
+    if (!editedItem.value.skpd_access) editedItem.value.skpd_access = []
+    
+    // Set selectedSkpdIds for autocomplete
+    selectedSkpdIds.value = editedItem.value.skpd_access.map(a => 
+      typeof a === 'object' ? parseInt(a.id || a.id_skpd) : parseInt(a)
+    )
+    
     editedItem.value.password = '' // Don't show hashed password
   } else {
     editedIndex.value = -1
+    selectedSkpdIds.value = []
     editedItem.value = {
       name: '',
       username: '',
@@ -455,8 +550,9 @@ const doDelete = async () => {
   }
 }
 
-const getSkpdName = (id) => {
-  const skpd = skpdList.value.find(s => s.id_skpd === id)
+const getSkpdName = (idOrObject) => {
+  const id = typeof idOrObject === 'object' ? (idOrObject.id || idOrObject.id_skpd) : idOrObject
+  const skpd = skpdList.value.find(s => parseInt(s.id_skpd) === parseInt(id))
   return skpd ? skpd.nama_skpd : `SKPD #${id}`
 }
 

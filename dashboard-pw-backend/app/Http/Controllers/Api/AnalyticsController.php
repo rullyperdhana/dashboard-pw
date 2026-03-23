@@ -18,13 +18,15 @@ class AnalyticsController extends Controller
         $category = $request->query('category', 'all');
         
         $user = auth()->user();
-        $skpdIds = $user->getAccessibleSkpds();
-        $skpdCodes = $user->getAccessibleSkpdCodes();
+        
+        // Pass relevant skpds based on category or handle inside each method
+        $pwSkpdIds = $user->getAccessibleSkpds('pw');
+        $pnsSkpdCodes = $user->getAccessibleSkpdCodes('pns');
 
         $data = [
-            'age_distribution' => $this->getAgeDistribution($category, $skpdIds, $skpdCodes),
-            'retirement_schedule' => $this->getRetirementSchedule($category, $skpdIds, $skpdCodes),
-            'budget_utilization' => $this->getBudgetUtilization($skpdIds),
+            'age_distribution' => $this->getAgeDistribution($category, $pwSkpdIds, $pnsSkpdCodes),
+            'retirement_schedule' => $this->getRetirementSchedule($category, $pwSkpdIds, $pnsSkpdCodes),
+            'budget_utilization' => $this->getBudgetUtilization($pwSkpdIds),
             'growth_trends' => $this->getGrowthTrends()
         ];
 

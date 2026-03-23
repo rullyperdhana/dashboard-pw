@@ -178,6 +178,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:superadmin')->group(function () {
         Route::apiResource('users', UserController::class);
         Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword']);
+        Route::get('/login-logs', [App\Http\Controllers\Api\LoginLogController::class, 'index']);
 
         // Data Maintenance
         Route::post('/settings/clear-payroll', [SettingController::class, 'clearPayrollData']);
