@@ -800,11 +800,14 @@ class SettingController extends Controller
             $mysqldump = 'mysqldump';
             $possiblePaths = [
                 '/Applications/MAMP/Library/bin/mysqldump',
+                '/Applications/MAMP PRO/Contents/Resources/bin/mysqldump',
+                '/usr/local/mysql/bin/mysqldump',
                 '/usr/local/bin/mysqldump',
-                '/opt/homebrew/bin/mysqldump'
+                '/opt/homebrew/bin/mysqldump',
+                getenv('HOME') . '/Library/Application Support/Herd/bin/mysqldump'
             ];
             foreach ($possiblePaths as $p) {
-                if (file_exists($p)) {
+                if (@file_exists($p) && @is_executable($p)) {
                     $mysqldump = $p;
                     break;
                 }
@@ -893,16 +896,17 @@ class SettingController extends Controller
             }
             
             $mysql = 'mysql';
-            // Cek path mysql (termasuk path MAMP & MAMP PRO)
+            // Cek path mysql (termasuk path MAMP, MAMP PRO, Herd)
             $possibleMysqlPaths = [
                 '/Applications/MAMP/Library/bin/mysql',
                 '/Applications/MAMP PRO/Contents/Resources/bin/mysql',
                 '/usr/local/mysql/bin/mysql',
                 '/usr/local/bin/mysql',
-                '/opt/homebrew/bin/mysql'
+                '/opt/homebrew/bin/mysql',
+                getenv('HOME') . '/Library/Application Support/Herd/bin/mysql'
             ];
             foreach ($possibleMysqlPaths as $p) {
-                if (@file_exists($p)) {
+                if (@file_exists($p) && @is_executable($p)) {
                     $mysql = $p;
                     break;
                 }
