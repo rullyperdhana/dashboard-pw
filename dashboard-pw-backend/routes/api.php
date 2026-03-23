@@ -190,6 +190,13 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('/{id}/toggle', [App\Http\Controllers\Api\ApiKeyController::class, 'toggleActive']);
             Route::delete('/{id}', [App\Http\Controllers\Api\ApiKeyController::class, 'destroy']);
         });
+
+        // BKD Reconciliation
+        Route::prefix('bkd-recon')->group(function () {
+            Route::get('/', [App\Http\Controllers\Api\BkdReconController::class, 'index']);
+            Route::post('/upload', [App\Http\Controllers\Api\BkdReconController::class, 'store']);
+            Route::get('/summary', [App\Http\Controllers\Api\BkdReconController::class, 'summary']);
+        });
     });
 
     // Upload Jobs (Queue-based)
