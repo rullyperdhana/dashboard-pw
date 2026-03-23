@@ -130,6 +130,14 @@ class BkdReconController extends Controller
             ->whereIn('kdstapeg', [1, 2, 3, 4, 5, 11, 12])
             ->count();
 
+        $subRef = DB::table('ref_jabatan_fungsional')
+            ->select('kdfungsi', 'nama_jabatan')
+            ->whereIn('id', function($q) {
+                $q->select(DB::raw('MAX(id)'))
+                    ->from('ref_jabatan_fungsional')
+                    ->groupBy('kdfungsi');
+            });
+
         $matchedCount = DB::table('bkd_pegawai as b')
             ->leftJoin('master_pegawai as m', 'b.nip', '=', 'm.nip')
             ->leftJoin('pegawai_pw as pw', 'b.nip', '=', 'pw.nip')
@@ -160,12 +168,13 @@ class BkdReconController extends Controller
         $matchedRows = DB::table('bkd_pegawai as b')
             ->leftJoin('master_pegawai as m', 'b.nip', '=', 'm.nip')
             ->leftJoin('pegawai_pw as pw', 'b.nip', '=', 'pw.nip')
+            ->leftJoinSub($subRef, 'rf', 'm.kdfungsi', '=', 'rf.kdfungsi')
             ->where(function($q) { $q->whereNotNull('m.nip')->orWhereNotNull('pw.nip'); })
             ->select(
                 'b.nik as bkd_nik', 'b.golongan as bkd_golongan', 'b.jabatan as bkd_jabatan',
                 DB::raw("COALESCE(m.noktp, pw.nik) as sg_nik"),
                 DB::raw("COALESCE(m.kdpangkat, pw.golru) as sg_golongan"),
-                DB::raw("COALESCE(pw.jabatan, NULL) as sg_jabatan"),
+                DB::raw("COALESCE(rf.nama_jabatan, pw.jabatan) as sg_jabatan"),
                 DB::raw("CASE WHEN m.nip IS NOT NULL THEN 'matched_pns' ELSE 'matched_pw' END as match_status")
             )->get();
 
@@ -315,10 +324,20 @@ class BkdReconController extends Controller
 
     private function buildBkdQuery($search)
     {
+        // Subquery for unique functional positions
+        $subRef = DB::table('ref_jabatan_fungsional')
+            ->select('kdfungsi', 'nama_jabatan')
+            ->whereIn('id', function($q) {
+                $q->select(DB::raw('MAX(id)'))
+                    ->from('ref_jabatan_fungsional')
+                    ->groupBy('kdfungsi');
+            });
+
         // LEFT JOIN against both master_pegawai (PNS) and pegawai_pw (PPPK-PW)
         $query = DB::table('bkd_pegawai as b')
             ->leftJoin('master_pegawai as m', 'b.nip', '=', 'm.nip')
             ->leftJoin('pegawai_pw as pw', 'b.nip', '=', 'pw.nip')
+            ->leftJoinSub($subRef, 'rf', 'm.kdfungsi', '=', 'rf.kdfungsi')
             ->select(
                 'b.nip',
                 'b.nama as bkd_nama',
@@ -336,7 +355,7 @@ class BkdReconController extends Controller
                 DB::raw("COALESCE(m.kdpangkat, pw.golru) as sg_golongan"),
                 DB::raw("COALESCE(m.tgllhr, pw.tgl_lahir) as sg_tgl_lahir"),
                 DB::raw("COALESCE(m.kdjenkel, pw.jk) as sg_jk"),
-                DB::raw("COALESCE(pw.jabatan, NULL) as sg_jabatan"),
+                DB::raw("COALESCE(rf.nama_jabatan, pw.jabatan) as sg_jabatan"),
                 DB::raw("CASE 
                     WHEN m.nip IS NOT NULL THEN 'matched_pns'
                     WHEN pw.nip IS NOT NULL THEN 'matched_pw'
@@ -358,9 +377,19 @@ class BkdReconController extends Controller
 
     private function buildSimgajiOnlyQuery($search)
     {
+        // Subquery for unique functional positions
+        $subRef = DB::table('ref_jabatan_fungsional')
+            ->select('kdfungsi', 'nama_jabatan')
+            ->whereIn('id', function($q) {
+                $q->select(DB::raw('MAX(id)'))
+                    ->from('ref_jabatan_fungsional')
+                    ->groupBy('kdfungsi');
+            });
+
         // PNS active not in BKD
         $pnsOnly = DB::table('master_pegawai as m')
             ->leftJoin('bkd_pegawai as b', 'm.nip', '=', 'b.nip')
+            ->leftJoinSub($subRef, 'rf', 'm.kdfungsi', '=', 'rf.kdfungsi')
             ->whereNull('b.nip')
             ->whereIn('m.kdstapeg', [1, 2, 3, 4, 5, 11, 12])
             ->select(
@@ -377,7 +406,7 @@ class BkdReconController extends Controller
                 'm.kdpangkat as sg_golongan',
                 'm.tgllhr as sg_tgl_lahir',
                 'm.kdjenkel as sg_jk',
-                DB::raw("NULL as sg_jabatan"),
+                'rf.nama_jabatan as sg_jabatan',
                 DB::raw("'simgaji_only_pns' as match_status")
             );
 
@@ -434,10 +463,10 @@ class BkdReconController extends Controller
         $sgGol = $this->normalizeGolongan($row->sg_golongan ?? '');
         if ($bkdGol && $sgGol && $bkdGol !== $sgGol) $diffs[] = 'golongan';
 
-        // Jabatan: compare BKD jabatan vs SimGaji jabatan (for PPPK-PW which has jabatan text)
+        // Jabatan: compare BKD jabatan vs SimGaji jabatan (fungsional)
         $bkdJabatan = strtoupper(trim($row->bkd_jabatan ?? ''));
         $sgJabatan = strtoupper(trim($row->sg_jabatan ?? ''));
-        if ($bkdJabatan && $sgJabatan && $bkdJabatan !== $sgJabatan) $diffs[] = 'jabatan';
+        if ($bkdJabatan !== $sgJabatan) $diffs[] = 'jabatan';
 
         return $diffs;
     }
