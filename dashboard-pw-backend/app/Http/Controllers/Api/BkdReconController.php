@@ -59,8 +59,22 @@ class BkdReconController extends Controller
         // SimGaji-only records
         $simgajiOnly = $this->buildSimgajiOnlyQuery($search);
 
+        $isSuperAdmin = auth()->user()->isSuperAdmin();
+
         // Apply filter
         if ($filter === 'bkd_only') {
+            if (!$isSuperAdmin) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [],
+                    'meta' => [
+                        'current_page' => 1,
+                        'last_page' => 1,
+                        'per_page' => $perPage,
+                        'total' => 0,
+                    ]
+                ]);
+            }
             $query->whereNull('m.nip')->whereNull('pw.nip');
             $paginated = $query->paginate($perPage);
         } elseif ($filter === 'simgaji_only') {
@@ -94,6 +108,9 @@ class BkdReconController extends Controller
             ]);
         } else {
             // All: union both queries
+            if (!$isSuperAdmin) {
+                $query->where(function($q) { $q->whereNotNull('m.nip')->orWhereNotNull('pw.nip'); });
+            }
             $combined = $query->unionAll($simgajiOnly);
             $paginated = DB::table(DB::raw("({$combined->toSql()}) as combined"))
                 ->mergeBindings($combined)
@@ -126,9 +143,17 @@ class BkdReconController extends Controller
             ]);
         }
 
-        $simgajiActiveCount = DB::table('master_pegawai')
-            ->whereIn('kdstapeg', [1, 2, 3, 4, 5, 11, 12])
-            ->count();
+        $skpdCodes = auth()->user()->getAccessibleSkpdCodes();
+        $isSuperAdmin = auth()->user()->isSuperAdmin();
+
+        $simgajiActiveQuery = DB::table('master_pegawai')
+            ->whereIn('kdstapeg', [1, 2, 3, 4, 5, 11, 12]);
+        if (!$isSuperAdmin) $simgajiActiveQuery->whereIn('kdskpd', $skpdCodes);
+        $simgajiActiveCount = $simgajiActiveQuery->count();
+
+        $pwActiveQuery = DB::table('pegawai_pw');
+        if (!$isSuperAdmin) $pwActiveQuery->whereIn('idskpd', $skpdCodes);
+        $pwActiveCount = $pwActiveQuery->count();
 
         $subRef = DB::table('ref_jabatan_fungsional')
             ->select('kdfungsi', 'nama_jabatan')
@@ -141,26 +166,39 @@ class BkdReconController extends Controller
         $matchedCount = DB::table('bkd_pegawai as b')
             ->leftJoin('master_pegawai as m', 'b.nip', '=', 'm.nip')
             ->leftJoin('pegawai_pw as pw', 'b.nip', '=', 'pw.nip')
-            ->where(function($q) { $q->whereNotNull('m.nip')->orWhereNotNull('pw.nip'); })
+            ->where(function($q) use ($skpdCodes, $isSuperAdmin) {
+                $q->where(function($sq) use ($skpdCodes, $isSuperAdmin) {
+                    $sq->whereNotNull('m.nip');
+                    if (!$isSuperAdmin) $sq->whereIn('m.kdskpd', $skpdCodes);
+                });
+                $q->orWhere(function($sq) use ($skpdCodes, $isSuperAdmin) {
+                    $sq->whereNotNull('pw.nip');
+                    if (!$isSuperAdmin) $sq->whereIn('pw.idskpd', $skpdCodes);
+                });
+            })
             ->count();
 
-        $bkdOnlyCount = DB::table('bkd_pegawai as b')
+        $bkdOnlyCount = $isSuperAdmin ? DB::table('bkd_pegawai as b')
             ->leftJoin('master_pegawai as m', 'b.nip', '=', 'm.nip')
             ->leftJoin('pegawai_pw as pw', 'b.nip', '=', 'pw.nip')
             ->whereNull('m.nip')
             ->whereNull('pw.nip')
-            ->count();
+            ->count() : 0;
 
-        $simgajiOnlyPnsCount = DB::table('master_pegawai as m')
+        $simgajiOnlyPnsQuery = DB::table('master_pegawai as m')
             ->leftJoin('bkd_pegawai as b', 'm.nip', '=', 'b.nip')
             ->whereNull('b.nip')
-            ->whereIn('m.kdstapeg', [1, 2, 3, 4, 5, 11, 12])
-            ->count();
+            ->whereIn('m.kdstapeg', [1, 2, 3, 4, 5, 11, 12]);
+        
+        if (!$isSuperAdmin) $simgajiOnlyPnsQuery->whereIn('m.kdskpd', $skpdCodes);
+        $simgajiOnlyPnsCount = $simgajiOnlyPnsQuery->count();
 
-        $simgajiOnlyPwCount = DB::table('pegawai_pw as pw')
+        $simgajiOnlyPwQuery = DB::table('pegawai_pw as pw')
             ->leftJoin('bkd_pegawai as b', 'pw.nip', '=', 'b.nip')
-            ->whereNull('b.nip')
-            ->count();
+            ->whereNull('b.nip');
+            
+        if (!$isSuperAdmin) $simgajiOnlyPwQuery->whereIn('pw.idskpd', $skpdCodes);
+        $simgajiOnlyPwCount = $simgajiOnlyPwQuery->count();
 
         $simgajiOnlyCount = $simgajiOnlyPnsCount + $simgajiOnlyPwCount;
 
@@ -169,7 +207,16 @@ class BkdReconController extends Controller
             ->leftJoin('master_pegawai as m', 'b.nip', '=', 'm.nip')
             ->leftJoin('pegawai_pw as pw', 'b.nip', '=', 'pw.nip')
             ->leftJoinSub($subRef, 'rf', 'm.kdfungsi', '=', 'rf.kdfungsi')
-            ->where(function($q) { $q->whereNotNull('m.nip')->orWhereNotNull('pw.nip'); })
+            ->where(function($q) use ($skpdCodes, $isSuperAdmin) {
+                $q->where(function($sq) use ($skpdCodes, $isSuperAdmin) {
+                    $sq->whereNotNull('m.nip');
+                    if (!$isSuperAdmin) $sq->whereIn('m.kdskpd', $skpdCodes);
+                });
+                $q->orWhere(function($sq) use ($skpdCodes, $isSuperAdmin) {
+                    $sq->whereNotNull('pw.nip');
+                    if (!$isSuperAdmin) $sq->whereIn('pw.idskpd', $skpdCodes);
+                });
+            })
             ->select(
                 'b.nik as bkd_nik', 'b.golongan as bkd_golongan', 'b.jabatan as bkd_jabatan',
                 DB::raw("COALESCE(m.noktp, pw.nik) as sg_nik"),
@@ -196,8 +243,8 @@ class BkdReconController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'bkd_total' => $bkdCount,
-                'simgaji_active_total' => $simgajiActiveCount + DB::table('pegawai_pw')->count(),
+                'bkd_total' => $isSuperAdmin ? $bkdCount : $matchedCount,
+                'simgaji_active_total' => $simgajiActiveCount + $pwActiveCount,
                 'matched' => $matchedCount,
                 'identical' => $identicalCount,
                 'with_differences' => $anyDiff,
@@ -217,17 +264,19 @@ class BkdReconController extends Controller
     public function export(Request $request)
     {
         $filter = $request->query('filter', 'all');
+        $isSuperAdmin = auth()->user()->isSuperAdmin();
 
         $query = $this->buildBkdQuery(null);
         $simgajiOnly = $this->buildSimgajiOnlyQuery(null);
 
         if ($filter === 'bkd_only') {
-            $query->whereNull('m.nip');
+            if (!$isSuperAdmin) return abort(403, 'Unauthorized');
+            $query->whereNull('m.nip')->whereNull('pw.nip');
             $rows = $query->get();
         } elseif ($filter === 'simgaji_only') {
             $rows = $simgajiOnly->get();
         } elseif (str_starts_with($filter, 'diff')) {
-            $query->whereNotNull('m.nip');
+            $query->where(function($q) { $q->whereNotNull('m.nip')->orWhereNotNull('pw.nip'); });
             $allMatched = $query->get();
             $diffType = $filter === 'diff' ? null : str_replace('diff_', '', $filter);
             $rows = $allMatched->filter(function($row) use ($diffType) {
@@ -237,6 +286,10 @@ class BkdReconController extends Controller
                 return $this->hasDifferences($row);
             })->values();
         } else {
+            // All
+            if (!$isSuperAdmin) {
+                $query->where(function($q) { $q->whereNotNull('m.nip')->orWhereNotNull('pw.nip'); });
+            }
             $combined = $query->unionAll($simgajiOnly);
             $rows = DB::table(DB::raw("({$combined->toSql()}) as combined"))
                 ->mergeBindings($combined)
@@ -324,6 +377,10 @@ class BkdReconController extends Controller
 
     private function buildBkdQuery($search)
     {
+        $user = auth()->user();
+        $isSuperAdmin = $user->isSuperAdmin();
+        $skpdCodes = $user->getAccessibleSkpdCodes();
+
         // Subquery for unique functional positions
         $subRef = DB::table('ref_jabatan_fungsional')
             ->select('kdfungsi', 'nama_jabatan')
@@ -335,8 +392,14 @@ class BkdReconController extends Controller
 
         // LEFT JOIN against both master_pegawai (PNS) and pegawai_pw (PPPK-PW)
         $query = DB::table('bkd_pegawai as b')
-            ->leftJoin('master_pegawai as m', 'b.nip', '=', 'm.nip')
-            ->leftJoin('pegawai_pw as pw', 'b.nip', '=', 'pw.nip')
+            ->leftJoin('master_pegawai as m', function($join) use ($skpdCodes, $isSuperAdmin) {
+                $join->on('b.nip', '=', 'm.nip');
+                if (!$isSuperAdmin) $join->whereIn('m.kdskpd', $skpdCodes);
+            })
+            ->leftJoin('pegawai_pw as pw', function($join) use ($skpdCodes, $isSuperAdmin) {
+                $join->on('b.nip', '=', 'pw.nip');
+                if (!$isSuperAdmin) $join->whereIn('pw.idskpd', $skpdCodes);
+            })
             ->leftJoinSub($subRef, 'rf', 'm.kdfungsi', '=', 'rf.kdfungsi')
             ->select(
                 'b.nip',
@@ -377,6 +440,10 @@ class BkdReconController extends Controller
 
     private function buildSimgajiOnlyQuery($search)
     {
+        $user = auth()->user();
+        $isSuperAdmin = $user->isSuperAdmin();
+        $skpdCodes = $user->getAccessibleSkpdCodes();
+
         // Subquery for unique functional positions
         $subRef = DB::table('ref_jabatan_fungsional')
             ->select('kdfungsi', 'nama_jabatan')
@@ -391,46 +458,52 @@ class BkdReconController extends Controller
             ->leftJoin('bkd_pegawai as b', 'm.nip', '=', 'b.nip')
             ->leftJoinSub($subRef, 'rf', 'm.kdfungsi', '=', 'rf.kdfungsi')
             ->whereNull('b.nip')
-            ->whereIn('m.kdstapeg', [1, 2, 3, 4, 5, 11, 12])
-            ->select(
-                'm.nip',
-                DB::raw("NULL as bkd_nama"),
-                DB::raw("NULL as bkd_nik"),
-                DB::raw("NULL as bkd_jabatan"),
-                DB::raw("NULL as bkd_golongan"),
-                DB::raw("NULL as bkd_tgl_lahir"),
-                DB::raw("NULL as bkd_jk"),
-                'm.nama as sg_nama',
-                'm.noktp as sg_nik',
-                DB::raw("CONCAT(COALESCE(m.glrdepan,''), ' ', m.nama, ' ', COALESCE(m.glrbelakan,'')) as sg_nama_lengkap"),
-                'm.kdpangkat as sg_golongan',
-                'm.tgllhr as sg_tgl_lahir',
-                'm.kdjenkel as sg_jk',
-                'rf.nama_jabatan as sg_jabatan',
-                DB::raw("'simgaji_only_pns' as match_status")
-            );
+            ->whereIn('m.kdstapeg', [1, 2, 3, 4, 5, 11, 12]);
+        
+        if (!$isSuperAdmin) $pnsOnly->whereIn('m.kdskpd', $skpdCodes);
+
+        $pnsOnly->select(
+            'm.nip',
+            DB::raw("NULL as bkd_nama"),
+            DB::raw("NULL as bkd_nik"),
+            DB::raw("NULL as bkd_jabatan"),
+            DB::raw("NULL as bkd_golongan"),
+            DB::raw("NULL as bkd_tgl_lahir"),
+            DB::raw("NULL as bkd_jk"),
+            'm.nama as sg_nama',
+            'm.noktp as sg_nik',
+            DB::raw("CONCAT(COALESCE(m.glrdepan,''), ' ', m.nama, ' ', COALESCE(m.glrbelakan,'')) as sg_nama_lengkap"),
+            'm.kdpangkat as sg_golongan',
+            'm.tgllhr as sg_tgl_lahir',
+            'm.kdjenkel as sg_jk',
+            'rf.nama_jabatan as sg_jabatan',
+            DB::raw("'simgaji_only_pns' as match_status")
+        );
 
         // PPPK-PW not in BKD
         $pwOnly = DB::table('pegawai_pw as pw')
             ->leftJoin('bkd_pegawai as b', 'pw.nip', '=', 'b.nip')
-            ->whereNull('b.nip')
-            ->select(
-                'pw.nip',
-                DB::raw("NULL as bkd_nama"),
-                DB::raw("NULL as bkd_nik"),
-                DB::raw("NULL as bkd_jabatan"),
-                DB::raw("NULL as bkd_golongan"),
-                DB::raw("NULL as bkd_tgl_lahir"),
-                DB::raw("NULL as bkd_jk"),
-                'pw.nama as sg_nama',
-                'pw.nik as sg_nik',
-                'pw.nama as sg_nama_lengkap',
-                'pw.golru as sg_golongan',
-                'pw.tgl_lahir as sg_tgl_lahir',
-                'pw.jk as sg_jk',
-                'pw.jabatan as sg_jabatan',
-                DB::raw("'simgaji_only_pw' as match_status")
-            );
+            ->whereNull('b.nip');
+        
+        if (!$isSuperAdmin) $pwOnly->whereIn('pw.idskpd', $skpdCodes);
+
+        $pwOnly->select(
+            'pw.nip',
+            DB::raw("NULL as bkd_nama"),
+            DB::raw("NULL as bkd_nik"),
+            DB::raw("NULL as bkd_jabatan"),
+            DB::raw("NULL as bkd_golongan"),
+            DB::raw("NULL as bkd_tgl_lahir"),
+            DB::raw("NULL as bkd_jk"),
+            'pw.nama as sg_nama',
+            'pw.nik as sg_nik',
+            'pw.nama as sg_nama_lengkap',
+            'pw.golru as sg_golongan',
+            'pw.tgl_lahir as sg_tgl_lahir',
+            'pw.jk as sg_jk',
+            'pw.jabatan as sg_jabatan',
+            DB::raw("'simgaji_only_pw' as match_status")
+        );
 
         if ($search) {
             $pnsOnly->where(function($q) use ($search) {

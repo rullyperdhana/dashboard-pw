@@ -192,22 +192,20 @@ Route::middleware('auth:sanctum')->group(function () {
         });
 
         // BKD Reconciliation
+    });
+
+    Route::middleware('role:superadmin,operator')->group(function () {
         Route::prefix('bkd-recon')->group(function () {
             Route::get('/', [App\Http\Controllers\Api\BkdReconController::class, 'index']);
             Route::post('/upload', [App\Http\Controllers\Api\BkdReconController::class, 'store']);
             Route::get('/summary', [App\Http\Controllers\Api\BkdReconController::class, 'summary']);
             Route::get('/export', [App\Http\Controllers\Api\BkdReconController::class, 'export']);
         });
+
+        // BPJS Rekon
+        Route::get('/bpjs-rekon', [BpjsRekonController::class, 'index']);
+        Route::get('/bpjs-rekon/ump', [BpjsRekonController::class, 'getUmp']);
     });
-
-    // Upload Jobs (Queue-based)
-    Route::post('/upload-jobs', [UploadJobController::class, 'store']);
-    Route::get('/upload-jobs', [UploadJobController::class, 'index']);
-    Route::get('/upload-jobs/{id}', [UploadJobController::class, 'show']);
-
-    // BPJS Rekon
-    Route::get('/bpjs-rekon', [BpjsRekonController::class, 'index']);
-    Route::get('/bpjs-rekon/ump', [BpjsRekonController::class, 'getUmp']);
     Route::put('/bpjs-rekon/ump', [BpjsRekonController::class, 'updateUmp']);
     Route::get('/bpjs-rekon/export', [BpjsRekonController::class, 'export']);
 
