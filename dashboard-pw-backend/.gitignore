@@ -22,3 +22,4 @@ yarn-error.log
 debug-*.php
 restore_*.php
 *.xlsx
+!BPA2 Excel to XML.xlsx

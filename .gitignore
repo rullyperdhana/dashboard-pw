@@ -5,6 +5,7 @@
 
 # ── Data sensitif (database, spreadsheet, DBF) ────────────────────────────
 *.xlsx
+!BPA2 Excel to XML.xlsx
 *.xls
 *.csv
 *.dbf
