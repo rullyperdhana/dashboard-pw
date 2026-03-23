@@ -166,7 +166,14 @@ class Sp2dController extends Controller
 
                 $pnsInt = $pnsInternal->whereIn('kdskpd', $kdskpds)->where('jenis_gaji', $type);
                 $pppkInt = $pppkInternal->whereIn('kdskpd', $kdskpds)->where('jenis_gaji', $type);
-                $pwInt = ($type === 'Induk') ? $pwInternal->where('idskpd', $skpd->id_skpd) : collect();
+                
+                // Aggregate PW data across all sub-units for this main SKPD
+                $pwInt = collect();
+                if ($type === 'Induk') {
+                    $prefix = substr($skpd->kode_skpd, 0, 18);
+                    $allUnitIds = Skpd::where('kode_skpd', 'LIKE', $prefix . '%')->pluck('id_skpd')->toArray();
+                    $pwInt = $pwInternal->whereIn('idskpd', $allUnitIds);
+                }
 
                 $resultData[] = [
                     'id_skpd' => $skpd->id_skpd,
