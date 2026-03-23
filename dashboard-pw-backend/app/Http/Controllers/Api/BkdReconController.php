@@ -396,7 +396,7 @@ class BkdReconController extends Controller
 
     /**
      * Normalize golongan to unified numeric format.
-     * "III/d" -> "3D", "3D" -> "3D", "IV/e" -> "4E"
+     * "III/d" -> "3D", "3D" -> "3D", "IV/e" -> "4E", "IX" -> "9", "09" -> "9"
      */
     private function normalizeGolongan(string $gol): string
     {
@@ -405,13 +405,22 @@ class BkdReconController extends Controller
 
         $gol = str_replace(['/', ' ', '-', '.'], '', $gol);
 
-        $romanMap = ['IV' => '4', 'III' => '3', 'II' => '2', 'I' => '1'];
+        // Map Roman numerals to numbers (longest first to avoid partial match)
+        $romanMap = [
+            'VIII' => '8', 'VII' => '7', 'VI' => '6',
+            'IV' => '4', 'IX' => '9', 'V' => '5',
+            'III' => '3', 'II' => '2', 'I' => '1',
+        ];
+
         foreach ($romanMap as $roman => $number) {
             if (str_starts_with($gol, $roman)) {
                 $gol = $number . substr($gol, strlen($roman));
                 break;
             }
         }
+
+        // Strip leading zeros from numeric part (e.g. "09" -> "9")
+        $gol = ltrim($gol, '0') ?: '0';
 
         return $gol;
     }
