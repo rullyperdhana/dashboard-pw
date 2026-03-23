@@ -799,6 +799,8 @@ class SettingController extends Controller
 
             $mysqldump = 'mysqldump';
             $possiblePaths = [
+                '/Applications/MAMP/Library/bin/mysql80/bin/mysqldump',
+                '/Applications/MAMP/Library/bin/mysql57/bin/mysqldump',
                 '/Applications/MAMP/Library/bin/mysqldump',
                 '/Applications/MAMP PRO/Contents/Resources/bin/mysqldump',
                 '/usr/local/mysql/bin/mysqldump',
@@ -898,6 +900,8 @@ class SettingController extends Controller
             $mysql = 'mysql';
             // Cek path mysql (termasuk path MAMP, MAMP PRO, Herd)
             $possibleMysqlPaths = [
+                '/Applications/MAMP/Library/bin/mysql80/bin/mysql',
+                '/Applications/MAMP/Library/bin/mysql57/bin/mysql',
                 '/Applications/MAMP/Library/bin/mysql',
                 '/Applications/MAMP PRO/Contents/Resources/bin/mysql',
                 '/usr/local/mysql/bin/mysql',
