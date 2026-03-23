@@ -16,8 +16,24 @@ class BudgetPredictionController extends Controller
      */
     public function index(Request $request)
     {
+        $user = auth()->user();
+        $isSuperAdmin = $user && $user->role === 'superadmin';
+
         $growthFactor = $request->query('growth_factor', 5);
-        $category = $request->query('category', 'pw');
+        $category = $request->query('category');
+        
+        // If category not provided, default based on role
+        if (!$category) {
+            $category = $isSuperAdmin ? 'pw' : 'pns';
+        }
+
+        // Restrict PW for non-superadmins
+        if ($category === 'pw' && !$isSuperAdmin) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Anda tidak memiliki akses ke data PPPK-PW.'
+            ], 403);
+        }
 
         if ($category === 'pw') {
             return $this->predictPW($growthFactor, $request);
