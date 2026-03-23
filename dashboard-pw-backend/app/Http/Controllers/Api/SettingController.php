@@ -781,6 +781,7 @@ class SettingController extends Controller
 
     public function backupDatabase()
     {
+        Log::info("GUI Backup initiated by user: " . (auth()->user()->username ?? 'unknown'));
         try {
             $dbName = config('database.connections.mysql.database');
             $dbUser = config('database.connections.mysql.username');
@@ -833,7 +834,10 @@ class SettingController extends Controller
             }
 
             return response()->download($path)->deleteFileAfterSend(true);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            Log::error("Fatal error in backupDatabase: " . $e->getMessage(), [
+                'trace' => substr($e->getTraceAsString(), 0, 500)
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Fatal Error: ' . $e->getMessage()
@@ -889,7 +893,10 @@ class SettingController extends Controller
             }
 
             return response()->json(['success' => true, 'message' => 'Database restored successfully!']);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            Log::error("Fatal error in importDatabase: " . $e->getMessage(), [
+                'trace' => substr($e->getTraceAsString(), 0, 500)
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Fatal Error: ' . $e->getMessage()
