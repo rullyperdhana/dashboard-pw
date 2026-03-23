@@ -843,12 +843,41 @@ class SettingController extends Controller
             $dbPass = config('database.connections.mysql.password');
             $dbHost = config('database.connections.mysql.host');
 
-            $ext = $file->getClientOriginalExtension();
+            $ext = strtolower($file->getClientOriginalExtension());
+            $tempSqlPath = null;
+            $importPath = $path;
+
+            // Handle ZIP
+            if ($ext === 'zip') {
+                $zip = new \ZipArchive();
+                if ($zip->open($path) === TRUE) {
+                    $sqlEntry = null;
+                    for($i = 0; $i < $zip->numFiles; $i++) {
+                        $name = $zip->getNameIndex($i);
+                        if (str_ends_with(strtolower($name), '.sql')) {
+                            $sqlEntry = $name;
+                            break;
+                        }
+                    }
+                    
+                    if (!$sqlEntry) {
+                        $zip->close();
+                        return response()->json(['success' => false, 'message' => 'Tidak ditemukan file .sql di dalam ZIP.'], 400);
+                    }
+
+                    $tempSqlPath = storage_path('app/temp_import_' . time() . '.sql');
+                    file_put_contents($tempSqlPath, $zip->getFromName($sqlEntry));
+                    $importPath = $tempSqlPath;
+                    $zip->close();
+                } else {
+                    return response()->json(['success' => false, 'message' => 'Gagal mengekstrak file ZIP.'], 400);
+                }
+            }
             
             if ($ext === 'gz') {
                 $command = sprintf(
-                    'gunzip < %s | mysql -h %s -u %s -p%s %s 2>&1',
-                    escapeshellarg($path),
+                    'gunzip < %s | mysql -h %s -u %s --password=%s %s 2>&1',
+                    escapeshellarg($importPath),
                     escapeshellarg($dbHost),
                     escapeshellarg($dbUser),
                     escapeshellarg($dbPass),
@@ -856,16 +885,21 @@ class SettingController extends Controller
                 );
             } else {
                 $command = sprintf(
-                    'mysql -h %s -u %s -p%s %s < %s 2>&1',
+                    'mysql -h %s -u %s --password=%s %s < %s 2>&1',
                     escapeshellarg($dbHost),
                     escapeshellarg($dbUser),
                     escapeshellarg($dbPass),
                     escapeshellarg($dbName),
-                    escapeshellarg($path)
+                    escapeshellarg($importPath)
                 );
             }
 
             exec($command, $output, $returnVar);
+
+            // Cleanup temp file if exists
+            if ($tempSqlPath && file_exists($tempSqlPath)) {
+                unlink($tempSqlPath);
+            }
 
             if ($returnVar !== 0) {
                  return response()->json([
@@ -874,7 +908,7 @@ class SettingController extends Controller
                  ], 500);
             }
 
-            return response()->json(['success' => true, 'message' => 'Database restored successfully!']);
+            return response()->json(['success' => true, 'message' => 'Database berhasil dipulihkan dari ' . $file->getClientOriginalName()]);
         } catch (\Throwable $e) {
             Log::error("Fatal error in importDatabase: " . $e->getMessage(), [
                 'trace' => substr($e->getTraceAsString(), 0, 500)
