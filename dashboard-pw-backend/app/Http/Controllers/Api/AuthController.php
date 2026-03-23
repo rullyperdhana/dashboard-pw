@@ -84,10 +84,17 @@ class AuthController extends Controller
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             RateLimiter::hit($throttleKey, 60);
+            
+            // Fire Failed event for logging
+            event(new \Illuminate\Auth\Events\Failed('sanctum', $user, $request->only('username', 'password')));
+            
             throw ValidationException::withMessages([
                 'username' => ['Username atau password salah.'],
             ]);
         }
+
+        // Fire Login event for logging
+        event(new \Illuminate\Auth\Events\Login('sanctum', $user, false));
 
         RateLimiter::clear($throttleKey);
 
