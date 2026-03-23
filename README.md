@@ -29,6 +29,8 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 | **Status Pajak (PTKP)**| Kelola status PTKP statis tahunan (K/0, TK/1, dll) |
 | **API Integrasi**    | Endpoint API Key untuk integrasi sistem Simgaji |
 | **Pajak TER (A2)**  | Perhitungan PPh 21 TER & Export Bukti Potong A2 |
+| **Log Keamanan**     | Audit trail login (berhasil/gagal) & deteksi brute-force |
+| **Verifikasi SP2D**  | Rekon rincian gaji SIMGAJI vs Realisasi SIPD (Gaji & TPP) |
 | **Export Excel & PDF** | Export laporan sesuai tab yang aktif |
 
 ---
