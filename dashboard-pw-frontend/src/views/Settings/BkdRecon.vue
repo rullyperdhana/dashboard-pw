@@ -145,6 +145,9 @@
             <template v-slot:item.bkd_jabatan="{ item }">
               <span class="text-caption" :class="{ 'diff-highlight': item.differences?.includes('jabatan') }">{{ item.bkd_jabatan || '-' }}</span>
             </template>
+            <template v-slot:item.sg_jabatan="{ item }">
+              <span class="text-caption" :class="{ 'diff-highlight': item.differences?.includes('jabatan') }">{{ item.sg_jabatan || '-' }}</span>
+            </template>
 
             <template v-slot:item.match_status="{ item }">
               <v-chip
@@ -236,6 +239,7 @@ const headers = [
   { title: 'Gol (BKD)', key: 'bkd_golongan', sortable: false, width: '75px' },
   { title: 'Gol (SG)', key: 'sg_golongan', sortable: false, width: '75px' },
   { title: 'Jabatan (BKD)', key: 'bkd_jabatan', sortable: false },
+  { title: 'Jabatan (SG)', key: 'sg_jabatan', sortable: false },
   { title: 'Status', key: 'match_status', sortable: false, width: '90px' },
 ]
 
@@ -330,14 +334,14 @@ const showSnack = (text, color = 'success') => {
 
 const getStatusColor = (item) => {
   if (item.match_status === 'bkd_only') return 'orange'
-  if (item.match_status === 'simgaji_only') return 'error'
+  if (item.match_status?.startsWith('simgaji_only')) return 'error'
   if (item.has_diff) return 'warning'
   return 'success'
 }
 
 const getStatusLabel = (item) => {
   if (item.match_status === 'bkd_only') return 'BKD Only'
-  if (item.match_status === 'simgaji_only') return 'SG Only'
+  if (item.match_status?.startsWith('simgaji_only')) return 'SG Only'
   if (item.has_diff) return 'Selisih'
   return 'Identik'
 }
