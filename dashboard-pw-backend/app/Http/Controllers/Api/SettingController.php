@@ -793,8 +793,20 @@ class SettingController extends Controller
             mkdir(storage_path("app/backups"), 0755, true);
         }
 
+        if (!function_exists('exec')) {
+            return response()->json(['success' => false, 'message' => 'Fungsi exec() dinonaktifkan di server (php.ini). Hubungi admin server.'], 500);
+        }
+
+        $mysqldump = 'mysqldump';
+        // Cek path mysqldump
+        $checkPath = exec('which mysqldump');
+        if ($checkPath) {
+            $mysqldump = $checkPath;
+        }
+
         $command = sprintf(
-            'mysqldump --column-statistics=0 -h %s -u %s -p%s --no-tablespaces %s 2>&1 | gzip > %s',
+            '%s --column-statistics=0 -h %s -u %s -p%s --no-tablespaces %s 2>&1 | gzip > %s',
+            $mysqldump,
             escapeshellarg($dbHost),
             escapeshellarg($dbUser),
             escapeshellarg($dbPass),
@@ -810,9 +822,10 @@ class SettingController extends Controller
                 'output' => $output,
                 'return_var' => $returnVar
             ]);
+            $errorMsg = implode(' ', $output);
             return response()->json([
                 'success' => false, 
-                'message' => 'Backup failed. Error: ' . implode(' ', $output)
+                'message' => 'Gagal backup: ' . ($errorMsg ?: 'Unknown error (Return Code: ' . $returnVar . ')')
             ], 500);
         }
 
@@ -821,6 +834,10 @@ class SettingController extends Controller
 
     public function importDatabase(Request $request)
     {
+        if (!function_exists('exec')) {
+            return response()->json(['success' => false, 'message' => 'Fungsi exec() dinonaktifkan di server (php.ini).'], 500);
+        }
+
         $request->validate(['file' => 'required|file']);
         $file = $request->file('file');
         $path = $file->getRealPath();
