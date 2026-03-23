@@ -41,7 +41,7 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
 ---
  
-### 📑 Pajak TER & Bukti Potong A2 (v3.8)
+### 📑 Pajak TER & Bukti Potong A2 (v3.9.0)
 - **Unified SKPD Engine:** Perhitungan PPh 21 kini menggunakan `skpd_id` tunggal yang terintegrasi untuk seluruh jenis pegawai (PNS & PPPK), memastikan laporan akurat meskipun dari sumber data yang berbeda.
 - **Bulk Management Tools:** Fitur ceklist (multi-select) untuk penghapusan data masal, memudahkan Superadmin dalam melakukan pembersihan atau pemutakhiran data perhitungan dalam jumlah besar.
 - **Administrative Controls:** Tombol hapus khusus Superadmin per baris laporan dengan konfirmasi keamanan untuk mencegah kesalahan operasional.
@@ -50,7 +50,7 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 - **PTKP Intelligence:** Pemetaan otomatis status PTKP (Kawin/Anak) pegawai ke Kategori TER yang sesuai secara *real-time*.
 - **Official A2 Export:** Export Bukti Potong A2 ke Excel sesuai format resmi.
 
-### 📄 Laporan & Transparansi (v3.6)
+### 📄 Laporan & Transparansi (v3.9.0)
 - **AI-Driven Analytics (TAPD):** Dashboard cerdas untuk Tim Anggaran Pemerintah Daerah yang mensimulasikan kenaikan anggaran berdasarkan data rill **KGB** (2 tahunan), **Kenaikan Pangkat** (4 tahunan), dan jadwal pensiun massal.
 - **Executive Mobile Dashboard:** Tampilan khusus yang dioptimalkan untuk perangkat mobile/smartphone bagi pimpinan (Kepala Dinas/Bupati) untuk memantau realisasi belanja pegawai secara *real-time*.
 - **PWA Ready:** Aplikasi kini mendukung instalasi langsung ke layar utama HP (*Add to Home Screen*) untuk akses cepat modul eksekutif.
@@ -76,14 +76,14 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 - **SKPD Name Normalization:** Pembersihan otomatis dan penggabungan (merge) nama SKPD yang terduplikasi karena spasi atau perbedaan kode, memastikan filter dropdown selalu bersih dan unik.
 - **VPS Migration Resiliency:** Penyesuaian skema database untuk mendukung migrasi yang lebih stabil pada berbagai konfigurasi server VPS (Foreign Key normalization).
 
-### 🔐 Keamanan & Role-Based Access (v3.1)
+### 🔐 Keamanan & Role-Based Access (v3.9.0)
 - **THR Management Restriction:** Fitur Generate, Edit, Tambah, dan Hapus data THR dibatasi khusus untuk akun **Superadmin**.
 - **Session Timeout:** Sesi otomatis berakhir setelah 30 menit tidak aktif.
 - **Audit Logging:** Pencatatan aktivitas sensitif (hapus data, upload, posting) ke database.
 - **Rate Limiting:** Pembatasan percobaan login (5 kali per 15 menit) untuk mencegah brute-force.
 - **Konfirmasi Password:** Validasi password admin untuk aksi penghapusan data masal.
 
-### 🛠️ Integrasi Master Data DBF (v2.6)
+### 🛠️ Integrasi Master Data DBF (v3.9.0)
 - **Import Langsung:** Mendukung import file `MST_PGW.DBF`, `KEL.DBF`, dan `GAJI.DBF`.
 - **Sinkronisasi Otomatis:** Pemutakhiran data pegawai dan keluarga secara massal.
 - **Riwayat Gaji Pokok:** Melacak perubahan gaji pokok pegawai dari waktu ke waktu.
