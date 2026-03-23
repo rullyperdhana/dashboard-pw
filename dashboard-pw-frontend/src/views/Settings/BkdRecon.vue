@@ -6,56 +6,67 @@
     <v-main>
       <v-container fluid class="pa-6 pa-md-8">
         <!-- Header -->
-        <div class="d-flex align-center mb-6">
+        <div class="d-flex align-center mb-6 flex-wrap ga-2">
           <div>
             <h1 class="text-h5 font-weight-bold">Rekonsiliasi Data BKD</h1>
             <p class="text-body-2 text-medium-emphasis mt-1">Bandingkan data pegawai BKD dengan data SimGaji</p>
           </div>
           <v-spacer></v-spacer>
+          <v-btn color="success" prepend-icon="mdi-download" variant="tonal" rounded="lg" @click="doExport" :loading="exporting" class="mr-2">
+            Export XLS
+          </v-btn>
           <v-btn color="primary" prepend-icon="mdi-upload" variant="flat" rounded="lg" @click="uploadDialog = true">
             Upload Data BKD
           </v-btn>
         </div>
 
         <!-- Summary Cards -->
-        <v-row v-if="summary" class="mb-6">
+        <v-row v-if="summary" class="mb-4" dense>
           <v-col cols="6" sm="4" md="2">
-            <v-card variant="tonal" color="primary" class="rounded-xl pa-4 text-center">
-              <div class="text-h5 font-weight-black">{{ summary.bkd_total }}</div>
+            <v-card variant="tonal" color="primary" class="rounded-xl pa-3 text-center" @click="filter = 'all'" style="cursor: pointer">
+              <div class="text-h6 font-weight-black">{{ summary.bkd_total }}</div>
               <div class="text-caption font-weight-bold mt-1">Data BKD</div>
             </v-card>
           </v-col>
           <v-col cols="6" sm="4" md="2">
-            <v-card variant="tonal" color="blue" class="rounded-xl pa-4 text-center">
-              <div class="text-h5 font-weight-black">{{ summary.simgaji_active_total }}</div>
-              <div class="text-caption font-weight-bold mt-1">SimGaji Aktif</div>
-            </v-card>
-          </v-col>
-          <v-col cols="6" sm="4" md="2">
-            <v-card variant="tonal" color="success" class="rounded-xl pa-4 text-center">
-              <div class="text-h5 font-weight-black">{{ summary.identical }}</div>
+            <v-card variant="tonal" color="success" class="rounded-xl pa-3 text-center" @click="filter = 'all'" style="cursor: pointer">
+              <div class="text-h6 font-weight-black">{{ summary.identical }}</div>
               <div class="text-caption font-weight-bold mt-1">Identik</div>
             </v-card>
           </v-col>
           <v-col cols="6" sm="4" md="2">
-            <v-card variant="tonal" color="warning" class="rounded-xl pa-4 text-center">
-              <div class="text-h5 font-weight-black">{{ summary.with_differences }}</div>
+            <v-card variant="tonal" color="warning" class="rounded-xl pa-3 text-center" @click="filter = 'diff'" style="cursor: pointer">
+              <div class="text-h6 font-weight-black">{{ summary.with_differences }}</div>
               <div class="text-caption font-weight-bold mt-1">Selisih</div>
             </v-card>
           </v-col>
           <v-col cols="6" sm="4" md="2">
-            <v-card variant="tonal" color="orange" class="rounded-xl pa-4 text-center">
-              <div class="text-h5 font-weight-black">{{ summary.bkd_only }}</div>
+            <v-card variant="tonal" color="orange" class="rounded-xl pa-3 text-center" @click="filter = 'bkd_only'" style="cursor: pointer">
+              <div class="text-h6 font-weight-black">{{ summary.bkd_only }}</div>
               <div class="text-caption font-weight-bold mt-1">Hanya BKD</div>
             </v-card>
           </v-col>
           <v-col cols="6" sm="4" md="2">
-            <v-card variant="tonal" color="error" class="rounded-xl pa-4 text-center">
-              <div class="text-h5 font-weight-black">{{ summary.simgaji_only }}</div>
+            <v-card variant="tonal" color="error" class="rounded-xl pa-3 text-center" @click="filter = 'simgaji_only'" style="cursor: pointer">
+              <div class="text-h6 font-weight-black">{{ summary.simgaji_only }}</div>
               <div class="text-caption font-weight-bold mt-1">Hanya SimGaji</div>
             </v-card>
           </v-col>
         </v-row>
+
+        <!-- Diff breakdown chips -->
+        <div v-if="summary && summary.with_differences > 0" class="mb-4 d-flex align-center ga-2 flex-wrap">
+          <span class="text-caption text-medium-emphasis mr-1">Detail Selisih:</span>
+          <v-chip size="small" :color="filter === 'diff_nik' ? 'primary' : 'default'" :variant="filter === 'diff_nik' ? 'flat' : 'outlined'" @click="filter = filter === 'diff_nik' ? 'diff' : 'diff_nik'" style="cursor: pointer">
+            NIK: {{ summary.diff_nik }}
+          </v-chip>
+          <v-chip size="small" :color="filter === 'diff_golongan' ? 'primary' : 'default'" :variant="filter === 'diff_golongan' ? 'flat' : 'outlined'" @click="filter = filter === 'diff_golongan' ? 'diff' : 'diff_golongan'" style="cursor: pointer">
+            Golongan: {{ summary.diff_golongan }}
+          </v-chip>
+          <v-chip size="small" :color="filter === 'diff_jabatan' ? 'primary' : 'default'" :variant="filter === 'diff_jabatan' ? 'flat' : 'outlined'" @click="filter = filter === 'diff_jabatan' ? 'diff' : 'diff_jabatan'" style="cursor: pointer">
+            Jabatan: {{ summary.diff_jabatan }}
+          </v-chip>
+        </div>
 
         <v-alert v-if="summary && summary.last_upload" type="info" variant="tonal" density="compact" class="mb-4 rounded-lg" closable>
           Data BKD terakhir diupload pada: <strong>{{ formatDate(summary.last_upload) }}</strong>
@@ -77,12 +88,12 @@
                 @keyup.enter="fetchData"
               ></v-text-field>
             </v-col>
-            <v-col cols="12" sm="6" md="4">
+            <v-col cols="12" sm="6" md="5">
               <v-btn-toggle v-model="filter" mandatory color="primary" variant="outlined" rounded="pill" density="compact">
                 <v-btn value="all" size="small">Semua</v-btn>
                 <v-btn value="diff" size="small">Selisih</v-btn>
                 <v-btn value="bkd_only" size="small">BKD Only</v-btn>
-                <v-btn value="simgaji_only" size="small">SimGaji Only</v-btn>
+                <v-btn value="simgaji_only" size="small">SG Only</v-btn>
               </v-btn-toggle>
             </v-col>
             <v-col cols="auto">
@@ -111,14 +122,14 @@
             </template>
 
             <template v-slot:item.bkd_nama="{ item }">
-              <span :class="{ 'diff-highlight': item.differences?.includes('nama') }">{{ item.bkd_nama || '-' }}</span>
+              <span class="text-body-2">{{ item.bkd_nama || '-' }}</span>
             </template>
             <template v-slot:item.sg_nama="{ item }">
-              <span :class="{ 'diff-highlight': item.differences?.includes('nama') }">{{ item.sg_nama || '-' }}</span>
+              <span class="text-body-2">{{ item.sg_nama || '-' }}</span>
             </template>
 
             <template v-slot:item.bkd_nik="{ item }">
-              <span :class="{ 'diff-highlight': item.differences?.includes('nik') }" class="text-caption">{{ item.bkd_nik || '-' }}</span>
+              <span :class="{ 'diff-highlight': item.differences?.includes('nik') }" class="text-caption">{{ cleanNik(item.bkd_nik) || '-' }}</span>
             </template>
             <template v-slot:item.sg_nik="{ item }">
               <span :class="{ 'diff-highlight': item.differences?.includes('nik') }" class="text-caption">{{ item.sg_nik || '-' }}</span>
@@ -129,6 +140,10 @@
             </template>
             <template v-slot:item.sg_golongan="{ item }">
               <span :class="{ 'diff-highlight': item.differences?.includes('golongan') }">{{ item.sg_golongan || '-' }}</span>
+            </template>
+
+            <template v-slot:item.bkd_jabatan="{ item }">
+              <span class="text-caption" :class="{ 'diff-highlight': item.differences?.includes('jabatan') }">{{ item.bkd_jabatan || '-' }}</span>
             </template>
 
             <template v-slot:item.match_status="{ item }">
@@ -202,6 +217,7 @@ const perPage = ref(50)
 const search = ref('')
 const filter = ref('all')
 const summary = ref(null)
+const exporting = ref(false)
 
 const uploadDialog = ref(false)
 const uploadFile = ref(null)
@@ -212,14 +228,15 @@ const snackText = ref('')
 const snackColor = ref('success')
 
 const headers = [
-  { title: 'NIP', key: 'nip', sortable: false, width: '170px' },
+  { title: 'NIP', key: 'nip', sortable: false, width: '160px' },
   { title: 'Nama (BKD)', key: 'bkd_nama', sortable: false },
-  { title: 'Nama (SimGaji)', key: 'sg_nama', sortable: false },
-  { title: 'NIK (BKD)', key: 'bkd_nik', sortable: false, width: '150px' },
-  { title: 'NIK (SimGaji)', key: 'sg_nik', sortable: false, width: '150px' },
-  { title: 'Gol (BKD)', key: 'bkd_golongan', sortable: false, width: '80px' },
-  { title: 'Gol (SG)', key: 'sg_golongan', sortable: false, width: '80px' },
-  { title: 'Status', key: 'match_status', sortable: false, width: '100px' },
+  { title: 'Nama (SG)', key: 'sg_nama', sortable: false },
+  { title: 'NIK (BKD)', key: 'bkd_nik', sortable: false, width: '140px' },
+  { title: 'NIK (SG)', key: 'sg_nik', sortable: false, width: '140px' },
+  { title: 'Gol (BKD)', key: 'bkd_golongan', sortable: false, width: '75px' },
+  { title: 'Gol (SG)', key: 'sg_golongan', sortable: false, width: '75px' },
+  { title: 'Jabatan (BKD)', key: 'bkd_jabatan', sortable: false },
+  { title: 'Status', key: 'match_status', sortable: false, width: '90px' },
 ]
 
 const fetchSummary = async () => {
@@ -282,6 +299,29 @@ const doUpload = async () => {
   }
 }
 
+const doExport = async () => {
+  exporting.value = true
+  try {
+    const res = await api.get('/bkd-recon/export', {
+      params: { filter: filter.value },
+      responseType: 'blob',
+    })
+    const url = window.URL.createObjectURL(new Blob([res.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `rekon_bkd_${filter.value}.xlsx`)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+    showSnack('File berhasil didownload!', 'success')
+  } catch (err) {
+    showSnack('Gagal mengexport file.', 'error')
+  } finally {
+    exporting.value = false
+  }
+}
+
 const showSnack = (text, color = 'success') => {
   snackText.value = text
   snackColor.value = color
@@ -300,6 +340,11 @@ const getStatusLabel = (item) => {
   if (item.match_status === 'simgaji_only') return 'SG Only'
   if (item.has_diff) return 'Selisih'
   return 'Identik'
+}
+
+const cleanNik = (nik) => {
+  if (!nik) return ''
+  return nik.replace(/'/g, '')
 }
 
 const formatDate = (dateStr) => {

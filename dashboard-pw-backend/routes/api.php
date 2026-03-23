@@ -196,6 +196,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/', [App\Http\Controllers\Api\BkdReconController::class, 'index']);
             Route::post('/upload', [App\Http\Controllers\Api\BkdReconController::class, 'store']);
             Route::get('/summary', [App\Http\Controllers\Api\BkdReconController::class, 'summary']);
+            Route::get('/export', [App\Http\Controllers\Api\BkdReconController::class, 'export']);
         });
     });
 
