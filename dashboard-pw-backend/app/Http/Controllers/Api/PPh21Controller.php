@@ -278,7 +278,7 @@ class PPh21Controller extends Controller
             $query->where('c.skpd_id', $skpd);
         }
 
-        $summary = $query->selectRaw('
+        $paginator = $query->selectRaw('
             c.bulan, 
             c.skpd_id,
             COALESCE(MAX(s.nama_skpd), CONCAT("SKPD ID: ", c.skpd_id)) as nama_skpd,
@@ -287,13 +287,19 @@ class PPh21Controller extends Controller
             SUM(c.tax_amount) as total_tax
         ')
         ->groupBy('c.bulan', 'c.skpd_id')
-        ->orderBy('c.bulan')
+        ->orderBy('c.bulan', 'desc')
         ->orderBy('c.skpd_id')
-        ->get();
+        ->paginate($request->per_page ?? 25);
 
         return response()->json([
             'success' => true,
-            'data' => $summary
+            'data' => $paginator->items(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ]
         ]);
     }
 

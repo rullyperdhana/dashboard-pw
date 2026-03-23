@@ -206,6 +206,20 @@
             </tbody>
           </v-table>
           
+          <v-divider></v-divider>
+          <v-card-actions class="pa-4">
+            <span class="text-caption text-medium-emphasis">Total: {{ reportMeta.total }} Data Laporan</span>
+            <v-spacer></v-spacer>
+            <v-pagination
+              v-model="currentPageReport"
+              :length="reportMeta.last_page"
+              :total-visible="7"
+              density="comfortable"
+              @update:model-value="fetchReport"
+              :disabled="loading"
+            ></v-pagination>
+          </v-card-actions>
+          
           <!-- Bulk Action Bar -->
           <v-fade-transition>
             <div v-if="selectedItems.length > 0" class="bulk-action-bar pa-4 d-flex align-center">
@@ -380,6 +394,14 @@ const snackColor = ref('info')
 const monDialog = ref(false)
 const monitoringData = ref([])
 const loadingMon = ref(false)
+const reportMeta = ref({
+  current_page: 1,
+  last_page: 1,
+  total: 0,
+  per_page: 25
+})
+const currentPageReport = ref(1)
+
 const monMeta = ref({
   current_page: 1,
   last_page: 1,
@@ -429,10 +451,12 @@ const fetchReport = async () => {
     const res = await api.get('/pph21/report', { 
       params: { 
         year: selectedYear.value,
-        skpd: selectedSkpd.value
+        skpd: selectedSkpd.value,
+        page: currentPageReport.value
       } 
     })
     reports.value = res.data.data
+    reportMeta.value = res.data.meta
   } catch (err) {
     console.error('Report Error:', err)
   } finally {
@@ -606,7 +630,10 @@ onMounted(() => {
   fetchReport()
 })
 
-watch([selectedYear, selectedSkpd], fetchReport)
+watch([selectedYear, selectedSkpd], () => {
+  currentPageReport.value = 1
+  fetchReport()
+})
 </script>
 
 <style scoped>
