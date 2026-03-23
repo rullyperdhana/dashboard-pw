@@ -81,7 +81,7 @@
         </v-btn>
       </template>
       <v-list class="pa-2 rounded-lg elevation-4">
-        <v-list-item @click="$emit('show-coming-soon', 'Pengaturan Akun')" rounded class="mb-1">
+        <v-list-item @click="settingsDialog = true" rounded class="mb-1">
            <template v-slot:prepend>
              <v-icon color="primary">mdi-account-cog-outline</v-icon>
            </template>
@@ -96,6 +96,13 @@
         </v-list-item>
       </v-list>
     </v-menu>
+
+    <!-- Account Settings Dialog -->
+    <AccountSettingsDialog
+      v-model="settingsDialog"
+      :user="user"
+      @user-updated="handleUserUpdated"
+    />
   </v-app-bar>
 </template>
 
@@ -104,11 +111,13 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '../api'
 import ThemeToggle from './ThemeToggle.vue'
+import AccountSettingsDialog from './AccountSettingsDialog.vue'
 import { toggleSidebar } from '../utils/sidebarState'
 
 const router = useRouter()
 const route = useRoute()
 const user = ref(null)
+const settingsDialog = ref(false)
 const currentTime = ref('')
 const currentDate = ref('')
 const searchQuery = ref('')
@@ -191,10 +200,24 @@ onUnmounted(() => {
   if (pollInterval) clearInterval(pollInterval)
 })
 
-const handleLogout = () => {
-  localStorage.removeItem('token')
-  localStorage.removeItem('user')
-  router.push('/login')
+const handleUserUpdated = (updatedUser) => {
+  localStorage.setItem('user', JSON.stringify(updatedUser))
+  user.value = updatedUser
+}
+
+const handleLogout = async () => {
+  try {
+    await api.post('/logout')
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    router.push('/login')
+  } catch (e) {
+    console.error('Logout failed', e)
+    // force logout anyway
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    router.push('/login')
+  }
 }
 
 defineEmits(['show-coming-soon'])

@@ -16,9 +16,19 @@ const router = createRouter({
         },
         {
             path: '/',
+            redirect: '/welcome',
+        },
+        {
+            path: '/welcome',
+            name: 'Welcome',
+            component: () => import('../views/Welcome.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Selamat Datang' },
+        },
+        {
+            path: '/dashboard-pppk-pw',
             name: 'DashboardPPPKPW',
             component: Dashboard,
-            meta: { requiresAuth: true, breadcrumb: 'Dashboard PPPK-PW' },
+            meta: { requiresAuth: true, breadcrumb: 'Dashboard PPPK-PW', app_access: 'pppk-pw-thr' },
         },
         {
             path: '/employees',
@@ -207,10 +217,10 @@ const router = createRouter({
             meta: { requiresAuth: true, breadcrumb: 'Riwayat Ekspor', roles: ['superadmin'] },
         },
         {
-            path: '/settings/help',
+            path: '/help',
             name: 'HelpCenter',
             component: () => import('../views/Settings/HelpCenter.vue'),
-            meta: { requiresAuth: true, breadcrumb: 'Pusat Bantuan', roles: ['superadmin'] },
+            meta: { requiresAuth: true, breadcrumb: 'Pusat Bantuan' },
         },
         {
             path: '/tpp/discrepancy-history',
@@ -236,6 +246,12 @@ const router = createRouter({
             component: () => import('../views/Settings/BkdRecon.vue'),
             meta: { requiresAuth: true, breadcrumb: 'Rekon Data BKD', roles: ['superadmin', 'operator'], app_access: 'bkd-recon' },
         },
+        {
+            path: '/settings/announcements',
+            name: 'AnnouncementManagement',
+            component: () => import('../views/AnnouncementManagement.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Kelola Pengumuman', roles: ['superadmin'] },
+        },
     ],
 })
 
@@ -248,7 +264,7 @@ router.beforeEach((to, from, next) => {
     if (to.meta.requiresAuth && !token) {
         return next('/login')
     } else if (to.meta.guest && token) {
-        return next('/')
+        return next('/welcome')
     }
 
     // Role and App Access check for protected routes

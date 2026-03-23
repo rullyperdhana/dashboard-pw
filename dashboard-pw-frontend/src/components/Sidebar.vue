@@ -88,13 +88,13 @@
           <v-divider class="mb-2 border-opacity-10"></v-divider>
           <v-btn
             block
-            prepend-icon="mdi-key-outline"
+            prepend-icon="mdi-account-cog-outline"
             variant="text"
             size="x-small"
             class="justify-start mb-1 px-2 text-medium-emphasis"
-            @click="passwordDialog = true"
+            @click="openSettings"
           >
-            Ganti Password
+            Pengaturan Akun
           </v-btn>
           <v-btn
             block
@@ -114,48 +114,12 @@
       </div>
     </template>
 
-    <!-- Change Password Dialog -->
-    <v-dialog v-model="passwordDialog" max-width="400px">
-      <v-card class="rounded-xl pa-2 glass-modal">
-        <v-card-title class="pa-4 font-weight-bold text-high-emphasis">Ganti Password</v-card-title>
-        <v-card-text>
-          <v-form ref="pwForm" v-model="pwValid">
-            <v-text-field
-              v-model="pwData.current_password"
-              label="Password Sekarang"
-              type="password"
-              variant="outlined"
-              density="compact"
-              rounded="lg"
-              :rules="[v => !!v || 'Wajib diisi']"
-            ></v-text-field>
-            <v-text-field
-              v-model="pwData.new_password"
-              label="Password Baru"
-              type="password"
-              variant="outlined"
-              density="compact"
-              rounded="lg"
-              :rules="[v => !!v || 'Wajib diisi', v => (v && v.length >= 6) || 'Minimal 6 karakter']"
-            ></v-text-field>
-            <v-text-field
-              v-model="pwData.new_password_confirmation"
-              label="Konfirmasi Password Baru"
-              type="password"
-              variant="outlined"
-              density="compact"
-              rounded="lg"
-              :rules="[v => !!v || 'Wajib diisi', v => v === pwData.new_password || 'Konfirmasi password tidak cocok']"
-            ></v-text-field>
-          </v-form>
-        </v-card-text>
-        <v-card-actions class="pa-4 pt-0">
-          <v-spacer></v-spacer>
-          <v-btn color="grey" variant="text" @click="passwordDialog = false">Batal</v-btn>
-          <v-btn color="primary" variant="flat" rounded="lg" @click="changePassword" :loading="pwLoading" :disabled="!pwValid">Simpan</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <!-- Account Settings Dialog -->
+    <AccountSettingsDialog
+      v-model="settingsDialog"
+      :user="user"
+      @user-updated="handleUserUpdated"
+    />
   </v-navigation-drawer>
 </template>
 
@@ -163,6 +127,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '../api'
+import AccountSettingsDialog from './AccountSettingsDialog.vue'
 import { isSidebarOpen } from '../utils/sidebarState'
 
 const appVersion = APP_VERSION
@@ -195,28 +160,15 @@ const userInitials = computed(() => {
   }
 })
 
-const passwordDialog = ref(false)
-const pwLoading = ref(false)
-const pwValid = ref(false)
-const pwData = ref({
-  current_password: '',
-  new_password: '',
-  new_password_confirmation: ''
-})
+const settingsDialog = ref(false)
 
-const changePassword = async () => {
-  pwLoading.value = true
-  try {
-    await api.post('/change-password', pwData.value)
-    alert('Password berhasil diubah')
-    passwordDialog.value = false
-    pwData.value = { current_password: '', new_password: '', new_password_confirmation: '' }
-  } catch (error) {
-    console.error('Error changing password:', error)
-    alert(error.response?.data?.message || 'Gagal mengubah password. Pastikan password lama benar.')
-  } finally {
-    pwLoading.value = false
-  }
+const handleUserUpdated = (updatedUser) => {
+  localStorage.setItem('user', JSON.stringify(updatedUser))
+  user.value = updatedUser
+}
+
+const openSettings = () => {
+  settingsDialog.value = true
 }
 
 const handleLogout = async () => {
@@ -233,10 +185,16 @@ const handleLogout = async () => {
 
 const menuItems = ref([
   {
+    title: 'Beranda',
+    icon: 'mdi-home-outline',
+    value: 'welcome',
+    to: '/welcome'
+  },
+  {
     title: 'PPPK-PW',
     icon: 'mdi-account-clock-outline',
     children: [
-      { title: 'Dashboard PW', icon: 'mdi-view-dashboard-outline', value: 'dashboard', to: '/' },
+      { title: 'Dashboard PW', icon: 'mdi-view-dashboard-outline', value: 'dashboard', to: '/dashboard-pppk-pw' },
       { title: 'Pegawai PW', icon: 'mdi-account-group-outline', value: 'employees', to: '/employees' },
       { title: 'Payroll PW', icon: 'mdi-wallet-outline', value: 'payments', to: '/payments' },
       { title: 'Data Gaji PPPK', icon: 'mdi-account-check-outline', value: 'gaji-pppk', to: '/gaji-pppk' },
@@ -295,8 +253,14 @@ const menuItems = ref([
       { title: 'Pemeliharaan', icon: 'mdi-database-wrench', value: 'data-maintenance', to: '/settings/maintenance', roles: ['superadmin'] },
       { title: 'Log Login', icon: 'mdi-shield-history', value: 'login-logs', to: '/settings/login-logs', roles: ['superadmin'] },
       { title: 'Rekon Data BKD', icon: 'mdi-compare-horizontal', value: 'bkd-recon', to: '/settings/bkd-recon', roles: ['superadmin', 'operator'] },
-      { title: 'Pusat Bantuan', icon: 'mdi-help-circle-outline', value: 'help-center', to: '/settings/help', roles: ['superadmin'] },
+      { title: 'Kelola Pengumuman', icon: 'mdi-bullhorn-outline', value: 'announcements', to: '/settings/announcements', roles: ['superadmin'] },
     ]
+  },
+  {
+    title: 'Pusat Bantuan',
+    icon: 'mdi-help-circle-outline',
+    value: 'help-center',
+    to: '/help'
   },
 ])
 

@@ -180,7 +180,11 @@ class ReportController extends Controller
         $month = $request->month ?? date('n');
         $year = $request->year ?? date('Y');
 
-        $query = Skpd::where('is_skpd', 1);
+        // Only include SKPDs that have at least one employee in pegawai_pw
+        $query = Skpd::where('is_skpd', 1)
+            ->whereIn('id_skpd', function($q) {
+                $q->select('idskpd')->from('pegawai_pw');
+            });
         $user = auth()->user();
         if ($user->role !== 'superadmin') {
             $query->whereIn('id_skpd', $user->getAccessibleSkpds());

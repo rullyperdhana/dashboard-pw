@@ -50,8 +50,10 @@ class DashboardController extends Controller
             $monthlyPayment = $monthlyQuery->sum('tb_payment_detail.total_amoun');
         }
 
-        // Total SKPD
-        $totalSkpd = Skpd::count();
+        // Total SKPD (Only those with PPPK-PW employees)
+        $totalSkpd = Skpd::whereIn('id_skpd', function($q) {
+            $q->select('idskpd')->from('pegawai_pw');
+        })->count();
 
         // Pegawai per SKPD (Top 10)
         $employeesPerSkpdQuery = DB::table('pegawai_pw')

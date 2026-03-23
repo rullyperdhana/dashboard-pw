@@ -22,6 +22,7 @@
               @update:model-value="fetchData"
             ></v-select>
             <v-btn
+              v-if="isSuperAdmin"
               color="secondary"
               prepend-icon="mdi-refresh"
               variant="outlined"
@@ -38,6 +39,7 @@
               Export
             </v-btn>
             <v-btn
+              v-if="isSuperAdmin"
               color="primary"
               prepend-icon="mdi-import"
               variant="flat"

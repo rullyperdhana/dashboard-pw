@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\ExportLogController;
 use App\Http\Controllers\Api\Skpd2026Controller;
 use App\Http\Controllers\Api\AnalyticsController;
 use App\Http\Controllers\Api\PPh21Controller;
+use App\Http\Controllers\Api\AnnouncementController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -49,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
+    Route::post('/update-profile', [AuthController::class, 'updateProfile']);
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index']);
@@ -259,6 +261,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/help', [App\Http\Controllers\HelpArticleController::class, 'store']);
     Route::put('/help/{id}', [App\Http\Controllers\HelpArticleController::class, 'update']);
     Route::delete('/help/{id}', [App\Http\Controllers\HelpArticleController::class, 'destroy']);
+
+    // Announcements
+    Route::get('/announcements', [AnnouncementController::class, 'index']);
+    Route::middleware('role:superadmin')->group(function () {
+        Route::get('/announcements/list', [AnnouncementController::class, 'list']);
+        Route::post('/announcements', [AnnouncementController::class, 'store']);
+        Route::put('/announcements/{announcement}', [AnnouncementController::class, 'update']);
+        Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy']);
+    });
 });
 
 // Simgaji Integration API (protected by API Key)

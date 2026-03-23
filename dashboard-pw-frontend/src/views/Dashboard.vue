@@ -939,7 +939,7 @@ const paidEmployeesHeaders = [
 const fetchPaidData = async () => {
   paidLoading.value = true
   try {
-    const params = { month: paidMonth.value, year: paidYear.value }
+    const params = { month: paidMonth.value, year: paidYear.value, type: 'pw' }
     const [skpdsRes, employeesRes] = await Promise.all([
       api.get('/reports/paid-skpds', { params }),
       api.get('/reports/paid-employees', { params })

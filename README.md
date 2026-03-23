@@ -29,6 +29,10 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 | **Status Pajak (PTKP)**| Kelola status PTKP statis tahunan (K/0, TK/1, dll) |
 | **API Integrasi**    | Endpoint API Key untuk integrasi sistem Simgaji |
 | **Pajak TER (A2)**  | Perhitungan PPh 21 TER & Export Bukti Potong A2 |
+| **Welcome Hub**    | Beranda interaktif dengan glassmorphism & pengumuman |
+| **Pengumuman**     | Manajemen pengumuman (CRUD) khusus Superadmin |
+| **Pengaturan Akun**| Kelola profil & keamanan (Ganti Password) terintegrasi |
+| **Pusat Bantuan**   | Akses informasi bantuan untuk seluruh level user |
 | **Log Keamanan**     | Audit trail login (berhasil/gagal) & deteksi brute-force |
 | **Verifikasi SP2D**  | Rekon rincian gaji SIMGAJI vs Realisasi SIPD (Gaji & TPP) |
 | **Export Excel & PDF** | Export laporan sesuai tab yang aktif |
@@ -64,6 +68,11 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 - **Professional PDF Export:** Redesain total template slip gaji dan payroll dengan layout profesional, border rapi, dan summary box.
 - **Digital QR Verification:** Setiap PDF memiliki QR Code unik yang terhubung ke halaman verifikasi publik untuk validasi keaslian dokumen.
 - **Nested THR Reporting:** Laporan THR PPPK-PW kini dikelompokkan secara hierarkis: **SKPD -> Sub Kegiatan -> Daftar Pegawai**.
+- **Welcome Hub Experience:** Landing page baru dengan desain premium *glassmorphism*, menampilkan statistik ringkas dan pengumuman terbaru secara dinamis.
+- **Integrated Account Management:** Dialog pengaturan akun (Profil & Keamanan) yang dapat diakses dari sidebar maupun navbar, mendukung update nama, email, dan ganti password dalam satu tempat.
+- **Announcement System (v3.9):** Modul manajemen pengumuman yang mendukung teks panjang (auto-scroll) dan format yang rapi untuk penyampaian informasi ke seluruh user.
+- **Enhanced Dashboard Filtering:** Dashboard PPPK-PW kini secara cerdas hanya menampilkan data yang benar-benar relevan dengan PPPK Paruh Waktu, menyaring data PNS/PPPK agar laporan tetap fokus.
+- **Global Help Access:** Halaman Pusat Bantuan kini dapat diakses oleh semua level pengguna (Admin & Operator).
 - **SKPD Name Normalization:** Pembersihan otomatis dan penggabungan (merge) nama SKPD yang terduplikasi karena spasi atau perbedaan kode, memastikan filter dropdown selalu bersih dan unik.
 - **VPS Migration Resiliency:** Penyesuaian skema database untuk mendukung migrasi yang lebih stabil pada berbagai konfigurasi server VPS (Foreign Key normalization).
 
@@ -298,7 +307,8 @@ Export Excel/PDF secara otomatis menyesuaikan kolom dengan tab yang aktif.
 
 | Route | Halaman |
 |---|---|
-| `/` | Dashboard PPPK Paruh Waktu |
+| `/welcome` | Beranda (Welcome Hub) & Pengumuman |
+| `/dashboard-pppk-pw` | Dashboard PPPK Paruh Waktu |
 | `/pns-dashboard` | Dashboard PNS & PPPK |
 | `/employees` | Daftar Pegawai PW |
 | `/employee-trace` | Trace / Riwayat Gaji Pegawai |
@@ -308,6 +318,8 @@ Export Excel/PDF secara otomatis menyesuaikan kolom dengan tab yang aktif.
 | `/settings/pppk` | Estimasi JKK/JKM/JKN |
 | `/settings/sumber-dana` | Setting Sumber Dana per SKPD |
 | `/settings/users` | Manajemen User |
+| `/settings/announcements` | Kelola Pengumuman (Superadmin) |
+| `/help` | Pusat Bantuan |
 | `/upload/pns` | Upload Gaji PNS |
 | `/upload/pppk` | Upload Gaji PPPK |
 | `/upload/tpp` | Upload TPP |

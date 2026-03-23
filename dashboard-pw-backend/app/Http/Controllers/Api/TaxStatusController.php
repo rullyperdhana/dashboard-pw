@@ -38,7 +38,7 @@ class TaxStatusController extends Controller
             
             $query->where(function($q) use ($skpdIds, $skpdCodes) {
                 $q->whereIn('nip', function($sq) use ($skpdCodes) {
-                    $sq->select('nip')->from('master_pegawai')->whereIn('kdskpd', $sq->raw($this->buildPlaceholders($skpdCodes)));
+                    $sq->select('nip')->from('master_pegawai')->whereIn('kdskpd', $skpdCodes);
                 })
                 ->orWhereIn('nip', function($sq) use ($skpdIds) {
                     $sq->select('nip')->from('pegawai_pw')->whereIn('idskpd', $skpdIds);

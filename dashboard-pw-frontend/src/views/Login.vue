@@ -230,7 +230,7 @@ const handleLogin = async () => {
     if (response.data.success) {
       localStorage.setItem('token', response.data.data.token)
       localStorage.setItem('user', JSON.stringify(response.data.data.user))
-      router.push('/')
+      router.push('/welcome')
     }
   } catch (err) {
     if (err.response) {

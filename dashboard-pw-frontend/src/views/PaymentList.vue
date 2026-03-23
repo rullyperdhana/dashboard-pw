@@ -392,7 +392,7 @@ onMounted(async () => {
   filterSkpdId.value = route.query.skpd_id ? parseInt(route.query.skpd_id) : null
 
   try {
-    const params = { per_page: 500 }
+    const params = { per_page: 'all' }
     if (filterMonth.value) params.month = filterMonth.value
     if (filterYear.value) params.year = filterYear.value
 

@@ -33,6 +33,7 @@ Berikut adalah tabel penambahan yang baru saja diimplementasikan. Pastikan semua
 | Migration | Deskripsi |
 |---|---|
 | `create_audit_logs_table` | **[NEW]** Tabel pencatatan aktivitas sensitif (Audit Trail) |
+| `create_announcements_table` | **[NEW]** Tabel manajemen pengumuman di Welcome Hub |
 | `create_master_pegawai_table` | Tabel induk data pegawai dari DBF (`master_pegawai`) |
 | `create_master_keluarga_table` | Tabel induk data keluarga dari DBF (`master_keluarga`) |
 | `create_satkers_table` | Tabel referensi Satker/SKPD untuk pemetaan nama |
