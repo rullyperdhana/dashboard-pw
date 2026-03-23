@@ -42,6 +42,9 @@ Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::get('/settings/pppk-pw-estimation', [SettingController::class, 'pppkPwEstimation']);
 Route::get('/verify-thr', [ThrController::class, 'verifyThr']);
 Route::get('/verify-payment', [PaymentController::class, 'verifyPayment']);
+Route::get('/debug-echo', function() {
+    return response()->json(['success' => true, 'message' => 'API is reachable', 'time' => now()->toDateTimeString()]);
+});
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -185,9 +188,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/settings/clear-payroll', [SettingController::class, 'clearPayrollData']);
         Route::get('/settings/db-backup', [SettingController::class, 'backupDatabase']);
         Route::post('/settings/db-import', [SettingController::class, 'importDatabase']);
-        Route::get('/settings/test-superadmin', function() {
-            return response()->json(['success' => true, 'message' => 'Superadmin route is reachable', 'user' => auth()->user()->username]);
-        });
 
         // API Key Management
         Route::prefix('api-keys')->group(function () {
