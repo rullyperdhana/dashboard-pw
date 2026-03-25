@@ -99,7 +99,11 @@
                     <div class="text-h3 font-weight-black mb-1 text-high-emphasis">
                       {{ (employeeType === 'combined' ? combinedTotal.employees : stats?.total_employees)?.toLocaleString() || 0 }}
                     </div>
-                    <div class="text-caption text-medium-emphasis">Unit terdaftar bulan ini</div>
+                    <div v-if="employeeType === 'combined'" class="text-caption d-flex gap-2">
+                      <span class="text-teal-darken-2 font-weight-bold">PNS: {{ pnsStats?.total_employees?.toLocaleString() }}</span>
+                      <span class="text-amber-darken-3 font-weight-bold">PPPK: {{ pppkStats?.total_employees?.toLocaleString() }}</span>
+                    </div>
+                    <div v-else class="text-caption text-medium-emphasis">Unit terdaftar bulan ini</div>
                   </v-card-text>
                 </v-card>
               </v-col>
@@ -417,7 +421,12 @@
                                       {{ type.jenis_gaji }}
                                     </v-chip>
                                   </td>
-                                  <td class="text-right">{{ type.total_employees.toLocaleString() }}</td>
+                                  <td class="text-right">
+                                    <div class="font-weight-bold text-high-emphasis">{{ type.total_employees.toLocaleString() }}</div>
+                                    <div v-if="employeeType === 'combined'" class="text-xxs opacity-70" style="font-size: 0.65rem">
+                                      PNS: {{ type.pns_employees?.toLocaleString() }} | PPPK: {{ type.pppk_employees?.toLocaleString() }}
+                                    </div>
+                                  </td>
                                   <td class="text-right">{{ formatCurrencyShort(type.total_gaji_pokok) }}</td>
                                   <td class="text-right">{{ formatCurrencyShort((type.total_tunj_istri || 0) + (type.total_tunj_anak || 0)) }}</td>
                                   <td class="text-right">{{ formatCurrencyShort((type.total_tunj_fungsional || 0) + (type.total_tunj_struktural || 0) + (type.total_tunj_umum || 0)) }}</td>
@@ -430,7 +439,12 @@
                                 <!-- Total Row for Month -->
                                 <tr class="table-row-hover row-total bg-teal-lighten-5" v-if="month.types.length > 1">
                                   <td class="sticky-left font-weight-black text-high-emphasis">TOTAL {{ getMonthName(month.month).toUpperCase() }}</td>
-                                  <td class="text-right font-weight-bold">{{ month.total_employees.toLocaleString() }}</td>
+                                  <td class="text-right font-weight-black">
+                                    <div class="text-subtitle-2 font-weight-black">{{ month.total_employees.toLocaleString() }}</div>
+                                    <div v-if="employeeType === 'combined'" style="font-size: 0.65rem" class="text-teal-darken-3">
+                                      PNS: {{ month.pns_employees?.toLocaleString() }} | PPPK: {{ month.pppk_employees?.toLocaleString() }}
+                                    </div>
+                                  </td>
                                   <td class="text-right font-weight-bold">{{ formatCurrencyShort(month.total_gaji_pokok) }}</td>
                                   <td class="text-right font-weight-bold">{{ formatCurrencyShort((month.total_tunj_istri || 0) + (month.total_tunj_anak || 0)) }}</td>
                                   <td class="text-right font-weight-bold">{{ formatCurrencyShort((month.total_tunj_fungsional || 0) + (month.total_tunj_struktural || 0) + (month.total_tunj_umum || 0)) }}</td>
@@ -447,7 +461,12 @@
                           <tfoot>
                             <tr class="footer-row">
                               <td class="sticky-left font-weight-black">TOTAL TAHUNAN</td>
-                              <td class="text-right font-weight-black">{{ lastMonthTotalEmployees.toLocaleString() }}</td>
+                              <td class="text-right font-weight-black">
+                                <div class="text-subtitle-1 font-weight-black">{{ lastMonthTotalEmployees.toLocaleString() }}</div>
+                                <div v-if="employeeType === 'combined'" style="font-size: 0.75rem; opacity: 0.9">
+                                  PNS: {{ lastMonthPnsEmployees.toLocaleString() }} | PPPK: {{ lastMonthPppkEmployees.toLocaleString() }}
+                                </div>
+                              </td>
                               <td class="text-right font-weight-black">{{ formatCurrencyCompact(annualReport?.yearly_total?.total_gaji_pokok) }}</td>
                               <td class="text-right font-weight-black">{{ formatCurrencyCompact((annualReport?.yearly_total?.total_tunj_istri || 0) + (annualReport?.yearly_total?.total_tunj_anak || 0)) }}</td>
                               <td class="text-right font-weight-black">{{ formatCurrencyCompact((annualReport?.yearly_total?.total_tunj_fungsional || 0) + (annualReport?.yearly_total?.total_tunj_struktural || 0) + (annualReport?.yearly_total?.total_tunj_umum || 0)) }}</td>
@@ -821,21 +840,32 @@ const fetchAnnualReport = async () => {
       pnsAnnual.value = p1.data.data; pppkAnnual.value = p2.data.data
       const mergedMonthly = pnsAnnual.value.monthly.map((m, i) => {
         const pppkMonth = pppkAnnual.value.monthly[i]
-        const merged = { ...m, types: [] }
+        const merged = { 
+          ...m, 
+          types: [],
+          pns_employees: Number(m.total_employees) || 0,
+          pppk_employees: Number(pppkMonth.total_employees) || 0
+        }
         
-        Object.keys(m).filter(k => !['month', 'month_name', 'types'].includes(k)).forEach(k => { 
+        Object.keys(m).filter(k => !['month', 'month_name', 'types', 'total_employees'].includes(k)).forEach(k => { 
           merged[k] = (Number(m[k]) || 0) + (Number(pppkMonth[k]) || 0) 
         })
+        merged.total_employees = merged.pns_employees + merged.pppk_employees
         
         const allTypes = [...new Set([...m.types.map(t => t.jenis_gaji), ...pppkMonth.types.map(t => t.jenis_gaji)])]
         allTypes.sort().forEach(type => {
           const pnsT = m.types.find(t => t.jenis_gaji === type)
           const pppkT = pppkMonth.types.find(t => t.jenis_gaji === type)
-          const mergedType = { jenis_gaji: type }
+          const mergedType = { 
+            jenis_gaji: type,
+            pns_employees: Number(pnsT?.total_employees) || 0,
+            pppk_employees: Number(pppkT?.total_employees) || 0
+          }
           const sample = pnsT || pppkT
-          Object.keys(sample).filter(k => k !== 'jenis_gaji').forEach(k => {
+          Object.keys(sample).filter(k => !['jenis_gaji', 'total_employees'].includes(k)).forEach(k => {
             mergedType[k] = (Number(pnsT?.[k]) || 0) + (Number(pppkT?.[k]) || 0)
           })
+          mergedType.total_employees = mergedType.pns_employees + mergedType.pppk_employees
           merged.types.push(mergedType)
         })
         return merged
