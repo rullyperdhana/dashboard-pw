@@ -18,6 +18,10 @@
             <v-icon start icon="mdi-refresh"></v-icon>
             Refresh
           </v-btn>
+          <v-btn variant="tonal" color="error" rounded="pill" @click="confirmDeleteAll" :disabled="mappings.length === 0" class="mr-3">
+            <v-icon start icon="mdi-delete-sweep"></v-icon>
+            Hapus ALL
+          </v-btn>
           <v-btn color="primary" rounded="pill" prepend-icon="mdi-plus" @click="openAddDialog">
             Tambah Mapping
           </v-btn>
@@ -470,6 +474,7 @@ const saving = ref(false)
 const deleting = ref(false)
 const dialog = ref(false)
 const deleteDialog = ref(false)
+const deleteAllDialog = ref(false)
 const editMode = ref(false)
 const editSourceName = ref(false)
 const showUnmapped = ref(true)
@@ -684,6 +689,24 @@ const deleteMapping = async () => {
     await loadAll()
   } catch (e) {
     notify('Gagal menghapus mapping', 'error')
+  } finally {
+    deleting.value = false
+  }
+}
+
+const confirmDeleteAll = () => {
+  deleteAllDialog.value = true
+}
+
+const deleteAllMapping = async () => {
+  deleting.value = true
+  try {
+    await api.delete('/skpd-mapping')
+    notify('Seluruh mapping berhasil dihapus')
+    deleteAllDialog.value = false
+    await loadAll()
+  } catch (e) {
+    notify('Gagal menghapus seluruh mapping', 'error')
   } finally {
     deleting.value = false
   }

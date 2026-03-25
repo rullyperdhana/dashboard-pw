@@ -299,6 +299,15 @@ class SkpdMappingController extends Controller
     }
 
     /**
+     * Delete all mappings
+     */
+    public function destroyAll()
+    {
+        SkpdMapping::truncate();
+        return response()->json(['success' => true, 'message' => 'Semua mapping berhasil dihapus']);
+    }
+
+    /**
      * Bulk store mappings
      */
     public function bulkStore(Request $request)

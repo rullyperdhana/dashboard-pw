@@ -66,6 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/skpd-2026', [Skpd2026Controller::class, 'index']);
     Route::post('/skpd-mapping', [SkpdMappingController::class, 'store']);
     Route::post('/skpd-mapping/bulk', [SkpdMappingController::class, 'bulkStore']);
+    Route::delete('/skpd-mapping', [SkpdMappingController::class, 'destroyAll']);
     Route::delete('/skpd-mapping/{id}', [SkpdMappingController::class, 'destroy']);
 
     // Analytics
