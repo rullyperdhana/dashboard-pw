@@ -494,45 +494,80 @@ class ReportController extends Controller
             $jenisGajiFilter = " AND g.jenis_gaji = " . DB::getPdo()->quote($jenisGaji);
         }
 
-        // ── Detailed mode for PNS / PPPK Penuh Waktu ──────────────────────────
-        if (in_array($type, ['pns', 'pppk'])) {
-            $table = $type === 'pns' ? 'gaji_pns' : 'gaji_pppk';
-            $mapType = $type === 'pns' ? "('pns','all')" : "('pppk','all')";
+        // ── Detailed mode for PNS / PPPK / Gabungan ──────────────────────────
+        if (in_array($type, ['pns', 'pppk', 'all'])) {
+            $parts = [];
+            $params = [];
+
+            $typesToInclude = $type === 'all' ? ['pns', 'pppk'] : [$type];
+
+            foreach ($typesToInclude as $t) {
+                $table = $t === 'pns' ? 'gaji_pns' : 'gaji_pppk';
+                $mapType = $t === 'pns' ? "('pns','all')" : "('pppk','all')";
+
+                $parts[] = "
+                    SELECT
+                        COALESCE(sm.kode_skpd, g.kdskpd) COLLATE utf8mb4_unicode_ci AS kode_skpd,
+                        COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd) COLLATE utf8mb4_unicode_ci AS nama_skpd,
+                        COUNT(DISTINCT g.nip)               AS jumlah_pegawai,
+                        SUM(g.gaji_pokok)                  AS gapok,
+                        SUM(g.tunj_istri)                  AS tj_istri,
+                        SUM(g.tunj_anak)                   AS tj_anak,
+                        SUM(g.tunj_tpp)                    AS tj_tpp,
+                        SUM(g.tunj_eselon)                 AS tj_eselon,
+                        SUM(g.tunj_fungsional)             AS tj_fungsi,
+                        SUM(g.tunj_beras)                  AS tj_beras,
+                        SUM(g.tunj_pph)                    AS tj_pajak,
+                        SUM(g.tunj_umum)                   AS tj_umum,
+                        SUM(g.tunj_tkd)                    AS tj_bilat,
+                        SUM(g.kotor)                       AS kotor,
+                        SUM(g.pot_iwp)                     AS pot_iwp,
+                        SUM(CASE WHEN g.pot_iwp1 > 0 THEN g.pot_iwp1 ELSE (g.pot_iwp - g.pot_iwp8) END) AS pot_iwp2,
+                        SUM(g.pot_iwp8)                    AS pot_iwp8,
+                        SUM(g.pot_pph)                     AS pot_pajak,
+                        SUM(g.total_potongan)              AS total_potongan,
+                        SUM(g.bersih)                      AS bersih
+                    FROM {$table} g
+                    LEFT JOIN (SELECT DISTINCT kdskpd, nmskpd FROM satkers) s2 ON g.kdskpd = s2.kdskpd
+                    LEFT JOIN (
+                        SELECT mp.source_code, s2.kode_skpd, s2.nama_skpd
+                        FROM skpd_mapping mp
+                        JOIN skpd s2 ON mp.skpd_id = s2.id_skpd
+                        WHERE mp.type IN {$mapType}
+                    ) sm ON g.kdskpd = sm.source_code
+                    WHERE g.bulan = ? AND g.tahun = ? {$codeFilter} {$jenisGajiFilter}
+                    GROUP BY 1, 2";
+                
+                $params = array_merge($params, [$month, $year]);
+            }
+
+            $unionSql = implode("\n UNION ALL \n", $parts);
 
             $rows = collect(DB::select("
                 SELECT
-                    COALESCE(sm.kode_skpd, g.kdskpd) COLLATE utf8mb4_unicode_ci AS kode_skpd,
-                    COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd) COLLATE utf8mb4_unicode_ci AS nama_skpd,
-                    COUNT(DISTINCT g.nip)               AS jumlah_pegawai,
-                    SUM(g.gaji_pokok)                  AS gapok,
-                    SUM(g.tunj_istri)                  AS tj_istri,
-                    SUM(g.tunj_anak)                   AS tj_anak,
-                    SUM(g.tunj_tpp)                    AS tj_tpp,
-                    SUM(g.tunj_eselon)                 AS tj_eselon,
-                    SUM(g.tunj_fungsional)             AS tj_fungsi,
-                    SUM(g.tunj_beras)                  AS tj_beras,
-                    SUM(g.tunj_pph)                    AS tj_pajak,
-                    SUM(g.tunj_umum)                   AS tj_umum,
-                    SUM(g.tunj_tkd)                    AS tj_bilat,
-                    SUM(g.kotor)                       AS kotor,
-                    SUM(g.pot_iwp)                     AS pot_iwp,
-                    SUM(CASE WHEN g.pot_iwp1 > 0 THEN g.pot_iwp1 ELSE (g.pot_iwp - g.pot_iwp8) END) AS pot_iwp2,
-                    SUM(g.pot_iwp8)                    AS pot_iwp8,
-                    SUM(g.pot_pph)                     AS pot_pajak,
-                    SUM(g.total_potongan)              AS total_potongan,
-                    SUM(g.bersih)                      AS bersih
-                FROM {$table} g
-                LEFT JOIN (SELECT DISTINCT kdskpd, nmskpd FROM satkers) s2 ON g.kdskpd = s2.kdskpd
-                LEFT JOIN (
-                    SELECT mp.source_code, s2.kode_skpd, s2.nama_skpd
-                    FROM skpd_mapping mp
-                    JOIN skpd s2 ON mp.skpd_id = s2.id_skpd
-                    WHERE mp.type IN {$mapType}
-                ) sm ON g.kdskpd = sm.source_code
-                WHERE g.bulan = ? AND g.tahun = ? {$codeFilter} {$jenisGajiFilter}
-                GROUP BY COALESCE(sm.kode_skpd, g.kdskpd) COLLATE utf8mb4_unicode_ci, COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd) COLLATE utf8mb4_unicode_ci
+                    kode_skpd, nama_skpd,
+                    SUM(jumlah_pegawai)  AS jumlah_pegawai,
+                    SUM(gapok)           AS gapok,
+                    SUM(tj_istri)        AS tj_istri,
+                    SUM(tj_anak)         AS tj_anak,
+                    SUM(tj_tpp)          AS tj_tpp,
+                    SUM(tj_eselon)       AS tj_eselon,
+                    SUM(tj_fungsi)       AS tj_fungsi,
+                    SUM(tj_beras)        AS tj_beras,
+                    SUM(tj_pajak)        AS tj_pajak,
+                    SUM(tj_umum)         AS tj_umum,
+                    SUM(tj_bilat)        AS tj_bilat,
+                    SUM(kotor)           AS kotor,
+                    SUM(pot_iwp)         AS pot_iwp,
+                    SUM(pot_iwp2)        AS pot_iwp2,
+                    SUM(pot_iwp8)        AS pot_iwp8,
+                    SUM(pot_pajak)       AS pot_pajak,
+                    SUM(total_potongan)  AS total_potongan,
+                    SUM(bersih)          AS bersih
+                FROM ({$unionSql}) AS combined
+                GROUP BY kode_skpd, nama_skpd
                 ORDER BY nama_skpd
-            ", [$month, $year]));
+            ", $params));
 
             return response()->json([
                 'success' => true,
@@ -550,10 +585,9 @@ class ReportController extends Controller
             ]);
         }
 
-        // ── Summary mode for PW / All ──────────────────────────────────────────
+        // ── Summary mode for PW (PPPK Paruh Waktu) ──────────────────────────────────────────
         $parts = [];
         $params = [];
-
 
         // --- PPPK-PW (Paruh Waktu) --- from tb_payment_detail
         if ($type === 'pw') {
@@ -572,54 +606,6 @@ class ReportController extends Controller
                 JOIN tb_payment p  ON pd.payment_id = p.id
                 WHERE p.month = ? AND p.year = ? {$idFilter}
                 GROUP BY s.id_skpd, s.kode_skpd, s.nama_skpd";
-            $params = array_merge($params, [$month, $year]);
-        }
-
-        // --- PNS --- from gaji_pns, normalized via skpd_mapping
-        if (in_array($type, ['pns', 'all'])) {
-            $parts[] = "
-                SELECT
-                    COALESCE(sm.kode_skpd, g.kdskpd) COLLATE utf8mb4_unicode_ci AS kode_skpd,
-                    COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd) COLLATE utf8mb4_unicode_ci AS nama_skpd,
-                    COUNT(DISTINCT g.nip)              AS employee_count,
-                    SUM(g.gaji_pokok)                 AS total_gaji_pokok,
-                    SUM(g.kotor - g.gaji_pokok)       AS total_tunjangan,
-                    SUM(g.total_potongan)             AS total_potongan,
-                    SUM(g.bersih)                     AS total_bersih
-                FROM gaji_pns g
-                LEFT JOIN (SELECT DISTINCT kdskpd, nmskpd FROM satkers) s2 ON g.kdskpd = s2.kdskpd
-                LEFT JOIN (
-                    SELECT mp.source_code, s2.kode_skpd, s2.nama_skpd
-                    FROM skpd_mapping mp
-                    JOIN skpd s2 ON mp.skpd_id = s2.id_skpd
-                    WHERE mp.type IN ('pns', 'all')
-                ) sm ON g.kdskpd = sm.source_code
-                WHERE g.bulan = ? AND g.tahun = ? {$codeFilter} {$jenisGajiFilter}
-                GROUP BY COALESCE(sm.kode_skpd, g.kdskpd) COLLATE utf8mb4_unicode_ci, COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd) COLLATE utf8mb4_unicode_ci";
-            $params = array_merge($params, [$month, $year]);
-        }
-
-        // --- PPPK Penuh Waktu --- from gaji_pppk, normalized via skpd_mapping
-        if (in_array($type, ['pppk', 'all'])) {
-            $parts[] = "
-                SELECT
-                    COALESCE(sm.kode_skpd, g.kdskpd) COLLATE utf8mb4_unicode_ci AS kode_skpd,
-                    COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd) COLLATE utf8mb4_unicode_ci AS nama_skpd,
-                    COUNT(DISTINCT g.nip)              AS employee_count,
-                    SUM(g.gaji_pokok)                 AS total_gaji_pokok,
-                    SUM(g.kotor - g.gaji_pokok)       AS total_tunjangan,
-                    SUM(g.total_potongan)             AS total_potongan,
-                    SUM(g.bersih)                     AS total_bersih
-                FROM gaji_pppk g
-                LEFT JOIN (SELECT DISTINCT kdskpd, nmskpd FROM satkers) s2 ON g.kdskpd = s2.kdskpd
-                LEFT JOIN (
-                    SELECT mp.source_code, s2.kode_skpd, s2.nama_skpd
-                    FROM skpd_mapping mp
-                    JOIN skpd s2 ON mp.skpd_id = s2.id_skpd
-                    WHERE mp.type IN ('pppk', 'all')
-                ) sm ON g.kdskpd = sm.source_code
-                WHERE g.bulan = ? AND g.tahun = ? {$codeFilter} {$jenisGajiFilter}
-                GROUP BY COALESCE(sm.kode_skpd, g.kdskpd) COLLATE utf8mb4_unicode_ci, COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd) COLLATE utf8mb4_unicode_ci";
             $params = array_merge($params, [$month, $year]);
         }
 
@@ -715,8 +701,8 @@ class ReportController extends Controller
                 'sumGajiPokok' => $sumGajiPokok,
                 'sumTunjangan' => array_sum(array_column($data, $mode === 'detail' ? 'kotor' : 'total_tunjangan')),
                 'sumPotongan' => array_sum(array_column($data, 'total_potongan')),
-                'sumPajak' => 0,
-                'sumIwp' => 0,
+                'sumPajak' => array_sum(array_column($data, $mode === 'detail' ? 'pot_pajak' : 'total_potongan')), // Summary uses total_potongan for simplicity
+                'sumIwp' => array_sum(array_column($data, $mode === 'detail' ? 'pot_iwp' : 'total_potongan')),
             ]);
 
             $pdf->setPaper('a4', $mode === 'detail' ? 'landscape' : 'landscape');
