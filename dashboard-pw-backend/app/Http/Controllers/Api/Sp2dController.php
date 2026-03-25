@@ -95,7 +95,7 @@ class Sp2dController extends Controller
             ->select(
                 'kdskpd', 
                 'jenis_gaji', 
-                \DB::raw('SUM(bersih) as netto'), 
+                \DB::raw('SUM(bersih - tunj_tpp) as netto'), 
                 \DB::raw('SUM(tunj_tpp) as tpp'),
                 \DB::raw('COUNT(DISTINCT nip) as emp_count')
             )
@@ -108,7 +108,7 @@ class Sp2dController extends Controller
             ->select(
                 'kdskpd', 
                 'jenis_gaji', 
-                \DB::raw('SUM(bersih) as netto'), 
+                \DB::raw('SUM(bersih - tunj_tpp) as netto'), 
                 \DB::raw('SUM(tunj_tpp) as tpp'),
                 \DB::raw('COUNT(DISTINCT nip) as emp_count')
             )
@@ -325,9 +325,9 @@ class Sp2dController extends Controller
             ->select(
                 'kdskpd',
                 'jenis_gaji',
-                \DB::raw('SUM(kotor) as brutto'),
+                \DB::raw('SUM(kotor - tunj_tpp) as brutto'),
                 \DB::raw('SUM(total_potongan) as potongan'),
-                \DB::raw('SUM(bersih) as netto'),
+                \DB::raw('SUM(bersih - tunj_tpp) as netto'),
                 \DB::raw('SUM(tunj_tpp) as tpp'),
                 \DB::raw('COUNT(DISTINCT nip) as emp_count')
             )
@@ -340,9 +340,9 @@ class Sp2dController extends Controller
             ->select(
                 'kdskpd',
                 'jenis_gaji',
-                \DB::raw('SUM(kotor) as brutto'),
+                \DB::raw('SUM(kotor - tunj_tpp) as brutto'),
                 \DB::raw('SUM(total_potongan) as potongan'),
-                \DB::raw('SUM(bersih) as netto'),
+                \DB::raw('SUM(bersih - tunj_tpp) as netto'),
                 \DB::raw('SUM(tunj_tpp) as tpp'),
                 \DB::raw('COUNT(DISTINCT nip) as emp_count')
             )
@@ -577,7 +577,7 @@ class Sp2dController extends Controller
                 ->where('bulan', $bulan)
                 ->where('tahun', $tahun)
                 ->where('jenis_gaji', $targetType)
-                ->select('nip', 'nama', 'bersih as nominal', \DB::raw("'PNS' as tipe"))
+                ->select('nip', 'nama', \DB::raw('(bersih - tunj_tpp) as nominal'), \DB::raw("'PNS' as tipe"))
                 ->get();
         } elseif ($isPppk) {
             $details = \DB::table('gaji_pppk')
@@ -585,7 +585,7 @@ class Sp2dController extends Controller
                 ->where('bulan', $bulan)
                 ->where('tahun', $tahun)
                 ->where('jenis_gaji', $targetType)
-                ->select('nip', 'nama', 'bersih as nominal', \DB::raw("'PPPK' as tipe"))
+                ->select('nip', 'nama', \DB::raw('(bersih - tunj_tpp) as nominal'), \DB::raw("'PPPK' as tipe"))
                 ->get();
         } elseif ($isTpp) {
             $ketRaw = strtoupper($real->keterangan ?? '');
