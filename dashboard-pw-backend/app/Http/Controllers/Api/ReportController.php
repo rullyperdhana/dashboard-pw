@@ -470,6 +470,7 @@ class ReportController extends Controller
         $month = $request->month ?? date('n');
         $year = $request->year ?? date('Y');
         $type = $request->type ?? 'all'; // pns | pppk | pw | all
+        $jenisGaji = $request->jenis_gaji ?? 'Induk';
 
         $user = auth()->user();
         $isSuperAdmin = $user->role === 'superadmin';
@@ -488,6 +489,11 @@ class ReportController extends Controller
             $codeFilter = " AND g.kdskpd IN ($codeList) ";
         }
 
+        $jenisGajiFilter = "";
+        if ($jenisGaji !== 'Semua') {
+            $jenisGajiFilter = " AND g.jenis_gaji = " . DB::getPdo()->quote($jenisGaji);
+        }
+
         // ── Detailed mode for PNS / PPPK Penuh Waktu ──────────────────────────
         if (in_array($type, ['pns', 'pppk'])) {
             $table = $type === 'pns' ? 'gaji_pns' : 'gaji_pppk';
@@ -497,7 +503,7 @@ class ReportController extends Controller
                 SELECT
                     g.kdskpd AS kode_skpd,
                     COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd) AS nama_skpd,
-                    COUNT(*)                            AS jumlah_pegawai,
+                    COUNT(DISTINCT g.nip)               AS jumlah_pegawai,
                     SUM(g.gaji_pokok)                  AS gapok,
                     SUM(g.tunj_istri)                  AS tj_istri,
                     SUM(g.tunj_anak)                   AS tj_anak,
@@ -523,7 +529,7 @@ class ReportController extends Controller
                     JOIN skpd s2 ON mp.skpd_id = s2.id_skpd
                     WHERE mp.type IN {$mapType}
                 ) sm ON g.kdskpd = sm.source_code
-                WHERE g.bulan = ? AND g.tahun = ? {$codeFilter}
+                WHERE g.bulan = ? AND g.tahun = ? {$codeFilter} {$jenisGajiFilter}
                 GROUP BY g.kdskpd, COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd)
                 ORDER BY nama_skpd
             ", [$month, $year]));
@@ -536,6 +542,7 @@ class ReportController extends Controller
                     'month' => (int) $month,
                     'year' => (int) $year,
                     'type' => $type,
+                    'jenis_gaji' => $jenisGaji,
                     'total_skpd' => $rows->count(),
                     'total_employees' => $rows->sum('jumlah_pegawai'),
                     'grand_total' => $rows->sum('bersih'),
@@ -574,7 +581,7 @@ class ReportController extends Controller
                 SELECT
                     g.kdskpd AS kode_skpd,
                     COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd) AS nama_skpd,
-                    COUNT(*)                           AS employee_count,
+                    COUNT(DISTINCT g.nip)              AS employee_count,
                     SUM(g.gaji_pokok)                 AS total_gaji_pokok,
                     SUM(g.kotor - g.gaji_pokok)       AS total_tunjangan,
                     SUM(g.total_potongan)             AS total_potongan,
@@ -587,7 +594,7 @@ class ReportController extends Controller
                     JOIN skpd s2 ON mp.skpd_id = s2.id_skpd
                     WHERE mp.type IN ('pns', 'all')
                 ) sm ON g.kdskpd = sm.source_code
-                WHERE g.bulan = ? AND g.tahun = ? {$codeFilter}
+                WHERE g.bulan = ? AND g.tahun = ? {$codeFilter} {$jenisGajiFilter}
                 GROUP BY g.kdskpd, COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd)";
             $params = array_merge($params, [$month, $year]);
         }
@@ -598,7 +605,7 @@ class ReportController extends Controller
                 SELECT
                     g.kdskpd AS kode_skpd,
                     COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd) AS nama_skpd,
-                    COUNT(*)                           AS employee_count,
+                    COUNT(DISTINCT g.nip)              AS employee_count,
                     SUM(g.gaji_pokok)                 AS total_gaji_pokok,
                     SUM(g.kotor - g.gaji_pokok)       AS total_tunjangan,
                     SUM(g.total_potongan)             AS total_potongan,
@@ -611,7 +618,7 @@ class ReportController extends Controller
                     JOIN skpd s2 ON mp.skpd_id = s2.id_skpd
                     WHERE mp.type IN ('pppk', 'all')
                 ) sm ON g.kdskpd = sm.source_code
-                WHERE g.bulan = ? AND g.tahun = ? {$codeFilter}
+                WHERE g.bulan = ? AND g.tahun = ? {$codeFilter} {$jenisGajiFilter}
                 GROUP BY g.kdskpd, COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd)";
             $params = array_merge($params, [$month, $year]);
         }
@@ -638,6 +645,7 @@ class ReportController extends Controller
                 'month' => (int) $month,
                 'year' => (int) $year,
                 'type' => $type,
+                'jenis_gaji' => $jenisGaji,
                 'total_skpd' => $paidSkpds->count(),
                 'total_employees' => $paidSkpds->sum('employee_count'),
                 'grand_total' => $paidSkpds->sum('total_bersih'),
@@ -654,6 +662,7 @@ class ReportController extends Controller
         $year = $request->year ?? date('Y');
         $format = $request->input('format') ?? 'excel';
         $type = $request->type ?? 'all';
+        $jenisGaji = $request->jenis_gaji ?? 'Induk';
 
         // Re-use paidSkpds logic (includes type-based mode selection)
         $response = $this->paidSkpds($request);
@@ -677,7 +686,8 @@ class ReportController extends Controller
         ];
         $monthName = $monthNames[(int) $month] ?? 'Unknown';
         $typeSlug = $type !== 'all' ? "_{$type}" : '';
-        $filename = "skpd_daftar_gaji{$typeSlug}_{$month}_{$year}";
+        $jgSlug = $jenisGaji !== 'Semua' ? "_" . strtolower(str_replace(' ', '_', $jenisGaji)) : '';
+        $filename = "skpd_daftar_gaji{$typeSlug}{$jgSlug}_{$month}_{$year}";
 
         if ($format === 'pdf') {
             if ($mode === 'detail') {
@@ -699,6 +709,7 @@ class ReportController extends Controller
                 'monthName' => $monthName,
                 'mode' => $mode,
                 'type' => $type,
+                'jenis_gaji' => $jenisGaji,
                 'totalEmployees' => $totalEmployees,
                 'grandTotal' => $grandTotal,
                 'sumGajiPokok' => $sumGajiPokok,

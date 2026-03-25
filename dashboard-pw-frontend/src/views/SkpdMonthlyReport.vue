@@ -29,6 +29,9 @@
                   <v-col cols="6">
                     <v-select v-model="selectedYear" :items="years" label="Tahun" density="compact" variant="outlined" hide-details></v-select>
                   </v-col>
+                  <v-col cols="12">
+                    <v-select v-model="selectedJenisGaji" :items="jenisGajiOptions" label="Jenis Gaji" density="compact" variant="outlined" hide-details></v-select>
+                  </v-col>
                   <v-col cols="12" class="mt-2 text-right">
                     <v-btn block color="teal" @click="fetchData(); menu = false">TERAPKAN</v-btn>
                   </v-col>
@@ -122,6 +125,8 @@ const mode      = ref('summary')   // 'summary' | 'detail'
 const activeTab = ref('all')
 const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedYear  = ref(new Date().getFullYear())
+const selectedJenisGaji = ref('Induk')
+const jenisGajiOptions = ['Semua', 'Induk', 'THR', 'Gaji 13', 'Susulan', 'Kekurangan', 'Terusan']
 const menu          = ref(false)
 const summary       = ref({})
 
@@ -195,7 +200,12 @@ const fetchData = async () => {
   loading.value = true
   try {
     const res = await api.get('/reports/paid-skpds', {
-      params: { month: selectedMonth.value, year: selectedYear.value, type: activeTab.value }
+      params: { 
+        month: selectedMonth.value, 
+        year: selectedYear.value, 
+        type: activeTab.value,
+        jenis_gaji: selectedJenisGaji.value
+      }
     })
     items.value = res.data.data
     meta.value  = res.data.meta
@@ -213,7 +223,12 @@ const preloadSummaries = async () => {
     if (summary.value[tab.type]) continue
     try {
       const res = await api.get('/reports/paid-skpds', {
-        params: { month: selectedMonth.value, year: selectedYear.value, type: tab.type }
+        params: { 
+          month: selectedMonth.value, 
+          year: selectedYear.value, 
+          type: tab.type,
+          jenis_gaji: selectedJenisGaji.value
+        }
       })
       summary.value[tab.type] = res.data.meta
     } catch (e) { /* silent */ }
@@ -224,7 +239,13 @@ const exportData = async (format) => {
   exporting.value = true
   try {
     const res = await api.get('/reports/paid-export', {
-      params: { month: selectedMonth.value, year: selectedYear.value, format, type: activeTab.value },
+      params: { 
+        month: selectedMonth.value, 
+        year: selectedYear.value, 
+        format, 
+        type: activeTab.value,
+        jenis_gaji: selectedJenisGaji.value
+      },
       responseType: 'blob'
     })
     const url  = window.URL.createObjectURL(new Blob([res.data]))
