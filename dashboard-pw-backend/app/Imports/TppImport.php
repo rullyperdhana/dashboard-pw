@@ -103,10 +103,16 @@ class TppImport implements ToCollection, WithHeadingRow
                 }
             }
 
-            // Clear previous logs for this period/type
+            // Clear previous logs and standalone records for this period/type
             \App\Models\TppDiscrepancyLog::where('month', $this->month)
                 ->where('year', $this->year)
                 ->where('employee_type', $this->type)
+                ->delete();
+
+            \App\Models\StandaloneTpp::where('month', $this->month)
+                ->where('year', $this->year)
+                ->where('employee_type', $this->type)
+                ->where('jenis_gaji', $this->jenisGaji)
                 ->delete();
 
             // Find missing employees: In DB but NOT in Excel
