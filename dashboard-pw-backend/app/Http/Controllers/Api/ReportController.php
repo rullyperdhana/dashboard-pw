@@ -556,7 +556,7 @@ class ReportController extends Controller
 
 
         // --- PPPK-PW (Paruh Waktu) --- from tb_payment_detail
-        if (in_array($type, ['pw', 'all'])) {
+        if ($type === 'pw') {
             $parts[] = "
                 SELECT
                     s.kode_skpd COLLATE utf8mb4_unicode_ci AS kode_skpd,
