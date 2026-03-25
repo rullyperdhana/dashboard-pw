@@ -9,15 +9,15 @@
         <v-row class="mb-6 align-center">
           <v-col cols="12" md="6">
             <h1 class="text-h4 font-weight-bold mb-1">
-              <v-icon start color="teal" size="36">mdi-file-table</v-icon>
-              Laporan Bulanan per SKPD
+              <v-icon start color="orange-darken-2" size="36">mdi-account-clock-outline</v-icon>
+              Laporan Bulanan PPPK-PW
             </h1>
-            <p class="text-subtitle-1 text-grey-darken-1">Rekapitulasi gaji per SKPD berdasarkan jenis kepegawaian.</p>
+            <p class="text-subtitle-1 text-grey-darken-1">Rekapitulasi gaji PPPK Paruh Waktu per SKPD.</p>
           </v-col>
           <v-col cols="12" md="6" class="d-flex justify-end align-center ga-2 flex-wrap">
             <v-menu v-model="menu" :close-on-content-click="false">
               <template v-slot:activator="{ props }">
-                <v-btn color="teal" variant="tonal" v-bind="props" prepend-icon="mdi-calendar" size="large">
+                <v-btn color="orange-darken-2" variant="tonal" v-bind="props" prepend-icon="mdi-calendar" size="large">
                   {{ selectedMonthName }} {{ selectedYear }}
                 </v-btn>
               </template>
@@ -33,7 +33,7 @@
                     <v-select v-model="selectedJenisGaji" :items="jenisGajiOptions" label="Jenis Gaji" density="compact" variant="outlined" hide-details></v-select>
                   </v-col>
                   <v-col cols="12" class="mt-2 text-right">
-                    <v-btn block color="teal" @click="fetchData(); menu = false">TERAPKAN</v-btn>
+                    <v-btn block color="orange-darken-2" @click="fetchData(); menu = false">TERAPKAN</v-btn>
                   </v-col>
                 </v-row>
               </v-card>
@@ -43,28 +43,17 @@
           </v-col>
         </v-row>
 
-        <!-- Tab bar -->
-        <v-tabs v-model="activeTab" color="teal" class="mb-4" @update:model-value="fetchData()">
-          <v-tab v-for="tab in tabs" :key="tab.type" :value="tab.type">
-            <v-icon start :icon="tab.icon" size="18"></v-icon>
-            {{ tab.label }}
-            <v-chip v-if="summary[tab.type]" size="x-small" :color="tab.color" class="ml-2">
-              {{ summary[tab.type].total_skpd }}
-            </v-chip>
-          </v-tab>
-        </v-tabs>
-
         <!-- Grand total bar -->
-        <v-card class="rounded-lg mb-4 pa-3" color="teal-lighten-5" elevation="0" v-if="meta">
+        <v-card class="rounded-lg mb-4 pa-3" color="orange-lighten-5" elevation="0" v-if="meta">
           <v-row align="center" dense>
             <v-col cols="auto">
-              <v-chip :color="currentTab.color" label size="small" class="font-weight-bold">{{ currentTab.label }}</v-chip>
+              <v-chip color="orange-darken-2" label size="small" class="font-weight-bold">PPPK PARUH WAKTU</v-chip>
             </v-col>
             <v-col>
               <span class="text-body-2 text-medium-emphasis">
                 <strong>{{ meta.total_skpd }}</strong> SKPD &nbsp;·&nbsp;
                 <strong>{{ formatNumber(meta.total_employees) }}</strong> Pegawai &nbsp;·&nbsp;
-                Total Bersih: <strong class="text-teal">{{ formatCurrency(meta.grand_total) }}</strong>
+                Total Bersih: <strong class="text-orange-darken-4">{{ formatCurrency(meta.grand_total) }}</strong>
               </span>
             </v-col>
           </v-row>
@@ -73,7 +62,7 @@
         <!-- Data table -->
         <v-card class="glass-card rounded-xl" :loading="loading" elevation="0">
           <v-data-table
-            :headers="currentHeaders"
+            :headers="summaryHeaders"
             :items="items"
             :loading="loading"
             class="bg-transparent detail-table"
@@ -81,16 +70,13 @@
             items-per-page="25"
             density="compact"
           >
-            <!-- Currency formatting for detail mode -->
+            <!-- Currency formatting -->
             <template v-for="col in currencyCols" :key="col" v-slot:[`item.${col}`]="{ item }">
-              <span :class="col === 'bersih' || col === 'total_bersih' ? 'font-weight-bold text-teal' : ''">
+              <span :class="col === 'total_bersih' ? 'font-weight-bold text-orange-darken-2' : ''">
                 {{ formatCurrency(item[col]) }}
               </span>
             </template>
 
-            <template v-slot:item.jumlah_pegawai="{ item }">
-              <v-chip size="x-small" color="blue-grey" variant="tonal">{{ item.jumlah_pegawai }}</v-chip>
-            </template>
             <template v-slot:item.employee_count="{ item }">
               <v-chip size="x-small" color="blue-grey" variant="tonal">{{ item.employee_count }}</v-chip>
             </template>
@@ -121,24 +107,12 @@ const loading   = ref(false)
 const exporting = ref(false)
 const items     = ref([])
 const meta      = ref(null)
-const mode      = ref('summary')   // 'summary' | 'detail'
-const activeTab = ref('all')
 const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedYear  = ref(new Date().getFullYear())
 const selectedJenisGaji = ref('Induk')
 const jenisGajiOptions = ['Semua', 'Induk', 'THR', 'Gaji 13', 'Susulan', 'Kekurangan', 'Terusan']
 const menu          = ref(false)
-const summary       = ref({})
 
-const tabs = [
-  { type: 'all',  label: 'Gabungan',          icon: 'mdi-layers-triple',          color: 'teal'   },
-  { type: 'pns',  label: 'PNS',               icon: 'mdi-account-tie-outline',    color: 'blue'   },
-  { type: 'pppk', label: 'PPPK Penuh Waktu',  icon: 'mdi-account-check-outline',  color: 'green'  },
-]
-
-const currentTab = computed(() => tabs.find(t => t.type === activeTab.value) ?? tabs[0])
-
-// ── Headers ────────────────────────────────────────────────────────────────
 const summaryHeaders = [
   { title: 'Kode SKPD',      key: 'kode_skpd',        align: 'start',  width: 140 },
   { title: 'Nama SKPD',      key: 'nama_skpd',         align: 'start'  },
@@ -149,40 +123,7 @@ const summaryHeaders = [
   { title: 'Bersih',         key: 'total_bersih',      align: 'end'   },
 ]
 
-const detailHeaders = [
-  { title: 'Kode SKPD',   key: 'kode_skpd',       align: 'start',  width: 120 },
-  { title: 'Nama SKPD',   key: 'nama_skpd',        align: 'start'  },
-  { title: 'PEG',         key: 'jumlah_pegawai',   align: 'center', width: 60  },
-  { title: 'GAPOK',       key: 'gapok',            align: 'end'   },
-  { title: 'TJISTRI',     key: 'tj_istri',         align: 'end'   },
-  { title: 'TJANAK',      key: 'tj_anak',          align: 'end'   },
-  { title: 'TJTPP',       key: 'tj_tpp',           align: 'end'   },
-  { title: 'TJESELON',    key: 'tj_eselon',        align: 'end'   },
-  { title: 'TJFUNGSI',    key: 'tj_fungsi',        align: 'end'   },
-  { title: 'TJBERAS',     key: 'tj_beras',         align: 'end'   },
-  { title: 'TJPAJAK',     key: 'tj_pajak',         align: 'end'   },
-  { title: 'TJUMUM',      key: 'tj_umum',          align: 'end'   },
-  { title: 'TBILAT',      key: 'tj_bilat',         align: 'end'   },
-  { title: 'KOTOR',       key: 'kotor',            align: 'end'   },
-  { title: 'PIWP',        key: 'pot_iwp',          align: 'end'   },
-  { title: 'PIWP2',       key: 'pot_iwp2',         align: 'end'   },
-  { title: 'PIWP8',       key: 'pot_iwp8',         align: 'end'   },
-  { title: 'PPAJAK',      key: 'pot_pajak',        align: 'end'   },
-  { title: 'POTONGAN',    key: 'total_potongan',   align: 'end'   },
-  { title: 'BERSIH',      key: 'bersih',           align: 'end'   },
-]
-
-const currentHeaders = computed(() => mode.value === 'detail' ? detailHeaders : summaryHeaders)
-
-// columns that need currency formatting
-const currencyCols = computed(() => {
-  if (mode.value === 'detail') {
-    return ['gapok','tj_istri','tj_anak','tj_tpp','tj_eselon','tj_fungsi',
-            'tj_beras','tj_pajak','tj_umum','tj_bilat','kotor',
-            'pot_iwp','pot_iwp2','pot_iwp8','pot_pajak','total_potongan','bersih']
-  }
-  return ['total_gaji_pokok','total_tunjangan','total_potongan','total_bersih']
-})
+const currencyCols = ['total_gaji_pokok','total_tunjangan','total_potongan','total_bersih']
 
 const months = [
   { title: 'Januari',   value: 1  }, { title: 'Februari',  value: 2  },
@@ -202,35 +143,16 @@ const fetchData = async () => {
       params: { 
         month: selectedMonth.value, 
         year: selectedYear.value, 
-        type: activeTab.value,
+        type: 'pw',
         jenis_gaji: selectedJenisGaji.value
       }
     })
     items.value = res.data.data
     meta.value  = res.data.meta
-    mode.value  = res.data.mode ?? 'summary'
-    summary.value[activeTab.value] = res.data.meta
   } catch (e) {
     console.error('Error fetching data:', e)
   } finally {
     loading.value = false
-  }
-}
-
-const preloadSummaries = async () => {
-  for (const tab of tabs) {
-    if (summary.value[tab.type]) continue
-    try {
-      const res = await api.get('/reports/paid-skpds', {
-        params: { 
-          month: selectedMonth.value, 
-          year: selectedYear.value, 
-          type: tab.type,
-          jenis_gaji: selectedJenisGaji.value
-        }
-      })
-      summary.value[tab.type] = res.data.meta
-    } catch (e) { /* silent */ }
   }
 }
 
@@ -242,7 +164,7 @@ const exportData = async (format) => {
         month: selectedMonth.value, 
         year: selectedYear.value, 
         format, 
-        type: activeTab.value,
+        type: 'pw',
         jenis_gaji: selectedJenisGaji.value
       },
       responseType: 'blob'
@@ -251,7 +173,7 @@ const exportData = async (format) => {
     const link = document.createElement('a')
     link.href  = url
     const ext  = format === 'pdf' ? 'pdf' : 'xlsx'
-    link.setAttribute('download', `laporan_skpd_${activeTab.value}_${selectedMonth.value}_${selectedYear.value}.${ext}`)
+    link.setAttribute('download', `laporan_skpd_pw_${selectedMonth.value}_${selectedYear.value}.${ext}`)
     document.body.appendChild(link)
     link.click()
     link.remove()
@@ -266,7 +188,6 @@ const formatNumber = (v) => new Intl.NumberFormat('id-ID').format(v ?? 0)
 
 onMounted(async () => {
   await fetchData()
-  preloadSummaries()
 })
 </script>
 
@@ -289,5 +210,5 @@ onMounted(async () => {
   white-space: nowrap;
 }
 :deep(.v-data-table__td) { white-space: nowrap; font-size: 0.78rem; }
-:deep(.v-data-table__tr:hover) { background-color: rgba(0, 150, 136, 0.05) !important; }
+:deep(.v-data-table__tr:hover) { background-color: rgba(255, 152, 0, 0.05) !important; }
 </style>

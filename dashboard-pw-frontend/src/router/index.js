@@ -61,6 +61,12 @@ const router = createRouter({
             meta: { requiresAuth: true, breadcrumb: 'Dashboard PNS & PPPK', app_access: 'pns' },
         },
         {
+            path: '/reports/pppk-pw-monthly',
+            name: 'PppkPwMonthlyReport',
+            component: () => import('../views/PppkPwMonthlyReport.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Laporan Bulanan PW', app_access: 'pppk-pw-thr' },
+        },
+        {
             path: '/tpp/upload',
             name: 'TppUpload',
             component: () => import('../views/TppUpload.vue'),
@@ -125,6 +131,12 @@ const router = createRouter({
             name: 'UserManagement',
             component: () => import('../views/Settings/UserManagement.vue'),
             meta: { requiresAuth: true, breadcrumb: 'Manajemen User', roles: ['superadmin'] },
+        },
+        {
+            path: '/settings/groups',
+            name: 'UserGroupManagement',
+            component: () => import('../views/Settings/UserGroups.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Manajemen Group', roles: ['superadmin'] },
         },
         {
             path: '/settings/satker',

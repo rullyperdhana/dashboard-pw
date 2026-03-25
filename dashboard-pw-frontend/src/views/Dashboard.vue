@@ -35,6 +35,27 @@
             <v-btn variant="tonal" color="primary" rounded="pill" class="mr-3" @click="fetchAllData" :loading="loading">
               <v-icon start>mdi-refresh</v-icon> Refresh
             </v-btn>
+            
+            <!-- Reports Sub-Menu -->
+            <v-menu transition="scale-transition">
+              <template v-slot:activator="{ props }">
+                <v-btn variant="tonal" color="primary" rounded="pill" class="mr-3" v-bind="props" append-icon="mdi-chevron-down">
+                  <v-icon start>mdi-file-chart-outline</v-icon> Laporan
+                </v-btn>
+              </template>
+              <v-list class="rounded-xl pa-2 shadow-premium" min-width="200">
+                <v-list-item to="/reports/pppk-pw-monthly" prepend-icon="mdi-file-table-outline" rounded="lg" class="mb-1">
+                  <v-list-item-title class="font-weight-bold">Laporan Bulanan PW</v-list-item-title>
+                </v-list-item>
+                <v-list-item to="/reports/thr-pppk-pw" prepend-icon="mdi-cash-fast" rounded="lg" class="mb-1">
+                  <v-list-item-title class="font-weight-bold">THR PPPK-PW</v-list-item-title>
+                </v-list-item>
+                <v-list-item to="/reports/gaji-13-pppk-pw" prepend-icon="mdi-cash-check" rounded="lg">
+                  <v-list-item-title class="font-weight-bold">Gaji 13 PPPK-PW</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+
             <v-btn variant="tonal" color="primary" rounded="pill">
               <v-icon start>mdi-calendar</v-icon> {{ currentYear }}
             </v-btn>
@@ -156,7 +177,7 @@
               </div>
 
               <v-divider class="my-4 border-opacity-10"></v-divider>
-              <v-btn block variant="tonal" color="primary" rounded="lg" size="small" append-icon="mdi-arrow-right">Lihat Detail Laporan</v-btn>
+              <v-btn block variant="tonal" color="primary" rounded="lg" size="small" append-icon="mdi-arrow-right" to="/reports/pppk-pw-monthly">Lihat Laporan Bulanan PW</v-btn>
             </v-card>
           </v-col>
         </v-row>

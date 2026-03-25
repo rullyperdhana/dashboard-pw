@@ -15,7 +15,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::with('skpd')->orderBy('username')->get();
+        $users = User::with(['skpd', 'userGroup'])->orderBy('username')->get();
 
         return response()->json([
             'success' => true,
@@ -38,6 +38,7 @@ class UserController extends Controller
             'status' => 'required|string|in:approved,pending',
             'app_access' => 'nullable|array',
             'skpd_access' => 'nullable|array',
+            'user_group_id' => 'nullable|exists:user_groups,id',
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
@@ -77,6 +78,7 @@ class UserController extends Controller
             'password' => 'nullable|string|min:6',
             'app_access' => 'nullable|array',
             'skpd_access' => 'nullable|array',
+            'user_group_id' => 'nullable|exists:user_groups,id',
         ]);
 
         if (!empty($validated['password'])) {

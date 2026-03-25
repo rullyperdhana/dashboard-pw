@@ -27,6 +27,7 @@ class User extends Authenticatable
         'status',
         'app_access',
         'skpd_access',
+        'user_group_id',
     ];
 
     /**
@@ -57,6 +58,14 @@ class User extends Authenticatable
     public function skpd()
     {
         return $this->belongsTo(Skpd::class, 'institution', 'id_skpd');
+    }
+
+    /**
+     * Relasi ke User Group
+     */
+    public function userGroup()
+    {
+        return $this->belongsTo(UserGroup::class, 'user_group_id');
     }
 
     /**
@@ -117,7 +126,14 @@ class User extends Authenticatable
             return null;
         }
 
-        $rawAccess = $this->skpd_access ?: [];
+        $rawAccess = $this->skpd_access;
+        
+        // If user specific access is empty, fallback to group access
+        if (empty($rawAccess) && $this->user_group_id) {
+            $rawAccess = $this->userGroup->skpd_access ?? [];
+        }
+
+        $rawAccess = $rawAccess ?: [];
         $access = [];
 
         // Normalize access based on type
@@ -171,6 +187,21 @@ class User extends Authenticatable
         }
 
         return $access;
+    }
+
+    /**
+     * Accessor untuk app_access dengan fallback ke User Group
+     */
+    public function getAppAccessAttribute($value)
+    {
+        $access = json_decode($value, true);
+        
+        // If user specific access is empty, fallback to group access
+        if (empty($access) && $this->user_group_id) {
+            $access = $this->userGroup->app_access ?? [];
+        }
+
+        return $access ?: [];
     }
 
     /**

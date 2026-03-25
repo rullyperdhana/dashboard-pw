@@ -187,6 +187,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // User Management (Superadmin Only)
     Route::middleware('role:superadmin')->group(function () {
         Route::apiResource('users', UserController::class);
+        Route::apiResource('user-groups', \App\Http\Controllers\Api\UserGroupController::class);
         Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword']);
         Route::get('/login-logs', [App\Http\Controllers\Api\LoginLogController::class, 'index']);
 

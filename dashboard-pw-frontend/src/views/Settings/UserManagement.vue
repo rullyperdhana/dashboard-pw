@@ -107,8 +107,20 @@
                 <v-col cols="12" md="6">
                   <v-text-field v-model="editedItem.username" label="Username" :rules="[rules.required]" variant="outlined"></v-text-field>
                 </v-col>
-                <v-col cols="12">
+                <v-col cols="12" md="8">
                   <v-text-field v-model="editedItem.email" label="Email" :rules="[rules.required, rules.email]" variant="outlined"></v-text-field>
+                </v-col>
+                <v-col cols="12" md="4">
+                  <v-select
+                    v-model="editedItem.user_group_id"
+                    :items="userGroups"
+                    item-title="name"
+                    item-value="id"
+                    label="Group User"
+                    variant="outlined"
+                    clearable
+                    placeholder="Pilih Group (Opsional)"
+                  ></v-select>
                 </v-col>
                 <v-col cols="12" v-if="editedIndex === -1">
                   <v-text-field v-model="editedItem.password" label="Password" type="password" :rules="[rules.required, rules.min]" variant="outlined"></v-text-field>
@@ -262,6 +274,7 @@ import api from '../../api'
 
 const loading = ref(false)
 const users = ref([])
+const userGroups = ref([])
 const skpdList = ref([])
 const search = ref('')
 const filterRole = ref('Semua Role')
@@ -353,6 +366,7 @@ const isGroupPartial = (groupItems) => {
 const headers = [
   { title: 'Nama', key: 'name', align: 'start' },
   { title: 'Username', key: 'username' },
+  { title: 'Group', key: 'user_group.name', sortable: true },
   { title: 'SKPD', key: 'skpd' },
   { title: 'Role', key: 'role', align: 'center' },
   { title: 'Status', key: 'status', align: 'center' },
@@ -384,6 +398,7 @@ const editedItem = ref({
   role: 'operator',
   status: 'approved',
   institution: null,
+  user_group_id: null,
   skpd_access: [],
   app_access: []
 })
@@ -466,6 +481,7 @@ const openDialog = (item = null) => {
       role: 'operator',
       status: 'approved',
       institution: null,
+      user_group_id: null,
       skpd_access: [],
       app_access: []
     }
@@ -585,8 +601,18 @@ const fetchSkpd = async () => {
   }
 }
 
+const fetchGroups = async () => {
+  try {
+    const response = await api.get('/user-groups')
+    userGroups.value = response.data.data
+  } catch (error) {
+    console.error('Error fetching groups:', error)
+  }
+}
+
 onMounted(() => {
   fetchUsers()
   fetchSkpd()
+  fetchGroups()
 })
 </script>

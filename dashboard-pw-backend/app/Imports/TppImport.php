@@ -29,6 +29,15 @@ class TppImport implements ToCollection, WithHeadingRow
     public function collection(Collection $rows)
     {
         try {
+            // Clear previous discrepancy logs for this period/type
+            \App\Models\TppDiscrepancyLog::where('month', $this->month)
+                ->where('year', $this->year)
+                ->where('employee_type', $this->type)
+                ->delete();
+
+            // Note: We don't delete standalone records here anymore to preserve manual mappings.
+            // We will cleanup at the end for NIPs not present in the new Excel.
+
             $excelNips = [];
             $updatedCount = 0;
             $notFoundInDbCount = 0;
@@ -60,21 +69,13 @@ class TppImport implements ToCollection, WithHeadingRow
                     $employee->save();
                     $updatedCount++;
                     
-                    // Also update/sync standalone record if exists to keep consistent
-                    StandaloneTpp::updateOrCreate(
-                        [
-                            'month' => $this->month,
-                            'year' => $this->year,
-                            'employee_type' => $this->type,
-                            'nip' => $nip,
-                            'jenis_gaji' => $this->jenisGaji
-                        ],
-                        [
-                            'nama' => $row['nama'] ?? null,
-                            'nilai' => $nilai,
-                            'skpd_id' => $employee->idskpd // If found in DB, use its SKPD
-                        ]
-                    );
+                    // If employee is found in DB, we should REMOVE them from standalone_tpp if they were there
+                    StandaloneTpp::where('month', $this->month)
+                        ->where('year', $this->year)
+                        ->where('employee_type', $this->type)
+                        ->where('nip', $nip)
+                        ->where('jenis_gaji', $this->jenisGaji)
+                        ->delete();
                 } else {
                     $notFoundInDbCount++;
                     Log::warning("TPP Import: Employee not found in DB for NIP: {$nip}, Month: {$this->month}, Year: {$this->year}. Saving to standalone_tpp.");
@@ -86,33 +87,34 @@ class TppImport implements ToCollection, WithHeadingRow
                         $skpdId = $this->findSkpdIdByName($skpdName);
                     }
 
-                    StandaloneTpp::updateOrCreate(
+                    $standalone = StandaloneTpp::firstOrCreate(
                         [
                             'month' => $this->month,
                             'year' => $this->year,
                             'employee_type' => $this->type,
                             'nip' => $nip,
                             'jenis_gaji' => $this->jenisGaji
-                        ],
-                        [
-                            'nama' => $row['nama'] ?? null,
-                            'nilai' => $nilai,
-                            'skpd_id' => $skpdId
                         ]
                     );
+
+                    $standalone->nama = $row['nama'] ?? $standalone->nama;
+                    $standalone->nilai = $nilai;
+
+                    // Only set skpd_id if it's currently null AND we found a match from the file
+                    if (!$standalone->skpd_id && $skpdId) {
+                        $standalone->skpd_id = $skpdId;
+                    }
+
+                    $standalone->save();
                 }
             }
 
-            // Clear previous logs and standalone records for this period/type
-            \App\Models\TppDiscrepancyLog::where('month', $this->month)
-                ->where('year', $this->year)
-                ->where('employee_type', $this->type)
-                ->delete();
-
-            \App\Models\StandaloneTpp::where('month', $this->month)
+            // Cleanup standalone records for this period/type/jenis_gaji that are NOT in the current Excel
+            StandaloneTpp::where('month', $this->month)
                 ->where('year', $this->year)
                 ->where('employee_type', $this->type)
                 ->where('jenis_gaji', $this->jenisGaji)
+                ->whereNotIn('nip', $excelNips)
                 ->delete();
 
             // Find missing employees: In DB but NOT in Excel

@@ -195,6 +195,7 @@ const menuItems = ref([
     icon: 'mdi-account-clock-outline',
     children: [
       { title: 'Dashboard PW', icon: 'mdi-view-dashboard-outline', value: 'dashboard', to: '/dashboard-pppk-pw' },
+      { title: 'Laporan Bulanan PW', icon: 'mdi-file-table-outline', value: 'pppk-pw-thr', to: '/reports/pppk-pw-monthly' },
       { title: 'Pegawai PW', icon: 'mdi-account-group-outline', value: 'employees', to: '/employees' },
       { title: 'Payroll PW', icon: 'mdi-wallet-outline', value: 'payments', to: '/payments' },
       { title: 'Data Gaji PPPK', icon: 'mdi-account-check-outline', value: 'gaji-pppk', to: '/gaji-pppk' },
@@ -248,6 +249,7 @@ const menuItems = ref([
     children: [
       { title: 'Posting Data', icon: 'mdi-lock-check-outline', value: 'posting-data', to: '/posting-data' },
       { title: 'Manajemen User', icon: 'mdi-account-group-outline', value: 'users', to: '/settings/users', roles: ['superadmin'] },
+      { title: 'Manajemen Group', icon: 'mdi-account-details-outline', value: 'users', to: '/settings/groups', roles: ['superadmin'] },
       { title: 'API Keys', icon: 'mdi-key-chain', value: 'api-keys', to: '/settings/api-keys', roles: ['superadmin'] },
       { title: 'Riwayat Ekspor', icon: 'mdi-history', value: 'export-logs', to: '/settings/export-logs', roles: ['superadmin'] },
       { title: 'Pemeliharaan', icon: 'mdi-database-wrench', value: 'data-maintenance', to: '/settings/maintenance', roles: ['superadmin'] },
