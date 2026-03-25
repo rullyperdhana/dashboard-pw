@@ -435,8 +435,16 @@ trait HandlesExtraPayroll
             
         // Group data for the export format: SKPD -> PPTK -> Sub Kegiatan -> Employees
         return $records->groupBy('skpd_name')->map(function ($skpdItems, $skpdName) {
+            // Fetch signatory (Pengguna Anggaran) for this SKPD
+            $skpdId = DB::table('skpd')->where('nama_skpd', $skpdName)->value('id_skpd');
+            $signatory = null;
+            if ($skpdId) {
+                $signatory = DB::table('report_settings')->where('skpdid', $skpdId)->first();
+            }
+
             return [
                 'skpd_name' => $skpdName,
+                'signatory' => $signatory,
                 'pptk_groups' => $skpdItems->groupBy(function ($item) {
                     return $item->pptk_nama ?: 'Tanpa PPTK';
                 })->map(function ($pptkItems, $pptkName) {

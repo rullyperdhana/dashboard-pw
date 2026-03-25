@@ -54,11 +54,6 @@ class ThrController extends Controller
 
         $monthNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         $method = Setting::where('key', 'thr_pppk_pw_method')->value('value') ?? 'proporsional';
-        $reportSettings = (object) [
-            'nama_kepala' => Setting::where('key', 'nama_kepala')->value('value'),
-            'nip_kepala'  => Setting::where('key', 'nip_kepala')->value('value'),
-            'jabatan_kepala' => Setting::where('key', 'jabatan_kepala')->value('value'),
-        ];
 
         $groupedData = $this->getFormattedGroupedData($request);
         $dataArray = json_decode(json_encode($groupedData), true);
@@ -69,7 +64,6 @@ class ThrController extends Controller
             'month'            => $month,
             'thrMonthName'     => $monthNames[(int)$month] ?? '',
             'calculationBasis' => 'Data Tersimpan (Database) - Metode: ' . ($method === 'tetap' ? 'Nilai Tetap' : 'Proporsional n/12'),
-            'reportSettings'   => $reportSettings,
             'printDate'        => now()->locale('id')->isoFormat('D MMMM YYYY'),
             'thrMethod'        => $method,
             'title'            => 'Tunjangan Hari Raya (THR)'

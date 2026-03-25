@@ -168,11 +168,11 @@
                                             <td style="border: none; width: 45%; text-align: center; padding: 0;">
                                                 <p style="margin-bottom: 50px; font-weight: bold;">
                                                     Mengetahui/Menyetujui,<br>
-                                                    {{ $reportSettings->jabatan_kepala ?? 'Pengguna Anggaran' }}
+                                                    {{ $skpd['signatory']['jabatan_kepala'] ?? 'Pengguna Anggaran' }}
                                                 </p>
                                                 <p style="margin-bottom: 0;">
-                                                    <span style="text-decoration: underline; font-weight: bold;">{{ $reportSettings->nama_kepala ?? '..................................' }}</span><br>
-                                                    NIP. {{ $reportSettings->nip_kepala ?? '..................................' }}
+                                                    <span style="text-decoration: underline; font-weight: bold;">{{ $skpd['signatory']['nama_kepala'] ?? '..................................' }}</span><br>
+                                                    NIP. {{ $skpd['signatory']['nip_kepala'] ?? '..................................' }}
                                                 </p>
                                             </td>
                                             <td style="border: none; width: 10%;"></td>
