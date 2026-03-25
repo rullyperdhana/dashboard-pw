@@ -444,6 +444,30 @@
       </v-card>
     </v-dialog>
 
+    <!-- Delete ALL Confirm Dialog -->
+    <v-dialog v-model="deleteAllDialog" max-width="500">
+      <v-card class="rounded-xl" elevation="8">
+        <v-card-title class="pa-5 d-flex align-center bg-error text-white">
+          <v-icon icon="mdi-alert-decagram" class="mr-2"></v-icon>
+          Hapus SELURUH Mapping
+        </v-card-title>
+        <v-card-text class="pa-6">
+          <div class="text-h6 mb-2">Apakah Anda yakin?</div>
+          <p>Tindakan ini akan menghapus <strong>seluruh ({{ mappings.length }})</strong> data pemetaan SKPD yang telah dibuat. Tindakan ini <strong>tidak dapat dibatalkan</strong>.</p>
+          <v-alert type="warning" variant="tonal" class="mt-4" density="compact">
+            Menghapus semua mapping mungkin akan menyebabkan ketidakkonsistenan pada laporan sampai mapping dibuat kembali.
+          </v-alert>
+        </v-card-text>
+        <v-card-actions class="pa-5 pt-0">
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="deleteAllDialog = false">Batal</v-btn>
+          <v-btn color="error" variant="flat" :loading="deleting" @click="deleteAllMapping">
+            Ya, Hapus Semua
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Snackbar -->
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000" rounded="lg">
       {{ snackbar.message }}

@@ -228,6 +228,7 @@ class UploadJobController extends Controller
                 'month' => (int) $request->input('month'),
                 'year' => (int) $request->input('year'),
                 'type' => $request->input('tpp_type'),
+                'jenis_gaji' => $request->input('jenis_gaji'),
             ],
             'tpg' => [
                 'triwulan' => (int) $request->input('triwulan'),

@@ -51,6 +51,10 @@ class TppImport implements ToCollection, WithHeadingRow
 
                 if ($employee) {
                     $employee->tunj_tpp = $nilai;
+                    
+                    // Recalculate kotor and bersih
+                    $this->recalculate($employee);
+                    
                     $employee->save();
                     $updatedCount++;
                 } else {
@@ -92,6 +96,29 @@ class TppImport implements ToCollection, WithHeadingRow
             Log::error('Error importing TPP: ' . $e->getMessage());
             throw $e;
         }
+    }
+
+    private function recalculate($employee)
+    {
+        // Get all tunjangan columns
+        $tunjanganColumns = [
+            'gaji_pokok', 'tunj_istri', 'tunj_anak', 'tunj_fungsional', 'tunj_struktural',
+            'tunj_umum', 'tunj_beras', 'tunj_pph', 'tunj_tpp', 'tunj_eselon',
+            'tunj_guru', 'tunj_langka', 'tunj_tkd', 'tunj_terpencil', 'tunj_khusus',
+            'tunj_askes', 'tunj_kk', 'tunj_km', 'pembulatan'
+        ];
+
+        $kotor = 0;
+        foreach ($tunjanganColumns as $col) {
+            $kotor += (float) $employee->{$col};
+        }
+
+        $employee->kotor = $kotor;
+        
+        // Bersih = Kotor - Total Potongan
+        // Standard formula from initial import
+        $totalPotongan = (float) $employee->total_potongan;
+        $employee->bersih = $kotor - $totalPotongan;
     }
 
     private function parseCurrency($value)
