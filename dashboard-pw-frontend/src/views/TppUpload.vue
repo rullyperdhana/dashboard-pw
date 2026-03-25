@@ -263,6 +263,11 @@
                 class="bg-transparent"
                 :loading="loadingDiscrepancies"
               >
+                <template v-slot:item.nilai="{ item }">
+                   <div class="font-weight-bold text-teal">
+                      {{ new Number(item.nilai).toLocaleString('id-ID') }}
+                   </div>
+                </template>
                 <template v-slot:no-data>
                    <v-alert type="success" variant="tonal" density="compact" class="mx-4 my-2">
                         Tidak ada selisih. Semua pegawai di database gaji terdaftar dalam file TPP.
@@ -312,6 +317,7 @@ const discrepancyHeaders = [
   { title: 'NIP', key: 'nip', sortable: true },
   { title: 'NAMA', key: 'nama', sortable: true },
   { title: 'SKPD', key: 'skpd', sortable: true },
+  { title: 'NILAI TPP', key: 'nilai', align: 'end' },
   { title: 'KETERANGAN', key: 'reason' },
 ]
 

@@ -13,6 +13,7 @@ class TppDiscrepancyLog extends Model
         'nip',
         'nama',
         'skpd',
+        'nilai',
         'reason',
     ];
 }

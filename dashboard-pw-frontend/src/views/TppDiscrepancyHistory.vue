@@ -107,6 +107,12 @@
                 class="bg-transparent"
                 hover
               >
+                <template v-slot:item.nilai="{ item }">
+                   <div class="font-weight-medium text-teal">
+                      {{ new Number(item.nilai).toLocaleString('id-ID') }}
+                   </div>
+                </template>
+                
                 <template v-slot:no-data>
                    <v-alert v-if="!loading" type="info" variant="tonal" density="compact" class="ma-4">
                         Pilih periode dan klik tombol "Tampilkan" untuk melihat riwayat selisih.
@@ -183,6 +189,7 @@ const headers = [
   { title: 'NIP', key: 'nip', sortable: true },
   { title: 'NAMA', key: 'nama', sortable: true },
   { title: 'SKPD', key: 'skpd', sortable: true },
+  { title: 'NILAI TPP', key: 'nilai', align: 'end' },
   { title: 'KETERANGAN', key: 'reason', sortable: true },
   { title: 'TGL LOG', key: 'created_at', sortable: true },
 ]

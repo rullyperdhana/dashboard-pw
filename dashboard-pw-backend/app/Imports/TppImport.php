@@ -75,7 +75,7 @@ class TppImport implements ToCollection, WithHeadingRow
                 ->where('tahun', $this->year)
                 ->where('jenis_gaji', $this->jenisGaji)
                 ->whereNotIn('nip', $excelNips)
-                ->select('nip', 'nama', 'skpd')
+                ->select('nip', 'nama', 'skpd', 'tunj_tpp')
                 ->get();
 
             foreach ($missingEmployees as $emp) {
@@ -86,6 +86,7 @@ class TppImport implements ToCollection, WithHeadingRow
                     'nip' => $emp->nip,
                     'nama' => $emp->nama,
                     'skpd' => $emp->skpd,
+                    'nilai' => $emp->tunj_tpp,
                     'reason' => 'Tidak ditemukan di file Excel TPP'
                 ]);
             }
