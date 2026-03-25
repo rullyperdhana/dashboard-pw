@@ -375,6 +375,27 @@ class Sp2dController extends Controller
                 'emp_count' => 0
             ];
 
+            // Determine target jenis_gaji & data type flags based on SP2D type
+            // This is moved here to ensure variables are always defined even if $skpd is null
+            $targetJenisGajiDetected = 'Induk';
+            $jenisDataRaw = $real->jenis_data ?? '';
+            
+            if (str_contains($jenisDataRaw, 'SUSULAN'))
+                $targetJenisGajiDetected = 'Susulan';
+            elseif (str_contains($jenisDataRaw, 'KEKURANGAN'))
+                $targetJenisGajiDetected = 'Kekurangan';
+            elseif (str_contains($jenisDataRaw, 'TERUSAN'))
+                $targetJenisGajiDetected = 'Terusan';
+            elseif (str_contains($jenisDataRaw, 'THR') || str_contains($jenisDataRaw, 'GAJI 14'))
+                $targetJenisGajiDetected = 'Gaji 14 / THR';
+            elseif (str_contains($jenisDataRaw, 'GAJI 13'))
+                $targetJenisGajiDetected = 'Gaji 13';
+
+            $isPnsRow = str_contains($jenisDataRaw, 'PNS');
+            $isPppkRow = str_contains($jenisDataRaw, 'PPPK') && !str_contains($jenisDataRaw, 'PPPK-PW');
+            $isTppRow = $jenisDataRaw === 'TPP' || str_contains($jenisDataRaw, 'TPP-');
+            $isPwRow = str_contains($jenisDataRaw, 'PPPK-PW');
+
             if ($skpd) {
                 // 1. Get kdskpds for Standard Payroll
                 $kdskpds = [];
@@ -386,24 +407,11 @@ class Sp2dController extends Controller
                 }
                 $kdskpds = array_unique($kdskpds);
 
-                // 2. Determine target jenis_gaji based on SP2D type
-                $targetJenisGajiDetected = 'Induk';
-                if (str_contains($real->jenis_data, 'SUSULAN'))
-                    $targetJenisGajiDetected = 'Susulan';
-                elseif (str_contains($real->jenis_data, 'KEKURANGAN'))
-                    $targetJenisGajiDetected = 'Kekurangan';
-                elseif (str_contains($real->jenis_data, 'TERUSAN'))
-                    $targetJenisGajiDetected = 'Terusan';
-
-                $isPnsRow = str_contains($real->jenis_data, 'PNS');
-                $isPppkRow = str_contains($real->jenis_data, 'PPPK') && !str_contains($real->jenis_data, 'PPPK-PW');
-                $isTppRow = $real->jenis_data === 'TPP' || str_contains($real->jenis_data, 'TPP-');
-                $isPwRow = str_contains($real->jenis_data, 'PPPK-PW');
-
                 // Standard Payroll aggregation
                 foreach ($kdskpds as $kd) {
-                    $isPppkTpp = $isTppRow && (str_contains(strtoupper($real->keterangan), 'PPPK') || str_contains(strtoupper($real->keterangan), 'P3K') && !str_contains(strtoupper($real->keterangan), 'PARUH'));
-                    $isPnsTpp = $isTppRow && !$isPppkTpp && !str_contains(strtoupper($real->keterangan), 'PARUH');
+                    $ketRaw = strtoupper($real->keterangan ?? '');
+                    $isPppkTpp = $isTppRow && (str_contains($ketRaw, 'PPPK') || str_contains($ketRaw, 'P3K') && !str_contains($ketRaw, 'PARUH'));
+                    $isPnsTpp = $isTppRow && !$isPppkTpp && !str_contains($ketRaw, 'PARUH');
 
                     if ($isPnsRow || $isPnsTpp) {
                         $p = $pnsInternal->where('kdskpd', $kd)->where('jenis_gaji', $targetJenisGajiDetected)->first();
@@ -511,15 +519,18 @@ class Sp2dController extends Controller
         $manual = \DB::table('skpd_mapping')->where('skpd_id', $skpdId)->pluck('source_code')->toArray();
         $kdskpds = array_unique(array_merge($kdskpds, $manual));
 
+        $jenisDataRaw = $real->jenis_data ?? '';
         $targetType = 'Induk';
-        if (str_contains($real->jenis_data, 'SUSULAN')) $targetType = 'Susulan';
-        elseif (str_contains($real->jenis_data, 'KEKURANGAN')) $targetType = 'Kekurangan';
-        elseif (str_contains($real->jenis_data, 'TERUSAN')) $targetType = 'Terusan';
+        if (str_contains($jenisDataRaw, 'SUSULAN')) $targetType = 'Susulan';
+        elseif (str_contains($jenisDataRaw, 'KEKURANGAN')) $targetType = 'Kekurangan';
+        elseif (str_contains($jenisDataRaw, 'TERUSAN')) $targetType = 'Terusan';
+        elseif (str_contains($jenisDataRaw, 'THR') || str_contains($jenisDataRaw, 'GAJI 14')) $targetType = 'Gaji 14 / THR';
+        elseif (str_contains($jenisDataRaw, 'GAJI 13')) $targetType = 'Gaji 13';
 
-        $isPns = str_contains($real->jenis_data, 'PNS');
-        $isPppk = str_contains($real->jenis_data, 'PPPK') && !str_contains($real->jenis_data, 'PPPK-PW');
-        $isTpp = str_contains($real->jenis_data, 'TPP');
-        $isPw = str_contains($real->jenis_data, 'PPPK-PW');
+        $isPns = str_contains($jenisDataRaw, 'PNS');
+        $isPppk = str_contains($jenisDataRaw, 'PPPK') && !str_contains($jenisDataRaw, 'PPPK-PW');
+        $isTpp = str_contains($jenisDataRaw, 'TPP');
+        $isPw = str_contains($jenisDataRaw, 'PPPK-PW');
 
         $details = [];
 
@@ -540,7 +551,8 @@ class Sp2dController extends Controller
                 ->select('nip', 'nama', 'bersih as nominal', \DB::raw("'PPPK' as tipe"))
                 ->get();
         } elseif ($isTpp) {
-            $table = str_contains(strtoupper($real->keterangan), 'PPPK') ? 'gaji_pppk' : 'gaji_pns';
+            $ketRaw = strtoupper($real->keterangan ?? '');
+            $table = (str_contains($ketRaw, 'PPPK') || str_contains($ketRaw, 'P3K')) ? 'gaji_pppk' : 'gaji_pns';
             $details = \DB::table($table)
                 ->whereIn('kdskpd', $kdskpds)
                 ->where('bulan', $bulan)

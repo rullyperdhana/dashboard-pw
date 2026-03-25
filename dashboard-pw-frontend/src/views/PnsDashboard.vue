@@ -345,9 +345,39 @@
             <!-- ═════════ ANNUAL DATA TABLE ═════════ -->
             <v-row class="mt-8 mb-12">
               <v-col cols="12">
-                <div class="d-flex align-center mb-6">
+                <div class="d-flex align-center mb-6" style="gap: 16px;">
                   <h2 class="text-h5 font-weight-black text-high-emphasis">Histori Transaksi {{ selectedYear }}</h2>
                   <v-spacer></v-spacer>
+                  <v-btn
+                    variant="tonal"
+                    color="success"
+                    prepend-icon="mdi-file-excel"
+                    :loading="exportingAnnual"
+                    @click="exportAnnualReport"
+                    class="text-none font-weight-bold"
+                  >
+                    EXPORT EXCEL
+                  </v-btn>
+                  <v-select
+                    v-model="selectedYear"
+                    :items="[2024, 2025, 2026]"
+                    label="TAHUN"
+                    variant="solo"
+                    density="compact"
+                    hide-details
+                    style="max-width: 120px;"
+                    @update:model-value="fetchAnnualReport"
+                  ></v-select>
+                  <v-select
+                    v-model="selectedJenisGajiFilter"
+                    :items="jenisGajiOptions"
+                    label="JENIS GAJI"
+                    variant="solo"
+                    density="compact"
+                    hide-details
+                    style="max-width: 200px;"
+                    @update:model-value="fetchAnnualReport"
+                  ></v-select>
                   <v-switch
                     v-model="showAnnualTable"
                     color="teal"
@@ -368,53 +398,49 @@
                               <th class="sticky-left text-medium-emphasis">BULAN</th>
                               <th class="text-right text-medium-emphasis">PERSONIL</th>
                               <th class="text-right text-medium-emphasis">GAJI POKOK</th>
-                              <th class="text-right text-medium-emphasis">FUNGSIONAL</th>
-                              <th class="text-right text-medium-emphasis">STRUKTURAL</th>
+                              <th class="text-right text-medium-emphasis">TJ. KELUARGA</th>
+                              <th class="text-right text-medium-emphasis" title="Struktural + Fungsional + Umum">TJ. JABATAN</th>
+                              <th class="text-right text-medium-emphasis">BERAS</th>
                               <th class="text-right text-medium-emphasis">TPP</th>
-                              <th class="text-right highlight-col font-weight-bold text-teal-darken-1">BERSIH (DISBURSED)</th>
+                              <th class="text-right text-medium-emphasis text-error">POTONGAN</th>
+                              <th class="text-right highlight-col font-weight-bold text-teal-darken-1">BERSIH</th>
                             </tr>
                           </thead>
                           <tbody>
                             <template v-for="(month, idx) in annualReport?.monthly" :key="idx">
                               <template v-if="month.total_employees > 0">
-                                <!-- PNS Row -->
-                                <tr class="row-sub text-disabled">
+                                <!-- Salary Type Breakdown (e.g., Induk, THR, Kekurangan) -->
+                                <tr v-for="type in month.types" :key="type.jenis_gaji" class="row-sub text-disabled border-b">
                                   <td class="sticky-left font-weight-bold pl-4">
                                     <span class="text-overline mr-2">{{ getMonthName(month.month) }}</span>
-                                    <span>PNS</span>
+                                    <v-chip size="x-small" :color="type.jenis_gaji === 'THR' ? 'orange' : 'primary'" variant="flat" class="font-weight-black px-2">
+                                      {{ type.jenis_gaji }}
+                                    </v-chip>
                                   </td>
-                                  <td class="text-right">{{ pnsAnnual?.monthly[idx]?.total_employees.toLocaleString() || 0 }}</td>
-                                  <td class="text-right">{{ formatCurrencyShort(pnsAnnual?.monthly[idx]?.total_gaji_pokok) }}</td>
-                                  <td class="text-right">{{ formatCurrencyShort(pnsAnnual?.monthly[idx]?.total_tunj_fungsional) }}</td>
-                                  <td class="text-right">{{ formatCurrencyShort(pnsAnnual?.monthly[idx]?.total_tunj_struktural) }}</td>
-                                  <td class="text-right">{{ formatCurrencyShort(pnsAnnual?.monthly[idx]?.total_tunj_tpp) }}</td>
-                                  <td class="text-right">{{ formatCurrencyShort(pnsAnnual?.monthly[idx]?.total_bersih) }}</td>
+                                  <td class="text-right">{{ type.total_employees.toLocaleString() }}</td>
+                                  <td class="text-right">{{ formatCurrencyShort(type.total_gaji_pokok) }}</td>
+                                  <td class="text-right">{{ formatCurrencyShort((type.total_tunj_istri || 0) + (type.total_tunj_anak || 0)) }}</td>
+                                  <td class="text-right">{{ formatCurrencyShort((type.total_tunj_fungsional || 0) + (type.total_tunj_struktural || 0) + (type.total_tunj_umum || 0)) }}</td>
+                                  <td class="text-right">{{ formatCurrencyShort(type.total_tunj_beras) }}</td>
+                                  <td class="text-right">{{ formatCurrencyShort(type.total_tunj_tpp) }}</td>
+                                  <td class="text-right text-error">{{ formatCurrencyShort(type.total_potongan) }}</td>
+                                  <td class="text-right">{{ formatCurrencyShort(type.total_bersih) }}</td>
                                 </tr>
-                                <!-- PPPK Row -->
-                                <tr class="row-sub text-disabled">
-                                  <td class="sticky-left font-weight-bold pl-4">
-                                    <span class="text-overline mr-2 invisible">{{ getMonthName(month.month) }}</span>
-                                    <span>PPPK</span>
-                                  </td>
-                                  <td class="text-right">{{ pppkAnnual?.monthly[idx]?.total_employees.toLocaleString() || 0 }}</td>
-                                  <td class="text-right">{{ formatCurrencyShort(pppkAnnual?.monthly[idx]?.total_gaji_pokok) }}</td>
-                                  <td class="text-right">{{ formatCurrencyShort(pppkAnnual?.monthly[idx]?.total_tunj_fungsional) }}</td>
-                                  <td class="text-right">{{ formatCurrencyShort(pppkAnnual?.monthly[idx]?.total_tunj_struktural) }}</td>
-                                  <td class="text-right">{{ formatCurrencyShort(pppkAnnual?.monthly[idx]?.total_tunj_tpp) }}</td>
-                                  <td class="text-right">{{ formatCurrencyShort(pppkAnnual?.monthly[idx]?.total_bersih) }}</td>
-                                </tr>
-                                <!-- Total Row -->
-                                <tr class="table-row-hover row-total">
-                                  <td class="sticky-left font-weight-black text-high-emphasis">TOTAL</td>
+
+                                <!-- Total Row for Month -->
+                                <tr class="table-row-hover row-total bg-teal-lighten-5" v-if="month.types.length > 1">
+                                  <td class="sticky-left font-weight-black text-high-emphasis">TOTAL {{ getMonthName(month.month).toUpperCase() }}</td>
                                   <td class="text-right font-weight-bold">{{ month.total_employees.toLocaleString() }}</td>
                                   <td class="text-right font-weight-bold">{{ formatCurrencyShort(month.total_gaji_pokok) }}</td>
-                                  <td class="text-right font-weight-bold">{{ formatCurrencyShort(month.total_tunj_fungsional) }}</td>
-                                  <td class="text-right font-weight-bold">{{ formatCurrencyShort(month.total_tunj_struktural) }}</td>
+                                  <td class="text-right font-weight-bold">{{ formatCurrencyShort((month.total_tunj_istri || 0) + (month.total_tunj_anak || 0)) }}</td>
+                                  <td class="text-right font-weight-bold">{{ formatCurrencyShort((month.total_tunj_fungsional || 0) + (month.total_tunj_struktural || 0) + (month.total_tunj_umum || 0)) }}</td>
+                                  <td class="text-right font-weight-bold">{{ formatCurrencyShort(month.total_tunj_beras) }}</td>
                                   <td class="text-right font-weight-bold">{{ formatCurrencyShort(month.total_tunj_tpp) }}</td>
+                                  <td class="text-right font-weight-bold text-error">{{ formatCurrencyShort(month.total_potongan) }}</td>
                                   <td class="text-right highlight-col font-weight-black text-teal-darken-2">{{ formatCurrencyShort(month.total_bersih) }}</td>
                                 </tr>
                                 <!-- Spacer Row -->
-                                <tr class="spacer-row"><td colspan="7"></td></tr>
+                                <tr class="spacer-row"><td colspan="9"></td></tr>
                               </template>
                             </template>
                           </tbody>
@@ -423,9 +449,11 @@
                               <td class="sticky-left font-weight-black">TOTAL TAHUNAN</td>
                               <td class="text-right font-weight-black">{{ lastMonthTotalEmployees.toLocaleString() }}</td>
                               <td class="text-right font-weight-black">{{ formatCurrencyCompact(annualReport?.yearly_total?.total_gaji_pokok) }}</td>
-                              <td class="text-right font-weight-black">{{ formatCurrencyCompact(annualReport?.yearly_total?.total_tunj_fungsional) }}</td>
-                              <td class="text-right font-weight-black">{{ formatCurrencyCompact(annualReport?.yearly_total?.total_tunj_struktural) }}</td>
+                              <td class="text-right font-weight-black">{{ formatCurrencyCompact((annualReport?.yearly_total?.total_tunj_istri || 0) + (annualReport?.yearly_total?.total_tunj_anak || 0)) }}</td>
+                              <td class="text-right font-weight-black">{{ formatCurrencyCompact((annualReport?.yearly_total?.total_tunj_fungsional || 0) + (annualReport?.yearly_total?.total_tunj_struktural || 0) + (annualReport?.yearly_total?.total_tunj_umum || 0)) }}</td>
+                              <td class="text-right font-weight-black">{{ formatCurrencyCompact(annualReport?.yearly_total?.total_tunj_beras) }}</td>
                               <td class="text-right font-weight-black">{{ formatCurrencyCompact(annualReport?.yearly_total?.total_tunj_tpp) }}</td>
+                              <td class="text-right font-weight-black text-error">{{ formatCurrencyCompact(annualReport?.yearly_total?.total_potongan) }}</td>
                               <td class="text-right highlight-col font-weight-black">{{ formatCurrencyCompact(annualReport?.yearly_total?.total_bersih) }}</td>
                             </tr>
                           </tfoot>
@@ -575,8 +603,36 @@ const menu = ref(false)
 const showAnnualTable = ref(false)
 const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedYear = ref(new Date().getFullYear())
-const selectedJenisGajiFilter = ref(null)
-const jenisGajiOptions = ['Induk', 'Susulan', 'Kekurangan', 'Terusan', 'THR', 'Gaji 13']
+const selectedJenisGajiFilter = ref('Semua')
+const jenisGajiOptions = ['Semua', 'Induk', 'Susulan', 'Kekurangan', 'Terusan', 'THR', 'Gaji 13']
+const exportingAnnual = ref(false)
+
+const exportAnnualReport = async () => {
+  exportingAnnual.value = true
+  try {
+    const params = { 
+      year: selectedYear.value, 
+      jenis_gaji: selectedJenisGajiFilter.value === 'Semua' ? '' : selectedJenisGajiFilter.value 
+    }
+    const response = await api.get('/pns/export-annual-report', { 
+      params,
+      responseType: 'blob'
+    })
+    
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `Annual_Report_${selectedYear.value}.xlsx`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } catch (err) {
+    console.error('Export failed:', err)
+    alert('Gagal mengekspor data')
+  } finally {
+    exportingAnnual.value = false
+  }
+}
 
 const detailDialog = ref(false)
 const detailType = ref('tunjangan')
@@ -764,8 +820,24 @@ const fetchAnnualReport = async () => {
     if (p1.data.success && p2.data.success) {
       pnsAnnual.value = p1.data.data; pppkAnnual.value = p2.data.data
       const mergedMonthly = pnsAnnual.value.monthly.map((m, i) => {
-        const merged = { ...m }
-        Object.keys(m).filter(k => !['month', 'month_name'].includes(k)).forEach(k => { merged[k] += (pppkAnnual.value.monthly[i][k] || 0) })
+        const pppkMonth = pppkAnnual.value.monthly[i]
+        const merged = { ...m, types: [] }
+        
+        Object.keys(m).filter(k => !['month', 'month_name', 'types'].includes(k)).forEach(k => { 
+          merged[k] = (Number(m[k]) || 0) + (Number(pppkMonth[k]) || 0) 
+        })
+        
+        const allTypes = [...new Set([...m.types.map(t => t.jenis_gaji), ...pppkMonth.types.map(t => t.jenis_gaji)])]
+        allTypes.sort().forEach(type => {
+          const pnsT = m.types.find(t => t.jenis_gaji === type)
+          const pppkT = pppkMonth.types.find(t => t.jenis_gaji === type)
+          const mergedType = { jenis_gaji: type }
+          const sample = pnsT || pppkT
+          Object.keys(sample).filter(k => k !== 'jenis_gaji').forEach(k => {
+            mergedType[k] = (Number(pnsT?.[k]) || 0) + (Number(pppkT?.[k]) || 0)
+          })
+          merged.types.push(mergedType)
+        })
         return merged
       })
       const mergedYearly = { ...pnsAnnual.value.yearly_total }

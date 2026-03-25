@@ -112,6 +112,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/pns/list', [PnsPayrollController::class, 'list']);
     Route::get('/pns/trend', [PnsPayrollController::class, 'yearlyTrend']);
     Route::get('/pns/annual-report', [PnsPayrollController::class, 'annualReport']);
+    Route::get('/pns/export-annual-report', [PnsPayrollController::class, 'exportAnnualReport']);
 
     // PPPK Payroll
     Route::get('/pppk/dashboard', [PnsPayrollController::class, 'dashboardPppk']);

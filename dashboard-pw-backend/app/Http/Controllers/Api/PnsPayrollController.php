@@ -7,6 +7,8 @@ use App\Models\GajiPns;
 use App\Models\GajiPppk;
 use App\Models\PayrollPosting;
 // Removed PnsImport and PppkImport
+use App\Exports\AnnualPayrollExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 // Removed Excel import
 use Illuminate\Support\Facades\DB;
@@ -91,7 +93,8 @@ class PnsPayrollController extends Controller
             $month = $request->month;
         }
 
-        $jenisGaji = $request->jenis_gaji ?? 'Induk';
+        $jenisGaji = $request->jenis_gaji ?? null;
+        if ($jenisGaji === 'Semua') $jenisGaji = null;
 
         \Log::info('PNS Dashboard Request', [
             'year' => $year,
@@ -101,8 +104,11 @@ class PnsPayrollController extends Controller
         ]);
 
         $query = GajiPns::where('tahun', $year)
-            ->where('bulan', $month)
-            ->where('jenis_gaji', $jenisGaji);
+            ->where('bulan', $month);
+
+        if ($jenisGaji) {
+            $query->where('jenis_gaji', $jenisGaji);
+        }
 
         $this->applySkpdFilter($query);
 
@@ -118,8 +124,11 @@ class PnsPayrollController extends Controller
 
         // Top 5 Earners
         $topEarnersQuery = GajiPns::where('gaji_pns.tahun', $year)
-            ->where('gaji_pns.bulan', $month)
-            ->where('gaji_pns.jenis_gaji', $jenisGaji);
+            ->where('gaji_pns.bulan', $month);
+        
+        if ($jenisGaji) {
+            $topEarnersQuery->where('gaji_pns.jenis_gaji', $jenisGaji);
+        }
         
         $this->applySkpdFilter($topEarnersQuery, 'gaji_pns');
 
@@ -143,8 +152,11 @@ class PnsPayrollController extends Controller
 
         // SKPD Distribution
         $skpdStatsQuery = GajiPns::where('gaji_pns.tahun', $year)
-            ->where('gaji_pns.bulan', $month)
-            ->where('gaji_pns.jenis_gaji', $jenisGaji);
+            ->where('gaji_pns.bulan', $month);
+        
+        if ($jenisGaji) {
+            $skpdStatsQuery->where('gaji_pns.jenis_gaji', $jenisGaji);
+        }
 
         $this->applySkpdFilter($skpdStatsQuery, 'gaji_pns');
 
@@ -166,8 +178,11 @@ class PnsPayrollController extends Controller
 
         // Cost by Rank (Golongan)
         $byGolonganQuery = GajiPns::where('tahun', $year)
-            ->where('bulan', $month)
-            ->where('jenis_gaji', $jenisGaji);
+            ->where('bulan', $month);
+            
+        if ($jenisGaji) {
+            $byGolonganQuery->where('jenis_gaji', $jenisGaji);
+        }
             
         $this->applySkpdFilter($byGolonganQuery);
 
@@ -209,11 +224,15 @@ class PnsPayrollController extends Controller
             $month = $request->month;
         }
         $search = $request->search;
-        $jenisGaji = $request->jenis_gaji ?? 'Induk';
+        $jenisGaji = $request->jenis_gaji ?? null;
+        if ($jenisGaji === 'Semua') $jenisGaji = null;
 
         $query = GajiPns::where('gaji_pns.tahun', $year)
-            ->where('gaji_pns.bulan', $month)
-            ->where('gaji_pns.jenis_gaji', $jenisGaji);
+            ->where('gaji_pns.bulan', $month);
+            
+        if ($jenisGaji) {
+            $query->where('gaji_pns.jenis_gaji', $jenisGaji);
+        }
 
         $this->applySkpdFilter($query, 'gaji_pns');
 
@@ -274,7 +293,8 @@ class PnsPayrollController extends Controller
             $month = $request->month;
         }
 
-        $jenisGaji = $request->jenis_gaji ?? 'Induk';
+        $jenisGaji = $request->jenis_gaji ?? null;
+        if ($jenisGaji === 'Semua') $jenisGaji = null;
 
         \Log::info('PPPK Dashboard Request', [
             'year' => $year,
@@ -284,8 +304,11 @@ class PnsPayrollController extends Controller
         ]);
 
         $query = GajiPppk::where('tahun', $year)
-            ->where('bulan', $month)
-            ->where('jenis_gaji', $jenisGaji);
+            ->where('bulan', $month);
+            
+        if ($jenisGaji) {
+            $query->where('jenis_gaji', $jenisGaji);
+        }
 
         $this->applySkpdFilter($query);
 
@@ -300,8 +323,11 @@ class PnsPayrollController extends Controller
 
         // Top 5 Earners
         $topEarnersQuery = GajiPppk::where('gaji_pppk.tahun', $year)
-            ->where('gaji_pppk.bulan', $month)
-            ->where('gaji_pppk.jenis_gaji', $jenisGaji);
+            ->where('gaji_pppk.bulan', $month);
+            
+        if ($jenisGaji) {
+            $topEarnersQuery->where('gaji_pppk.jenis_gaji', $jenisGaji);
+        }
 
         $this->applySkpdFilter($topEarnersQuery, 'gaji_pppk');
 
@@ -325,8 +351,11 @@ class PnsPayrollController extends Controller
 
         // SKPD Distribution
         $skpdStatsQuery = GajiPppk::where('gaji_pppk.tahun', $year)
-            ->where('gaji_pppk.bulan', $month)
-            ->where('gaji_pppk.jenis_gaji', $jenisGaji);
+            ->where('gaji_pppk.bulan', $month);
+            
+        if ($jenisGaji) {
+            $skpdStatsQuery->where('gaji_pppk.jenis_gaji', $jenisGaji);
+        }
 
         $this->applySkpdFilter($skpdStatsQuery, 'gaji_pppk');
 
@@ -347,8 +376,11 @@ class PnsPayrollController extends Controller
             ->get();
 
         $byGolonganQuery = GajiPppk::where('tahun', $year)
-            ->where('bulan', $month)
-            ->where('jenis_gaji', $jenisGaji);
+            ->where('bulan', $month);
+            
+        if ($jenisGaji) {
+            $byGolonganQuery->where('jenis_gaji', $jenisGaji);
+        }
 
         $this->applySkpdFilter($byGolonganQuery);
 
@@ -377,15 +409,45 @@ class PnsPayrollController extends Controller
     }
 
     /**
+     * Export Annual Report to Excel
+     */
+    public function exportAnnualReport(Request $request)
+    {
+        $year = $request->year ?? date('Y');
+        $type = $request->type ?? 'pns';
+        $jenisGaji = $request->jenis_gaji ?? null;
+        if ($jenisGaji === 'Semua') $jenisGaji = null;
+
+        // Get the data using the existing response logic
+        $response = $this->annualReport($request);
+        $data = $response->getData(true);
+
+        if (!$data['success']) {
+            return response()->json(['success' => false, 'message' => 'Failed to get data'], 400);
+        }
+
+        $filename = "Annual_Report_{$type}_{$year}_" . ($jenisGaji ?? 'Semua') . "_" . date('YmdHis') . ".xlsx";
+
+        return Excel::download(
+            new AnnualPayrollExport($data['data']['monthly'], $year, $type, $jenisGaji),
+            $filename
+        );
+    }
+
+    /**
      * PNS Yearly Trend (for full year chart)
      */
     public function yearlyTrend(Request $request)
     {
         $year = $request->year ?? date('Y');
-        $jenisGaji = $request->jenis_gaji ?? 'Induk';
+        $jenisGaji = $request->jenis_gaji ?? null;
+        if ($jenisGaji === 'Semua') $jenisGaji = null;
 
-        $query = GajiPns::where('tahun', $year)
-            ->where('jenis_gaji', $jenisGaji);
+        $query = GajiPns::where('tahun', $year);
+            
+        if ($jenisGaji) {
+            $query->where('jenis_gaji', $jenisGaji);
+        }
 
         $this->applySkpdFilter($query);
 
@@ -410,10 +472,14 @@ class PnsPayrollController extends Controller
     public function yearlyTrendPppk(Request $request)
     {
         $year = $request->year ?? date('Y');
-        $jenisGaji = $request->jenis_gaji ?? 'Induk';
+        $jenisGaji = $request->jenis_gaji ?? null;
+        if ($jenisGaji === 'Semua') $jenisGaji = null;
 
-        $query = GajiPppk::where('tahun', $year)
-            ->where('jenis_gaji', $jenisGaji);
+        $query = GajiPppk::where('tahun', $year);
+            
+        if ($jenisGaji) {
+            $query->where('jenis_gaji', $jenisGaji);
+        }
 
         $this->applySkpdFilter($query);
 
@@ -440,7 +506,8 @@ class PnsPayrollController extends Controller
         $year = $request->year ?? date('Y');
         $employeeType = $request->type ?? 'pns'; // 'pns' or 'pppk'
         $skpdFilter = $request->skpd ?? null;
-        $jenisGajiFilter = $request->jenis_gaji ?? 'Induk';
+        $jenisGajiFilter = $request->jenis_gaji ?? null;
+        if ($jenisGajiFilter === 'Semua') $jenisGajiFilter = null;
 
         $model = $employeeType === 'pns' ? GajiPns::class : GajiPppk::class;
 
@@ -505,26 +572,6 @@ class PnsPayrollController extends Controller
             'total_tunj_km'
         ];
 
-        // Single query with GROUP BY instead of 12 separate queries
-        $tableName = (new $model)->getTable();
-        $query = $model::where("$tableName.tahun", $year);
-
-        $this->applySkpdFilter($query, $tableName);
-
-        if ($skpdFilter) {
-            $query->where("$tableName.kdskpd", $skpdFilter);
-        }
-        if ($jenisGajiFilter) {
-            $query->where("$tableName.jenis_gaji", $jenisGajiFilter);
-        }
-
-        $results = $query->selectRaw($selectFields)
-            ->groupBy('bulan')
-            ->orderBy('bulan')
-            ->get()
-            ->keyBy('bulan');
-
-        // Build monthly data for all 12 months (fill empty months with zeros)
         $numericKeys = [
             'total_employees',
             'total_gaji_pokok',
@@ -565,28 +612,73 @@ class PnsPayrollController extends Controller
             'total_bersih',
         ];
 
+        // Single query with GROUP BY instead of 12 separate queries
+        $tableName = (new $model)->getTable();
+        $query = $model::where("$tableName.tahun", $year);
+
+        $this->applySkpdFilter($query, $tableName);
+
+        if ($skpdFilter) {
+            $query->where("$tableName.kdskpd", $skpdFilter);
+        }
+        if ($jenisGajiFilter) {
+            $query->where("$tableName.jenis_gaji", $jenisGajiFilter);
+        }
+
+        $results = $query->selectRaw($selectFields . ', jenis_gaji')
+            ->groupBy('bulan', 'jenis_gaji')
+            ->orderBy('bulan')
+            ->orderBy('jenis_gaji')
+            ->get();
+
         $monthlyData = [];
         for ($month = 1; $month <= 12; $month++) {
-            $data = $results->get($month);
+            $monthResults = $results->where('bulan', $month);
+            
             $row = [
                 'month' => $month,
                 'month_name' => date('F', mktime(0, 0, 0, $month, 1)),
+                'types' => []
             ];
 
+            // Initialize monthly totals
             foreach ($numericKeys as $key) {
                 if ($key === 'total_employees') {
-                    $row[$key] = (int) ($data->$key ?? 0);
+                    $row[$key] = 0;
                 } else {
-                    $row[$key] = (float) ($data->$key ?? 0);
+                    $row[$key] = 0.0;
                 }
             }
 
-            // Calculate total tunjangan
-            $totalTunjangan = 0;
-            foreach ($tunjanganFields as $field) {
-                $totalTunjangan += $row[$field];
+            foreach ($monthResults as $data) {
+                $typeRow = [
+                    'jenis_gaji' => $data->jenis_gaji,
+                ];
+
+                foreach ($numericKeys as $key) {
+                    if ($key === 'total_employees') {
+                        $val = (int) ($data->$key ?? 0);
+                        $typeRow[$key] = $val;
+                        $row[$key] += $val; // Sum for monthly total
+                    } else {
+                        $val = (float) ($data->$key ?? 0);
+                        $typeRow[$key] = $val;
+                        $row[$key] += $val; // Sum for monthly total
+                    }
+                }
+
+                // Calculate type total tunjangan
+                $typeTotalTunjangan = 0;
+                foreach ($tunjanganFields as $field) {
+                    $typeTotalTunjangan += $typeRow[$field];
+                }
+                $typeRow['total_tunjangan'] = (float) $typeTotalTunjangan;
+
+                $row['types'][] = $typeRow;
             }
-            $row['total_tunjangan'] = (float) $totalTunjangan;
+
+            // Calculate total tunjangan for month
+            $row['total_tunjangan'] = array_sum(array_column($row['types'], 'total_tunjangan'));
 
             $monthlyData[] = $row;
         }
@@ -599,7 +691,7 @@ class PnsPayrollController extends Controller
         $yearlyTotal['total_tunjangan'] = array_sum(array_column($monthlyData, 'total_tunjangan'));
 
         // Calculate averages
-        $monthsWithData = count(array_filter($monthlyData, fn($m) => $m['total_employees'] > 0));
+        $monthsWithData = count(array_filter($monthlyData, fn($m) => count($m['types']) > 0));
         $avgEmployees = $monthsWithData > 0 ? $yearlyTotal['total_employees'] / $monthsWithData : 0;
         $avgSalaryPerEmployee = $yearlyTotal['total_employees'] > 0 ? $yearlyTotal['total_bersih'] / $yearlyTotal['total_employees'] : 0;
 
