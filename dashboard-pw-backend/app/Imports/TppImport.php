@@ -115,17 +115,29 @@ class TppImport implements ToCollection, WithHeadingRow
                 ->where('tahun', $this->year)
                 ->where('jenis_gaji', $this->jenisGaji)
                 ->whereNotIn('nip', $excelNips)
-                ->select('nip', 'nama', 'skpd', 'tunj_tpp')
+                ->select('nip', 'nama', 'skpd', 'kdskpd', 'tunj_tpp')
                 ->get();
 
             foreach ($missingEmployees as $emp) {
+                $skpdName = $emp->skpd;
+                
+                // If SKPD is "Unknown", try to resolve it via kdskpd and mapping
+                if ($skpdName === 'Unknown' && isset($emp->kdskpd)) {
+                    $mapping = \App\Models\SkpdMapping::where('source_code', $emp->kdskpd)
+                        ->whereIn('type', [$this->type, 'all'])
+                        ->first();
+                    if ($mapping && $mapping->skpd) {
+                        $skpdName = $mapping->skpd->nama_skpd;
+                    }
+                }
+
                 \App\Models\TppDiscrepancyLog::create([
                     'month' => $this->month,
                     'year' => $this->year,
                     'employee_type' => $this->type,
                     'nip' => $emp->nip,
                     'nama' => $emp->nama,
-                    'skpd' => $emp->skpd,
+                    'skpd' => $skpdName,
                     'nilai' => $emp->tunj_tpp,
                     'reason' => 'Tidak ditemukan di file Excel TPP'
                 ]);

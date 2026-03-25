@@ -408,6 +408,8 @@ const discrepancyHeaders = [
   { title: 'KETERANGAN', key: 'reason' },
 ]
 
+const discrepancies = ref([])
+const loadingDiscrepancies = ref(false)
 const standaloneTpps = ref([])
 const loadingStandalone = ref(false)
 const standaloneHeaders = [
