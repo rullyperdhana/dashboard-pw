@@ -50,6 +50,12 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 - **Enhanced Dashboard Filtering:** Dashboard secara cerdas memisahkan data PPPK-PW dari PNS/PPPK Penuh Waktu untuk akurasi laporan.
 - **Global Help Access:** Halaman Pusat Bantuan kini dapat diakses oleh semua level pengguna (Admin & Operator).
 - **Environment Version Indicator:** Label versi aplikasi (v3.9.0) yang transparan di sidebar.
+  
+### 🛠️ Maintenance & Refinement (v3.9.1)
+- **Automatic SKPD Synchronization:** Penentuan SKPD Utama kini otomatis tersinkron dangan pilihan pertama pada modul Manajemen User, memastikan identitas Sidebar selalu akurat.
+- **Enhanced Login Parity:** Respon otentikasi kini menyertakan data perizinan lengkap (`skpd_access`, `app_access`) untuk menghilangkan jeda sinkronisasi *cache* setelah perubahan admin.
+- **Fixed PPPK-PW PDF Export:** Perbaikan variabel dan mapping data pada template PDF untuk laporan THR dan Gaji-13 PPPK Paruh Waktu.
+- **Dashboard Metric Accuracy:** Penyesuaian logika hitung personil (diambil dari data bulan terakhir, bukan akumulasi tahunan) dan tampilan angka nominal penuh pada footer Dashboard PNS.
 
 ---
  

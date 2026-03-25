@@ -414,6 +414,13 @@ const getGranularAccess = (id) => {
 }
 
 watch(selectedSkpdIds, (newIds) => {
+  // Sync editedItem.institution with the first selected SKPD
+  if (newIds && newIds.length > 0) {
+    editedItem.value.institution = parseInt(newIds[0])
+  } else {
+    editedItem.value.institution = null
+  }
+
   // Sync editedItem.skpd_access (array of objects) with selectedSkpdIds (array of IDs)
   const currentAccess = [...editedItem.value.skpd_access]
   

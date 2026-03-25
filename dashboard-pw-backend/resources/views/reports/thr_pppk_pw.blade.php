@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Daftar THR PPPK Paruh Waktu</title>
+    <title>{{ $title ?? 'Daftar Pembayaran' }} PPPK Paruh Waktu</title>
     <style>
         @page {
             margin: 120px 30px 60px 30px;
@@ -94,7 +94,7 @@
     </footer>
 
     <header>
-        <h2 style="margin:0; padding:0;">PEMERINTAH PROVINSI KALIMANTAN SELATAN <br>DAFTAR PEMBAYARAN THR PEGAWAI PPPK
+        <h2 style="margin:0; padding:0;">PEMERINTAH PROVINSI KALIMANTAN SELATAN <br>DAFTAR PEMBAYARAN {{ strtoupper($title ?? 'PPPK') }} PEGAWAI PPPK
             PARUH WAKTU</h2>
         <h3 style="margin:5px 0 0 0; padding:0;">TAHUN {{ $year }} (PEMBAYARAN BULAN {{ strtoupper($thrMonthName) }})
         </h3>
@@ -130,7 +130,7 @@
                                             <th>Jabatan</th>
                                             <th width="90">Gapok Basis</th>
                                             <th width="70">Masa Kerja</th>
-                                            <th width="100">Besaran THR</th>
+                                            <th width="100">Besaran {{ $title ?? 'Pembayaran' }}</th>
                                             <th width="140">Tanda Tangan / Penerima</th>
                                         </tr>
                                     </thead>
@@ -143,7 +143,7 @@
                                                 <td>{{ $item['jabatan'] }}</td>
                                                 <td class="text-right">{{ number_format($item['gapok_basis'], 0, ',', '.') }}</td>
                                                 <td class="text-center">{{ $item['n_months'] }} Bln</td>
-                                                <td class="text-right">{{ number_format($item['thr_amount'], 0, ',', '.') }}</td>
+                                                <td class="text-right">{{ number_format($item['payroll_amount'], 0, ',', '.') }}</td>
                                                 <td style="padding-top: 5px; height: 35px; vertical-align: top;">
                                                     @if(($index + 1) % 2 != 0)
                                                         {{ $index + 1 }}.
@@ -155,7 +155,7 @@
                                         @endforeach
                                         <tr class="total-row">
                                             <td colspan="6" class="text-right">SUBTOTAL SUB KEGIATAN &nbsp;</td>
-                                            <td class="text-right">{{ number_format($subGiat['subtotal_thr'], 0, ',', '.') }}</td>
+                                            <td class="text-right">{{ number_format($subGiat['subtotal_thr'] ?? $subGiat['subtotal_payroll'], 0, ',', '.') }}</td>
                                             <td></td>
                                         </tr>
                                     </tbody>

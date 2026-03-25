@@ -44,14 +44,27 @@ class Gaji13Controller extends Controller
         $year = $request->year ?? 2026;
         $month = $request->month ?? 6;
 
+        $monthNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        $method = \App\Models\Setting::where('key', 'gaji13_pppk_pw_method')->value('value') ?? 'proporsional';
+        $reportSettings = (object) [
+            'nama_kepala'    => \App\Models\Setting::where('key', 'nama_kepala')->value('value'),
+            'nip_kepala'     => \App\Models\Setting::where('key', 'nip_kepala')->value('value'),
+            'jabatan_kepala' => \App\Models\Setting::where('key', 'jabatan_kepala')->value('value'),
+        ];
+
         $groupedData = $this->getFormattedGroupedData($request);
         $dataArray = json_decode(json_encode($groupedData), true);
-        
+
         $pdf = Pdf::loadView('reports.thr_pppk_pw', [
-            'data' => $dataArray,
-            'year' => $year,
-            'month' => $month,
-            'title' => 'Gaji Ketiga Belas (Gaji-13)'
+            'data'             => $dataArray,
+            'year'             => $year,
+            'month'            => $month,
+            'thrMonthName'     => $monthNames[$month] ?? '',
+            'calculationBasis' => 'Data Tersimpan (Database) — Metode: ' . ($method === 'tetap' ? 'Nilai Tetap' : 'Proporsional n/12'),
+            'reportSettings'   => $reportSettings,
+            'printDate'        => now()->locale('id')->isoFormat('D MMMM YYYY'),
+            'thrMethod'        => $method,
+            'title'            => 'Gaji Ketiga Belas (Gaji-13)',
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download("GAJI_13_PPPK_PW_{$year}_{$month}.pdf");
