@@ -54,6 +54,12 @@ class SkpdMappingController extends Controller
             ->orderBy('gaji_pns.kdskpd')
             ->get()
             ->map(function($item) use ($allSkpds) {
+                // Fix confusing "Unknown" label
+                $sourceName = $item->source_name;
+                if ($item->suggestion && (empty($sourceName) || strtolower($sourceName) === 'unknown')) {
+                    $sourceName = $item->suggestion;
+                }
+
                 $suggestionId = null;
                 if ($item->suggestion) {
                     $normSug = $this->normalizeName($item->suggestion);
@@ -62,7 +68,7 @@ class SkpdMappingController extends Controller
                 }
                 return [
                     'source_code' => $item->source_code,
-                    'source_name' => $item->source_name,
+                    'source_name' => $sourceName,
                     'suggestion' => $item->suggestion,
                     'suggestion_id' => $suggestionId,
                     'type' => 'pns'
@@ -80,6 +86,12 @@ class SkpdMappingController extends Controller
             ->orderBy('gaji_pppk.kdskpd')
             ->get()
             ->map(function($item) use ($allSkpds) {
+                // Fix confusing "Unknown" label
+                $sourceName = $item->source_name;
+                if ($item->suggestion && (empty($sourceName) || strtolower($sourceName) === 'unknown')) {
+                    $sourceName = $item->suggestion;
+                }
+
                 $suggestionId = null;
                 if ($item->suggestion) {
                     $normSug = $this->normalizeName($item->suggestion);
@@ -88,7 +100,7 @@ class SkpdMappingController extends Controller
                 }
                 return [
                     'source_code' => $item->source_code,
-                    'source_name' => $item->source_name,
+                    'source_name' => $sourceName,
                     'suggestion' => $item->suggestion,
                     'suggestion_id' => $suggestionId,
                     'type' => 'pppk'
@@ -106,6 +118,12 @@ class SkpdMappingController extends Controller
             ->orderBy('pegawai_pw.idskpd')
             ->get()
             ->map(function($item) use ($allSkpds) {
+                // Fix confusing "Unknown" label
+                $sourceName = $item->source_name;
+                if ($item->suggestion && (empty($sourceName) || strtolower($sourceName) === 'unknown')) {
+                    $sourceName = $item->suggestion;
+                }
+
                 $suggestionId = null;
                 if ($item->suggestion) {
                     $normSug = $this->normalizeName($item->suggestion);
@@ -114,7 +132,7 @@ class SkpdMappingController extends Controller
                 }
                 return [
                     'source_code' => (string) $item->source_code,
-                    'source_name' => $item->source_name,
+                    'source_name' => $sourceName,
                     'suggestion' => $item->suggestion,
                     'suggestion_id' => $suggestionId,
                     'type' => 'pppk_pw'

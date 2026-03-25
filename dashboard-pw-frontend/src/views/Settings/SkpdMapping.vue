@@ -110,6 +110,12 @@
                       <v-icon icon="mdi-check-circle-outline" color="success" size="32" class="mb-2"></v-icon>
                       <div>Semua SKPD PNS sudah dipetakan!</div>
                     </div>
+                    <div v-else class="mb-3 d-flex align-center px-2">
+                       <v-spacer></v-spacer>
+                       <v-btn size="small" color="primary" variant="flat" rounded="pill" @click="mapAllSuggestions('pns')" :loading="bulkSaving" prepend-icon="mdi-auto-fix">
+                         Petakan Semua yang Disarankan
+                       </v-btn>
+                    </div>
                     <v-list v-else density="compact" class="rounded-lg">
                       <v-list-item
                         v-for="item in unmappedPns"
@@ -142,6 +148,12 @@
                     <div v-if="unmappedPppk.length === 0" class="text-center pa-4 text-medium-emphasis">
                       <v-icon icon="mdi-check-circle-outline" color="success" size="32" class="mb-2"></v-icon>
                       <div>Semua SKPD PPPK Penuh Waktu sudah dipetakan!</div>
+                    </div>
+                    <div v-else class="mb-3 d-flex align-center px-2">
+                       <v-spacer></v-spacer>
+                       <v-btn size="small" color="primary" variant="flat" rounded="pill" @click="mapAllSuggestions('pppk')" :loading="bulkSaving" prepend-icon="mdi-auto-fix">
+                         Petakan Semua yang Disarankan
+                       </v-btn>
                     </div>
                     <v-list v-else density="compact" class="rounded-lg">
                       <v-list-item
@@ -176,6 +188,12 @@
                       <v-icon icon="mdi-check-circle-outline" color="success" size="32" class="mb-2"></v-icon>
                       <div>Semua SKPD PPPK Paruh Waktu sudah dipetakan!</div>
                     </div>
+                    <div v-else class="mb-3 d-flex align-center px-2">
+                       <v-spacer></v-spacer>
+                       <v-btn size="small" color="primary" variant="flat" rounded="pill" @click="mapAllSuggestions('pppk_pw')" :loading="bulkSaving" prepend-icon="mdi-auto-fix">
+                         Petakan Semua yang Disarankan
+                       </v-btn>
+                    </div>
                     <v-list v-else density="compact" class="rounded-lg">
                       <v-list-item
                         v-for="item in unmappedPppkPw"
@@ -207,6 +225,12 @@
                     <div v-if="unmappedSp2d.length === 0" class="text-center pa-4 text-medium-emphasis">
                       <v-icon icon="mdi-check-circle-outline" color="success" size="32" class="mb-2"></v-icon>
                       <div>Semua nama SKPD dari SP2D sudah dipetakan!</div>
+                    </div>
+                    <div v-else class="mb-3 d-flex align-center px-2">
+                       <v-spacer></v-spacer>
+                       <v-btn size="small" color="primary" variant="flat" rounded="pill" @click="mapAllSuggestions('sp2d')" :loading="bulkSaving" prepend-icon="mdi-auto-fix">
+                         Petakan Semua yang Disarankan
+                       </v-btn>
                     </div>
                     <v-list v-else density="compact" class="rounded-lg">
                       <v-list-item
@@ -496,6 +520,41 @@ const loadingSkpd = ref(false)
 const loadingSkpd2026 = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
+const bulkSaving = ref(false)
+
+const mapAllSuggestions = async (type) => {
+  let itemsToMap = []
+  if (type === 'pns') itemsToMap = unmappedPns.value
+  else if (type === 'pppk') itemsToMap = unmappedPppk.value
+  else if (type === 'pppk_pw') itemsToMap = unmappedPppkPw.value
+  else if (type === 'sp2d') itemsToMap = unmappedSp2d.value
+
+  const payload = itemsToMap
+    .filter(item => item.suggestion_id)
+    .map(item => ({
+      source_name: item.source_name,
+      source_code: item.source_code || null,
+      skpd_id: item.suggestion_id,
+      skpd_2026_id: null,
+      type: item.type === 'sp2d' ? 'all' : item.type
+    }))
+
+  if (payload.length === 0) {
+    notify('Tidak ada saran pemetaan otomatis untuk kategori ini', 'warning')
+    return
+  }
+
+  bulkSaving.value = true
+  try {
+    const res = await api.post('/skpd-mapping/bulk', { mappings: payload })
+    notify(res.data.message || 'Pemetaan massal berhasil!')
+    await loadAll()
+  } catch (e) {
+    notify(e.response?.data?.message || 'Gagal melakukan pemetaan massal', 'error')
+  } finally {
+    bulkSaving.value = false
+  }
+}
 const dialog = ref(false)
 const deleteDialog = ref(false)
 const deleteAllDialog = ref(false)
