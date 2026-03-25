@@ -42,7 +42,7 @@ class Gaji13Controller extends Controller
     public function exportPdf(Request $request)
     {
         $year = $request->year ?? 2026;
-        $month = $request->month ?? 6;
+        $month = $request->month ?: 6;
 
         $monthNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         $method = \App\Models\Setting::where('key', 'gaji13_pppk_pw_method')->value('value') ?? 'proporsional';
@@ -59,8 +59,8 @@ class Gaji13Controller extends Controller
             'data'             => $dataArray,
             'year'             => $year,
             'month'            => $month,
-            'thrMonthName'     => $monthNames[$month] ?? '',
-            'calculationBasis' => 'Data Tersimpan (Database) — Metode: ' . ($method === 'tetap' ? 'Nilai Tetap' : 'Proporsional n/12'),
+            'thrMonthName'     => $monthNames[(int)$month] ?? '',
+            'calculationBasis' => 'Data Tersimpan (Database) - Metode: ' . ($method === 'tetap' ? 'Nilai Tetap' : 'Proporsional n/12'),
             'reportSettings'   => $reportSettings,
             'printDate'        => now()->locale('id')->isoFormat('D MMMM YYYY'),
             'thrMethod'        => $method,
