@@ -501,7 +501,7 @@ class ReportController extends Controller
 
             $rows = collect(DB::select("
                 SELECT
-                    g.kdskpd AS kode_skpd,
+                    COALESCE(sm.kode_skpd, g.kdskpd) AS kode_skpd,
                     COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd) AS nama_skpd,
                     COUNT(DISTINCT g.nip)               AS jumlah_pegawai,
                     SUM(g.gaji_pokok)                  AS gapok,
@@ -530,7 +530,7 @@ class ReportController extends Controller
                     WHERE mp.type IN {$mapType}
                 ) sm ON g.kdskpd = sm.source_code
                 WHERE g.bulan = ? AND g.tahun = ? {$codeFilter} {$jenisGajiFilter}
-                GROUP BY g.kdskpd, COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd)
+                GROUP BY COALESCE(sm.kode_skpd, g.kdskpd), COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd)
                 ORDER BY nama_skpd
             ", [$month, $year]));
 
@@ -579,7 +579,7 @@ class ReportController extends Controller
         if (in_array($type, ['pns', 'all'])) {
             $parts[] = "
                 SELECT
-                    g.kdskpd AS kode_skpd,
+                    COALESCE(sm.kode_skpd, g.kdskpd) AS kode_skpd,
                     COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd) AS nama_skpd,
                     COUNT(DISTINCT g.nip)              AS employee_count,
                     SUM(g.gaji_pokok)                 AS total_gaji_pokok,
@@ -595,7 +595,7 @@ class ReportController extends Controller
                     WHERE mp.type IN ('pns', 'all')
                 ) sm ON g.kdskpd = sm.source_code
                 WHERE g.bulan = ? AND g.tahun = ? {$codeFilter} {$jenisGajiFilter}
-                GROUP BY g.kdskpd, COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd)";
+                GROUP BY COALESCE(sm.kode_skpd, g.kdskpd), COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd)";
             $params = array_merge($params, [$month, $year]);
         }
 
@@ -603,7 +603,7 @@ class ReportController extends Controller
         if (in_array($type, ['pppk', 'all'])) {
             $parts[] = "
                 SELECT
-                    g.kdskpd AS kode_skpd,
+                    COALESCE(sm.kode_skpd, g.kdskpd) AS kode_skpd,
                     COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd) AS nama_skpd,
                     COUNT(DISTINCT g.nip)              AS employee_count,
                     SUM(g.gaji_pokok)                 AS total_gaji_pokok,
@@ -619,7 +619,7 @@ class ReportController extends Controller
                     WHERE mp.type IN ('pppk', 'all')
                 ) sm ON g.kdskpd = sm.source_code
                 WHERE g.bulan = ? AND g.tahun = ? {$codeFilter} {$jenisGajiFilter}
-                GROUP BY g.kdskpd, COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd)";
+                GROUP BY COALESCE(sm.kode_skpd, g.kdskpd), COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd)";
             $params = array_merge($params, [$month, $year]);
         }
 
