@@ -110,37 +110,39 @@
                       <v-icon icon="mdi-check-circle-outline" color="success" size="32" class="mb-2"></v-icon>
                       <div>Semua SKPD PNS sudah dipetakan!</div>
                     </div>
-                    <div v-else class="mb-3 d-flex align-center px-2">
-                       <v-spacer></v-spacer>
-                       <v-btn size="small" color="primary" variant="flat" rounded="pill" @click="mapAllSuggestions('pns')" :loading="bulkSaving" prepend-icon="mdi-auto-fix">
-                         Petakan Semua yang Disarankan
-                       </v-btn>
+                    <div v-else>
+                      <div class="mb-3 d-flex align-center px-2">
+                        <v-spacer></v-spacer>
+                        <v-btn size="small" color="primary" variant="flat" rounded="pill" @click="mapAllSuggestions('pns')" :loading="bulkSaving" prepend-icon="mdi-auto-fix">
+                          Petakan Semua yang Disarankan
+                        </v-btn>
+                      </div>
+                      <v-list density="compact" class="rounded-lg">
+                        <v-list-item
+                          v-for="item in unmappedPns"
+                          :key="item.source_name"
+                          class="mb-1 border rounded-lg"
+                        >
+                          <template v-slot:prepend>
+                            <v-icon icon="mdi-office-building-remove-outline" color="warning" size="20"></v-icon>
+                          </template>
+                          <v-list-item-title class="text-body-2 font-weight-medium">
+                            <v-chip size="x-small" color="warning" class="mr-2">{{ item.source_code }}</v-chip>
+                            {{ item.source_name }}
+                          </v-list-item-title>
+                          <v-list-item-subtitle v-if="item.suggestion" class="text-caption text-primary">
+                            Saran: {{ item.suggestion }}
+                            <span v-if="item.kdskpd" class="text-grey ml-1">[{{ item.kdskpd }}]</span>
+                          </v-list-item-subtitle>
+                          <template v-slot:append>
+                            <v-btn size="small" color="primary" variant="tonal" @click="quickMap(item)">
+                              <v-icon start icon="mdi-link-variant" size="16"></v-icon>
+                              Petakan
+                            </v-btn>
+                          </template>
+                        </v-list-item>
+                      </v-list>
                     </div>
-                    <v-list v-else density="compact" class="rounded-lg">
-                      <v-list-item
-                        v-for="item in unmappedPns"
-                        :key="item.source_name"
-                        class="mb-1 border rounded-lg"
-                      >
-                        <template v-slot:prepend>
-                          <v-icon icon="mdi-office-building-remove-outline" color="warning" size="20"></v-icon>
-                        </template>
-                        <v-list-item-title class="text-body-2 font-weight-medium">
-                          <v-chip size="x-small" color="warning" class="mr-2">{{ item.source_code }}</v-chip>
-                          {{ item.source_name }}
-                        </v-list-item-title>
-                        <v-list-item-subtitle v-if="item.suggestion" class="text-caption text-primary">
-                          Saran: {{ item.suggestion }}
-                          <span v-if="item.kdskpd" class="text-grey ml-1">[{{ item.kdskpd }}]</span>
-                        </v-list-item-subtitle>
-                        <template v-slot:append>
-                          <v-btn size="small" color="primary" variant="tonal" @click="quickMap(item)">
-                            <v-icon start icon="mdi-link-variant" size="16"></v-icon>
-                            Petakan
-                          </v-btn>
-                        </template>
-                      </v-list-item>
-                    </v-list>
                   </v-window-item>
 
                   <!-- PPPK Unmapped -->
@@ -149,37 +151,39 @@
                       <v-icon icon="mdi-check-circle-outline" color="success" size="32" class="mb-2"></v-icon>
                       <div>Semua SKPD PPPK Penuh Waktu sudah dipetakan!</div>
                     </div>
-                    <div v-else class="mb-3 d-flex align-center px-2">
-                       <v-spacer></v-spacer>
-                       <v-btn size="small" color="primary" variant="flat" rounded="pill" @click="mapAllSuggestions('pppk')" :loading="bulkSaving" prepend-icon="mdi-auto-fix">
-                         Petakan Semua yang Disarankan
-                       </v-btn>
+                    <div v-else>
+                      <div class="mb-3 d-flex align-center px-2">
+                        <v-spacer></v-spacer>
+                        <v-btn size="small" color="primary" variant="flat" rounded="pill" @click="mapAllSuggestions('pppk')" :loading="bulkSaving" prepend-icon="mdi-auto-fix">
+                          Petakan Semua yang Disarankan
+                        </v-btn>
+                      </div>
+                      <v-list density="compact" class="rounded-lg">
+                        <v-list-item
+                          v-for="item in unmappedPppk"
+                          :key="item.source_name"
+                          class="mb-1 border rounded-lg"
+                        >
+                          <template v-slot:prepend>
+                            <v-icon icon="mdi-office-building-remove-outline" color="warning" size="20"></v-icon>
+                          </template>
+                          <v-list-item-title class="text-body-2 font-weight-medium">
+                            <v-chip size="x-small" color="warning" class="mr-2">{{ item.source_code }}</v-chip>
+                            {{ item.source_name }}
+                          </v-list-item-title>
+                          <v-list-item-subtitle v-if="item.suggestion" class="text-caption text-primary">
+                            Saran: {{ item.suggestion }}
+                            <span v-if="item.kdskpd" class="text-grey ml-1">[{{ item.kdskpd }}]</span>
+                          </v-list-item-subtitle>
+                          <template v-slot:append>
+                            <v-btn size="small" color="primary" variant="tonal" @click="quickMap(item)">
+                              <v-icon start icon="mdi-link-variant" size="16"></v-icon>
+                              Petakan
+                            </v-btn>
+                          </template>
+                        </v-list-item>
+                      </v-list>
                     </div>
-                    <v-list v-else density="compact" class="rounded-lg">
-                      <v-list-item
-                        v-for="item in unmappedPppk"
-                        :key="item.source_name"
-                        class="mb-1 border rounded-lg"
-                      >
-                        <template v-slot:prepend>
-                          <v-icon icon="mdi-office-building-remove-outline" color="warning" size="20"></v-icon>
-                        </template>
-                        <v-list-item-title class="text-body-2 font-weight-medium">
-                          <v-chip size="x-small" color="warning" class="mr-2">{{ item.source_code }}</v-chip>
-                          {{ item.source_name }}
-                        </v-list-item-title>
-                        <v-list-item-subtitle v-if="item.suggestion" class="text-caption text-primary">
-                          Saran: {{ item.suggestion }}
-                          <span v-if="item.kdskpd" class="text-grey ml-1">[{{ item.kdskpd }}]</span>
-                        </v-list-item-subtitle>
-                        <template v-slot:append>
-                          <v-btn size="small" color="primary" variant="tonal" @click="quickMap(item)">
-                            <v-icon start icon="mdi-link-variant" size="16"></v-icon>
-                            Petakan
-                          </v-btn>
-                        </template>
-                      </v-list-item>
-                    </v-list>
                   </v-window-item>
 
                   <!-- PPPK-PW Unmapped -->
@@ -188,36 +192,38 @@
                       <v-icon icon="mdi-check-circle-outline" color="success" size="32" class="mb-2"></v-icon>
                       <div>Semua SKPD PPPK Paruh Waktu sudah dipetakan!</div>
                     </div>
-                    <div v-else class="mb-3 d-flex align-center px-2">
-                       <v-spacer></v-spacer>
-                       <v-btn size="small" color="primary" variant="flat" rounded="pill" @click="mapAllSuggestions('pppk_pw')" :loading="bulkSaving" prepend-icon="mdi-auto-fix">
-                         Petakan Semua yang Disarankan
-                       </v-btn>
+                    <div v-else>
+                      <div class="mb-3 d-flex align-center px-2">
+                        <v-spacer></v-spacer>
+                        <v-btn size="small" color="primary" variant="flat" rounded="pill" @click="mapAllSuggestions('pppk_pw')" :loading="bulkSaving" prepend-icon="mdi-auto-fix">
+                          Petakan Semua yang Disarankan
+                        </v-btn>
+                      </div>
+                      <v-list density="compact" class="rounded-lg">
+                        <v-list-item
+                          v-for="item in unmappedPppkPw"
+                          :key="item.source_name"
+                          class="mb-1 border rounded-lg"
+                        >
+                          <template v-slot:prepend>
+                            <v-icon icon="mdi-office-building-remove-outline" color="warning" size="20"></v-icon>
+                          </template>
+                          <v-list-item-title class="text-body-2 font-weight-medium">
+                            <v-chip size="x-small" color="warning" class="mr-2">{{ item.source_code }}</v-chip>
+                            {{ item.source_name }}
+                          </v-list-item-title>
+                          <v-list-item-subtitle v-if="item.suggestion" class="text-caption text-primary">
+                            Saran: {{ item.suggestion }}
+                          </v-list-item-subtitle>
+                          <template v-slot:append>
+                            <v-btn size="small" color="primary" variant="tonal" @click="quickMap(item)">
+                              <v-icon start icon="mdi-link-variant" size="16"></v-icon>
+                              Petakan
+                            </v-btn>
+                          </template>
+                        </v-list-item>
+                      </v-list>
                     </div>
-                    <v-list v-else density="compact" class="rounded-lg">
-                      <v-list-item
-                        v-for="item in unmappedPppkPw"
-                        :key="item.source_name"
-                        class="mb-1 border rounded-lg"
-                      >
-                        <template v-slot:prepend>
-                          <v-icon icon="mdi-office-building-remove-outline" color="warning" size="20"></v-icon>
-                        </template>
-                        <v-list-item-title class="text-body-2 font-weight-medium">
-                          <v-chip size="x-small" color="warning" class="mr-2">{{ item.source_code }}</v-chip>
-                          {{ item.source_name }}
-                        </v-list-item-title>
-                        <v-list-item-subtitle v-if="item.suggestion" class="text-caption text-primary">
-                          Saran: {{ item.suggestion }}
-                        </v-list-item-subtitle>
-                        <template v-slot:append>
-                          <v-btn size="small" color="primary" variant="tonal" @click="quickMap(item)">
-                            <v-icon start icon="mdi-link-variant" size="16"></v-icon>
-                            Petakan
-                          </v-btn>
-                        </template>
-                      </v-list-item>
-                    </v-list>
                   </v-window-item>
 
                   <!-- SP2D Unmapped -->
@@ -226,35 +232,37 @@
                       <v-icon icon="mdi-check-circle-outline" color="success" size="32" class="mb-2"></v-icon>
                       <div>Semua nama SKPD dari SP2D sudah dipetakan!</div>
                     </div>
-                    <div v-else class="mb-3 d-flex align-center px-2">
-                       <v-spacer></v-spacer>
-                       <v-btn size="small" color="primary" variant="flat" rounded="pill" @click="mapAllSuggestions('sp2d')" :loading="bulkSaving" prepend-icon="mdi-auto-fix">
-                         Petakan Semua yang Disarankan
-                       </v-btn>
+                    <div v-else>
+                      <div class="mb-3 d-flex align-center px-2">
+                        <v-spacer></v-spacer>
+                        <v-btn size="small" color="primary" variant="flat" rounded="pill" @click="mapAllSuggestions('sp2d')" :loading="bulkSaving" prepend-icon="mdi-auto-fix">
+                          Petakan Semua yang Disarankan
+                        </v-btn>
+                      </div>
+                      <v-list density="compact" class="rounded-lg">
+                        <v-list-item
+                          v-for="item in unmappedSp2d"
+                          :key="item.source_name"
+                          class="mb-1 border rounded-lg"
+                        >
+                          <template v-slot:prepend>
+                            <v-icon icon="mdi-file-document-remove-outline" color="warning" size="20"></v-icon>
+                          </template>
+                          <v-list-item-title class="text-body-2 font-weight-medium">
+                            {{ item.source_name }}
+                          </v-list-item-title>
+                          <v-list-item-subtitle v-if="item.suggestion" class="text-caption text-primary">
+                            Saran: {{ item.suggestion }}
+                          </v-list-item-subtitle>
+                          <template v-slot:append>
+                            <v-btn size="small" color="primary" variant="tonal" @click="quickMap(item)">
+                              <v-icon start icon="mdi-link-variant" size="16"></v-icon>
+                              Petakan
+                            </v-btn>
+                          </template>
+                        </v-list-item>
+                      </v-list>
                     </div>
-                    <v-list v-else density="compact" class="rounded-lg">
-                      <v-list-item
-                        v-for="item in unmappedSp2d"
-                        :key="item.source_name"
-                        class="mb-1 border rounded-lg"
-                      >
-                        <template v-slot:prepend>
-                          <v-icon icon="mdi-file-document-remove-outline" color="warning" size="20"></v-icon>
-                        </template>
-                        <v-list-item-title class="text-body-2 font-weight-medium">
-                          {{ item.source_name }}
-                        </v-list-item-title>
-                        <v-list-item-subtitle v-if="item.suggestion" class="text-caption text-primary">
-                          Saran: {{ item.suggestion }}
-                        </v-list-item-subtitle>
-                        <template v-slot:append>
-                          <v-btn size="small" color="primary" variant="tonal" @click="quickMap(item)">
-                            <v-icon start icon="mdi-link-variant" size="16"></v-icon>
-                            Petakan
-                          </v-btn>
-                        </template>
-                      </v-list-item>
-                    </v-list>
                   </v-window-item>
                 </v-window>
               </v-card-text>
