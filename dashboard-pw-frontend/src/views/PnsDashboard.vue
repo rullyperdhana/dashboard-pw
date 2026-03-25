@@ -522,48 +522,48 @@
                             <tr class="footer-row">
                               <td class="sticky-left font-weight-black">TOTAL TAHUNAN</td>
                               <td class="text-right font-weight-black">
-                                <div class="text-subtitle-1 font-weight-black">{{ (annualReport?.yearly_total?.total_employees || 0).toLocaleString() }}</div>
+                                <div class="text-subtitle-1 font-weight-black">{{ lastMonthTotalEmployees.toLocaleString() }}</div>
                                 <div v-if="employeeType === 'combined'" style="font-size: 0.75rem; opacity: 0.8">
-                                  {{ (annualReport?.yearly_total?.pns_employees || 0).toLocaleString() }} | {{ (annualReport?.yearly_total?.pppk_employees || 0).toLocaleString() }}
+                                  {{ lastMonthPnsEmployees.toLocaleString() }} | {{ lastMonthPppkEmployees.toLocaleString() }}
                                 </div>
                               </td>
                               <td class="text-right font-weight-black">
-                                <div>{{ formatCurrencyCompact(annualReport?.yearly_total?.total_gaji_pokok) }}</div>
+                                <div>{{ formatCurrencyShort(annualReport?.yearly_total?.total_gaji_pokok) }}</div>
                                 <div v-if="employeeType === 'combined'" style="font-size: 0.75rem; opacity: 0.8">
-                                  {{ formatCurrencyCompact(annualReport?.yearly_total?.pns_total_gaji_pokok) }} | {{ formatCurrencyCompact(annualReport?.yearly_total?.pppk_total_gaji_pokok) }}
+                                  {{ formatCurrencyShort(annualReport?.yearly_total?.pns_total_gaji_pokok) }} | {{ formatCurrencyShort(annualReport?.yearly_total?.pppk_total_gaji_pokok) }}
                                 </div>
                               </td>
                               <td class="text-right font-weight-black">
-                                <div>{{ formatCurrencyCompact((annualReport?.yearly_total?.total_tunj_istri || 0) + (annualReport?.yearly_total?.total_tunj_anak || 0)) }}</div>
+                                <div>{{ formatCurrencyShort((annualReport?.yearly_total?.total_tunj_istri || 0) + (annualReport?.yearly_total?.total_tunj_anak || 0)) }}</div>
                                 <div v-if="employeeType === 'combined'" style="font-size: 0.75rem; opacity: 0.8">
-                                  {{ formatCurrencyCompact((annualReport?.yearly_total?.pns_total_tunj_istri || 0) + (annualReport?.yearly_total?.pns_total_tunj_anak || 0)) }} | {{ formatCurrencyCompact((annualReport?.yearly_total?.pppk_total_tunj_istri || 0) + (annualReport?.yearly_total?.pppk_total_tunj_anak || 0)) }}
+                                  {{ formatCurrencyShort((annualReport?.yearly_total?.pns_total_tunj_istri || 0) + (annualReport?.yearly_total?.pns_total_tunj_anak || 0)) }} | {{ formatCurrencyShort((annualReport?.yearly_total?.pppk_total_tunj_istri || 0) + (annualReport?.yearly_total?.pppk_total_tunj_anak || 0)) }}
                                 </div>
                               </td>
                               <td class="text-right font-weight-black">
-                                <div>{{ formatCurrencyCompact((annualReport?.yearly_total?.total_tunj_fungsional || 0) + (annualReport?.yearly_total?.total_tunj_struktural || 0) + (annualReport?.yearly_total?.total_tunj_umum || 0)) }}</div>
+                                <div>{{ formatCurrencyShort((annualReport?.yearly_total?.total_tunj_fungsional || 0) + (annualReport?.yearly_total?.total_tunj_struktural || 0) + (annualReport?.yearly_total?.total_tunj_umum || 0)) }}</div>
                                 <div v-if="employeeType === 'combined'" style="font-size: 0.75rem; opacity: 0.8">
-                                  {{ formatCurrencyCompact((annualReport?.yearly_total?.pns_total_tunj_fungsional || 0) + (annualReport?.yearly_total?.pns_total_tunj_struktural || 0) + (annualReport?.yearly_total?.pns_total_tunj_umum || 0)) }} | {{ formatCurrencyCompact((annualReport?.yearly_total?.pppk_total_tunj_fungsional||0) + (annualReport?.yearly_total?.pppk_total_tunj_struktural||0) + (annualReport?.yearly_total?.pppk_total_tunj_umum||0)) }}
+                                  {{ formatCurrencyShort((annualReport?.yearly_total?.pns_total_tunj_fungsional || 0) + (annualReport?.yearly_total?.pns_total_tunj_struktural || 0) + (annualReport?.yearly_total?.pns_total_tunj_umum || 0)) }} | {{ formatCurrencyShort((annualReport?.yearly_total?.pppk_total_tunj_fungsional||0) + (annualReport?.yearly_total?.pppk_total_tunj_struktural||0) + (annualReport?.yearly_total?.pppk_total_tunj_umum||0)) }}
                                 </div>
                               </td>
                               <td class="text-right font-weight-black">
-                                <div>{{ formatCurrencyCompact(annualReport?.yearly_total?.total_tunj_beras) }}</div>
+                                <div>{{ formatCurrencyShort(annualReport?.yearly_total?.total_tunj_beras) }}</div>
                                 <div v-if="employeeType === 'combined'" style="font-size: 0.75rem; opacity: 0.8">
-                                  {{ formatCurrencyCompact(annualReport?.yearly_total?.pns_total_tunj_beras) }} | {{ formatCurrencyCompact(annualReport?.yearly_total?.pppk_total_tunj_beras) }}
+                                  {{ formatCurrencyShort(annualReport?.yearly_total?.pns_total_tunj_beras) }} | {{ formatCurrencyShort(annualReport?.yearly_total?.pppk_total_tunj_beras) }}
                                 </div>
                               </td>
                               <td class="text-right font-weight-black">
-                                <div>{{ formatCurrencyCompact(annualReport?.yearly_total?.total_tunj_tpp) }}</div>
+                                <div>{{ formatCurrencyShort(annualReport?.yearly_total?.total_tunj_tpp) }}</div>
                                 <div v-if="employeeType === 'combined'" style="font-size: 0.75rem; opacity: 0.8">
-                                  {{ formatCurrencyCompact(annualReport?.yearly_total?.pns_total_tunj_tpp) }} | {{ formatCurrencyCompact(annualReport?.yearly_total?.pppk_total_tunj_tpp) }}
+                                  {{ formatCurrencyShort(annualReport?.yearly_total?.pns_total_tunj_tpp) }} | {{ formatCurrencyShort(annualReport?.yearly_total?.pppk_total_tunj_tpp) }}
                                 </div>
                               </td>
                               <td class="text-right font-weight-black text-error">
-                                {{ formatCurrencyCompact(annualReport?.yearly_total?.total_potongan) }}
+                                {{ formatCurrencyShort(annualReport?.yearly_total?.total_potongan) }}
                               </td>
                               <td class="text-right highlight-col font-weight-black">
-                                <div>{{ formatCurrencyCompact(annualReport?.yearly_total?.total_bersih) }}</div>
+                                <div>{{ formatCurrencyShort(annualReport?.yearly_total?.total_bersih) }}</div>
                                 <div v-if="employeeType === 'combined'" style="font-size: 0.75rem; opacity: 0.8">
-                                  {{ formatCurrencyCompact(annualReport?.yearly_total?.pns_total_bersih) }} | {{ formatCurrencyCompact(annualReport?.yearly_total?.pppk_total_bersih) }}
+                                  {{ formatCurrencyShort(annualReport?.yearly_total?.pns_total_bersih) }} | {{ formatCurrencyShort(annualReport?.yearly_total?.pppk_total_bersih) }}
                                 </div>
                               </td>
                             </tr>
