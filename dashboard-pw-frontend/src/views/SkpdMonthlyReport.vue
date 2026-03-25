@@ -32,6 +32,9 @@
                   <v-col cols="12">
                     <v-select v-model="selectedJenisGaji" :items="jenisGajiOptions" label="Jenis Gaji" density="compact" variant="outlined" hide-details></v-select>
                   </v-col>
+                  <v-col cols="12">
+                    <v-select v-model="selectedPaperSize" :items="paperSizeOptions" item-title="title" item-value="value" label="Ukuran Kertas (PDF)" density="compact" variant="outlined" hide-details></v-select>
+                  </v-col>
                   <v-col cols="12" class="mt-2 text-right">
                     <v-btn block color="teal" @click="fetchData(); menu = false">TERAPKAN</v-btn>
                   </v-col>
@@ -126,6 +129,12 @@ const activeTab = ref('all')
 const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedYear  = ref(new Date().getFullYear())
 const selectedJenisGaji = ref('Induk')
+const selectedPaperSize = ref('a4')
+const paperSizeOptions = [
+  { title: 'A4 (Standar)', value: 'a4' },
+  { title: 'Legal / F4',   value: 'legal' },
+  { title: 'Letter',       value: 'letter' },
+]
 const jenisGajiOptions = ['Semua', 'Induk', 'THR', 'Gaji 13', 'Susulan', 'Kekurangan', 'Terusan']
 const menu          = ref(false)
 const summary       = ref({})
@@ -243,7 +252,8 @@ const exportData = async (format) => {
         year: selectedYear.value, 
         format, 
         type: activeTab.value,
-        jenis_gaji: selectedJenisGaji.value
+        jenis_gaji: selectedJenisGaji.value,
+        paper_size: selectedPaperSize.value
       },
       responseType: 'blob'
     })

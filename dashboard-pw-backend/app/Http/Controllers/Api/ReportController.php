@@ -688,6 +688,8 @@ class ReportController extends Controller
                 $sumGajiPokok = array_sum(array_column($data, 'total_gaji_pokok'));
             }
 
+            $paperSize = $request->input('paper_size') ?? 'a4';
+
             $pdf = Pdf::loadView('exports.paid-skpd-pdf', [
                 'data' => $data,
                 'month' => $month,
@@ -705,7 +707,7 @@ class ReportController extends Controller
                 'sumIwp' => array_sum(array_column($data, $mode === 'detail' ? 'pot_iwp' : 'total_potongan')),
             ]);
 
-            $pdf->setPaper('a4', $mode === 'detail' ? 'landscape' : 'landscape');
+            $pdf->setPaper($paperSize, 'landscape');
             return $pdf->download($filename . '.pdf');
         }
 
