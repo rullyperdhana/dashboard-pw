@@ -133,6 +133,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/tpp/upload', [TppController::class, 'upload']);
     Route::get('/tpp/template', [TppController::class, 'downloadTemplate']);
     Route::get('/tpp/discrepancies', [TppController::class, 'getDiscrepancies']);
+    
+    // TPP Standalone (Unmapped)
+    Route::get('/tpp/standalone', [App\Http\Controllers\Api\TppStandaloneController::class, 'index']);
+    Route::put('/tpp/standalone/{id}', [App\Http\Controllers\Api\TppStandaloneController::class, 'update']);
+    Route::delete('/tpp/standalone/{id}', [App\Http\Controllers\Api\TppStandaloneController::class, 'destroy']);
 
     // TPG (Tunjangan Profesi Guru)
     Route::post('/tpg/upload', [TpgController::class, 'upload']);

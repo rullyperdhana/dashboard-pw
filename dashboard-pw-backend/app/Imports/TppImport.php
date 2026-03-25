@@ -4,6 +4,8 @@ namespace App\Imports;
 
 use App\Models\GajiPns;
 use App\Models\GajiPppk;
+use App\Models\StandaloneTpp;
+use App\Models\Skpd;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
@@ -57,9 +59,47 @@ class TppImport implements ToCollection, WithHeadingRow
                     
                     $employee->save();
                     $updatedCount++;
+                    
+                    // Also update/sync standalone record if exists to keep consistent
+                    StandaloneTpp::updateOrCreate(
+                        [
+                            'month' => $this->month,
+                            'year' => $this->year,
+                            'employee_type' => $this->type,
+                            'nip' => $nip,
+                            'jenis_gaji' => $this->jenisGaji
+                        ],
+                        [
+                            'nama' => $row['nama'] ?? null,
+                            'nilai' => $nilai,
+                            'skpd_id' => $employee->idskpd // If found in DB, use its SKPD
+                        ]
+                    );
                 } else {
                     $notFoundInDbCount++;
-                    Log::warning("TPP Import: Employee not found in DB for NIP: {$nip}, Month: {$this->month}, Year: {$this->year}");
+                    Log::warning("TPP Import: Employee not found in DB for NIP: {$nip}, Month: {$this->month}, Year: {$this->year}. Saving to standalone_tpp.");
+
+                    // Save to standalone_tpp so operator can map it
+                    $skpdId = null;
+                    if (isset($row['skpd']) || isset($row['unit_skpd'])) {
+                        $skpdName = $row['skpd'] ?? $row['unit_skpd'];
+                        $skpdId = $this->findSkpdIdByName($skpdName);
+                    }
+
+                    StandaloneTpp::updateOrCreate(
+                        [
+                            'month' => $this->month,
+                            'year' => $this->year,
+                            'employee_type' => $this->type,
+                            'nip' => $nip,
+                            'jenis_gaji' => $this->jenisGaji
+                        ],
+                        [
+                            'nama' => $row['nama'] ?? null,
+                            'nilai' => $nilai,
+                            'skpd_id' => $skpdId
+                        ]
+                    );
                 }
             }
 
@@ -146,5 +186,17 @@ class TppImport implements ToCollection, WithHeadingRow
         $withDecimal = str_replace(',', '.', $noDots);
 
         return (float) $withDecimal;
+    }
+
+    private function findSkpdIdByName($name)
+    {
+        if (empty($name)) return null;
+        $name = trim($name);
+        
+        $skpd = Skpd::where('nama_skpd', 'LIKE', '%' . $name . '%')
+            ->orWhere('kode_simgaji', $name)
+            ->first();
+            
+        return $skpd ? $skpd->id_skpd : null;
     }
 }

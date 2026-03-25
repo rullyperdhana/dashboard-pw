@@ -233,7 +233,59 @@
           </v-col>
         </v-row>
 
-        <!-- Discrepancy Report -->
+        <!-- Standalone TPP (Unmapped/Standalone) -->
+        <v-row v-if="standaloneTpps.length > 0" class="mt-8">
+          <v-col cols="12">
+            <v-card class="glass-card rounded-xl pa-6 border-teal">
+              <div class="d-flex align-center justify-space-between mb-4">
+                <div>
+                  <h2 class="text-h5 font-weight-bold text-teal">
+                    <v-icon start color="teal" size="32">mdi-account-question-outline</v-icon>
+                    Data TPP Belum Terhubung (Standalone)
+                  </h2>
+                  <p class="text-caption text-grey-darken-1">Pegawai yang ada di file Excel TPP periode ini tapi TIDAK DITEMUKAN di data Gaji (Simgaji).</p>
+                </div>
+              </div>
+
+              <v-data-table
+                :headers="standaloneHeaders"
+                :items="standaloneTpps"
+                density="comfortable"
+                class="bg-transparent"
+                :loading="loadingStandalone"
+              >
+                <template v-slot:item.nama="{ item }">
+                    <div class="font-weight-medium">{{ item.nama || 'Tanpa Nama' }}</div>
+                    <div class="text-caption text-grey">{{ item.nip }}</div>
+                </template>
+                <template v-slot:item.nilai="{ item }">
+                    <div class="font-weight-bold text-teal">
+                        {{ new Number(item.nilai).toLocaleString('id-ID') }}
+                    </div>
+                </template>
+                <template v-slot:item.skpd="{ item }">
+                    <v-chip v-if="item.skpd" color="teal" size="small" variant="tonal">
+                        {{ item.skpd.nama_skpd }}
+                    </v-chip>
+                    <v-chip v-else color="error" size="small" variant="tonal">
+                        Belum Terhubung
+                    </v-chip>
+                </template>
+                <template v-slot:item.actions="{ item }">
+                    <v-btn
+                        color="teal"
+                        variant="tonal"
+                        size="small"
+                        prepend-icon="mdi-link-variant"
+                        @click="openMappingDialog(item)"
+                    >
+                        Hubungkan SKPD
+                    </v-btn>
+                </template>
+              </v-data-table>
+            </v-card>
+          </v-col>
+        </v-row>
         <v-row v-if="discrepancies.length > 0 || (activeJobStatus === 'completed' && !loadingDiscrepancies)" class="mt-8">
           <v-col cols="12">
             <v-card class="glass-card rounded-xl pa-6 border-warning">
@@ -291,6 +343,43 @@
             </template>
         </v-snackbar>
 
+        <!-- Mapping Dialog -->
+        <v-dialog v-model="mappingDialog.show" max-width="500">
+            <v-card class="glass-card rounded-xl pa-4">
+                <v-card-title class="text-h6 font-weight-bold">
+                    Hubungkan TPP ke SKPD
+                </v-card-title>
+                <v-card-text>
+                    <div class="mb-4">
+                        <div class="text-body-2 text-grey">Pegawai:</div>
+                        <div class="font-weight-bold">{{ mappingDialog.item?.nama }} ({{ mappingDialog.item?.nip }})</div>
+                    </div>
+                    <v-autocomplete
+                        v-model="mappingDialog.skpd_id"
+                        :items="skpds"
+                        item-title="nama_skpd"
+                        item-value="id_skpd"
+                        label="Pilih SKPD"
+                        variant="outlined"
+                        color="teal"
+                        placeholder="Ketik nama SKPD..."
+                    ></v-autocomplete>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn variant="text" @click="mappingDialog.show = false">Batal</v-btn>
+                    <v-btn
+                        color="teal"
+                        :loading="mappingDialog.loading"
+                        :disabled="!mappingDialog.skpd_id"
+                        @click="saveMapping"
+                    >
+                        Simpan Hubungan
+                    </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
       </v-container>
     </v-main>
   </div>
@@ -311,8 +400,6 @@ const employeeType = ref('pns')
 const selectedJenisGaji = ref('Induk')
 const jenisGajiOptions = ['Induk', 'THR', 'Gaji 13']
 
-const discrepancies = ref([])
-const loadingDiscrepancies = ref(false)
 const discrepancyHeaders = [
   { title: 'NIP', key: 'nip', sortable: true },
   { title: 'NAMA', key: 'nama', sortable: true },
@@ -320,6 +407,72 @@ const discrepancyHeaders = [
   { title: 'NILAI TPP', key: 'nilai', align: 'end' },
   { title: 'KETERANGAN', key: 'reason' },
 ]
+
+const standaloneTpps = ref([])
+const loadingStandalone = ref(false)
+const standaloneHeaders = [
+  { title: 'PEGAWAI', key: 'nama' },
+  { title: 'SKPD TERHUBUNG', key: 'skpd' },
+  { title: 'NILAI TPP', key: 'nilai', align: 'end' },
+  { title: 'AKSI', key: 'actions', align: 'center', sortable: false },
+]
+
+const skpds = ref([])
+const fetchSkpds = async () => {
+    try {
+        const res = await api.get('/skpd')
+        skpds.value = res.data.data
+    } catch (error) {
+        console.error('Failed to fetch SKPDs', error)
+    }
+}
+
+const mappingDialog = ref({
+    show: false,
+    loading: false,
+    item: null,
+    skpd_id: null
+})
+
+const openMappingDialog = (item) => {
+    mappingDialog.value.item = item
+    mappingDialog.value.skpd_id = item.skpd_id
+    mappingDialog.value.show = true
+}
+
+const saveMapping = async () => {
+    mappingDialog.value.loading = true
+    try {
+        await api.put(`/tpp/standalone/${mappingDialog.value.item.id}`, {
+            skpd_id: mappingDialog.value.skpd_id
+        })
+        showSnackbar('SKPD berhasil dihubungkan', 'success')
+        mappingDialog.value.show = false
+        fetchStandaloneTpps()
+    } catch (error) {
+        showSnackbar('Gagal menghubungkan SKPD', 'error')
+    } finally {
+        mappingDialog.value.loading = false
+    }
+}
+
+const fetchStandaloneTpps = async () => {
+    loadingStandalone.value = true
+    try {
+        const res = await api.get('/tpp/standalone', {
+            params: {
+                month: selectedMonth.value,
+                year: selectedYear.value,
+                type: employeeType.value
+            }
+        })
+        standaloneTpps.value = res.data.data
+    } catch (error) {
+        console.error('Failed to fetch standalone TPPs', error)
+    } finally {
+        loadingStandalone.value = false
+    }
+}
 
 const fetchDiscrepancies = async () => {
   loadingDiscrepancies.value = true
@@ -520,6 +673,7 @@ const startPolling = () => {
         pollInterval = null
         activeJobResult.value = job.result_summary
         fetchDiscrepancies()
+        fetchStandaloneTpps()
       } else if (job.status === 'failed') {
         clearInterval(pollInterval)
         pollInterval = null
@@ -541,7 +695,12 @@ const resetUpload = () => {
   activeJobError.value = ''
   activeJobErrorDetail.value = ''
   discrepancies.value = []
+  standaloneTpps.value = []
 }
+
+fetchSkpds()
+fetchStandaloneTpps()
+fetchDiscrepancies()
 
 onUnmounted(() => {
   if (pollInterval) clearInterval(pollInterval)

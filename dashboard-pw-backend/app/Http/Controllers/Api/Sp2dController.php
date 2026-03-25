@@ -138,6 +138,15 @@ class Sp2dController extends Controller
         $manualMappingsCount = \DB::table('skpd_mapping')->count();
         $mappings = \DB::table('skpd_mapping')->get()->groupBy('skpd_id');
 
+        // 3b. Get Standalone TPP Data
+        $standaloneTpp = \DB::table('standalone_tpp')
+            ->where('month', $bulan)
+            ->where('year', $tahun)
+            ->select('skpd_id', 'jenis_gaji', \DB::raw('SUM(nilai) as total'), \DB::raw('COUNT(*) as count'))
+            ->whereNotNull('skpd_id')
+            ->groupBy('skpd_id', 'jenis_gaji')
+            ->get();
+
         // 4. Build Detailed Rows
         $resultData = [];
         $types = ['Induk', 'Susulan', 'Kekurangan', 'Terusan', 'Gaji 13', 'Gaji 14 / THR'];
@@ -196,8 +205,8 @@ class Sp2dController extends Controller
                     ),
                     'tpp' => $this->formatStatus(
                         $reals->filter(fn($r) => str_contains($r->jenis_data, 'TPP')),
-                        ($pnsInt->sum('tpp') + $pppkInt->sum('tpp')),
-                        ($pnsInt->where('tpp', '>', 0)->sum('emp_count') + $pppkInt->where('tpp', '>', 0)->sum('emp_count')),
+                        ($pnsInt->sum('tpp') + $pppkInt->sum('tpp') + $standaloneTpp->where('skpd_id', $skpd->id_skpd)->where('jenis_gaji', $type)->sum('total')),
+                        ($pnsInt->where('tpp', '>', 0)->sum('emp_count') + $pppkInt->where('tpp', '>', 0)->sum('emp_count') + $standaloneTpp->where('skpd_id', $skpd->id_skpd)->where('jenis_gaji', $type)->sum('count')),
                         $tppReconMode
                     ),
                 ];
@@ -359,8 +368,15 @@ class Sp2dController extends Controller
             ->get()
             ->groupBy('skpd_id');
 
+        // 4b. Get Standalone TPP Data for Recon
+        $standaloneTpp = \DB::table('standalone_tpp')
+            ->where('month', $bulan)
+            ->where('year', $tahun)
+            ->whereNotNull('skpd_id')
+            ->get();
+
         // 5. Build rows
-        $data = $realizations->map(function ($real) use ($skpds, $pnsInternal, $pppkInternal, $pwInternal, $manualMappings, $tppReconMode) {
+        $data = $realizations->map(function ($real) use ($skpds, $pnsInternal, $pppkInternal, $pwInternal, $manualMappings, $tppReconMode, $standaloneTpp, $bulan, $tahun) {
             $skpd = $skpds->where('id_skpd', $real->skpd_id)->first();
 
             $internalCtx = [
@@ -444,6 +460,27 @@ class Sp2dController extends Controller
                                 $internalCtx['tpp_pppk'] += (float) ($pk->tpp ?? 0);
                             }
                             $internalCtx['emp_count'] += (int) ($pk->emp_count ?? 0);
+                        }
+                    }
+                }
+
+                // Standalone TPP aggregation
+                if ($isTppRow) {
+                    $st = $standaloneTpp->where('skpd_id', $skpd->id_skpd)->where('jenis_gaji', $targetJenisGajiDetected);
+                    foreach ($st as $item) {
+                        // Check if item is already in gaji_xxx to avoid double counting
+                        // If it has been synced, we don't add it here
+                        // Actually, for simplicity we trust the sync logic or just add it if it's there
+                        // Better: standalone_tpp should only sum if it's NOT already in gaji_xxx for that month/nip
+                        $inPns = \DB::table('gaji_pns')->where('nip', $item->nip)->where('bulan', $bulan)->where('tahun', $tahun)->where('jenis_gaji', $targetJenisGajiDetected)->exists();
+                        $inPppk = \DB::table('gaji_pppk')->where('nip', $item->nip)->where('bulan', $bulan)->where('tahun', $tahun)->where('jenis_gaji', $targetJenisGajiDetected)->exists();
+                        
+                        if (!$inPns && !$inPppk) {
+                            $internalCtx['brutto'] += (float) $item->nilai;
+                            $internalCtx['netto'] += (float) $item->nilai;
+                            if ($item->employee_type === 'pns') $internalCtx['tpp_pns'] += (float) $item->nilai;
+                            else $internalCtx['tpp_pppk'] += (float) $item->nilai;
+                            $internalCtx['emp_count'] += 1;
                         }
                     }
                 }
