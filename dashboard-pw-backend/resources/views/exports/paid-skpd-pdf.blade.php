@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            font-size: 9px;
+            font-size: {{ (isset($mode) && $mode === 'detail') ? '7px' : '9px' }};
             color: #333;
         }
 
@@ -37,19 +37,21 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
+            table-layout: fixed; /* Force fixed layout to honor widths */
         }
 
         th,
         td {
             border: 1px solid #ccc;
-            padding: 4px 5px;
+            padding: {{ (isset($mode) && $mode === 'detail') ? '2px 1px' : '4px 5px' }};
+            word-wrap: break-word; /* Allow wrapping within narrow columns */
         }
 
         th {
             background: #2e7d32;
             color: #fff;
             font-weight: bold;
-            font-size: 8px;
+            font-size: {{ (isset($mode) && $mode === 'detail') ? '6px' : '8px' }};
             text-align: center;
         }
 

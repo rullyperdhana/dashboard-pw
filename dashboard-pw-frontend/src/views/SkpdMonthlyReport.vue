@@ -131,9 +131,11 @@ const selectedYear  = ref(new Date().getFullYear())
 const selectedJenisGaji = ref('Induk')
 const selectedPaperSize = ref('a4')
 const paperSizeOptions = [
-  { title: 'A4 (Standar)', value: 'a4' },
-  { title: 'Legal / F4',   value: 'legal' },
-  { title: 'Letter',       value: 'letter' },
+  { title: 'A4 (Standar)',     value: 'a4' },
+  { title: 'Legal / F4',       value: 'legal' },
+  { title: 'A3 (Sangat Lebar)', value: 'a3' },
+  { title: 'A2 (Ultra Lebar)',   value: 'a2' },
+  { title: 'Letter',           value: 'letter' },
 ]
 const jenisGajiOptions = ['Semua', 'Induk', 'THR', 'Gaji 13', 'Susulan', 'Kekurangan', 'Terusan']
 const menu          = ref(false)
