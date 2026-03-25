@@ -15,7 +15,7 @@
           <v-btn color="success" prepend-icon="mdi-download" variant="tonal" rounded="lg" @click="doExport" :loading="exporting" class="mr-2">
             Export XLS
           </v-btn>
-          <v-btn color="primary" prepend-icon="mdi-upload" variant="flat" rounded="lg" @click="uploadDialog = true">
+          <v-btn v-if="user?.role !== 'operator'" color="primary" prepend-icon="mdi-upload" variant="flat" rounded="lg" @click="uploadDialog = true">
             Upload Data BKD
           </v-btn>
         </div>
@@ -212,6 +212,16 @@ import Navbar from '../../components/Navbar.vue'
 import Sidebar from '../../components/Sidebar.vue'
 import api from '../../api'
 
+const getUserFromStorage = () => {
+  try {
+    const stored = localStorage.getItem('user')
+    return (stored && stored !== 'null') ? JSON.parse(stored) : {}
+  } catch (e) {
+    return {}
+  }
+}
+
+const user = ref(getUserFromStorage())
 const loading = ref(false)
 const items = ref([])
 const totalItems = ref(0)
