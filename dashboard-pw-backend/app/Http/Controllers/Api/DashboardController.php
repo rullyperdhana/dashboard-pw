@@ -143,6 +143,7 @@ class DashboardController extends Controller
     }
 
     /**
+    /**
      * Combined summary for Executive Mobile
      */
     public function executiveSummary(Request $request)
@@ -173,25 +174,47 @@ class DashboardController extends Controller
         $taxPns = DB::table('gaji_pns')->where('bulan', $month)->where('tahun', $year)->sum('pot_pph');
         $taxPppk = DB::table('gaji_pppk')->where('bulan', $month)->where('tahun', $year)->sum('pot_pph');
 
-        // 4. Trend (Last 6 months combined)
-        $trend = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $tDate = date('Y-m-d', strtotime("-$i months"));
-            $tMonth = (int)date('m', strtotime($tDate));
-            $tYear = (int)date('Y', strtotime($tDate));
-            $months = [1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'May', 6 => 'Jun', 7 => 'Jul', 8 => 'Aug', 9 => 'Sep', 10 => 'Oct', 11 => 'Nov', 12 => 'Dec'];
+        // 4. Yearly Realization (Jan-Dec for the current year)
+        $yearlyRealization = [];
+        $monthsArr = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
 
-            $mPns = DB::table('gaji_pns')->where('bulan', $tMonth)->where('tahun', $tYear)->sum('bersih');
-            $mPppk = DB::table('gaji_pppk')->where('bulan', $tMonth)->where('tahun', $tYear)->sum('bersih');
+        for ($m = 1; $m <= 12; $m++) {
+            $mPns = DB::table('gaji_pns')->where('bulan', $m)->where('tahun', $year)->sum('bersih');
+            $mPppk = DB::table('gaji_pppk')->where('bulan', $m)->where('tahun', $year)->sum('bersih');
             $mPw = DB::table('tb_payment_detail as pd')
                 ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
-                ->where('p.month', $tMonth)
-                ->where('p.year', $tYear)
+                ->where('p.month', $m)
+                ->where('p.year', $year)
                 ->sum('pd.total_amoun');
 
-            $trend[] = [
-                'label' => $months[$tMonth] . ' ' . $tYear,
-                'total' => (float)($mPns + $mPppk + $mPw)
+            $mEmpPns = DB::table('gaji_pns')->where('bulan', $m)->where('tahun', $year)->count(DB::raw('DISTINCT nip'));
+            $mEmpPppk = DB::table('gaji_pppk')->where('bulan', $m)->where('tahun', $year)->count(DB::raw('DISTINCT nip'));
+            
+            // For PW, we only have records if payment exists for that month
+            $mEmpPw = DB::table('tb_payment_detail as pd')
+                ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
+                ->where('p.month', $m)
+                ->where('p.year', $year)
+                ->count(DB::raw('DISTINCT pd.employee_id'));
+
+            $totalNominal = (float)($mPns + $mPppk + $mPw);
+            $totalEmployees = $mEmpPns + $mEmpPppk + $mEmpPw;
+
+            $yearlyRealization[] = [
+                'month_name' => $monthsArr[$m],
+                'month_num' => $m,
+                'nominal' => $totalNominal,
+                'employees' => $totalEmployees,
+                'status' => $totalNominal > 0 ? 'paid' : ($m < date('n') ? 'delayed' : 'upcoming'),
+                'breakdown' => [
+                    'pns' => ['amount' => (float)$mPns, 'employees' => $mEmpPns],
+                    'pppk' => ['amount' => (float)$mPppk, 'employees' => $mEmpPppk],
+                    'pw' => ['amount' => (float)$mPw, 'employees' => $mEmpPw],
+                ]
             ];
         }
 
@@ -204,13 +227,18 @@ class DashboardController extends Controller
                     'tpp_total' => (float)($tppPns + $tppPppk + $tppStandalone),
                     'tax_total' => (float)($taxPns + $taxPppk),
                     'active_skpd' => DB::table('skpd')->where('is_skpd', 1)->count(),
+                    'avg_per_employee' => ($totalPns + $totalPppk + $totalPw) > 0 
+                        ? (float)(($expPns + $expPppk + $expPw) / ($totalPns + $totalPppk + $totalPw))
+                        : 0,
                 ],
                 'categories' => [
                     ['label' => 'PNS', 'employees' => $totalPns, 'amount' => (float)$expPns],
                     ['label' => 'PPPK', 'employees' => $totalPppk, 'amount' => (float)$expPppk],
                     ['label' => 'PPPK-PW', 'employees' => $totalPw, 'amount' => (float)$expPw],
                 ],
-                'trend' => $trend
+                'yearly_realization' => $yearlyRealization,
+                'current_month' => (int)$month,
+                'current_year' => (int)$year,
             ]
         ]);
     }
