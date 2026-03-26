@@ -113,80 +113,80 @@
           <v-expansion-panel-text class="bg-slate-50 pa-0">
             <div class="breakdown-area py-3">
               <!-- PNS Breakdown -->
-              <div class="px-4 mb-2">
+              <div class="px-4 mb-3">
                 <div class="d-flex justify-space-between align-center mb-1">
                   <div class="d-flex align-center">
                     <div class="cat-dot bg-indigo mr-2"></div>
-                    <span class="text-xxs font-weight-bold text-slate-800">PEGAWAI NEGERI SIPIL (PNS)</span>
+                    <span class="text-caption font-weight-bold text-slate-800">PEGAWAI NEGERI SIPIL (PNS)</span>
                   </div>
                   <div class="text-right">
-                    <div class="text-xxs font-weight-black text-slate-900">{{ formatCurrencyFull(row.breakdown.pns.amount) }}</div>
-                    <div class="text-xxxs text-slate-500">{{ row.breakdown.pns.employees }} Pegawai</div>
+                    <div class="text-body-2 font-weight-black text-slate-900">{{ formatCurrencyFull(row.breakdown.pns.amount) }}</div>
+                    <div class="text-caption text-slate-500">{{ row.breakdown.pns.employees }} Pegawai</div>
                   </div>
                 </div>
-                <div class="px-3 d-flex flex-column gap-1 text-xxxs text-slate-500 mt-2">
+                <div class="px-3 d-flex flex-column gap-1 text-caption text-slate-600 mt-2">
                   <div class="d-flex justify-space-between">
                     <span>Gaji Induk:</span>
-                    <span class="text-slate-700 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pns.gaji) }}</span>
+                    <span class="text-slate-800 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pns.gaji) }}</span>
                   </div>
                   <div class="d-flex justify-space-between" v-if="row.breakdown.pns.thr > 0">
                     <span>Tunj. Hari Raya (THR):</span>
-                    <span class="text-slate-700 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pns.thr) }}</span>
+                    <span class="text-slate-800 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pns.thr) }}</span>
                   </div>
                   <div class="d-flex justify-space-between" v-if="row.breakdown.pns.gaji13 > 0">
                     <span>Gaji 13:</span>
-                    <span class="text-slate-700 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pns.gaji13) }}</span>
+                    <span class="text-slate-800 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pns.gaji13) }}</span>
                   </div>
                   <div class="d-flex justify-space-between">
                     <span>Tunj. Profesi (TPP):</span>
-                    <span class="text-slate-700 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pns.tpp) }}</span>
+                    <span class="text-slate-800 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pns.tpp) }}</span>
                   </div>
                 </div>
               </div>
               <v-divider class="mx-4 opacity-10 my-3"></v-divider>
               
               <!-- PPPK Breakdown -->
-              <div class="px-4 my-2">
+              <div class="px-4 my-3">
                 <div class="d-flex justify-space-between align-center mb-1">
                   <div class="d-flex align-center">
                     <div class="cat-dot bg-teal mr-2"></div>
-                    <span class="text-xxs font-weight-bold text-slate-800">PPPK (FULL TIME)</span>
+                    <span class="text-caption font-weight-bold text-slate-800">PPPK (FULL TIME)</span>
                   </div>
                   <div class="text-right">
-                    <div class="text-xxs font-weight-black text-slate-900">{{ formatCurrencyFull(row.breakdown.pppk.amount) }}</div>
-                    <div class="text-xxxs text-slate-500">{{ row.breakdown.pppk.employees }} Pegawai</div>
+                    <div class="text-body-2 font-weight-black text-slate-900">{{ formatCurrencyFull(row.breakdown.pppk.amount) }}</div>
+                    <div class="text-caption text-slate-500">{{ row.breakdown.pppk.employees }} Pegawai</div>
                   </div>
                 </div>
-                <div class="px-3 d-flex flex-column gap-1 text-xxxs text-slate-500 mt-2">
+                <div class="px-3 d-flex flex-column gap-1 text-caption text-slate-600 mt-2">
                   <div class="d-flex justify-space-between">
                     <span>Gaji Induk:</span>
-                    <span class="text-slate-700 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pppk.gaji) }}</span>
+                    <span class="text-slate-800 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pppk.gaji) }}</span>
                   </div>
                   <div class="d-flex justify-space-between" v-if="row.breakdown.pppk.thr > 0">
                     <span>Tunj. Hari Raya (THR):</span>
-                    <span class="text-slate-700 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pppk.thr) }}</span>
+                    <span class="text-slate-800 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pppk.thr) }}</span>
                   </div>
                   <div class="d-flex justify-space-between" v-if="row.breakdown.pppk.gaji13 > 0">
                     <span>Gaji 13:</span>
-                    <span class="text-slate-700 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pppk.gaji13) }}</span>
+                    <span class="text-slate-800 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pppk.gaji13) }}</span>
                   </div>
                   <div class="d-flex justify-space-between">
                     <span>Tunj. Profesi (TPP):</span>
-                    <span class="text-slate-700 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pppk.tpp) }}</span>
+                    <span class="text-slate-800 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pppk.tpp) }}</span>
                   </div>
                 </div>
               </div>
               <v-divider class="mx-4 opacity-10 my-3"></v-divider>
 
               <!-- PW Breakdown -->
-              <div class="d-flex justify-space-between align-center px-4 mt-2">
+              <div class="d-flex justify-space-between align-center px-4 mt-3 mb-2">
                 <div class="d-flex align-center">
                   <div class="cat-dot bg-orange mr-2"></div>
-                  <span class="text-xxs font-weight-bold text-slate-800">PPPK PARUH WAKTU</span>
+                  <span class="text-caption font-weight-bold text-slate-800">PPPK PARUH WAKTU</span>
                 </div>
                 <div class="text-right">
-                  <div class="text-xxs font-weight-black text-slate-900">{{ formatCurrencyFull(row.breakdown.pw.amount) }}</div>
-                  <div class="text-xxxs text-slate-500">{{ row.breakdown.pw.employees }} Pegawai</div>
+                  <div class="text-body-2 font-weight-black text-slate-900">{{ formatCurrencyFull(row.breakdown.pw.amount) }}</div>
+                  <div class="text-caption text-slate-500">{{ row.breakdown.pw.employees }} Pegawai</div>
                 </div>
               </div>
             </div>
@@ -224,10 +224,10 @@ const currentYear = ref(new Date().getFullYear())
 
 const trendOption = computed(() => {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
-  const gajiPns = realizationData.value.map(r => r.breakdown.pns.gaji / 1000000)
-  const tppPns = realizationData.value.map(r => r.breakdown.pns.tpp / 1000000)
-  const gajiPppk = realizationData.value.map(r => r.breakdown.pppk.gaji / 1000000)
-  const tppPppk = realizationData.value.map(r => r.breakdown.pppk.tpp / 1000000)
+  const gajiPns = realizationData.value.map(r => r.breakdown.pns.gaji)
+  const tppPns = realizationData.value.map(r => r.breakdown.pns.tpp)
+  const gajiPppk = realizationData.value.map(r => r.breakdown.pppk.gaji)
+  const tppPppk = realizationData.value.map(r => r.breakdown.pppk.tpp)
 
   return {
     tooltip: {
@@ -238,7 +238,7 @@ const trendOption = computed(() => {
       formatter: function(params) {
         let text = `<b style="font-size:12px;">${params[0].axisValue}</b><br/>`;
         params.forEach(p => {
-          text += `${p.marker} <span style="font-weight:bold; color:#334155">${p.seriesName}:</span> <b>Rp ${p.value.toLocaleString('id-ID')} Jt</b><br/>`;
+          text += `${p.marker} <span style="font-weight:bold; color:#334155">${p.seriesName}:</span> <b>Rp ${p.value.toLocaleString('id-ID')}</b><br/>`;
         });
         return text;
       }
@@ -260,7 +260,10 @@ const trendOption = computed(() => {
     },
     yAxis: {
       type: 'value',
-      axisLabel: { formatter: '{value} Jt', fontSize: 10, fontWeight: 'bold', color: '#64748b' },
+      axisLabel: { 
+        formatter: (value) => { return (value / 1000000).toLocaleString('id-ID') + ' Jt' },
+        fontSize: 10, fontWeight: 'bold', color: '#64748b' 
+      },
       splitLine: { lineStyle: { color: '#e2e8f0' } }
     },
     series: [

@@ -249,17 +249,22 @@ class DashboardController extends Controller
             ];
         }
 
+        $yearTotal = 0;
+        foreach ($yearlyRealization as $yr) {
+            $yearTotal += $yr['nominal'];
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
                 'summary' => [
-                    'total_expenditure' => (float)($expPns + $tppPns + $tppStandalone + $expPppk + $tppPppk + $expPw),
+                    'total_expenditure' => $yearTotal,
                     'total_employees' => $totalPns + $totalPppk + $totalPw,
                     'tpp_total' => (float)($tppPns + $tppPppk + $tppStandalone),
                     'tax_total' => (float)($taxPns + $taxPppk),
                     'active_skpd' => DB::table('skpd')->where('is_skpd', 1)->count(),
                     'avg_per_employee' => ($totalPns + $totalPppk + $totalPw) > 0 
-                        ? (float)((($expPns + $tppPns + $tppStandalone + $expPppk + $tppPppk + $expPw)) / ($totalPns + $totalPppk + $totalPw))
+                        ? (float)($yearTotal / ($totalPns + $totalPppk + $totalPw))
                         : 0,
                 ],
                 // We keep categories for the pie/line charts fallback, though line charts will mostly rely on yearly_realization
