@@ -52,16 +52,17 @@
       </v-row>
     </div>
 
-    <!-- Gaji vs TPP Composition Chart -->
+    <!-- Financial Trend Chart -->
     <div class="px-6 mb-4 mt-2">
-      <div class="text-subtitle-2 font-weight-black text-slate-800 d-flex align-center mb-3">
-        KOMPOSISI GAJI & TPP (SEKARANG)
-        <v-spacer></v-spacer>
-        <v-icon size="18" color="slate-400">mdi-chart-pie</v-icon>
+      <div class="d-flex justify-space-between align-center mb-1">
+        <div class="text-subtitle-1 font-weight-black text-slate-800">Financial Trend {{ currentYear }}</div>
+        <v-chip size="x-small" color="teal-lighten-4" class="text-teal-darken-3 font-weight-bold">Akumulasi Juta IDR</v-chip>
       </div>
-      <v-card class="stat-mini-card pa-2" elevation="2">
-        <div style="height: 180px">
-          <v-chart v-if="categories.length" :option="compositionOption" autoresize />
+      <div class="text-caption text-slate-500 mb-4">Pertumbuhan pengeluaran gaji dan tunjangan bulanan</div>
+      
+      <v-card class="stat-mini-card pa-0 elevation-0 border-0 bg-transparent" elevation="0">
+        <div style="height: 300px">
+          <v-chart v-if="realizationData.length" :option="trendOption" autoresize />
           <div v-else class="h-100 d-flex align-center justify-center">
             <v-progress-circular indeterminate color="primary"></v-progress-circular>
           </div>
@@ -123,12 +124,26 @@
                     <div class="text-xxxs text-slate-500">{{ row.breakdown.pns.employees }} Pegawai</div>
                   </div>
                 </div>
-                <div class="px-3 d-flex justify-space-between text-xxxs text-slate-500">
-                  <span>Gaji: <span class="text-slate-700 font-weight-bold">{{ formatCurrencyCompact(row.breakdown.pns.gaji) }}</span></span>
-                  <span>TPP: <span class="text-slate-700 font-weight-bold">{{ formatCurrencyCompact(row.breakdown.pns.tpp) }}</span></span>
+                <div class="px-3 d-flex flex-column gap-1 text-xxxs text-slate-500 mt-2">
+                  <div class="d-flex justify-space-between">
+                    <span>Gaji Induk:</span>
+                    <span class="text-slate-700 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pns.gaji) }}</span>
+                  </div>
+                  <div class="d-flex justify-space-between" v-if="row.breakdown.pns.thr > 0">
+                    <span>Tunj. Hari Raya (THR):</span>
+                    <span class="text-slate-700 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pns.thr) }}</span>
+                  </div>
+                  <div class="d-flex justify-space-between" v-if="row.breakdown.pns.gaji13 > 0">
+                    <span>Gaji 13:</span>
+                    <span class="text-slate-700 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pns.gaji13) }}</span>
+                  </div>
+                  <div class="d-flex justify-space-between">
+                    <span>Tunj. Profesi (TPP):</span>
+                    <span class="text-slate-700 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pns.tpp) }}</span>
+                  </div>
                 </div>
               </div>
-              <v-divider class="mx-4 opacity-10"></v-divider>
+              <v-divider class="mx-4 opacity-10 my-3"></v-divider>
               
               <!-- PPPK Breakdown -->
               <div class="px-4 my-2">
@@ -142,12 +157,26 @@
                     <div class="text-xxxs text-slate-500">{{ row.breakdown.pppk.employees }} Pegawai</div>
                   </div>
                 </div>
-                <div class="px-3 d-flex justify-space-between text-xxxs text-slate-500">
-                  <span>Gaji: <span class="text-slate-700 font-weight-bold">{{ formatCurrencyCompact(row.breakdown.pppk.gaji) }}</span></span>
-                  <span>TPP: <span class="text-slate-700 font-weight-bold">{{ formatCurrencyCompact(row.breakdown.pppk.tpp) }}</span></span>
+                <div class="px-3 d-flex flex-column gap-1 text-xxxs text-slate-500 mt-2">
+                  <div class="d-flex justify-space-between">
+                    <span>Gaji Induk:</span>
+                    <span class="text-slate-700 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pppk.gaji) }}</span>
+                  </div>
+                  <div class="d-flex justify-space-between" v-if="row.breakdown.pppk.thr > 0">
+                    <span>Tunj. Hari Raya (THR):</span>
+                    <span class="text-slate-700 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pppk.thr) }}</span>
+                  </div>
+                  <div class="d-flex justify-space-between" v-if="row.breakdown.pppk.gaji13 > 0">
+                    <span>Gaji 13:</span>
+                    <span class="text-slate-700 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pppk.gaji13) }}</span>
+                  </div>
+                  <div class="d-flex justify-space-between">
+                    <span>Tunj. Profesi (TPP):</span>
+                    <span class="text-slate-700 font-weight-bold">{{ formatCurrencyFull(row.breakdown.pppk.tpp) }}</span>
+                  </div>
                 </div>
               </div>
-              <v-divider class="mx-4 opacity-10"></v-divider>
+              <v-divider class="mx-4 opacity-10 my-3"></v-divider>
 
               <!-- PW Breakdown -->
               <div class="d-flex justify-space-between align-center px-4 mt-2">
@@ -166,21 +195,7 @@
       </v-expansion-panels>
     </div>
 
-    <!-- Bottom Nav -->
-    <v-bottom-navigation grow color="primary" elevation="10" height="72" class="border-top">
-      <v-btn value="summary" active>
-        <v-icon>mdi-finance</v-icon>
-        <span class="text-xxs mt-1">Summary</span>
-      </v-btn>
-      <v-btn value="skpd" to="/skpd">
-        <v-icon>mdi-domain</v-icon>
-        <span class="text-xxs mt-1">Instansi</span>
-      </v-btn>
-      <v-btn value="reports" to="/reports/skpd-monthly">
-        <v-icon>mdi-file-chart-outline</v-icon>
-        <span class="text-xxs mt-1">Laporan</span>
-      </v-btn>
-    </v-bottom-navigation>
+    <!-- No Bottom Nav Here As per Requested -->
   </div>
 </template>
 
@@ -192,11 +207,11 @@ import api from '../api'
 // ECharts
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-import { PieChart } from 'echarts/charts'
-import { TitleComponent, TooltipComponent, LegendComponent } from 'echarts/components'
+import { LineChart } from 'echarts/charts'
+import { TitleComponent, TooltipComponent, LegendComponent, GridComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
 
-use([CanvasRenderer, PieChart, TitleComponent, TooltipComponent, LegendComponent])
+use([CanvasRenderer, LineChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent])
 
 const theme = useTheme()
 provide('THEME_KEY', 'light')
@@ -207,67 +222,90 @@ const realizationData = ref([])
 const categories = ref([])
 const currentYear = ref(new Date().getFullYear())
 
-const formatCurrencyCompactVal = (value) => {
-  if (!value) return '0'
-  if (value >= 1000000000) return (value / 1000000000).toFixed(1) + 'M'
-  if (value >= 1000000) return (value / 1000000).toFixed(1) + 'Jt'
-  return value.toLocaleString()
-}
-
-const compositionOption = computed(() => {
-  const pns = categories.value.find(c => c.label === 'PNS') || { gaji: 0, tpp: 0 }
-  const pppk = categories.value.find(c => c.label === 'PPPK') || { gaji: 0, tpp: 0 }
+const trendOption = computed(() => {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+  const gajiPns = realizationData.value.map(r => r.breakdown.pns.gaji / 1000000)
+  const tppPns = realizationData.value.map(r => r.breakdown.pns.tpp / 1000000)
+  const gajiPppk = realizationData.value.map(r => r.breakdown.pppk.gaji / 1000000)
+  const tppPppk = realizationData.value.map(r => r.breakdown.pppk.tpp / 1000000)
 
   return {
-    tooltip: { 
-      trigger: 'item', 
-      formatter: (params) => {
-        return `<div style="font-size: 11px; padding: 2px;">
-          <b style="color:${params.color}; font-weight:900;">${params.name}</b><br/>
-          Rp ${params.value.toLocaleString()}<br/>
-          <span style="font-weight:900">${params.percent}%</span>
-        </div>`;
-      },
+    tooltip: {
+      trigger: 'axis',
       backgroundColor: 'rgba(255, 255, 255, 0.9)',
       borderColor: '#E2E8F0',
-      textStyle: { color: '#0F172A' }
+      textStyle: { color: '#0F172A', fontSize: 11 },
+      formatter: function(params) {
+        let text = `<b style="font-size:12px;">${params[0].axisValue}</b><br/>`;
+        params.forEach(p => {
+          text += `${p.marker} <span style="font-weight:bold; color:#334155">${p.seriesName}:</span> <b>Rp ${p.value.toLocaleString('id-ID')} Jt</b><br/>`;
+        });
+        return text;
+      }
     },
-    legend: { 
-      bottom: 0, 
-      itemWidth: 10, 
-      itemHeight: 10, 
-      textStyle: { fontSize: 9, color: '#64748b', fontWeight: 'bold' } 
+    legend: {
+      bottom: 0,
+      icon: 'circle',
+      itemWidth: 10,
+      itemHeight: 10,
+      textStyle: { fontSize: 10, fontWeight: 'bold', color: '#1e293b' }
     },
-    title: [
-      { text: 'PNS', left: '25%', top: '40%', textAlign: 'center', textStyle: { fontSize: 11, fontWeight: 'bold', color: '#4F46E5' } },
-      { text: 'PPPK', left: '75%', top: '40%', textAlign: 'center', textStyle: { fontSize: 11, fontWeight: 'bold', color: '#06B6D4' } }
-    ],
+    grid: { left: '15%', right: '5%', bottom: '15%', top: '5%' },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: months,
+      axisLabel: { fontSize: 10, fontWeight: 'bold', color: '#64748b' },
+      axisLine: { lineStyle: { color: '#cbd5e1' } }
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: { formatter: '{value} Jt', fontSize: 10, fontWeight: 'bold', color: '#64748b' },
+      splitLine: { lineStyle: { color: '#e2e8f0' } }
+    },
     series: [
       {
-        name: 'PNS',
-        type: 'pie',
-        radius: ['50%', '75%'],
-        center: ['25%', '45%'],
-        avoidLabelOverlap: false,
-        label: { show: false },
-        itemStyle: { borderWidth: 2, borderColor: '#fff' },
-        data: [
-          { value: pns.gaji, name: 'Gaji PNS', itemStyle: { color: '#4F46E5' } },
-          { value: pns.tpp, name: 'TPP PNS', itemStyle: { color: '#818CF8' } }
-        ]
+        name: 'Gaji PNS',
+        type: 'line',
+        data: gajiPns,
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 6,
+        itemStyle: { color: '#10b981' }, // vibrant green
+        lineStyle: { width: 3 },
+        areaStyle: {
+          color: 'rgba(16, 185, 129, 0.1)'
+        }
       },
       {
-        name: 'PPPK',
-        type: 'pie',
-        radius: ['50%', '75%'],
-        center: ['75%', '45%'],
-        avoidLabelOverlap: false,
-        label: { show: false },
-        itemStyle: { borderWidth: 2, borderColor: '#fff' },
-        data: [
-          { value: pppk.gaji, name: 'Gaji PPPK', itemStyle: { color: '#06B6D4' } },
-          { value: pppk.tpp, name: 'TPP PPPK', itemStyle: { color: '#67E8F9' } }
-        ]
+        name: 'TPP PNS',
+        type: 'line',
+        data: tppPns,
+        smooth: true,
+        symbol: 'emptyCircle',
+        symbolSize: 6,
+        itemStyle: { color: '#34d399' }, // light green
+        lineStyle: { type: 'dashed', width: 2 }
+      },
+      {
+        name: 'Gaji PPPK',
+        type: 'line',
+        data: gajiPppk,
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 6,
+        itemStyle: { color: '#f59e0b' }, // orange
+        lineStyle: { width: 3 }
+      },
+      {
+        name: 'TPP PPPK',
+        type: 'line',
+        data: tppPppk,
+        smooth: true,
+        symbol: 'emptyCircle',
+        symbolSize: 6,
+        itemStyle: { color: '#fcd34d' }, // yellow
+        lineStyle: { type: 'dashed', width: 2 }
       }
     ]
   }

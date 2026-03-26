@@ -183,10 +183,16 @@ class DashboardController extends Controller
         ];
 
         for ($m = 1; $m <= 12; $m++) {
-            $mPns = DB::table('gaji_pns')->where('bulan', $m)->where('tahun', $year)->sum('bersih');
+            $mGajiPns = DB::table('gaji_pns')->where('bulan', $m)->where('tahun', $year)->whereNotIn('jenis_gaji', ['THR', 'Gaji 13'])->sum('bersih');
+            $mThrPns = DB::table('gaji_pns')->where('bulan', $m)->where('tahun', $year)->where('jenis_gaji', 'THR')->sum('bersih');
+            $mGaji13Pns = DB::table('gaji_pns')->where('bulan', $m)->where('tahun', $year)->where('jenis_gaji', 'Gaji 13')->sum('bersih');
             $mTppPns = DB::table('gaji_pns')->where('bulan', $m)->where('tahun', $year)->sum('tunj_tpp');
-            $mPppk = DB::table('gaji_pppk')->where('bulan', $m)->where('tahun', $year)->sum('bersih');
+
+            $mGajiPppk = DB::table('gaji_pppk')->where('bulan', $m)->where('tahun', $year)->whereNotIn('jenis_gaji', ['THR', 'Gaji 13'])->sum('bersih');
+            $mThrPppk = DB::table('gaji_pppk')->where('bulan', $m)->where('tahun', $year)->where('jenis_gaji', 'THR')->sum('bersih');
+            $mGaji13Pppk = DB::table('gaji_pppk')->where('bulan', $m)->where('tahun', $year)->where('jenis_gaji', 'Gaji 13')->sum('bersih');
             $mTppPppk = DB::table('gaji_pppk')->where('bulan', $m)->where('tahun', $year)->sum('tunj_tpp');
+
             $mPw = DB::table('tb_payment_detail as pd')
                 ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
                 ->where('p.month', $m)
@@ -203,7 +209,9 @@ class DashboardController extends Controller
                 ->where('p.year', $year)
                 ->count(DB::raw('DISTINCT pd.employee_id'));
 
-            $totalNominal = (float)($mPns + $mTppPns + $mPppk + $mTppPppk + $mPw);
+            $mPnsTotal = $mGajiPns + $mThrPns + $mGaji13Pns;
+            $mPppkTotal = $mGajiPppk + $mThrPppk + $mGaji13Pppk;
+            $totalNominal = (float)($mPnsTotal + $mTppPns + $mPppkTotal + $mTppPppk + $mPw);
             $totalEmployees = $mEmpPns + $mEmpPppk + $mEmpPw;
 
             $yearlyRealization[] = [
@@ -214,20 +222,26 @@ class DashboardController extends Controller
                 'status' => $totalNominal > 0 ? 'paid' : ($m < date('n') ? 'delayed' : 'upcoming'),
                 'breakdown' => [
                     'pns' => [
-                        'amount' => (float)($mPns + $mTppPns),
-                        'gaji' => (float)$mPns, 
+                        'amount' => (float)($mPnsTotal + $mTppPns),
+                        'gaji' => (float)$mGajiPns, 
+                        'thr' => (float)$mThrPns,
+                        'gaji13' => (float)$mGaji13Pns,
                         'tpp' => (float)$mTppPns, 
                         'employees' => $mEmpPns
                     ],
                     'pppk' => [
-                        'amount' => (float)($mPppk + $mTppPppk),
-                        'gaji' => (float)$mPppk, 
+                        'amount' => (float)($mPppkTotal + $mTppPppk),
+                        'gaji' => (float)$mGajiPppk, 
+                        'thr' => (float)$mThrPppk,
+                        'gaji13' => (float)$mGaji13Pppk,
                         'tpp' => (float)$mTppPppk, 
                         'employees' => $mEmpPppk
                     ],
                     'pw' => [
                         'amount' => (float)$mPw, 
                         'gaji' => (float)$mPw, 
+                        'thr' => 0,
+                        'gaji13' => 0,
                         'tpp' => 0, 
                         'employees' => $mEmpPw
                     ],
@@ -248,6 +262,7 @@ class DashboardController extends Controller
                         ? (float)((($expPns + $tppPns + $tppStandalone + $expPppk + $tppPppk + $expPw)) / ($totalPns + $totalPppk + $totalPw))
                         : 0,
                 ],
+                // We keep categories for the pie/line charts fallback, though line charts will mostly rely on yearly_realization
                 'categories' => [
                     ['label' => 'PNS', 'employees' => $totalPns, 'amount' => (float)($expPns + $tppPns + $tppStandalone), 'gaji' => (float)$expPns, 'tpp' => (float)($tppPns + $tppStandalone)],
                     ['label' => 'PPPK', 'employees' => $totalPppk, 'amount' => (float)($expPppk + $tppPppk), 'gaji' => (float)$expPppk, 'tpp' => (float)$tppPppk],
