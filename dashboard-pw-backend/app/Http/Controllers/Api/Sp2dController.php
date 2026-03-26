@@ -403,9 +403,53 @@ class Sp2dController extends Controller
             })
             ->get();
 
-        // 5. Build rows
-        $data = $realizations->map(function ($real) use ($skpds, $pnsInternal, $pppkInternal, $pwInternal, $manualMappings, $tppReconMode, $standaloneTpp, $bulan, $tahun) {
-            $skpd = $skpds->where('id_skpd', $real->skpd_id)->first();
+        // 5. Group and Aggregate Realizations to avoid duplicate internal rows
+        $groupedData = [];
+        
+        foreach ($realizations as $real) {
+            // A. Detect Category & Jenis Gaji
+            $jenisDataRaw = $real->jenis_data ?? '';
+            $ketRaw = strtoupper($real->keterangan ?? '');
+            
+            $targetJenisGajiDetected = 'Induk';
+            if (str_contains($jenisDataRaw, 'SUSULAN')) $targetJenisGajiDetected = 'Susulan';
+            elseif (str_contains($jenisDataRaw, 'KEKURANGAN')) $targetJenisGajiDetected = 'Kekurangan';
+            elseif (str_contains($jenisDataRaw, 'TERUSAN')) $targetJenisGajiDetected = 'Terusan';
+            elseif (str_contains($jenisDataRaw, 'THR') || str_contains($jenisDataRaw, 'GAJI 14') || str_contains($ketRaw, 'THR')) $targetJenisGajiDetected = 'Gaji 14 / THR';
+            elseif (str_contains($jenisDataRaw, 'GAJI 13')) $targetJenisGajiDetected = 'Gaji 13';
+
+            $category = 'UNKNOWN';
+            if (str_contains($jenisDataRaw, 'PPPK-PW')) $category = 'PPPK_PW';
+            elseif (str_contains($jenisDataRaw, 'TPP')) $category = 'TPP';
+            elseif (str_contains($jenisDataRaw, 'PPPK') || str_contains($jenisDataRaw, 'P3K')) $category = 'PPPK';
+            elseif (str_contains($jenisDataRaw, 'PNS')) $category = 'PNS';
+
+            // Special case for TPP sub-categories (PNS vs PPPK) based on description if not in jenis_data
+            if ($category === 'TPP' && !str_contains($jenisDataRaw, 'PNS') && !str_contains($jenisDataRaw, 'PPPK')) {
+                if (str_contains($ketRaw, 'PPPK') || str_contains($ketRaw, 'P3K')) $category = 'TPP_PPPK';
+                else $category = 'TPP_PNS';
+            }
+
+            $key = $real->skpd_id . '|' . $targetJenisGajiDetected . '|' . $category;
+
+            if (!isset($groupedData[$key])) {
+                $groupedData[$key] = [
+                    'skpd_id' => $real->skpd_id,
+                    'jenis_gaji' => $targetJenisGajiDetected,
+                    'category' => $category,
+                    'reals' => collect(),
+                    'ids' => []
+                ];
+            }
+            $groupedData[$key]['reals']->push($real);
+            $groupedData[$key]['ids'][] = $real->id;
+        }
+
+        $data = collect($groupedData)->map(function ($group) use ($skpds, $pnsInternal, $pppkInternal, $pwInternal, $manualMappings, $tppReconMode, $standaloneTpp, $bulan, $tahun) {
+            $skpd = $skpds->where('id_skpd', $group['skpd_id'])->first();
+            $category = $group['category'];
+            $targetType = $group['jenis_gaji'];
+            $reals = $group['reals'];
 
             $internalCtx = [
                 'brutto' => 0,
@@ -415,87 +459,63 @@ class Sp2dController extends Controller
                 'gaji_pppk' => 0,
                 'tpp_pns' => 0,
                 'tpp_pppk' => 0,
-                'jenis_gaji' => null,
+                'jenis_gaji' => $targetType,
                 'emp_count' => 0
             ];
 
-            // Determine target jenis_gaji & data type flags based on SP2D type
-            // This is moved here to ensure variables are always defined even if $skpd is null
-            $targetJenisGajiDetected = 'Induk';
-            $jenisDataRaw = $real->jenis_data ?? '';
-            
-            if (str_contains($jenisDataRaw, 'SUSULAN'))
-                $targetJenisGajiDetected = 'Susulan';
-            elseif (str_contains($jenisDataRaw, 'KEKURANGAN'))
-                $targetJenisGajiDetected = 'Kekurangan';
-            elseif (str_contains($jenisDataRaw, 'TERUSAN'))
-                $targetJenisGajiDetected = 'Terusan';
-            elseif (str_contains($jenisDataRaw, 'THR') || str_contains($jenisDataRaw, 'GAJI 14'))
-                $targetJenisGajiDetected = 'Gaji 14 / THR';
-            elseif (str_contains($jenisDataRaw, 'GAJI 13'))
-                $targetJenisGajiDetected = 'Gaji 13';
-
-            $isPnsRow = str_contains($jenisDataRaw, 'PNS');
-            $isPppkRow = str_contains($jenisDataRaw, 'PPPK') && !str_contains($jenisDataRaw, 'PPPK-PW');
-            $isTppRow = $jenisDataRaw === 'TPP' || str_contains($jenisDataRaw, 'TPP-');
-            $isPwRow = str_contains($jenisDataRaw, 'PPPK-PW');
-
             if ($skpd) {
-                // 1. Get kdskpds for Standard Payroll
                 $kdskpds = [];
                 if ($skpd->kode_simgaji) $kdskpds[] = $skpd->kode_simgaji;
                 if (isset($manualMappings[$skpd->id_skpd])) {
-                    foreach ($manualMappings[$skpd->id_skpd] as $m) {
-                        if ($m->source_code) $kdskpds[] = $m->source_code;
-                    }
+                    foreach ($manualMappings[$skpd->id_skpd] as $m) if ($m->source_code) $kdskpds[] = $m->source_code;
                 }
                 $kdskpds = array_unique($kdskpds);
 
-                // Standard Payroll aggregation
                 foreach ($kdskpds as $kd) {
-                    $ketRaw = strtoupper($real->keterangan ?? '');
-                    $isPppkTpp = $isTppRow && (str_contains($ketRaw, 'PPPK') || str_contains($ketRaw, 'P3K') && !str_contains($ketRaw, 'PARUH'));
-                    $isPnsTpp = $isTppRow && !$isPppkTpp && !str_contains($ketRaw, 'PARUH');
-
-                    if ($isPnsRow || $isPnsTpp) {
-                        $p = $pnsInternal->where('kdskpd', $kd)->where('jenis_gaji', $targetJenisGajiDetected)->first();
+                    if ($category === 'PNS') {
+                        $p = $pnsInternal->where('kdskpd', $kd)->where('jenis_gaji', $targetType)->first();
                         if ($p) {
-                            if ($isPnsRow) {
-                                $internalCtx['brutto'] += (float) ($p->brutto ?? 0);
-                                $internalCtx['potongan'] += (float) ($p->potongan ?? 0);
-                                $internalCtx['netto'] += (float) ($p->netto ?? 0);
-                                $internalCtx['gaji_pns'] += (float) ($p->netto ?? 0);
-                            } else {
-                                $internalCtx['brutto'] += (float) ($p->tpp ?? 0);
-                                $internalCtx['netto'] += (float) ($p->tpp ?? 0);
-                                $internalCtx['tpp_pns'] += (float) ($p->tpp ?? 0);
-                            }
-                            $internalCtx['emp_count'] += (int) ($p->emp_count ?? 0);
+                            $internalCtx['brutto'] += (float) $p->brutto;
+                            $internalCtx['potongan'] += (float) $p->potongan;
+                            $internalCtx['netto'] += (float) $p->netto;
+                            $internalCtx['gaji_pns'] += (float) $p->netto;
+                            $internalCtx['emp_count'] += (int) $p->emp_count;
                         }
-                    }
-
-                    if ($isPppkRow || $isPppkTpp) {
-                        $pk = $pppkInternal->where('kdskpd', $kd)->where('jenis_gaji', $targetJenisGajiDetected)->first();
+                    } elseif ($category === 'PPPK') {
+                        $pk = $pppkInternal->where('kdskpd', $kd)->where('jenis_gaji', $targetType)->first();
                         if ($pk) {
-                            if ($isPppkRow) {
-                                $internalCtx['brutto'] += (float) ($pk->brutto ?? 0);
-                                $internalCtx['potongan'] += (float) ($pk->potongan ?? 0);
-                                $internalCtx['netto'] += (float) ($pk->netto ?? 0);
-                                $internalCtx['gaji_pppk'] += (float) ($pk->netto ?? 0);
-                            } else {
-                                $internalCtx['brutto'] += (float) ($pk->tpp ?? 0);
-                                $internalCtx['netto'] += (float) ($pk->tpp ?? 0);
-                                $internalCtx['tpp_pppk'] += (float) ($pk->tpp ?? 0);
-                            }
-                            $internalCtx['emp_count'] += (int) ($pk->emp_count ?? 0);
+                            $internalCtx['brutto'] += (float) $pk->brutto;
+                            $internalCtx['potongan'] += (float) $pk->potongan;
+                            $internalCtx['netto'] += (float) $pk->netto;
+                            $internalCtx['gaji_pppk'] += (float) $pk->netto;
+                            $internalCtx['emp_count'] += (int) $pk->emp_count;
+                        }
+                    } elseif ($category === 'TPP' || $category === 'TPP_PNS') {
+                        $p = $pnsInternal->where('kdskpd', $kd)->where('jenis_gaji', $targetType)->first();
+                        if ($p) {
+                            $internalCtx['brutto'] += (float) $p->tpp;
+                            $internalCtx['netto'] += (float) $p->tpp;
+                            $internalCtx['tpp_pns'] += (float) $p->tpp;
+                            $internalCtx['emp_count'] += (int) $p->emp_count;
+                        }
+                    } elseif ($category === 'TPP_PPPK') {
+                        $pk = $pppkInternal->where('kdskpd', $kd)->where('jenis_gaji', $targetType)->first();
+                        if ($pk) {
+                            $internalCtx['brutto'] += (float) $pk->tpp;
+                            $internalCtx['netto'] += (float) $pk->tpp;
+                            $internalCtx['tpp_pppk'] += (float) $pk->tpp;
+                            $internalCtx['emp_count'] += (int) $pk->emp_count;
                         }
                     }
                 }
 
-                // Standalone TPP aggregation (already filtered in query)
-                if ($isTppRow) {
-                    $st = $standaloneTpp->where('skpd_id', $skpd->id_skpd)->where('jenis_gaji', $targetJenisGajiDetected);
+                // Standalone TPP integration
+                if (str_contains($category, 'TPP')) {
+                    $st = $standaloneTpp->where('skpd_id', $skpd->id_skpd)->where('jenis_gaji', $targetType);
                     foreach ($st as $item) {
+                        if ($category === 'TPP_PPPK' && $item->employee_type !== 'pppk') continue;
+                        if ($category === 'TPP_PNS' && $item->employee_type !== 'pns') continue;
+                        
                         $internalCtx['brutto'] += (float) $item->nilai;
                         $internalCtx['netto'] += (float) $item->nilai;
                         if ($item->employee_type === 'pns') $internalCtx['tpp_pns'] += (float) $item->nilai;
@@ -504,26 +524,25 @@ class Sp2dController extends Controller
                     }
                 }
 
-                // PPPK-PW aggregation (Source 1)
-                if ($isPwRow) {
+                // PW aggregation
+                if ($category === 'PPPK_PW') {
                     $prefix = substr($skpd->kode_skpd, 0, 18);
                     $allUnitIds = Skpd::where('kode_skpd', 'LIKE', $prefix . '%')->pluck('id_skpd')->toArray();
                     foreach ($allUnitIds as $uid) {
-                        $pw = $pwInternal->where('idskpd', $uid)->first(); // Note: PW doesn't use Induk/Susulan yet in DB schema
+                        $pw = $pwInternal->where('idskpd', $uid)->first();
                         if ($pw) {
-                            $internalCtx['brutto'] += (float) ($pw->brutto ?? 0);
-                            $internalCtx['potongan'] += (float) ($pw->potongan ?? 0);
-                            $internalCtx['netto'] += (float) ($pw->netto ?? 0);
-                            $internalCtx['emp_count'] += (int) ($pw->emp_count ?? 0);
+                            $internalCtx['brutto'] += (float) $pw->brutto;
+                            $internalCtx['potongan'] += (float) $pw->potongan;
+                            $internalCtx['netto'] += (float) $pw->netto;
+                            $internalCtx['emp_count'] += (int) $pw->emp_count;
                         }
                     }
                 }
-                
-                $internalCtx['jenis_gaji'] = $targetJenisGajiDetected;
             }
 
             return [
-                'id' => $real->id,
+                'id' => $group['ids'][0], // Use first ID as representative
+                'all_ids' => implode(',', $group['ids']),
                 'simgaji' => [
                     'nama_skpd' => $skpd ? $skpd->nama_skpd : 'No SKPD Mapping',
                     'brutto' => $internalCtx['brutto'],
@@ -537,19 +556,20 @@ class Sp2dController extends Controller
                     'emp_count' => $internalCtx['emp_count'],
                 ],
                 'sipd' => [
-                    'tanggal_sp2d' => $real->tanggal_sp2d ? $real->tanggal_sp2d->format('Y-m-d') : null,
-                    'tanggal_cair' => $real->tanggal_cair ? $real->tanggal_cair->format('Y-m-d') : null,
-                    'nomor_sp2d' => $real->nomor_sp2d,
-                    'nama_skpd' => $real->nama_skpd_sipd,
-                    'jenis_data' => $real->jenis_data,
-                    'keterangan' => $real->keterangan,
-                    'brutto' => $real->brutto,
-                    'potongan' => $real->potongan,
-                    'netto' => ($isTppRow && $tppReconMode === 'bruto') ? $real->brutto : $real->netto, 
+                    'tanggal_sp2d' => $reals->first()->tanggal_sp2d ? $reals->first()->tanggal_sp2d->format('Y-m-d') : null,
+                    'tanggal_cair' => $reals->first()->tanggal_cair ? $reals->first()->tanggal_cair->format('Y-m-d') : null,
+                    'nomor_sp2d' => $reals->pluck('nomor_sp2d')->implode(', '),
+                    'nama_skpd' => $reals->first()->nama_skpd_sipd,
+                    'jenis_data' => $reals->first()->jenis_data . ($reals->count() > 1 ? ' (' . $reals->count() . ' data)' : ''),
+                    'keterangan' => $reals->pluck('keterangan')->implode(' | '),
+                    'brutto' => $reals->sum('brutto'),
+                    'potongan' => $reals->sum('potongan'),
+                    'netto' => ($category === 'TPP' && $tppReconMode === 'bruto') ? $reals->sum('brutto') : $reals->sum('netto'), 
                     'is_realized' => true,
+                    'sp2d_count' => $reals->count()
                 ]
             ];
-        });
+        })->values();
 
         return response()->json([
             'status' => 'success',
@@ -559,7 +579,15 @@ class Sp2dController extends Controller
 
     public function getReconDetail(Request $request, $id)
     {
-        $real = Sp2dRealization::findOrFail($id);
+        // Allow multiple IDs (comma separated) for aggregated rows
+        $ids = explode(',', $id);
+        $reals = Sp2dRealization::whereIn('id', $ids)->get();
+        
+        if ($reals->isEmpty()) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+
+        $real = $reals->first();
         $bulan = $real->bulan;
         $tahun = $real->tahun;
         $skpdId = $real->skpd_id;
@@ -575,69 +603,116 @@ class Sp2dController extends Controller
         $manual = \DB::table('skpd_mapping')->where('skpd_id', $skpdId)->pluck('source_code')->toArray();
         $kdskpds = array_unique(array_merge($kdskpds, $manual));
 
-        $jenisDataRaw = $real->jenis_data ?? '';
-        $targetType = 'Induk';
-        if (str_contains($jenisDataRaw, 'SUSULAN')) $targetType = 'Susulan';
-        elseif (str_contains($jenisDataRaw, 'KEKURANGAN')) $targetType = 'Kekurangan';
-        elseif (str_contains($jenisDataRaw, 'TERUSAN')) $targetType = 'Terusan';
-        elseif (str_contains($jenisDataRaw, 'THR') || str_contains($jenisDataRaw, 'GAJI 14')) $targetType = 'Gaji 14 / THR';
-        elseif (str_contains($jenisDataRaw, 'GAJI 13')) $targetType = 'Gaji 13';
+        // Use the aggregate category detection logic
+        $allDetails = collect();
 
-        $isPns = str_contains($jenisDataRaw, 'PNS');
-        $isPppk = str_contains($jenisDataRaw, 'PPPK') && !str_contains($jenisDataRaw, 'PPPK-PW');
-        $isTpp = str_contains($jenisDataRaw, 'TPP');
-        $isPw = str_contains($jenisDataRaw, 'PPPK-PW');
+        foreach ($reals as $r) {
+            $jenisDataRaw = $r->jenis_data ?? '';
+            $ketRaw = strtoupper($r->keterangan ?? '');
+            
+            $targetType = 'Induk';
+            if (str_contains($jenisDataRaw, 'SUSULAN')) $targetType = 'Susulan';
+            elseif (str_contains($jenisDataRaw, 'KEKURANGAN')) $targetType = 'Kekurangan';
+            elseif (str_contains($jenisDataRaw, 'TERUSAN')) $targetType = 'Terusan';
+            elseif (str_contains($jenisDataRaw, 'THR') || str_contains($jenisDataRaw, 'GAJI 14') || str_contains($ketRaw, 'THR')) $targetType = 'Gaji 14 / THR';
+            elseif (str_contains($jenisDataRaw, 'GAJI 13')) $targetType = 'Gaji 13';
 
-        $details = [];
+            $isPns = str_contains($jenisDataRaw, 'PNS');
+            $isPppk = str_contains($jenisDataRaw, 'PPPK') && !str_contains($jenisDataRaw, 'PPPK-PW');
+            $isTpp = str_contains($jenisDataRaw, 'TPP');
+            $isPw = str_contains($jenisDataRaw, 'PPPK-PW');
 
-        if ($isPns) {
-            $details = \DB::table('gaji_pns')
-                ->whereIn('kdskpd', $kdskpds)
-                ->where('bulan', $bulan)
-                ->where('tahun', $tahun)
-                ->where('jenis_gaji', $targetType)
-                ->select('nip', 'nama', \DB::raw('(bersih - tunj_tpp) as nominal'), \DB::raw("'PNS' as tipe"))
-                ->get();
-        } elseif ($isPppk) {
-            $details = \DB::table('gaji_pppk')
-                ->whereIn('kdskpd', $kdskpds)
-                ->where('bulan', $bulan)
-                ->where('tahun', $tahun)
-                ->where('jenis_gaji', $targetType)
-                ->select('nip', 'nama', \DB::raw('(bersih - tunj_tpp) as nominal'), \DB::raw("'PPPK' as tipe"))
-                ->get();
-        } elseif ($isTpp) {
-            $ketRaw = strtoupper($real->keterangan ?? '');
-            $table = (str_contains($ketRaw, 'PPPK') || str_contains($ketRaw, 'P3K')) ? 'gaji_pppk' : 'gaji_pns';
-            $details = \DB::table($table)
-                ->whereIn('kdskpd', $kdskpds)
-                ->where('bulan', $bulan)
-                ->where('tahun', $tahun)
-                ->where('jenis_gaji', $targetType)
-                ->where('tunj_tpp', '>', 0)
-                ->select('nip', 'nama', 'tunj_tpp as nominal', \DB::raw("'TPP' as tipe"))
-                ->get();
-        } elseif ($isPw) {
-            $prefix = substr($skpd->kode_skpd, 0, 18);
-            $allUnitIds = Skpd::where('kode_skpd', 'LIKE', $prefix . '%')->pluck('id_skpd')->toArray();
-            $details = \DB::table('tb_payment_detail as pd')
-                ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
-                ->join('pegawai_pw as e', 'pd.employee_id', '=', 'e.id')
-                ->whereIn('e.idskpd', $allUnitIds)
-                ->where('p.month', $bulan)
-                ->where('p.year', $tahun)
-                ->select('e.nip', 'e.nama', 'pd.total_amoun as nominal', \DB::raw("'PPPK-PW' as tipe"))
-                ->get();
+            // Special case for TPP detection if not in jenis_data
+            if ($isTpp && !$isPns && !$isPppk) {
+                if (str_contains($ketRaw, 'PPPK') || str_contains($ketRaw, 'P3K')) $isPppk = true;
+                else $isPns = true;
+            }
+
+            $details = collect();
+            if ($isPns && !$isTpp) {
+                $details = \DB::table('gaji_pns')
+                    ->whereIn('kdskpd', $kdskpds)
+                    ->where('bulan', $bulan)
+                    ->where('tahun', $tahun)
+                    ->where('jenis_gaji', $targetType)
+                    ->select('nip', 'nama', \DB::raw('(bersih - tunj_tpp) as nominal'), \DB::raw("'PNS' as tipe"))
+                    ->get();
+            } elseif ($isPppk && !$isTpp) {
+                $details = \DB::table('gaji_pppk')
+                    ->whereIn('kdskpd', $kdskpds)
+                    ->where('bulan', $bulan)
+                    ->where('tahun', $tahun)
+                    ->where('jenis_gaji', $targetType)
+                    ->select('nip', 'nama', \DB::raw('(bersih - tunj_tpp) as nominal'), \DB::raw("'PPPK' as tipe"))
+                    ->get();
+            } elseif ($isTpp) {
+                $table = ($isPppk || str_contains($ketRaw, 'PPPK') || str_contains($ketRaw, 'P3K')) ? 'gaji_pppk' : 'gaji_pns';
+                $details = \DB::table($table)
+                    ->whereIn('kdskpd', $kdskpds)
+                    ->where('bulan', $bulan)
+                    ->where('tahun', $tahun)
+                    ->where('jenis_gaji', $targetType)
+                    ->where('tunj_tpp', '>', 0)
+                    ->select('nip', 'nama', 'tunj_tpp as nominal', \DB::raw("'TPP' as tipe"))
+                    ->get();
+                
+                // Also add standalone TPP if any
+                $st = \DB::table('standalone_tpp')
+                    ->where('skpd_id', $skpdId)
+                    ->where('month', $bulan)
+                    ->where('year', $tahun)
+                    ->where('jenis_gaji', $targetType)
+                    ->get();
+                
+                foreach ($st as $item) {
+                    if ($isPppk && $item->employee_type !== 'pppk') continue;
+                    if ($isPns && $item->employee_type !== 'pns') continue;
+                    
+                    // Exclude those already in main table (same as getRecon logic)
+                    $inMain = \DB::table($table)->where('nip', $item->nip)->where('bulan', $bulan)->where('tahun', $tahun)->where('jenis_gaji', $targetType)->exists();
+                    if (!$inMain) {
+                        $details->push((object)[
+                            'nip' => $item->nip,
+                            'nama' => $item->nama,
+                            'nominal' => (float)$item->nilai,
+                            'tipe' => 'TPP-Standalone'
+                        ]);
+                    }
+                }
+            } elseif ($isPw) {
+                $prefix = substr($skpd->kode_skpd, 0, 18);
+                $allUnitIds = Skpd::where('kode_skpd', 'LIKE', $prefix . '%')->pluck('id_skpd')->toArray();
+                $details = \DB::table('tb_payment_detail as pd')
+                    ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
+                    ->join('pegawai_pw as e', 'pd.employee_id', '=', 'e.id')
+                    ->whereIn('e.idskpd', $allUnitIds)
+                    ->where('p.month', $bulan)
+                    ->where('p.year', $tahun)
+                    ->select('e.nip', 'e.nama', 'pd.total_amoun as nominal', \DB::raw("'PPPK-PW' as tipe"))
+                    ->get();
+            }
+            $allDetails = $allDetails->merge($details);
         }
+
+        // De-duplicate if same personnel appears in multiple SP2Ds (e.g. split payment)
+        $allDetails = $allDetails->groupBy('nip')->map(function($group) {
+            $first = $group->first();
+            return [
+                'nip' => $first->nip,
+                'nama' => $first->nama,
+                'tipe' => $first->tipe,
+                'nominal' => $group->sum('nominal')
+            ];
+        })->values();
 
         return response()->json([
             'status' => 'success',
             'sp2d' => [
-                'nomor' => $real->nomor_sp2d,
-                'nominal' => $isTpp ? $real->brutto : $real->netto,
-                'jenis' => $real->jenis_data
+                'nomor' => $reals->pluck('nomor_sp2d')->implode(', '),
+                'nominal' => $reals->sum('netto'),
+                'jenis' => $reals->first()->jenis_data . ($reals->count() > 1 ? ' (' . $reals->count() . ' items)' : '')
             ],
-            'details' => $details
+            'details' => $allDetails
         ]);
     }
 

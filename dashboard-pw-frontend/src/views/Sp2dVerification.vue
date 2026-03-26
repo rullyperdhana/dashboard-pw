@@ -812,7 +812,8 @@ const reconDetails = ref([])
 const activeReconSp2d = ref(null)
 
 const fetchReconDetail = async (row) => {
-    if (!row.id) return
+    const idParam = row.all_ids || row.id
+    if (!idParam) return
     
     activeReconSp2d.value = {
         nomor: row.sipd.nomor_sp2d,
@@ -825,7 +826,7 @@ const fetchReconDetail = async (row) => {
     reconDetails.value = []
 
     try {
-        const response = await api.get(`/sp2d/recon/${row.id}`)
+        const response = await api.get(`/sp2d/recon/${idParam}`)
         reconDetails.value = response.data.details
     } catch (err) {
         showSnackbar('Gagal mengambil detail personil', 'error')

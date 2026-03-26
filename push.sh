@@ -27,8 +27,11 @@ else
     echo -e "${YELLOW}ℹ️  Tidak ada perubahan yang perlu di-commit.${NC}"
 fi
 
-echo -e "${BLUE}📤 Mengirim ke repository remote...${NC}"
-git push origin main
+# Detect current branch
+CURRENT_BRANCH=$(git branch --show-current)
+
+echo -e "${BLUE}📤 Mengirim ke repository remote (branch: $CURRENT_BRANCH)...${NC}"
+git push origin "$CURRENT_BRANCH"
 
 echo -e "\n${GREEN}✨ Selesai! Kode berhasil di-push ke GitHub.${NC}"
 echo -e "${BLUE}🔗 Repository: $(git remote get-url origin)${NC}"

@@ -1,7 +1,7 @@
 #!/bin/bash
 # ──────────────────────────────────────────────────────────────────────────────
-# DEPLOY SCRIPT - Pull and Update on VPS
-# Jalankan: bash deploy.sh
+# DEPLOY SCRIPT - DEV ENVIRONMENT
+# Jalankan: bash deploy-dev.sh
 # ──────────────────────────────────────────────────────────────────────────────
 
 GREEN='\033[0;32m'
@@ -14,38 +14,27 @@ set -e
 
 PROJECT_ROOT=$(pwd)
 
-echo -e "${BLUE}=== Memulai Proses Update di VPS ===${NC}"
+echo -e "${BLUE}=== Memulai Update LINGKUNGAN DEV ===${NC}"
 
-# 1. Pull Kode terbaru dari branch MAIN
-echo -e "${YELLOW}1. Menarik data terbaru dari GitHub (branch MAIN)...${NC}"
-git checkout main
-git pull origin main
+# 1. Pull dari branch dev
+echo -e "${YELLOW}1. Menarik data terbaru dari branch DEV...${NC}"
+git pull origin dev
 
 # 2. Update Backend (Laravel)
-echo -e "${YELLOW}2. Memperbarui Backend...${NC}"
+echo -e "${YELLOW}2. Memperbarui Backend Dev...${NC}"
 cd "$PROJECT_ROOT/dashboard-pw-backend"
 if [ -f "composer.json" ]; then
-    composer install --no-dev --optimize-autoloader
+    composer install
 fi
 php artisan migrate --force
-php artisan db:seed --class=HelpArticleSeeder
-php artisan db:seed --class=SkpdMappingSeeder
-php artisan db:seed --class=PPh21TerSeeder
 php artisan optimize:clear
 php artisan config:cache
-php artisan view:cache
-php artisan queue:restart
 
 # 3. Update Frontend (Vue.js)
-echo -e "${YELLOW}3. Memperbarui Frontend...${NC}"
+echo -e "${YELLOW}3. Memperbarui Frontend Dev...${NC}"
 cd "$PROJECT_ROOT/dashboard-pw-frontend"
 npm install
 npm run build
 
-# 4. Finalisasi Hak Akses (Opsional, sesuaikan dengan user web server Anda)
-cd "$PROJECT_ROOT"
-# Uncomment baris di bawah jika Anda menggunakan aaPanel (user www)
-# chown -R www:www dashboard-pw-backend/storage dashboard-pw-backend/bootstrap/cache
-
-echo -e "\n${GREEN}✅ SIP-Gaji Berhasil Diperbarui!${NC}"
+echo -e "\n${GREEN}✅ SIP-Gaji DEV Berhasil Diperbarui!${NC}"
 echo -e "${BLUE}──────────────────────────────────────────────────────────────────────────────${NC}"
