@@ -75,7 +75,7 @@
             </template>
           </template>
           <template v-slot:item.role="{ item }">
-            <v-chip :color="item.role === 'superadmin' ? 'purple' : 'blue'" size="small" label>
+            <v-chip :color="item.role === 'superadmin' ? 'purple' : (item.role === 'eksekutif' ? 'teal' : 'blue')" size="small" label>
               {{ item.role.toUpperCase() }}
             </v-chip>
           </template>
@@ -126,7 +126,7 @@
                   <v-text-field v-model="editedItem.password" label="Password" type="password" :rules="[rules.required, rules.min]" variant="outlined"></v-text-field>
                 </v-col>
                 <v-col cols="12" md="6">
-                  <v-select v-model="editedItem.role" :items="['superadmin', 'operator']" label="Role" :rules="[rules.required]" variant="outlined"></v-select>
+                  <v-select v-model="editedItem.role" :items="['superadmin', 'operator', 'eksekutif']" label="Role" :rules="[rules.required]" variant="outlined"></v-select>
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-select v-model="editedItem.status" :items="['approved', 'pending']" label="Status" :rules="[rules.required]" variant="outlined"></v-select>
@@ -278,7 +278,7 @@ const userGroups = ref([])
 const skpdList = ref([])
 const search = ref('')
 const filterRole = ref('Semua Role')
-const roles = ['Semua Role', 'superadmin', 'operator']
+const roles = ['Semua Role', 'superadmin', 'operator', 'eksekutif']
 
 const moduleGroups = [
   {

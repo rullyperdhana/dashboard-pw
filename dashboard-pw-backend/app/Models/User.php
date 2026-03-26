@@ -101,6 +101,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Check apakah user adalah eksekutif
+     */
+    public function isEksekutif()
+    {
+        return $this->role === 'eksekutif';
+    }
+
+    /**
      * Scope untuk user aktif
      */
     public function scopeActive($query)
@@ -122,7 +130,7 @@ class User extends Authenticatable
      */
     public function getAccessibleSkpds($type = null)
     {
-        if ($this->isSuperAdmin()) {
+        if ($this->isSuperAdmin() || $this->isEksekutif()) {
             return null;
         }
 
