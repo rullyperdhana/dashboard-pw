@@ -28,7 +28,7 @@ class ThrExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
     public function headings(): array
     {
         return [
-            ["DAFTAR PEMBAYARAN THR PEGAWAI PPPK PARUH WAKTU"],
+            ["DAFTAR PEMBAYARAN KESEJAHTERAAN PEGAWAI PPPK PARUH WAKTU"],
             ["TAHUN {$this->year} (PEMBAYARAN BULAN " . strtoupper($this->thrMonthName) . ")"],
             ["DASAR PERHITUNGAN: " . strtoupper($this->calculationBasis)],
             [''],
