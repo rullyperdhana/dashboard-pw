@@ -13,15 +13,21 @@
       </div>
 
       <v-card class="glass-card mt-4 mb-2 pa-6 border-0" elevation="0">
-        <div class="text-caption text-white opacity-60 mb-1">TOTAL BELANJA PEGAWAI ({{ currentMonthName }})</div>
-        <div class="text-h3 font-weight-black mb-3 letter-spacing-tight">
-          {{ formatCurrencyCompact(stats.total_expenditure) }}
+        <div class="text-caption text-white opacity-60 mb-1">TOTAL REALISASI BELANJA PEGAWAI ({{ currentMonthName }})</div>
+        <div class="text-h4 font-weight-black mb-3 letter-spacing-tight line-height-tight">
+          {{ formatCurrencyFull(stats.total_expenditure) }}
         </div>
-        <div class="d-flex align-center">
-          <v-icon icon="mdi-trending-up" color="success-light" size="18" class="mr-1"></v-icon>
-          <span class="text-caption font-weight-bold text-success-light">+2.1%</span>
-          <span class="text-caption text-white opacity-60 ml-2">vs bulan sebelumnya</span>
-        </div>
+        <v-divider class="border-opacity-25 mb-4"></v-divider>
+        <v-row dense>
+          <v-col cols="6">
+            <div class="text-caption text-white opacity-60">Realisasi TPP</div>
+            <div class="text-subtitle-1 font-weight-bold">{{ formatCurrencyFull(stats.tpp_total) }}</div>
+          </v-col>
+          <v-col cols="6">
+            <div class="text-caption text-white opacity-60">Potongan Pajak</div>
+            <div class="text-subtitle-1 font-weight-bold">{{ formatCurrencyFull(stats.tax_total) }}</div>
+          </v-col>
+        </v-row>
       </v-card>
     </div>
 
@@ -59,17 +65,17 @@
         <v-card class="category-card pa-4" variant="flat" border>
           <div class="d-flex justify-space-between align-center">
             <div>
-              <div class="text-subtitle-2 font-weight-bold">{{ cat.label }}</div>
-              <div class="text-caption text-grey">{{ cat.employees }} Pegawai Terdaftar</div>
+              <div class="text-subtitle-2 font-weight-black">{{ cat.label }}</div>
+              <div class="text-caption text-grey">{{ cat.employees.toLocaleString() }} Pegawai</div>
             </div>
             <div class="text-right">
-              <div class="text-subtitle-1 font-weight-black">{{ formatCurrencyCompact(cat.amount) }}</div>
+              <div class="text-subtitle-2 font-weight-black">{{ formatCurrencyFull(cat.amount) }}</div>
             </div>
           </div>
           <v-progress-linear
             :model-value="(cat.amount / stats.total_expenditure) * 100"
             color="primary"
-            height="4"
+            height="6"
             class="mt-3 rounded-pill"
           ></v-progress-linear>
         </v-card>
@@ -144,10 +150,8 @@ const fetchData = async () => {
   }
 }
 
-const formatCurrencyCompact = (value) => {
+const formatCurrencyFull = (value) => {
   if (!value) return 'Rp 0'
-  if (value >= 1000000000000) return 'Rp ' + (value / 1000000000000).toFixed(2) + ' Triliun'
-  if (value >= 1000000000) return 'Rp ' + (value / 1000000000).toFixed(2) + ' Miliar'
   return new Intl.NumberFormat('id-ID', { 
     style: 'currency', 
     currency: 'IDR',

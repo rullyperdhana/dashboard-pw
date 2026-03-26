@@ -165,10 +165,13 @@ class DashboardController extends Controller
             ->where('p.year', $year)
             ->sum('pd.total_amoun');
 
-        // 3. TPP Total (Standalone + regular)
+        // 3. TPP & Tax Totals
         $tppPns = DB::table('gaji_pns')->where('bulan', $month)->where('tahun', $year)->sum('tunj_tpp');
         $tppPppk = DB::table('gaji_pppk')->where('bulan', $month)->where('tahun', $year)->sum('tunj_tpp');
         $tppStandalone = DB::table('standalone_tpp')->where('month', $month)->where('year', $year)->sum('nilai');
+
+        $taxPns = DB::table('gaji_pns')->where('bulan', $month)->where('tahun', $year)->sum('pot_pph');
+        $taxPppk = DB::table('gaji_pppk')->where('bulan', $month)->where('tahun', $year)->sum('pot_pph');
 
         // 4. Trend (Last 6 months combined)
         $trend = [];
@@ -199,6 +202,7 @@ class DashboardController extends Controller
                     'total_expenditure' => (float)($expPns + $expPppk + $expPw),
                     'total_employees' => $totalPns + $totalPppk + $totalPw,
                     'tpp_total' => (float)($tppPns + $tppPppk + $tppStandalone),
+                    'tax_total' => (float)($taxPns + $taxPppk),
                     'active_skpd' => DB::table('skpd')->where('is_skpd', 1)->count(),
                 ],
                 'categories' => [
