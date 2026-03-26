@@ -66,8 +66,8 @@ class SkpdMappingSeeder extends Seeder
         ];
 
         foreach ($mappings as $mapping) {
-            \App\Models\SkpdMapping::updateOrCreate(
-                ['source_code' => $mapping['source_code'], 'source_name' => $mapping['source_name'], 'type' => $mapping['type']],
+            \App\Models\SkpdMapping::firstOrCreate(
+                ['source_code' => $mapping['source_code'], 'type' => $mapping['type']],
                 $mapping
             );
         }
