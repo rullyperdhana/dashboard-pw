@@ -94,7 +94,7 @@
     </footer>
 
     <header>
-        <h2 style="margin:0; padding:0;">PEMERINTAH PROVINSI KALIMANTAN SELATAN <br>DAFTAR PEMBAYARAN KESEJAHTERAAN PEGAWAI PPPK
+        <h2 style="margin:0; padding:0;">PEMERINTAH PROVINSI KALIMANTAN SELATAN <br>DAFTAR PEMBAYARAN TUNJANGAN HARI RAYA (THR) PEGAWAI PPPK
             PARUH WAKTU</h2>
         <h3 style="margin:5px 0 0 0; padding:0;">TAHUN {{ $year }} (PEMBAYARAN BULAN {{ strtoupper($thrMonthName) }})
         </h3>

@@ -505,6 +505,7 @@ class ReportController extends Controller
                 $table = $t === 'pns' ? 'gaji_pns' : 'gaji_pppk';
                 $mapType = $t === 'pns' ? "('pns','all')" : "('pppk','all')";
 
+                // --- MAIN PAYROLL DATA ---
                 $parts[] = "
                     SELECT
                         COALESCE(sm.kode_skpd, g.kdskpd) COLLATE utf8mb4_unicode_ci AS kode_skpd,
@@ -536,6 +537,34 @@ class ReportController extends Controller
                         WHERE mp.type IN {$mapType}
                     ) sm ON g.kdskpd = sm.source_code
                     WHERE g.bulan = ? AND g.tahun = ? {$codeFilter} {$jenisGajiFilter}
+                    GROUP BY 1, 2";
+                
+                $params = array_merge($params, [$month, $year]);
+
+                // --- STANDALONE TPP DATA ---
+                // Only include if these NIPs are NOT already in the main payroll table for this month (avoid double counting)
+                $parts[] = "
+                    SELECT
+                        s.kode_skpd COLLATE utf8mb4_unicode_ci AS kode_skpd,
+                        s.nama_skpd COLLATE utf8mb4_unicode_ci AS nama_skpd,
+                        COUNT(DISTINCT st.nip) AS jumlah_pegawai,
+                        0 AS gapok, 0 AS tj_istri, 0 AS tj_anak,
+                        SUM(st.nilai) AS tj_tpp,
+                        0 AS tj_eselon, 0 AS tj_fungsi, 0 AS tj_beras, 0 AS tj_pajak, 0 AS tj_umum, 0 AS tj_bilat,
+                        SUM(st.nilai) AS kotor,
+                        0 AS pot_iwp, 0 AS pot_iwp2, 0 AS pot_iwp8, 0 AS pot_pajak, 0 AS total_potongan,
+                        SUM(st.nilai) AS bersih
+                    FROM standalone_tpp st
+                    JOIN skpd s ON st.skpd_id = s.id_skpd
+                    WHERE st.month = ? AND st.year = ? 
+                    AND st.employee_type = " . DB::getPdo()->quote($t) . "
+                    AND st.jenis_gaji = " . DB::getPdo()->quote($jenisGaji === 'Semua' ? 'Induk' : $jenisGaji) . "
+                    AND NOT EXISTS (
+                        SELECT 1 FROM {$table} g2 
+                        WHERE g2.nip = st.nip 
+                        AND g2.bulan = st.month 
+                        AND g2.tahun = st.year
+                    )
                     GROUP BY 1, 2";
                 
                 $params = array_merge($params, [$month, $year]);
