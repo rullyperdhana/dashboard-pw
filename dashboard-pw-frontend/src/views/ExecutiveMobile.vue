@@ -1,86 +1,105 @@
 <template>
-  <div class="executive-mobile min-h-screen pb-20">
-    <!-- Navbar Mobile -->
-    <v-app-bar elevation="1" flat class="px-2">
-      <v-avatar color="primary" size="32" class="mr-3">
-        <v-icon icon="mdi-shield-crown" color="white" size="20"></v-icon>
-      </v-avatar>
-      <v-toolbar-title class="text-subtitle-1 font-weight-black">SIP-Gaji Executive</v-toolbar-title>
-      <v-spacer></v-spacer>
-      <v-btn icon @click="fetchData">
-        <v-icon>mdi-refresh</v-icon>
-      </v-btn>
-    </v-app-bar>
+  <div class="executive-mobile min-h-screen">
+    <!-- Premium Header Area -->
+    <div class="header-gradient pt-12 pb-8 px-6 text-white relative">
+      <div class="d-flex justify-space-between align-center mb-6">
+        <div>
+          <div class="text-caption font-weight-bold opacity-70">EXECUTIVE DASHBOARD</div>
+          <div class="text-h6 font-weight-black">SIP-Gaji Digital</div>
+        </div>
+        <v-btn icon color="white" variant="tonal" size="small" @click="fetchData" :loading="loading">
+          <v-icon size="18">mdi-refresh</v-icon>
+        </v-btn>
+      </div>
 
-    <div class="pa-4 pt-6">
-      <!-- High Level Summary -->
-      <div class="text-subtitle-2 text-grey mb-4">RINGKASAN EKSEKUTIF - {{ currentMonthName }} {{ currentYear }}</div>
-      
-      <v-card class="rounded-xl mb-4 bg-primary text-white pa-5 shadow-lg" elevation="0">
-        <div class="text-caption opacity-80 mb-1">Total Belanja Pegawai</div>
-        <div class="text-h4 font-weight-black">{{ formatCurrencyCompact(stats.monthly_payment) }}</div>
-        <div class="d-flex align-center mt-3">
-          <v-chip size="x-small" color="white" variant="flat" class="text-primary font-weight-bold mr-2">
-            +2.4% vs Mar
-          </v-chip>
-          <span class="text-caption opacity-70">Tren Bulanan</span>
+      <v-card class="glass-card mt-4 mb-2 pa-6 border-0" elevation="0">
+        <div class="text-caption text-white opacity-60 mb-1">TOTAL BELANJA PEGAWAI ({{ currentMonthName }})</div>
+        <div class="text-h3 font-weight-black mb-3 letter-spacing-tight">
+          {{ formatCurrencyCompact(stats.total_expenditure) }}
+        </div>
+        <div class="d-flex align-center">
+          <v-icon icon="mdi-trending-up" color="success-light" size="18" class="mr-1"></v-icon>
+          <span class="text-caption font-weight-bold text-success-light">+2.1%</span>
+          <span class="text-caption text-white opacity-60 ml-2">vs bulan sebelumnya</span>
         </div>
       </v-card>
+    </div>
 
-      <v-row dense>
+    <!-- Main Content -->
+    <div class="content-area pa-6">
+      <!-- Stats Row -->
+      <v-row dense class="mb-6 mt-n12">
         <v-col cols="6">
-          <v-card class="rounded-xl pa-4" elevation="2">
-            <div class="text-caption text-grey mb-1">Total Pegawai</div>
-            <div class="text-h5 font-weight-bold">{{ stats.total_employees }}</div>
-            <div class="text-caption text-success mt-1">Aktif & Terintegrasi</div>
+          <v-card class="stat-card pa-4" elevation="4">
+            <div class="d-flex align-center mb-1">
+              <v-icon color="primary" size="small" class="mr-2">mdi-account-group</v-icon>
+              <span class="text-caption text-grey">Total Pegawai</span>
+            </div>
+            <div class="text-h5 font-weight-black">{{ stats.total_employees.toLocaleString() }}</div>
           </v-card>
         </v-col>
         <v-col cols="6">
-          <v-card class="rounded-xl pa-4" elevation="2">
-            <div class="text-caption text-grey mb-1">Instansi</div>
-            <div class="text-h5 font-weight-bold">{{ stats.total_skpd }}</div>
-            <div class="text-caption text-primary mt-1">Unit Pengelola</div>
+          <v-card class="stat-card pa-4" elevation="4">
+            <div class="d-flex align-center mb-1">
+              <v-icon color="secondary" size="small" class="mr-2">mdi-bank</v-icon>
+              <span class="text-caption text-grey">Instansi SKPD</span>
+            </div>
+            <div class="text-h5 font-weight-black">{{ stats.active_skpd }}</div>
           </v-card>
         </v-col>
       </v-row>
 
-      <!-- Charts for Mobile -->
-      <div class="text-subtitle-2 text-grey mb-4 mt-6">TREN PENCAIRAN</div>
-      <v-card class="rounded-xl pa-4 mb-6" elevation="2">
-        <div style="height: 200px">
-          <v-chart v-if="charts.payment_trend" :option="trendOption" autoresize />
+      <!-- Category Breakdown -->
+      <div class="text-subtitle-2 font-weight-black mb-4 d-flex align-center">
+        RINCIAN BELANJA PEGAWAI
+        <v-divider class="ml-4"></v-divider>
+      </div>
+
+      <div v-for="cat in categories" :key="cat.label" class="mb-3">
+        <v-card class="category-card pa-4" variant="flat" border>
+          <div class="d-flex justify-space-between align-center">
+            <div>
+              <div class="text-subtitle-2 font-weight-bold">{{ cat.label }}</div>
+              <div class="text-caption text-grey">{{ cat.employees }} Pegawai Terdaftar</div>
+            </div>
+            <div class="text-right">
+              <div class="text-subtitle-1 font-weight-black">{{ formatCurrencyCompact(cat.amount) }}</div>
+            </div>
+          </div>
+          <v-progress-linear
+            :model-value="(cat.amount / stats.total_expenditure) * 100"
+            color="primary"
+            height="4"
+            class="mt-3 rounded-pill"
+          ></v-progress-linear>
+        </v-card>
+      </div>
+
+      <!-- Combined Trend -->
+      <div class="text-subtitle-2 font-weight-black mb-4 mt-8 d-flex align-center">
+        TREN BELANJA (6 BULAN)
+        <v-divider class="ml-4"></v-divider>
+      </div>
+      <v-card class="chart-card pa-4 mb-20" elevation="2">
+        <div style="height: 220px">
+          <v-chart v-if="trendData.length" :option="trendOption" autoresize />
         </div>
       </v-card>
-
-      <!-- Quick Action / Alert -->
-      <v-alert
-        v-if="unpaidCount > 0"
-        type="warning"
-        variant="tonal"
-        class="rounded-xl mb-6"
-        density="compact"
-      >
-        Ada <strong>{{ unpaidCount }} SKPD</strong> belum memproses gaji bulan ini.
-      </v-alert>
-
-      <v-btn block color="primary" rounded="xl" size="large" to="/">
-        Lihat Dashboard Lengkap
-      </v-btn>
     </div>
 
-    <!-- Bottom Navigation -->
-    <v-bottom-navigation grow color="primary">
+    <!-- Minimalist Bottom Nav -->
+    <v-bottom-navigation grow color="primary" elevation="10" height="72" class="border-top-nav">
       <v-btn value="summary">
-        <v-icon>mdi-view-dashboard</v-icon>
-        Ringkasan
+        <v-icon>mdi-finance</v-icon>
+        <span class="text-caption mt-1">Summary</span>
       </v-btn>
-      <v-btn value="reports">
-        <v-icon>mdi-file-chart</v-icon>
-        Laporan
+      <v-btn value="skpd" to="/skpd">
+        <v-icon>mdi-domain</v-icon>
+        <span class="text-caption mt-1">Instansi</span>
       </v-btn>
-      <v-btn value="profile">
-        <v-icon>mdi-account</v-icon>
-        Profil
+      <v-btn value="reports" to="/reports/skpd-monthly">
+        <v-icon>mdi-file-chart-outline</v-icon>
+        <span class="text-caption mt-1">Laporan</span>
       </v-btn>
     </v-bottom-navigation>
   </div>
@@ -103,46 +122,65 @@ use([CanvasRenderer, LineChart, BarChart, TitleComponent, TooltipComponent, Grid
 const theme = useTheme()
 provide(THEME_KEY, computed(() => theme.global.name.value === 'dark' ? 'dark' : 'light'))
 
-const currentYear = new Date().getFullYear()
+const loading = ref(false)
 const currentMonthName = new Intl.DateTimeFormat('id-ID', { month: 'long' }).format(new Date())
 
-const stats = ref({ total_employees: 0, monthly_payment: 0, total_skpd: 0 })
-const charts = ref({ payment_trend: [] })
-const unpaidCount = ref(0)
+const stats = ref({ total_expenditure: 0, total_employees: 0, active_skpd: 0, tpp_total: 0 })
+const categories = ref([])
+const trendData = ref([])
 
 const fetchData = async () => {
+  loading.value = true
   try {
-    const response = await api.get('/dashboard')
-    stats.value = response.data.data.summary
-    charts.value = response.data.data.charts
-    
-    // Check missing count
-    const missingRes = await api.get('/reports/thr-pppk-pw/summary')
-    unpaidCount.value = missingRes.data.data.length
+    const response = await api.get('/dashboard/executive')
+    const { summary, categories: cats, trend } = response.data.data
+    stats.value = summary
+    categories.value = cats
+    trendData.value = trend
   } catch (error) {
-    console.error('Error fetching data:', error)
+    console.error('Error:', error)
+  } finally {
+    loading.value = false
   }
 }
 
 const formatCurrencyCompact = (value) => {
   if (!value) return 'Rp 0'
-  if (value >= 1000000000) return 'Rp ' + (value / 1000000000).toFixed(2) + ' M'
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(value)
+  if (value >= 1000000000000) return 'Rp ' + (value / 1000000000000).toFixed(2) + ' Triliun'
+  if (value >= 1000000000) return 'Rp ' + (value / 1000000000).toFixed(2) + ' Miliar'
+  return new Intl.NumberFormat('id-ID', { 
+    style: 'currency', 
+    currency: 'IDR',
+    maximumFractionDigits: 0
+  }).format(value)
 }
 
 const trendOption = computed(() => ({
-  tooltip: { trigger: 'axis' },
-  grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
-  xAxis: { type: 'category', data: charts.value.payment_trend?.map(i => i.month.split(' ')[0]) || [] },
+  tooltip: { trigger: 'axis', backgroundColor: 'rgba(0,0,0,0.8)', textStyle: { color: '#fff' } },
+  grid: { left: '0%', right: '0%', bottom: '0%', top: '5%', containLabel: true },
+  xAxis: { 
+    type: 'category', 
+    data: trendData.value.map(i => i.label.split(' ')[0]),
+    axisLine: { show: false },
+    axisTick: { show: false }
+  },
   yAxis: { type: 'value', show: false },
   series: [{
-    data: charts.value.payment_trend?.map(i => i.total) || [],
+    data: trendData.value.map(i => i.total),
     type: 'line',
     smooth: true,
+    showSymbol: false,
     areaStyle: {
-      color: 'rgba(var(--v-theme-primary), 0.1)'
+      color: {
+        type: 'linear',
+        x: 0, y: 0, x2: 0, y2: 1,
+        colorStops: [
+          { offset: 0, color: 'rgba(var(--v-theme-primary), 0.3)' },
+          { offset: 1, color: 'rgba(var(--v-theme-primary), 0)' }
+        ]
+      }
     },
-    lineStyle: { width: 3 }
+    lineStyle: { width: 4, color: '#1B5E20' }
   }]
 }))
 
@@ -151,6 +189,48 @@ onMounted(fetchData)
 
 <style scoped>
 .executive-mobile {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Outfit', 'Inter', sans-serif;
+  background-color: #F8FAFC;
+}
+
+.header-gradient {
+  background: linear-gradient(135deg, #164e63 0%, #0891b2 100%);
+  border-bottom-left-radius: 40px;
+  border-bottom-right-radius: 40px;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 24px !important;
+}
+
+.stat-card {
+  border-radius: 20px !important;
+  border: none;
+}
+
+.category-card {
+  border-radius: 16px !important;
+  background: white !important;
+  transition: transform 0.2s;
+}
+
+.chart-card {
+  border-radius: 24px !important;
+}
+
+.letter-spacing-tight {
+  letter-spacing: -1.5px;
+}
+
+.text-success-light {
+  color: #4ADE80;
+}
+
+.border-top-nav {
+  border-top: 1px solid #E2E8F0;
 }
 </style>

@@ -141,4 +141,73 @@ class DashboardController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Combined summary for Executive Mobile
+     */
+    public function executiveSummary(Request $request)
+    {
+        $month = $request->query('month', date('n'));
+        $year = $request->query('year', date('Y'));
+
+        // 1. Employee Counts
+        $totalPns = DB::table('gaji_pns')->where('bulan', $month)->where('tahun', $year)->count(DB::raw('DISTINCT nip'));
+        $totalPppk = DB::table('gaji_pppk')->where('bulan', $month)->where('tahun', $year)->count(DB::raw('DISTINCT nip'));
+        $totalPw = DB::table('pegawai_pw')->count();
+
+        // 2. Monthly Expenditure
+        $expPns = DB::table('gaji_pns')->where('bulan', $month)->where('tahun', $year)->sum('bersih');
+        $expPppk = DB::table('gaji_pppk')->where('bulan', $month)->where('tahun', $year)->sum('bersih');
+        
+        $expPw = DB::table('tb_payment_detail as pd')
+            ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
+            ->where('p.month', $month)
+            ->where('p.year', $year)
+            ->sum('pd.total_amoun');
+
+        // 3. TPP Total (Standalone + regular)
+        $tppPns = DB::table('gaji_pns')->where('bulan', $month)->where('tahun', $year)->sum('tunj_tpp');
+        $tppPppk = DB::table('gaji_pppk')->where('bulan', $month)->where('tahun', $year)->sum('tunj_tpp');
+        $tppStandalone = DB::table('standalone_tpp')->where('month', $month)->where('year', $year)->sum('nilai');
+
+        // 4. Trend (Last 6 months combined)
+        $trend = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $tDate = date('Y-m-d', strtotime("-$i months"));
+            $tMonth = (int)date('m', strtotime($tDate));
+            $tYear = (int)date('Y', strtotime($tDate));
+            $months = [1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'May', 6 => 'Jun', 7 => 'Jul', 8 => 'Aug', 9 => 'Sep', 10 => 'Oct', 11 => 'Nov', 12 => 'Dec'];
+
+            $mPns = DB::table('gaji_pns')->where('bulan', $tMonth)->where('tahun', $tYear)->sum('bersih');
+            $mPppk = DB::table('gaji_pppk')->where('bulan', $tMonth)->where('tahun', $tYear)->sum('bersih');
+            $mPw = DB::table('tb_payment_detail as pd')
+                ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
+                ->where('p.month', $tMonth)
+                ->where('p.year', $tYear)
+                ->sum('pd.total_amoun');
+
+            $trend[] = [
+                'label' => $months[$tMonth] . ' ' . $tYear,
+                'total' => (float)($mPns + $mPppk + $mPw)
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'summary' => [
+                    'total_expenditure' => (float)($expPns + $expPppk + $expPw),
+                    'total_employees' => $totalPns + $totalPppk + $totalPw,
+                    'tpp_total' => (float)($tppPns + $tppPppk + $tppStandalone),
+                    'active_skpd' => DB::table('skpd')->where('is_skpd', 1)->count(),
+                ],
+                'categories' => [
+                    ['label' => 'PNS', 'employees' => $totalPns, 'amount' => (float)$expPns],
+                    ['label' => 'PPPK', 'employees' => $totalPppk, 'amount' => (float)$expPppk],
+                    ['label' => 'PPPK-PW', 'employees' => $totalPw, 'amount' => (float)$expPw],
+                ],
+                'trend' => $trend
+            ]
+        ]);
+    }
 }
