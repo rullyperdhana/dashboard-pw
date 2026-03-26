@@ -52,10 +52,27 @@
       </v-row>
     </div>
 
+    <!-- Gaji vs TPP Composition Chart -->
+    <div class="px-6 mb-4 mt-2">
+      <div class="text-subtitle-2 font-weight-black text-slate-800 d-flex align-center mb-3">
+        KOMPOSISI GAJI & TPP (SEKARANG)
+        <v-spacer></v-spacer>
+        <v-icon size="18" color="slate-400">mdi-chart-pie</v-icon>
+      </div>
+      <v-card class="stat-mini-card pa-2" elevation="2">
+        <div style="height: 180px">
+          <v-chart v-if="categories.length" :option="compositionOption" autoresize />
+          <div v-else class="h-100 d-flex align-center justify-center">
+            <v-progress-circular indeterminate color="primary"></v-progress-circular>
+          </div>
+        </div>
+      </v-card>
+    </div>
+
     <!-- Category Selector / Label -->
-    <div class="px-6 mb-4">
+    <div class="px-6 mb-4 mt-6">
       <div class="text-subtitle-2 font-weight-black text-slate-800 d-flex align-center">
-        TREN & REALISASI BULANAN
+        REALISASI BULANAN TERINCI
         <v-spacer></v-spacer>
         <v-chip-group mandatory selected-class="text-primary">
           <v-chip size="x-small" variant="tonal" color="indigo" class="font-weight-bold">PNS</v-chip>
@@ -95,34 +112,48 @@
           <v-expansion-panel-text class="bg-slate-50 pa-0">
             <div class="breakdown-area py-3">
               <!-- PNS Breakdown -->
-              <div class="d-flex justify-space-between align-center px-4 mb-2">
-                <div class="d-flex align-center">
-                  <div class="cat-dot bg-indigo mr-2"></div>
-                  <span class="text-xxs font-weight-bold text-slate-600">PEGAWAI NEGERI SIPIL (PNS)</span>
+              <div class="px-4 mb-2">
+                <div class="d-flex justify-space-between align-center mb-1">
+                  <div class="d-flex align-center">
+                    <div class="cat-dot bg-indigo mr-2"></div>
+                    <span class="text-xxs font-weight-bold text-slate-800">PEGAWAI NEGERI SIPIL (PNS)</span>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-xxs font-weight-black text-slate-900">{{ formatCurrencyFull(row.breakdown.pns.amount) }}</div>
+                    <div class="text-xxxs text-slate-500">{{ row.breakdown.pns.employees }} Pegawai</div>
+                  </div>
                 </div>
-                <div class="text-right">
-                  <div class="text-xxs font-weight-black text-slate-900">{{ formatCurrencyFull(row.breakdown.pns.amount) }}</div>
-                  <div class="text-xxxs text-slate-500">{{ row.breakdown.pns.employees }} Pegawai</div>
+                <div class="px-3 d-flex justify-space-between text-xxxs text-slate-500">
+                  <span>Gaji: <span class="text-slate-700 font-weight-bold">{{ formatCurrencyCompact(row.breakdown.pns.gaji) }}</span></span>
+                  <span>TPP: <span class="text-slate-700 font-weight-bold">{{ formatCurrencyCompact(row.breakdown.pns.tpp) }}</span></span>
                 </div>
               </div>
               <v-divider class="mx-4 opacity-10"></v-divider>
+              
               <!-- PPPK Breakdown -->
-              <div class="d-flex justify-space-between align-center px-4 my-2">
-                <div class="d-flex align-center">
-                  <div class="cat-dot bg-teal mr-2"></div>
-                  <span class="text-xxs font-weight-bold text-slate-600">PPPK (FULL TIME)</span>
+              <div class="px-4 my-2">
+                <div class="d-flex justify-space-between align-center mb-1">
+                  <div class="d-flex align-center">
+                    <div class="cat-dot bg-teal mr-2"></div>
+                    <span class="text-xxs font-weight-bold text-slate-800">PPPK (FULL TIME)</span>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-xxs font-weight-black text-slate-900">{{ formatCurrencyFull(row.breakdown.pppk.amount) }}</div>
+                    <div class="text-xxxs text-slate-500">{{ row.breakdown.pppk.employees }} Pegawai</div>
+                  </div>
                 </div>
-                <div class="text-right">
-                  <div class="text-xxs font-weight-black text-slate-900">{{ formatCurrencyFull(row.breakdown.pppk.amount) }}</div>
-                  <div class="text-xxxs text-slate-500">{{ row.breakdown.pppk.employees }} Pegawai</div>
+                <div class="px-3 d-flex justify-space-between text-xxxs text-slate-500">
+                  <span>Gaji: <span class="text-slate-700 font-weight-bold">{{ formatCurrencyCompact(row.breakdown.pppk.gaji) }}</span></span>
+                  <span>TPP: <span class="text-slate-700 font-weight-bold">{{ formatCurrencyCompact(row.breakdown.pppk.tpp) }}</span></span>
                 </div>
               </div>
               <v-divider class="mx-4 opacity-10"></v-divider>
+
               <!-- PW Breakdown -->
               <div class="d-flex justify-space-between align-center px-4 mt-2">
                 <div class="d-flex align-center">
                   <div class="cat-dot bg-orange mr-2"></div>
-                  <span class="text-xxs font-weight-bold text-slate-600">PPPK PARUH WAKTU</span>
+                  <span class="text-xxs font-weight-bold text-slate-800">PPPK PARUH WAKTU</span>
                 </div>
                 <div class="text-right">
                   <div class="text-xxs font-weight-black text-slate-900">{{ formatCurrencyFull(row.breakdown.pw.amount) }}</div>
@@ -158,21 +189,98 @@ import { ref, onMounted, computed, provide } from 'vue'
 import { useTheme } from 'vuetify'
 import api from '../api'
 
+// ECharts
+import { use } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { PieChart } from 'echarts/charts'
+import { TitleComponent, TooltipComponent, LegendComponent } from 'echarts/components'
+import VChart from 'vue-echarts'
+
+use([CanvasRenderer, PieChart, TitleComponent, TooltipComponent, LegendComponent])
+
 const theme = useTheme()
 provide('THEME_KEY', 'light')
 
 const loading = ref(false)
 const stats = ref({ total_expenditure: 0, total_employees: 0, active_skpd: 0, tpp_total: 0, avg_per_employee: 0 })
 const realizationData = ref([])
+const categories = ref([])
 const currentYear = ref(new Date().getFullYear())
+
+const formatCurrencyCompactVal = (value) => {
+  if (!value) return '0'
+  if (value >= 1000000000) return (value / 1000000000).toFixed(1) + 'M'
+  if (value >= 1000000) return (value / 1000000).toFixed(1) + 'Jt'
+  return value.toLocaleString()
+}
+
+const compositionOption = computed(() => {
+  const pns = categories.value.find(c => c.label === 'PNS') || { gaji: 0, tpp: 0 }
+  const pppk = categories.value.find(c => c.label === 'PPPK') || { gaji: 0, tpp: 0 }
+
+  return {
+    tooltip: { 
+      trigger: 'item', 
+      formatter: (params) => {
+        return `<div style="font-size: 11px; padding: 2px;">
+          <b style="color:${params.color}; font-weight:900;">${params.name}</b><br/>
+          Rp ${params.value.toLocaleString()}<br/>
+          <span style="font-weight:900">${params.percent}%</span>
+        </div>`;
+      },
+      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+      borderColor: '#E2E8F0',
+      textStyle: { color: '#0F172A' }
+    },
+    legend: { 
+      bottom: 0, 
+      itemWidth: 10, 
+      itemHeight: 10, 
+      textStyle: { fontSize: 9, color: '#64748b', fontWeight: 'bold' } 
+    },
+    title: [
+      { text: 'PNS', left: '25%', top: '40%', textAlign: 'center', textStyle: { fontSize: 11, fontWeight: 'bold', color: '#4F46E5' } },
+      { text: 'PPPK', left: '75%', top: '40%', textAlign: 'center', textStyle: { fontSize: 11, fontWeight: 'bold', color: '#06B6D4' } }
+    ],
+    series: [
+      {
+        name: 'PNS',
+        type: 'pie',
+        radius: ['50%', '75%'],
+        center: ['25%', '45%'],
+        avoidLabelOverlap: false,
+        label: { show: false },
+        itemStyle: { borderWidth: 2, borderColor: '#fff' },
+        data: [
+          { value: pns.gaji, name: 'Gaji PNS', itemStyle: { color: '#4F46E5' } },
+          { value: pns.tpp, name: 'TPP PNS', itemStyle: { color: '#818CF8' } }
+        ]
+      },
+      {
+        name: 'PPPK',
+        type: 'pie',
+        radius: ['50%', '75%'],
+        center: ['75%', '45%'],
+        avoidLabelOverlap: false,
+        label: { show: false },
+        itemStyle: { borderWidth: 2, borderColor: '#fff' },
+        data: [
+          { value: pppk.gaji, name: 'Gaji PPPK', itemStyle: { color: '#06B6D4' } },
+          { value: pppk.tpp, name: 'TPP PPPK', itemStyle: { color: '#67E8F9' } }
+        ]
+      }
+    ]
+  }
+})
 
 const fetchData = async () => {
   loading.value = true
   try {
     const response = await api.get('/dashboard/executive')
-    const { summary, yearly_realization, current_year } = response.data.data
+    const { summary, yearly_realization, current_year, categories: cats } = response.data.data
     stats.value = summary
     realizationData.value = yearly_realization
+    categories.value = cats || []
     currentYear.value = current_year
   } catch (error) {
     console.error('Error:', error)

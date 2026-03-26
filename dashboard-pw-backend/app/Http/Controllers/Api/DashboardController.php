@@ -184,7 +184,9 @@ class DashboardController extends Controller
 
         for ($m = 1; $m <= 12; $m++) {
             $mPns = DB::table('gaji_pns')->where('bulan', $m)->where('tahun', $year)->sum('bersih');
+            $mTppPns = DB::table('gaji_pns')->where('bulan', $m)->where('tahun', $year)->sum('tunj_tpp');
             $mPppk = DB::table('gaji_pppk')->where('bulan', $m)->where('tahun', $year)->sum('bersih');
+            $mTppPppk = DB::table('gaji_pppk')->where('bulan', $m)->where('tahun', $year)->sum('tunj_tpp');
             $mPw = DB::table('tb_payment_detail as pd')
                 ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
                 ->where('p.month', $m)
@@ -201,7 +203,7 @@ class DashboardController extends Controller
                 ->where('p.year', $year)
                 ->count(DB::raw('DISTINCT pd.employee_id'));
 
-            $totalNominal = (float)($mPns + $mPppk + $mPw);
+            $totalNominal = (float)($mPns + $mTppPns + $mPppk + $mTppPppk + $mPw);
             $totalEmployees = $mEmpPns + $mEmpPppk + $mEmpPw;
 
             $yearlyRealization[] = [
@@ -211,9 +213,24 @@ class DashboardController extends Controller
                 'employees' => $totalEmployees,
                 'status' => $totalNominal > 0 ? 'paid' : ($m < date('n') ? 'delayed' : 'upcoming'),
                 'breakdown' => [
-                    'pns' => ['amount' => (float)$mPns, 'employees' => $mEmpPns],
-                    'pppk' => ['amount' => (float)$mPppk, 'employees' => $mEmpPppk],
-                    'pw' => ['amount' => (float)$mPw, 'employees' => $mEmpPw],
+                    'pns' => [
+                        'amount' => (float)($mPns + $mTppPns),
+                        'gaji' => (float)$mPns, 
+                        'tpp' => (float)$mTppPns, 
+                        'employees' => $mEmpPns
+                    ],
+                    'pppk' => [
+                        'amount' => (float)($mPppk + $mTppPppk),
+                        'gaji' => (float)$mPppk, 
+                        'tpp' => (float)$mTppPppk, 
+                        'employees' => $mEmpPppk
+                    ],
+                    'pw' => [
+                        'amount' => (float)$mPw, 
+                        'gaji' => (float)$mPw, 
+                        'tpp' => 0, 
+                        'employees' => $mEmpPw
+                    ],
                 ]
             ];
         }
@@ -222,19 +239,19 @@ class DashboardController extends Controller
             'success' => true,
             'data' => [
                 'summary' => [
-                    'total_expenditure' => (float)($expPns + $expPppk + $expPw),
+                    'total_expenditure' => (float)($expPns + $tppPns + $tppStandalone + $expPppk + $tppPppk + $expPw),
                     'total_employees' => $totalPns + $totalPppk + $totalPw,
                     'tpp_total' => (float)($tppPns + $tppPppk + $tppStandalone),
                     'tax_total' => (float)($taxPns + $taxPppk),
                     'active_skpd' => DB::table('skpd')->where('is_skpd', 1)->count(),
                     'avg_per_employee' => ($totalPns + $totalPppk + $totalPw) > 0 
-                        ? (float)(($expPns + $expPppk + $expPw) / ($totalPns + $totalPppk + $totalPw))
+                        ? (float)((($expPns + $tppPns + $tppStandalone + $expPppk + $tppPppk + $expPw)) / ($totalPns + $totalPppk + $totalPw))
                         : 0,
                 ],
                 'categories' => [
-                    ['label' => 'PNS', 'employees' => $totalPns, 'amount' => (float)$expPns],
-                    ['label' => 'PPPK', 'employees' => $totalPppk, 'amount' => (float)$expPppk],
-                    ['label' => 'PPPK-PW', 'employees' => $totalPw, 'amount' => (float)$expPw],
+                    ['label' => 'PNS', 'employees' => $totalPns, 'amount' => (float)($expPns + $tppPns + $tppStandalone), 'gaji' => (float)$expPns, 'tpp' => (float)($tppPns + $tppStandalone)],
+                    ['label' => 'PPPK', 'employees' => $totalPppk, 'amount' => (float)($expPppk + $tppPppk), 'gaji' => (float)$expPppk, 'tpp' => (float)$tppPppk],
+                    ['label' => 'PPPK-PW', 'employees' => $totalPw, 'amount' => (float)$expPw, 'gaji' => (float)$expPw, 'tpp' => 0],
                 ],
                 'yearly_realization' => $yearlyRealization,
                 'current_month' => (int)$month,
