@@ -215,7 +215,17 @@
       </v-expansion-panels>
     </div>
 
-    <!-- No Bottom Nav Here As per Requested -->
+    <!-- Bottom Nav (Executive Menu) -->
+    <v-bottom-navigation grow color="indigo-darken-2" elevation="10" height="72" class="border-top" bg-color="white">
+      <v-btn value="summary" active>
+        <v-icon>mdi-finance</v-icon>
+        <span class="text-xxs mt-1 font-weight-bold">Summary</span>
+      </v-btn>
+      <v-btn value="tapd" to="/analytics/tapd">
+        <v-icon>mdi-chart-areaspline</v-icon>
+        <span class="text-xxs mt-1 font-weight-bold">Tim TAPD</span>
+      </v-btn>
+    </v-bottom-navigation>
   </div>
 </template>
 
