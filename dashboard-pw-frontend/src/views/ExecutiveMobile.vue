@@ -13,14 +13,34 @@
       </div>
 
       <!-- Main KPI Card -->
-      <v-card class="glass-card pa-6 mb-2 border-0" elevation="10">
-        <div class="text-overline font-weight-black text-slate-500 mb-1">TOTAL REALISASI BELANJA</div>
-        <div class="text-h4 font-weight-black text-slate-900 mb-2">
-          {{ formatCurrencyFull(stats.total_expenditure) }}
+      <v-card class="glass-card pa-5 mb-2 border-0" elevation="10">
+        <div class="text-overline font-weight-black text-slate-500 mb-3">TOTAL REALISASI BELANJA {{ currentYear }}</div>
+        
+        <!-- PNS Total -->
+        <div class="mb-3">
+          <div class="d-flex justify-space-between align-center mb-1">
+            <span class="text-caption font-weight-bold text-indigo">PNS</span>
+            <span class="text-subtitle-1 font-weight-black text-slate-900">{{ formatCurrencyFull(catStats.pns.amount) }}</span>
+          </div>
+          <v-progress-linear :model-value="(catStats.pns.amount / catStats.total) * 100 || 0" color="indigo" height="4" rounded></v-progress-linear>
         </div>
-        <div class="d-flex align-center">
-          <v-chip size="x-small" color="success" class="font-weight-bold mr-2">+2.1%</v-chip>
-          <span class="text-xxs text-slate-500">Dibanding periode sebelumnya</span>
+
+        <!-- PPPK Total -->
+        <div class="mb-3">
+          <div class="d-flex justify-space-between align-center mb-1">
+            <span class="text-caption font-weight-bold text-teal">PPPK</span>
+            <span class="text-subtitle-1 font-weight-black text-slate-900">{{ formatCurrencyFull(catStats.pppk.amount) }}</span>
+          </div>
+          <v-progress-linear :model-value="(catStats.pppk.amount / catStats.total) * 100 || 0" color="teal" height="4" rounded></v-progress-linear>
+        </div>
+
+        <!-- PW Total -->
+        <div>
+          <div class="d-flex justify-space-between align-center mb-1">
+            <span class="text-caption font-weight-bold text-orange">PPPK Paruh Waktu</span>
+            <span class="text-subtitle-1 font-weight-black text-slate-900">{{ formatCurrencyFull(catStats.pw.amount) }}</span>
+          </div>
+          <v-progress-linear :model-value="(catStats.pw.amount / catStats.total) * 100 || 0" color="orange" height="4" rounded></v-progress-linear>
         </div>
       </v-card>
     </div>
@@ -30,23 +50,23 @@
       <v-row dense>
         <v-col cols="4">
           <v-card class="stat-mini-card pa-3 text-center h-100" elevation="2">
-            <v-icon color="indigo" size="20" class="mb-1">mdi-account-group</v-icon>
-            <div class="text-subtitle-2 font-weight-black text-slate-900">{{ stats.total_employees.toLocaleString() }}</div>
-            <div class="text-xxxs text-slate-500 font-weight-bold">PEGAWAI</div>
+            <v-icon color="indigo" size="20" class="mb-1">mdi-account-tie</v-icon>
+            <div class="text-subtitle-2 font-weight-black text-slate-900">{{ catStats.pns.emp.toLocaleString() }}</div>
+            <div class="text-xxxs text-slate-500 font-weight-bold">PNS</div>
           </v-card>
         </v-col>
         <v-col cols="4">
           <v-card class="stat-mini-card pa-3 text-center h-100" elevation="2">
-            <v-icon color="teal" size="20" class="mb-1">mdi-wallet</v-icon>
-            <div class="text-subtitle-2 font-weight-black text-slate-900">{{ stats.active_skpd }}</div>
-            <div class="text-xxxs text-slate-500 font-weight-bold">INSTANSI</div>
+            <v-icon color="teal" size="20" class="mb-1">mdi-account-hard-hat</v-icon>
+            <div class="text-subtitle-2 font-weight-black text-slate-900">{{ catStats.pppk.emp.toLocaleString() }}</div>
+            <div class="text-xxxs text-slate-500 font-weight-bold">PPPK</div>
           </v-card>
         </v-col>
         <v-col cols="4">
           <v-card class="stat-mini-card pa-3 text-center h-100" elevation="2">
-            <v-icon color="orange" size="20" class="mb-1">mdi-calculator</v-icon>
-            <div class="text-xxxs font-weight-black text-slate-900 mt-1">{{ formatCurrencyCompact(stats.avg_per_employee) }}</div>
-            <div class="text-xxxs text-slate-500 font-weight-bold">AVG/STAFF</div>
+            <v-icon color="orange" size="20" class="mb-1">mdi-account-clock</v-icon>
+            <div class="text-subtitle-2 font-weight-black text-slate-900">{{ catStats.pw.emp.toLocaleString() }}</div>
+            <div class="text-xxxs text-slate-500 font-weight-bold">PW</div>
           </v-card>
         </v-col>
       </v-row>
@@ -221,6 +241,30 @@ const stats = ref({ total_expenditure: 0, total_employees: 0, active_skpd: 0, tp
 const realizationData = ref([])
 const categories = ref([])
 const currentYear = ref(new Date().getFullYear())
+
+const catStats = computed(() => {
+  let pns = { amount: 0, emp: 0 }
+  let pppk = { amount: 0, emp: 0 }
+  let pw = { amount: 0, emp: 0 }
+  
+  if (realizationData.value.length) {
+      pns.amount = realizationData.value.reduce((sum, r) => sum + r.breakdown.pns.amount, 0)
+      pppk.amount = realizationData.value.reduce((sum, r) => sum + r.breakdown.pppk.amount, 0)
+      pw.amount = realizationData.value.reduce((sum, r) => sum + r.breakdown.pw.amount, 0)
+
+      const catPns = categories.value.find(c => c.label === 'PNS')
+      pns.emp = catPns ? catPns.employees : 0
+      
+      const catPppk = categories.value.find(c => c.label === 'PPPK')
+      pppk.emp = catPppk ? catPppk.employees : 0
+      
+      const catPw = categories.value.find(c => c.label === 'PPPK-PW')
+      pw.emp = catPw ? catPw.employees : 0
+  }
+  
+  const total = pns.amount + pppk.amount + pw.amount
+  return { pns, pppk, pw, total }
+})
 
 const trendOption = computed(() => {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
