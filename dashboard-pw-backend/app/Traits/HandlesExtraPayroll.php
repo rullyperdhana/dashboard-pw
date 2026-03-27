@@ -434,7 +434,7 @@ trait HandlesExtraPayroll
             ->get();
             
         // Group data for the export format: SKPD -> PPTK -> Sub Kegiatan -> Employees
-        return $records->groupBy('skpd_name')->map(function ($skpdItems, $skpdName) {
+        return $records->groupBy('skpd_name')->map(function ($skpdItems, $skpdName) use ($request) {
             // Fetch signatory (Pengguna Anggaran) for this SKPD
             $skpdId = DB::table('skpd')->where('nama_skpd', $skpdName)->value('id_skpd');
             $signatory = null;
@@ -447,18 +447,37 @@ trait HandlesExtraPayroll
                 'signatory' => $signatory,
                 'pptk_groups' => $skpdItems->groupBy(function ($item) {
                     return $item->pptk_nama ?: 'Tanpa PPTK';
-                })->map(function ($pptkItems, $pptkName) {
+                })->map(function ($pptkItems, $pptkName) use ($request) {
                     $firstItem = $pptkItems->first();
                     return [
                         'pptk_nama' => $pptkName,
                         'pptk_nip' => $firstItem->pptk_nip,
                         'pptk_jabatan' => $firstItem->pptk_jabatan,
-                        'sub_giat_groups' => $pptkItems->groupBy('nama_sub_giat')->map(function ($subGiatItems, $subGiatName) {
+                        'sub_giat_groups' => $pptkItems->groupBy('nama_sub_giat')->map(function ($subGiatItems, $subGiatName) use ($request) {
+                            $subtotalStr = number_format($subGiatItems->sum('payroll_amount'), 0, ',', '.');
+                            $period = ($request->month ?? 4) . '-' . ($request->year ?? 2026);
+                            
+                            $verifyPath = $this->getPayrollType() === 'thr' ? '/api/verify-thr' : '/api/verify-gaji13';
+                            $verifyUrl = url($verifyPath) . "?" . http_build_query([
+                                'total' => $subtotalStr,
+                                'period' => $period,
+                                'date' => now()->format('d/m/Y H:i'),
+                                'sub_giat' => $subGiatName
+                            ]);
+                            $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' . urlencode($verifyUrl);
+                            
+                            try {
+                                $qrCodeBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($qrUrl));
+                            } catch (\Exception $e) {
+                                $qrCodeBase64 = null;
+                            }
+
                             return [
                                 'sub_giat_name' => $subGiatName,
                                 'employees' => $subGiatItems,
                                 'subtotal_thr' => $subGiatItems->sum('payroll_amount'),
-                                'employee_count' => $subGiatItems->count()
+                                'employee_count' => $subGiatItems->count(),
+                                'qr_code' => $qrCodeBase64
                             ];
                         })->values(),
                         'total_pptk_thr' => $pptkItems->sum('payroll_amount'),
