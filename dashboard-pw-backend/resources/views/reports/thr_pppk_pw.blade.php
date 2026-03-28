@@ -10,7 +10,7 @@
         .header h3 { margin: 5px 0; font-size: 10pt; text-transform: uppercase; }
         .header p { margin: 0; font-size: 9pt; }
         
-        .info-section { margin-bottom: 15px; font-weight: bold; }
+        .info-section { margin-bottom: 10px; font-weight: bold; }
         .info-row { margin-bottom: 3px; }
         
         table { width: 100%; border-collapse: collapse; margin-bottom: 15px; table-layout: fixed; }
@@ -32,21 +32,20 @@
 </head>
 <body>
     @foreach($data as $skpd)
-        @foreach($skpd['pptk_groups'] as $pptkIndex => $pptk)
-            <div class="header">
-                <h2>PEMERINTAH PROVINSI KALIMANTAN SELATAN</h2>
-                <h3>DAFTAR PEMBAYARAN {{ strtoupper($title ?? 'THR') }} PEGAWAI PPPK PARUH WAKTU</h3>
-                <p>TAHUN {{ $year }} - BULAN {{ strtoupper($thrMonthName ?? '') }}</p>
-            </div>
+        @foreach($skpd['pptk_groups'] as $pptk)
+            @foreach($pptk['sub_giat_groups'] as $sgIndex => $subGiat)
+                <div class="header">
+                    <h2>PEMERINTAH PROVINSI KALIMANTAN SELATAN</h2>
+                    <h3>DAFTAR PEMBAYARAN {{ strtoupper($title ?? 'THR') }} PEGAWAI PPPK PARUH WAKTU</h3>
+                    <p>TAHUN {{ $year }} - BULAN {{ strtoupper($thrMonthName ?? '') }}</p>
+                </div>
 
-            <div class="info-section">
-                <div class="info-row">UNIT KERJA : {{ $skpd['skpd_name'] ?? 'N/A' }}</div>
-                <div class="info-row">PPTK : {{ $pptk['pptk_nama'] }}</div>
-            </div>
+                <div class="info-section">
+                    <div class="info-row">UNIT KERJA : {{ $skpd['skpd_name'] ?? 'N/A' }}</div>
+                    <div class="info-row">PPTK : {{ $pptk['pptk_nama'] }}</div>
+                    <div class="info-row">SUB KEGIATAN : {{ $subGiat['sub_giat_name'] }}</div>
+                </div>
 
-            @foreach($pptk['sub_giat_groups'] as $subGiat)
-                <p style="margin: 5px 0; font-weight: bold; font-style: italic;">Sub Kegiatan: {{ $subGiat['sub_giat_name'] }}</p>
-                
                 <table>
                     <thead>
                         <tr>
@@ -78,66 +77,57 @@
                             </tr>
                         @endforeach
                         <tr style="background:#eee; font-weight:bold;">
-                            <td colspan="3" class="text-right">SUB TOTAL SUB KEGIATAN:</td>
+                            <td colspan="3" class="text-right">TOTAL SUB KEGIATAN:</td>
                             <td class="text-right">{{ number_format($subGiat['subtotal_thr'], 0, ',', '.') }}</td>
                             <td></td>
                         </tr>
                     </tbody>
                 </table>
-            @endforeach
-            
-            <div class="text-right text-bold" style="margin-bottom: 20px;">
-                TOTAL {{ strtoupper($pptk['pptk_nama'] ?? 'PPTK') }} : Rp {{ number_format($pptk['total_pptk_thr'], 0, ',', '.') }}
-            </div>
 
-            <!-- Bagian Tanda Tangan Pejabat (Per PPTK) -->
-            <table class="signature-table">
-                <tr>
-                    <td width="33%">
-                        @if(isset($skpd['signatory']))
-                            Setuju Dibayar,<br>
-                            {{ $skpd['signatory']['jabatan_bendahara'] ?? 'Bendahara Pengeluaran' }}
+                <!-- Bagian Tanda Tangan Pejabat (SETIAP SUB KEGIATAN) -->
+                <table class="signature-table">
+                    <tr>
+                        <td width="33%">
+                            @if(isset($skpd['signatory']))
+                                Setuju Dibayar,<br>
+                                {{ $skpd['signatory']['jabatan_bendahara'] ?? 'Bendahara Pengeluaran' }}
+                                <div class="sig-box">
+                                    <strong><u>{{ $skpd['signatory']['nama_bendahara'] ?? '................................' }}</u></strong><br>
+                                    NIP. {{ $skpd['signatory']['nip_bendahara'] ?? '................................' }}
+                                </div>
+                            @endif
+                        </td>
+                        <td width="33%">
+                            <br>Mengetahui,<br>
+                            Pejabat Pelaksana Teknis Kegiatan
                             <div class="sig-box">
-                                <strong><u>{{ $skpd['signatory']['nama_bendahara'] ?? '................................' }}</u></strong><br>
-                                NIP. {{ $skpd['signatory']['nip_bendahara'] ?? '................................' }}
+                                <strong><u>{{ $pptk['pptk_nama'] ?? '................................' }}</u></strong><br>
+                                NIP. {{ $pptk['pptk_nip'] ?? '................................' }}
                             </div>
-                        @endif
-                    </td>
-                    <td width="33%">
-                        <br>Mengetahui,<br>
-                        Pejabat Pelaksana Teknis Kegiatan
-                        <div class="sig-box">
-                            <strong><u>{{ $pptk['pptk_nama'] ?? '................................' }}</u></strong><br>
-                            NIP. {{ $pptk['pptk_nip'] ?? '................................' }}
-                        </div>
-                    </td>
-                    <td width="34%">
-                        Banjarmasin, {{ $printDate }}<br>
-                        @if(isset($skpd['signatory']))
-                            {{ $skpd['signatory']['jabatan_kepala'] ?? 'Pengguna Anggaran' }}
-                            <div class="sig-box">
-                                <strong><u>{{ $skpd['signatory']['nama_kepala'] ?? '................................' }}</u></strong><br>
-                                NIP. {{ $skpd['signatory']['nip_kepala'] ?? '................................' }}
-                            </div>
-                        @else
-                            Pengguna Anggaran
-                            <div class="sig-box">
-                                <strong><u>................................</u></strong><br>
-                                NIP. ................................
-                            </div>
-                        @endif
-                    </td>
-                </tr>
-            </table>
+                        </td>
+                        <td width="34%">
+                            Banjarmasin, {{ $printDate }}<br>
+                            @if(isset($skpd['signatory']))
+                                {{ $skpd['signatory']['jabatan_kepala'] ?? 'Pengguna Anggaran' }}
+                                <div class="sig-box">
+                                    <strong><u>{{ $skpd['signatory']['nama_kepala'] ?? '................................' }}</u></strong><br>
+                                    NIP. {{ $skpd['signatory']['nip_kepala'] ?? '................................' }}
+                                </div>
+                            @else
+                                Pengguna Anggaran
+                                <div class="sig-box">
+                                    <strong><u>................................</u></strong><br>
+                                    NIP. ................................
+                                </div>
+                            @endif
+                        </td>
+                    </tr>
+                </table>
 
-            @if(!$loop->last)
+                {{-- Page break jika bukan sub kegiatan terakhir dalam SKPD --}}
                 <div class="page-break"></div>
-            @endif
+            @endforeach
         @endforeach
-        
-        @if(!$loop->last)
-            <div class="page-break"></div>
-        @endif
     @endforeach
 </body>
 </html>
