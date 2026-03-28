@@ -1,216 +1,109 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <title>{{ $title ?? 'Daftar Pembayaran' }} PPPK Paruh Waktu</title>
     <style>
-        @page {
-            margin: 120px 30px 60px 30px;
-            /* top, right, bottom, left */
-        }
-
-        body {
-            font-family: sans-serif;
-            font-size: 10px;
-        }
-
-        header {
-            position: fixed;
-            top: -90px;
-            left: 0px;
-            right: 0px;
-            height: 70px;
-            text-align: center;
-        }
-
-        footer {
-            position: fixed;
-            bottom: -40px;
-            left: 0px;
-            right: 0px;
-            height: 30px;
-            text-align: center;
-            font-size: 10px;
-            color: #777;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 5px;
-        }
-
-        th,
-        td {
-            border: 1px solid #000;
-            padding: 4px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #f2f2f2;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .text-right {
-            text-align: right;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .header h2,
-        .header h3 {
-            margin: 2px 0;
-        }
-
-        .footer {
-            margin-top: 20px;
-            font-style: italic;
-            font-size: 8px;
-        }
-
-        .total-row {
-            font-weight: bold;
-            background-color: #eee;
-        }
-
-        .page-number:after {
-            content: "Halaman " counter(page);
-        }
+        body { font-family: sans-serif; font-size: 8pt; margin: 0; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
+        th, td { border: 1px solid #000; padding: 4px; font-size: 7.5pt; word-wrap: break-word; }
+        th { background-color: #f2f2f2; font-weight: bold; text-align: center; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .footer { margin-top: 20px; font-style: italic; font-size: 7pt; }
+        .debug-banner { background: #ffeb3b; padding: 10px; border: 2px solid #fbc02d; margin-bottom: 20px; text-align: center; font-weight: bold; font-size: 10pt; }
     </style>
 </head>
-
 <body>
-    <footer>
-        <span class="page-number"></span>
-    </footer>
+    <div class="debug-banner">
+        KONFIRMASI: Berhasil Menemukan {{ count($data) }} Grup SKPD (Total {{ $recordCount ?? 0 }} Pegawai)
+    </div>
 
-    <header>
-        <h2 style="margin:0; padding:0;">PEMERINTAH PROVINSI KALIMANTAN SELATAN <br>DAFTAR PEMBAYARAN TUNJANGAN HARI RAYA (THR) PEGAWAI PPPK
-            PARUH WAKTU</h2>
-        <h3 style="margin:5px 0 0 0; padding:0;">TAHUN {{ $year }} (PEMBAYARAN BULAN {{ strtoupper($thrMonthName) }})
-        </h3>
-        <p style="margin:5px 0 0 0; padding:0; font-size: 10px;">Dasar Perhitungan: {{ $calculationBasis }}</p>
-    </header>
+    <div class="header">
+        <h2 style="margin:0;">PEMERINTAH PROVINSI KALIMANTAN SELATAN</h2>
+        <h3 style="margin:5px 0;">DAFTAR PEMBAYARAN {{ strtoupper($title ?? 'THR') }} PEGAWAI PPPK PARUH WAKTU</h3>
+        <p style="margin:0;">TAHUN {{ $year }} - BULAN {{ strtoupper($thrMonthName ?? '') }}</p>
+    </div>
 
-    <main>
-        <div style="background: #fff3cd; padding: 5px; border: 1px solid #ffeeba; margin-bottom: 10px; font-size: 8px; text-align: center;">
-            DEBUG INFO: Data Ditemukan per Filter = <strong>{{ $recordCount ?? 0 }}</strong> Pegawai.
-        </div>
+    @foreach($data as $skpd)
+        <div style="margin-bottom: 30px;">
+            <p style="font-weight: bold; font-size: 10pt; margin-bottom: 5px;">UNIT KERJA: {{ $skpd['skpd_name'] ?? 'N/A' }}</p>
 
-        @foreach($data as $skpd)
-            <div style="margin-bottom: 20px;">
-                <h1 style="text-align: center; border-bottom: 3px double #000; padding-bottom: 5px; margin-bottom: 15px; font-size: 14px;">
-                    SKPD: {{ $skpd['skpd_name'] }}
-                </h1>
-
-                @foreach($skpd['pptk_groups'] as $pptk)
-                    <div style="margin-bottom: 25px;">
-                        <div style="background: #f9f9f9; padding: 5px 10px; margin-bottom: 5px; border-left: 5px solid #007bff;">
-                            <h3 style="margin: 0; color: #333; font-size: 11px;">PPTK: {{ $pptk['pptk_nama'] }}</h3>
-                            <p style="margin: 2px 0 0 0; font-size: 9px; color: #666;">NIP. {{ $pptk['pptk_nip'] }} | {{ $pptk['pptk_jabatan'] }}</p>
-                        </div>
-
-                        @foreach($pptk['sub_giat_groups'] as $subGiat)
-                            <div style="margin-bottom: 15px;">
-                                <h4 style="margin-top: 5px; margin-bottom: 5px; color: #444; border-bottom: 1px solid #eee; font-size: 10px;">
-                                    Sub Kegiatan: {{ $subGiat['sub_giat_name'] }}
-                                </h4>
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th width="30">No</th>
-                                            <th width="110">NIP</th>
-                                            <th>Nama</th>
-                                            <th>Jabatan</th>
-                                            <th width="85">Gapok Basis</th>
-                                            <th width="65">Masa Kerja</th>
-                                            <th width="95">Besaran {{ $title ?? 'Pembayaran' }}</th>
-                                            <th width="140">Tanda Tangan / Penerima</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($subGiat['employees'] as $index => $item)
-                                            <tr>
-                                                <td class="text-center">{{ $index + 1 }}</td>
-                                                <td>{{ $item['nip'] }}</td>
-                                                <td>{{ $item['nama'] }}</td>
-                                                <td>{{ $item['jabatan'] }}</td>
-                                                <td class="text-right">{{ number_format($item['gapok_basis'], 0, ',', '.') }}</td>
-                                                <td class="text-center">{{ $item['n_months'] }} Bln</td>
-                                                <td class="text-right">{{ number_format($item['payroll_amount'], 0, ',', '.') }}</td>
-                                                <td style="padding-top: 5px; height: 32px; vertical-align: top;">
-                                                    @if(($index + 1) % 2 != 0)
-                                                        {{ $index + 1 }}.
-                                                    @else
-                                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ $index + 1 }}.
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                        <tr class="total-row">
-                                            <td colspan="6" class="text-right">SUBTOTAL SUB KEGIATAN &nbsp;</td>
-                                            <td class="text-right">{{ number_format($subGiat['subtotal_thr'] ?? $subGiat['subtotal_payroll'], 0, ',', '.') }}</td>
-                                            <td></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-
-                                {{-- Signature and System Verification per Sub-Activity --}}
-                                <div style="margin-top: 10px;">
-                                    <table style="border: none; width: 100%;">
-                                        <tr style="border: none; background: none;">
-                                            <td style="border: none; width: 45%; text-align: center; padding: 0; vertical-align: top;">
-                                                <p style="margin-bottom: 40px; font-weight: bold;">
-                                                    Mengetahui/Menyetujui,<br>
-                                                    {{ $skpd['signatory']['jabatan_kepala'] ?? 'Pengguna Anggaran' }}
-                                                </p>
-                                                <p style="margin-bottom: 0;">
-                                                    <span style="text-decoration: underline; font-weight: bold;">{{ $skpd['signatory']['nama_kepala'] ?? '..................................' }}</span><br>
-                                                    NIP. {{ $skpd['signatory']['nip_kepala'] ?? '..................................' }}
-                                                </p>
-                                            </td>
-                                            <td style="border: none; width: 10%;"></td>
-                                            <td style="border: none; width: 45%; text-align: center; padding: 0; vertical-align: top;">
-                                                <p style="margin-bottom: 40px; font-weight: bold;">
-                                                    Banjarmasin, {{ $printDate }}<br>
-                                                    PPTK,
-                                                </p>
-                                                <p style="margin-bottom: 0;">
-                                                    <span style="text-decoration: underline; font-weight: bold;">{{ $pptk['pptk_nama'] }}</span><br>
-                                                    NIP. {{ $pptk['pptk_nip'] }}
-                                                </p>
-                                            </td>
-                                        </tr>
-                                    </table>
-
-                                    <div class="footer" style="font-size: 8px; color: #555; border-top: 1px solid #eee; padding-top: 5px;">
-                                        <strong>KEABSAHAN DOKUMEN:</strong><br>
-                                        Dokumen ini dihasilkan secara otomatis oleh Sistem PPPK Payroll Dashboard.<br>
-                                        Metode: {{ $thrMethod == 'tetap' ? 'Nilai Tetap' : 'Proporsional n/12' }}. Dicetak pada: {{ $printDate }}
-                                    </div>
-                                </div>
-                            </div>
-                            @if(!$loop->last)
-                                <div style="page-break-after: always;"></div>
-                            @endif
-                        @endforeach
-                    </div>
+            @foreach($skpd['pptk_groups'] as $pptk)
+                <p style="margin: 5px 0; font-weight: bold;">PPTK: {{ $pptk['pptk_nama'] }}</p>
+                
+                @foreach($pptk['sub_giat_groups'] as $subGiat)
+                    <p style="margin: 2px 0 5px 10px; font-style: italic;">Sub Kegiatan: {{ $subGiat['sub_giat_name'] }}</p>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="30">NO</th>
+                                <th width="150">NAMA / NIP</th>
+                                <th width="80">GOLONGAN</th>
+                                <th width="100">JABATAN</th>
+                                <th>JUMLAH DITERIMA (Rp)</th>
+                                <th width="80">TANDA TANGAN</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($subGiat['employees'] as $index => $item)
+                                <tr>
+                                    <td class="text-center">{{ $index + 1 }}</td>
+                                    <td>
+                                        <strong>{{ $item['nama'] }}</strong><br>
+                                        {{ $item['nip'] }}
+                                    </td>
+                                    <td class="text-center">{{ $item['golongan'] }}</td>
+                                    <td>{{ $item['jabatan'] }}</td>
+                                    <td class="text-right">{{ number_format($item['payroll_amount'], 0, ',', '.') }}</td>
+                                    <td style="height: 35px;"></td>
+                                </tr>
+                            @endforeach
+                            <tr style="background:#eee; font-weight:bold;">
+                                <td colspan="4" class="text-right">SUB TOTAL SUBGIAT:</td>
+                                <td class="text-right">{{ number_format($subGiat['subtotal_thr'], 0, ',', '.') }}</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 @endforeach
-            </div>
-            @if(!$loop->last)
-                <div style="page-break-after: always;"></div>
-            @endif
-        @endforeach
-    </main>
-</body>
+                
+                <p style="text-align: right; font-weight: bold;">Total PPTK {{ $pptk['pptk_nama'] }}: Rp {{ number_format($pptk['total_pptk_thr'], 0, ',', '.') }}</p>
+            @endforeach
 
+            <!-- Bagian Tanda Tangan -->
+            <div style="margin-top: 20px; width: 100%;">
+                <table style="border: none;">
+                    <tr>
+                        <td width="33%" style="border: none; vertical-align: top;">
+                            @if(isset($skpd['signatory']))
+                                Setuju Dibayar,<br>
+                                {{ $skpd['signatory']['jabatan_bendahara'] ?? 'Bendahara Pengeluaran' }}<br><br><br><br>
+                                <strong>{{ $skpd['signatory']['nama_bendahara'] ?? '........................' }}</strong><br>
+                                NIP. {{ $skpd['signatory']['nip_bendahara'] ?? '........................' }}
+                            @endif
+                        </td>
+                        <td width="33%" style="border: none; text-align: center; vertical-align: top;">
+                            <br>Mengetahui,<br>
+                            PPTK<br><br><br><br>
+                            <strong>{{ $skpd['pptk_groups'][0]['pptk_nama'] ?? '........................' }}</strong><br>
+                            NIP. {{ $skpd['pptk_groups'][0]['pptk_nip'] ?? '........................' }}
+                        </td>
+                        <td width="33%" style="border: none; vertical-align: top;">
+                            @if(isset($skpd['signatory']))
+                                Banjarmasin, {{ $printDate }}<br>
+                                {{ $skpd['signatory']['jabatan_kepala'] ?? 'Pengguna Anggaran' }}<br><br><br><br>
+                                <strong>{{ $skpd['signatory']['nama_kepala'] ?? '........................' }}</strong><br>
+                                NIP. {{ $skpd['signatory']['nip_kepala'] ?? '........................' }}
+                            @endif
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div style="page-break-after: always;"></div>
+        </div>
+    @endforeach
+</body>
 </html>
