@@ -137,9 +137,11 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useTheme } from 'vuetify'
 import ThemeToggle from '../../components/ThemeToggle.vue'
 import api from '../../api'
-import { onMounted } from 'vue'
 
 const router = useRouter()
 const theme = useTheme()
