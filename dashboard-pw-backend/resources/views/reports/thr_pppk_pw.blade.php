@@ -4,7 +4,7 @@
     <title>{{ $title ?? 'Daftar Pembayaran' }} PPPK Paruh Waktu</title>
     <style>
         @page { margin: 1.5cm 1cm 1cm 1cm; }
-        body { font-family: sans-serif; font-size: 8pt; color: #000; line-height: 1.2; }
+        body { font-family: sans-serif; font-size: 8pt; color: #000; line-height: 1.3; }
         .header { text-align: center; margin-bottom: 25px; }
         .header h2 { margin: 0; font-size: 11pt; text-transform: uppercase; }
         .header h3 { margin: 5px 0; font-size: 10pt; text-transform: uppercase; }
@@ -21,9 +21,9 @@
         .text-center { text-align: center; }
         .text-bold { font-weight: bold; }
         
-        .signature-table { border: none !important; width: 100%; margin-top: 20px; page-break-inside: avoid; }
-        .signature-table td { border: none !important; padding: 0; vertical-align: top; text-align: center; height: auto; }
-        .sig-box { min-height: 100px; padding-top: 60px; }
+        .signature-table { border: none !important; width: 100%; margin-top: 30px; page-break-inside: avoid; }
+        .signature-table td { border: none !important; padding: 0; vertical-align: top; text-align: center; font-size: 8.5pt; }
+        .sig-name { padding-top: 65px; font-weight: bold; text-transform: uppercase; text-decoration: underline; }
         
         .page-break { page-break-after: always; }
         .employee-sign { position: relative; height: 35px; }
@@ -52,8 +52,8 @@
                             <th width="30">NO</th>
                             <th width="180">NAMA / NIP</th>
                             <th>JABATAN</th>
-                            <th width="100">JUMLAH DITERIMA (Rp)</th>
-                            <th width="120">TANDA TANGAN</th>
+                            <th width="105">JUMLAH DITERIMA (Rp)</th>
+                            <th width="130">TANDA TANGAN</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -77,54 +77,43 @@
                             </tr>
                         @endforeach
                         <tr style="background:#eee; font-weight:bold;">
-                            <td colspan="3" class="text-right">TOTAL SUB KEGIATAN:</td>
+                            <td colspan="3" class="text-right text-bold">TOTAL SUB KEGIATAN:</td>
                             <td class="text-right">{{ number_format($subGiat['subtotal_thr'], 0, ',', '.') }}</td>
                             <td></td>
                         </tr>
                     </tbody>
                 </table>
 
-                <!-- Bagian Tanda Tangan Pejabat (SETIAP SUB KEGIATAN) -->
+                <!-- Bagian Tanda Tangan Pejabat (Sesuai Dinamika SKPD) -->
                 <table class="signature-table">
                     <tr>
-                        <td width="33%">
-                            @if(isset($skpd['signatory']))
-                                Setuju Dibayar,<br>
-                                {{ $skpd['signatory']['jabatan_bendahara'] ?? 'Bendahara Pengeluaran' }}
-                                <div class="sig-box">
-                                    <strong><u>{{ $skpd['signatory']['nama_bendahara'] ?? '................................' }}</u></strong><br>
-                                    NIP. {{ $skpd['signatory']['nip_bendahara'] ?? '................................' }}
-                                </div>
-                            @endif
-                        </td>
-                        <td width="33%">
+                        <td width="55%">
                             <br>Mengetahui,<br>
-                            Pejabat Pelaksana Teknis Kegiatan
-                            <div class="sig-box">
-                                <strong><u>{{ $pptk['pptk_nama'] ?? '................................' }}</u></strong><br>
-                                NIP. {{ $pptk['pptk_nip'] ?? '................................' }}
+                            Pejabat Pengelola Teknis Kegiatan
+                            <div class="sig-name">
+                                ( {{ $pptk['pptk_nama'] ?? '....................................' }} )
                             </div>
+                            NIP. {{ $pptk['pptk_nip'] ?? '....................................' }}
                         </td>
-                        <td width="34%">
-                            Banjarmasin, {{ $printDate }}<br>
+                        <td width="45%">
+                            Banjarbaru, {{ $printDate }}<br>
                             @if(isset($skpd['signatory']))
-                                {{ $skpd['signatory']['jabatan_kepala'] ?? 'Pengguna Anggaran' }}
-                                <div class="sig-box">
-                                    <strong><u>{{ $skpd['signatory']['nama_kepala'] ?? '................................' }}</u></strong><br>
-                                    NIP. {{ $skpd['signatory']['nip_kepala'] ?? '................................' }}
+                                {{ strtoupper($skpd['signatory']['jabatan_bendahara'] ?? 'BENDAHARA PENGELUARAN PEMBANTU') }}
+                                <div class="sig-name">
+                                    ( {{ $skpd['signatory']['nama_bendahara'] ?? '....................................' }} )
                                 </div>
+                                NIP. {{ $skpd['signatory']['nip_bendahara'] ?? '....................................' }}
                             @else
-                                Pengguna Anggaran
-                                <div class="sig-box">
-                                    <strong><u>................................</u></strong><br>
-                                    NIP. ................................
+                                BENDAHARA PENGELUARAN PEMBANTU
+                                <div class="sig-name">
+                                    ( .................................... )
                                 </div>
+                                NIP. ....................................
                             @endif
                         </td>
                     </tr>
                 </table>
 
-                {{-- Page break jika bukan sub kegiatan terakhir dalam SKPD --}}
                 <div class="page-break"></div>
             @endforeach
         @endforeach
