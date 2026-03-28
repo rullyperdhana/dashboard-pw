@@ -142,8 +142,8 @@ class GenerateExtraPayrollPdfJob implements ShouldQueue
 
             \Illuminate\Support\Facades\Log::info("PDF Job [{$this->jobId}]: Memulai Rendering DomPDF...");
             
-            // Konversi deep array agar semua objek (seperti signatory) terbaca sebagai array di Blade
-            $dataArray = json_decode(json_encode($groupedData), true);
+            // Gunakan konversi array murni yang paling stabil
+            $dataArray = $groupedData->all(); 
             
             $pdf = Pdf::loadView($viewName, [
                 'data'             => $dataArray, 
