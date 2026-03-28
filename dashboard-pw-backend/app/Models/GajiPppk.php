@@ -4,9 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class GajiPppk extends Model
 {
+    use LogsActivity;
+
     use HasFactory;
 
     protected $table = 'gaji_pppk';
@@ -74,4 +78,12 @@ class GajiPppk extends Model
         'bersih' => 'decimal:2',
         'kotor' => 'decimal:2',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['nip', 'nama', 'kotor', 'bersih', 'bulan', 'tahun', 'jenis_gaji'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
 }

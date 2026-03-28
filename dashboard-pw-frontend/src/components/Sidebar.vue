@@ -76,14 +76,17 @@
     <template v-slot:append>
       <div class="pa-4">
         <v-card variant="tonal" color="primary" class="rounded-lg pa-3" flat>
-          <div class="d-flex align-center mb-3">
-            <v-avatar size="32" color="primary" variant="flat" class="mr-2">
-              <span class="text-caption font-weight-bold text-white">{{ userInitials }}</span>
-            </v-avatar>
-            <div style="overflow: hidden">
-              <div class="text-caption font-weight-bold text-truncate text-high-emphasis">{{ user.name }}</div>
-              <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 10px">{{ user.role?.toUpperCase() }}</div>
+          <div class="d-flex align-center justify-space-between mb-3">
+            <div class="d-flex align-center">
+              <v-avatar size="32" color="primary" variant="flat" class="mr-2">
+                <span class="text-caption font-weight-bold text-white">{{ userInitials }}</span>
+              </v-avatar>
+              <div style="overflow: hidden">
+                <div class="text-caption font-weight-bold text-truncate text-high-emphasis">{{ user.name }}</div>
+                <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 10px">{{ user.role?.toUpperCase() }}</div>
+              </div>
             </div>
+            <ThemeToggle />
           </div>
           <v-divider class="mb-2 border-opacity-10"></v-divider>
           <v-btn
@@ -128,6 +131,7 @@ import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '../api'
 import AccountSettingsDialog from './AccountSettingsDialog.vue'
+import ThemeToggle from './ThemeToggle.vue'
 import { isSidebarOpen } from '../utils/sidebarState'
 
 const appVersion = APP_VERSION

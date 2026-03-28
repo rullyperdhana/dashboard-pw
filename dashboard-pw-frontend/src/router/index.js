@@ -15,6 +15,18 @@ const router = createRouter({
             meta: { guest: true },
         },
         {
+            path: '/ess/login',
+            name: 'EssLogin',
+            component: () => import('../views/ESS/EssLogin.vue'),
+            meta: { essGuest: true },
+        },
+        {
+            path: '/ess/dashboard',
+            name: 'EssDashboard',
+            component: () => import('../views/ESS/EssDashboard.vue'),
+            meta: { requiresEssAuth: true, layout: 'empty' },
+        },
+        {
             path: '/',
             redirect: '/welcome',
         },
@@ -273,6 +285,16 @@ router.beforeEach((to, from, next) => {
     const userStr = localStorage.getItem('user')
     const user = userStr ? JSON.parse(userStr) : {}
 
+    const essToken = localStorage.getItem('ess_token')
+
+    // ESS Guards
+    if (to.meta.requiresEssAuth && !essToken) {
+        return next('/ess/login')
+    } else if (to.meta.essGuest && essToken) {
+        return next('/ess/dashboard')
+    }
+
+    // Admin Guards
     if (to.meta.requiresAuth && !token) {
         return next('/login')
     } else if (to.meta.guest && token) {

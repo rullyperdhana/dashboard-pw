@@ -29,6 +29,7 @@ use App\Http\Controllers\Api\Skpd2026Controller;
 use App\Http\Controllers\Api\AnalyticsController;
 use App\Http\Controllers\Api\PPh21Controller;
 use App\Http\Controllers\Api\AnnouncementController;
+use App\Http\Controllers\Api\EssAuthController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -39,10 +40,14 @@ use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::get('/captcha', [AuthController::class, 'getCaptcha']);
-Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1')->name('login');
 Route::get('/settings/pppk-pw-estimation', [SettingController::class, 'pppkPwEstimation']);
 Route::get('/verify-thr', [ThrController::class, 'verifyThr']);
 Route::get('/verify-payment', [PaymentController::class, 'verifyPayment']);
+
+// ESS Public routes
+Route::post('/ess/login', [EssAuthController::class, 'login'])->middleware('throttle:10,1');
+Route::get('/ess/slips', [EssAuthController::class, 'slips']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -53,8 +58,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/update-profile', [AuthController::class, 'updateProfile']);
 
     // Dashboard
-    Route::get('/dashboard', [DashboardController::class, 'index']);
-    Route::get('/dashboard/executive', [DashboardController::class, 'executiveSummary']);
+    Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('throttle:30,1');
+    Route::get('/dashboard/executive', [DashboardController::class, 'executiveSummary'])->middleware('throttle:30,1');
     Route::get('/budget-prediction', [BudgetPredictionController::class, 'index']);
     Route::apiResource('upload-jobs', UploadJobController::class);
 

@@ -201,7 +201,7 @@
                             </tr>
                           </thead>
                           <tbody>
-                            <tr v-for="(item, i) in combinedAllowanceBreakdown.slice(0, 7)" :key="i">
+                            <tr v-for="(item, i) in combinedAllowanceBreakdown.slice(0, 10)" :key="i">
                               <td class="text-caption font-weight-medium">{{ item.label }}</td>
                               <td class="text-right text-caption">{{ formatCurrencyCompact(item.pns) }}</td>
                               <td class="text-right text-caption font-weight-bold">{{ formatCurrencyCompact(item.pppk) }}</td>
@@ -230,7 +230,7 @@
                             </tr>
                           </thead>
                           <tbody>
-                            <tr v-for="(item, i) in combinedDeductionBreakdown.slice(0, 7)" :key="i">
+                            <tr v-for="(item, i) in combinedDeductionBreakdown.slice(0, 10)" :key="i">
                               <td class="text-caption font-weight-medium">{{ item.label }}</td>
                               <td class="text-right text-caption">{{ formatCurrencyCompact(item.pns) }}</td>
                               <td class="text-right text-caption font-weight-bold text-error">{{ formatCurrencyCompact(item.pppk) }}</td>
@@ -252,7 +252,7 @@
                       <v-card-title class="pa-6 pb-4 font-weight-bold text-subtitle-1">Rincian Tunjangan</v-card-title>
                       <v-card-text class="pa-0">
                         <v-list density="compact" class="bg-transparent">
-                          <v-list-item v-for="(item, i) in allowanceBreakdown.filter(a => a.value > 0).slice(0, 8)" :key="i" class="px-6 border-b">
+                          <v-list-item v-for="(item, i) in allowanceBreakdown.filter(a => a.value > 0)" :key="i" class="px-6 border-b">
                             <v-list-item-title class="text-caption">{{ item.label }}</v-list-item-title>
                             <template v-slot:append>
                               <span class="text-caption font-weight-black text-high-emphasis">{{ formatCurrencyShort(item.value) }}</span>
@@ -267,7 +267,7 @@
                       <v-card-title class="pa-6 pb-4 font-weight-bold text-subtitle-1">Rincian Potongan</v-card-title>
                       <v-card-text class="pa-0">
                         <v-list density="compact" class="bg-transparent">
-                          <v-list-item v-for="(item, i) in deductionBreakdown.filter(a => a.value > 0).slice(0, 8)" :key="i" class="px-6 border-b">
+                          <v-list-item v-for="(item, i) in deductionBreakdown.filter(a => a.value > 0)" :key="i" class="px-6 border-b">
                             <v-list-item-title class="text-caption">{{ item.label }}</v-list-item-title>
                             <template v-slot:append>
                               <span class="text-caption font-weight-black text-error">{{ formatCurrencyShort(item.value) }}</span>
@@ -406,6 +406,7 @@
                               <th class="text-right text-medium-emphasis" title="Struktural + Fungsional + Umum">TJ. JABATAN</th>
                               <th class="text-right text-medium-emphasis">BERAS</th>
                               <th class="text-right text-medium-emphasis">TPP</th>
+                              <th class="text-right text-medium-emphasis">BULAT</th>
                               <th class="text-right text-medium-emphasis text-error">POTONGAN</th>
                               <th class="text-right highlight-col font-weight-bold text-teal-darken-1">BERSIH</th>
                             </tr>
@@ -457,6 +458,12 @@
                                       {{ formatCurrencyShort(type.pns_total_tunj_tpp) }} | {{ formatCurrencyShort(type.pppk_total_tunj_tpp) }}
                                     </div>
                                   </td>
+                                  <td class="text-right">
+                                    <div class="text-high-emphasis">{{ formatCurrencyShort(type.total_pembulatan) }}</div>
+                                    <div v-if="employeeType === 'combined'" style="font-size: 0.65rem" class="opacity-60">
+                                      {{ formatCurrencyShort(type.pns_total_pembulatan) }} | {{ formatCurrencyShort(type.pppk_total_pembulatan) }}
+                                    </div>
+                                  </td>
                                   <td class="text-right text-error">{{ formatCurrencyShort(type.total_potongan) }}</td>
                                   <td class="text-right">
                                     <div class="font-weight-bold">{{ formatCurrencyShort(type.total_bersih) }}</div>
@@ -505,6 +512,12 @@
                                       {{ formatCurrencyShort(month.pns_total_tunj_tpp) }} | {{ formatCurrencyShort(month.pppk_total_tunj_tpp) }}
                                     </div>
                                   </td>
+                                  <td class="text-right font-weight-bold">
+                                    <div>{{ formatCurrencyShort(month.total_pembulatan) }}</div>
+                                    <div v-if="employeeType === 'combined'" style="font-size: 0.65rem" class="opacity-70 font-weight-medium">
+                                      {{ formatCurrencyShort(month.pns_total_pembulatan) }} | {{ formatCurrencyShort(month.pppk_total_pembulatan) }}
+                                    </div>
+                                  </td>
                                   <td class="text-right font-weight-bold text-error">{{ formatCurrencyShort(month.total_potongan) }}</td>
                                   <td class="text-right highlight-col font-weight-black text-teal-darken-2">
                                     <div>{{ formatCurrencyShort(month.total_bersih) }}</div>
@@ -514,7 +527,7 @@
                                   </td>
                                 </tr>
                                 <!-- Spacer Row -->
-                                <tr class="spacer-row"><td colspan="9"></td></tr>
+                                <tr class="spacer-row"><td colspan="10"></td></tr>
                               </template>
                             </template>
                           </tbody>
@@ -555,6 +568,12 @@
                                 <div>{{ formatCurrencyShort(annualReport?.yearly_total?.total_tunj_tpp) }}</div>
                                 <div v-if="employeeType === 'combined'" style="font-size: 0.75rem; opacity: 0.8">
                                   {{ formatCurrencyShort(annualReport?.yearly_total?.pns_total_tunj_tpp) }} | {{ formatCurrencyShort(annualReport?.yearly_total?.pppk_total_tunj_tpp) }}
+                                </div>
+                              </td>
+                              <td class="text-right font-weight-black">
+                                <div>{{ formatCurrencyShort(annualReport?.yearly_total?.total_pembulatan) }}</div>
+                                <div v-if="employeeType === 'combined'" style="font-size: 0.75rem; opacity: 0.8">
+                                  {{ formatCurrencyShort(annualReport?.yearly_total?.pns_total_pembulatan) }} | {{ formatCurrencyShort(annualReport?.yearly_total?.pppk_total_pembulatan) }}
                                 </div>
                               </td>
                               <td class="text-right font-weight-black text-error">
@@ -789,6 +808,7 @@ const tunjanganFields = [
   { key: 'total_tunj_umum', label: 'Tunjangan Umum' }, { key: 'total_tunj_beras', label: 'Tunjangan Beras' },
   { key: 'total_tunj_pph', label: 'Tunjangan PPh' }, { key: 'total_tunj_tpp', label: 'Tunjangan TPP' },
   { key: 'total_tunj_eselon', label: 'Tunjangan Eselon' }, { key: 'total_tunj_guru', label: 'Tunjangan Guru' },
+  { key: 'total_pembulatan', label: 'Pembulatan' },
 ]
 
 const potonganFields = [

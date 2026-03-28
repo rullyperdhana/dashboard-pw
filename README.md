@@ -57,6 +57,12 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 - **Fixed PPPK-PW PDF Export:** Perbaikan variabel dan mapping data pada template PDF untuk laporan THR dan Gaji-13 PPPK Paruh Waktu.
 - **Dashboard Metric Accuracy:** Penyesuaian logika hitung personil (diambil dari data bulan terakhir, bukan akumulasi tahunan) dan tampilan angka nominal penuh pada footer Dashboard PNS.
 
+### 💨 Optimalisasi & Laporan Dinamis (v3.9.2)
+- **ESS Experience Upgrade:** Dashboard Employee Self-Service (ESS) kini mendukung histori slip gaji hingga 5 tahun (60 bulan) dengan fitur pengelompokan tab berbasis tahun (*Yearly Tabs*), serta menampilkan rincian spesifik Gaji Pokok dan TPP pada tiap kartu slip.
+- **Fixed Allowance Data:** Perbaikan kueri inti SQL pada laporan bulanan untuk menyertakan pilar tunjangan **Pembulatan** yang sebelumnya tersembunyi. Data pembulatan kini tampil akurat di tabel UI Web, PNS Dashboard, cetak Excel, hingga *export* PDF.
+- **PDF Export Resilience:** Mengalihkan *driver* penyimpanan *export* PDF ke direktori publik yang lebih terjamin aksesibilitasnya, serta men-sintesis ulang struktur DomPDF dengan melumpuhkan komponen berat (*QR Code generator*) sementara waktu untuk mengatasi masalah lambatnya proses antrean latar belakang (*Job Queue bottleneck*).
+- **Sticky DataGrid UX:** Mengimplementasikan fitur penguncian layar otomatis (*Freeze Header* & *Freeze SKPD Column*) pada tabel Laporan Bulanan SKPD menggunakan arsitektur CSS modern, mencegah disorientasi pengguna saat menelusuri ratusan kolom tunjangan ke arah kanan.
+
 ---
  
 ### 📑 Pajak TER & Bukti Potong A2 (v3.8)

@@ -13,7 +13,8 @@
       </div>
 
       <!-- Main KPI Card -->
-      <v-card class="glass-card pa-5 mb-2 border-0" elevation="10">
+      <v-skeleton-loader v-if="loading" type="card" class="mb-2 rounded-lg" height="200" elevation="10"></v-skeleton-loader>
+      <v-card v-else class="glass-card pa-5 mb-2 border-0" elevation="10">
         <div class="text-overline font-weight-black text-slate-500 mb-3">TOTAL REALISASI BELANJA {{ currentYear }}</div>
         
         <!-- PNS Total -->
@@ -48,27 +49,34 @@
     <!-- Stats Grid -->
     <div class="px-6 mt-n8 mb-8">
       <v-row dense>
-        <v-col cols="4">
-          <v-card class="stat-mini-card pa-3 text-center h-100" elevation="2">
-            <v-icon color="indigo" size="20" class="mb-1">mdi-account-tie</v-icon>
-            <div class="text-subtitle-2 font-weight-black text-slate-900">{{ catStats.pns.emp.toLocaleString() }}</div>
-            <div class="text-xxxs text-slate-500 font-weight-bold">PNS</div>
-          </v-card>
-        </v-col>
-        <v-col cols="4">
-          <v-card class="stat-mini-card pa-3 text-center h-100" elevation="2">
-            <v-icon color="teal" size="20" class="mb-1">mdi-account-hard-hat</v-icon>
-            <div class="text-subtitle-2 font-weight-black text-slate-900">{{ catStats.pppk.emp.toLocaleString() }}</div>
-            <div class="text-xxxs text-slate-500 font-weight-bold">PPPK</div>
-          </v-card>
-        </v-col>
-        <v-col cols="4">
-          <v-card class="stat-mini-card pa-3 text-center h-100" elevation="2">
-            <v-icon color="orange" size="20" class="mb-1">mdi-account-clock</v-icon>
-            <div class="text-subtitle-2 font-weight-black text-slate-900">{{ catStats.pw.emp.toLocaleString() }}</div>
-            <div class="text-xxxs text-slate-500 font-weight-bold">PW</div>
-          </v-card>
-        </v-col>
+        <template v-if="loading">
+          <v-col cols="4" v-for="i in 3" :key="'skel-stat-'+i">
+            <v-skeleton-loader type="image" height="80" class="stat-mini-card"></v-skeleton-loader>
+          </v-col>
+        </template>
+        <template v-else>
+          <v-col cols="4">
+            <v-card class="stat-mini-card pa-3 text-center h-100" elevation="2">
+              <v-icon color="indigo" size="20" class="mb-1">mdi-account-tie</v-icon>
+              <div class="text-subtitle-2 font-weight-black text-slate-900">{{ catStats.pns.emp.toLocaleString() }}</div>
+              <div class="text-xxxs text-slate-500 font-weight-bold">PNS</div>
+            </v-card>
+          </v-col>
+          <v-col cols="4">
+            <v-card class="stat-mini-card pa-3 text-center h-100" elevation="2">
+              <v-icon color="teal" size="20" class="mb-1">mdi-account-hard-hat</v-icon>
+              <div class="text-subtitle-2 font-weight-black text-slate-900">{{ catStats.pppk.emp.toLocaleString() }}</div>
+              <div class="text-xxxs text-slate-500 font-weight-bold">PPPK</div>
+            </v-card>
+          </v-col>
+          <v-col cols="4">
+            <v-card class="stat-mini-card pa-3 text-center h-100" elevation="2">
+              <v-icon color="orange" size="20" class="mb-1">mdi-account-clock</v-icon>
+              <div class="text-subtitle-2 font-weight-black text-slate-900">{{ catStats.pw.emp.toLocaleString() }}</div>
+              <div class="text-xxxs text-slate-500 font-weight-bold">PW</div>
+            </v-card>
+          </v-col>
+        </template>
       </v-row>
     </div>
 
@@ -82,9 +90,10 @@
       
       <v-card class="stat-mini-card pa-0 elevation-0 border-0 bg-transparent" elevation="0">
         <div style="height: 300px">
-          <v-chart v-if="realizationData.length" :option="trendOption" autoresize />
-          <div v-else class="h-100 d-flex align-center justify-center">
-            <v-progress-circular indeterminate color="primary"></v-progress-circular>
+          <v-skeleton-loader v-if="loading" type="image" height="300" class="rounded-lg"></v-skeleton-loader>
+          <v-chart v-else-if="realizationData.length" :option="trendOption" autoresize />
+          <div v-else class="h-100 d-flex align-center justify-center text-slate-500">
+            Tidak ada data trend
           </div>
         </div>
       </v-card>
@@ -105,7 +114,10 @@
 
     <!-- Realization Table with Breakdown -->
     <div class="px-6 pb-12">
-      <v-expansion-panels variant="accordion" class="custom-expansion">
+      <template v-if="loading">
+        <v-skeleton-loader v-for="i in 5" :key="'skel-table-'+i" type="list-item-avatar-two-line" class="mb-2 rounded-lg border"></v-skeleton-loader>
+      </template>
+      <v-expansion-panels v-else variant="accordion" class="custom-expansion">
         <v-expansion-panel
           v-for="row in realizationData"
           :key="row.month_num"

@@ -43,24 +43,32 @@ class Gaji13Controller extends Controller
     {
         $year = $request->year ?? 2026;
         $month = $request->month ?: 6;
+        $user = auth()->user();
 
-        $monthNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-        $method = \App\Models\Setting::where('key', 'gaji13_pppk_pw_method')->value('value') ?? 'proporsional';
+        $job = \App\Models\UploadJob::create([
+            'type' => 'export',
+            'file_name' => strtoupper($this->getPayrollType()) . "_PPPK_PW_{$year}_{$month}.pdf",
+            'file_path' => '-',
+            'status' => 'pending',
+            'user_id' => $user->id,
+            'params' => $request->all()
+        ]);
 
-        $groupedData = $this->getFormattedGroupedData($request);
-        $dataArray = json_decode(json_encode($groupedData), true);
+        \App\Jobs\GenerateExtraPayrollPdfJob::dispatch(
+            $job->id,
+            $this->getPayrollType(),
+            $year,
+            $month,
+            $request->all(),
+            $user->id,
+            $user->institution,
+            $user->role
+        );
 
-        $pdf = Pdf::loadView('reports.thr_pppk_pw', [
-            'data'             => $dataArray,
-            'year'             => $year,
-            'month'            => $month,
-            'thrMonthName'     => $monthNames[(int)$month] ?? '',
-            'calculationBasis' => 'Data Tersimpan (Database) - Metode: ' . ($method === 'tetap' ? 'Nilai Tetap' : 'Proporsional n/12'),
-            'printDate'        => now()->locale('id')->isoFormat('D MMMM YYYY'),
-            'thrMethod'        => $method,
-            'title'            => 'Gaji Ketiga Belas (Gaji-13)',
-        ])->setPaper('a4', 'landscape');
-
-        return $pdf->download("GAJI_13_PPPK_PW_{$year}_{$month}.pdf");
+        return response()->json([
+            'success' => true,
+            'message' => 'Tugas sedang diproses di background',
+            'job_id' => $job->id
+        ]);
     }
 }

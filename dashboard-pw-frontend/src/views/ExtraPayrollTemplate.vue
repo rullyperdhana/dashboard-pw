@@ -637,21 +637,60 @@ const saveAdd = async () => {
   }
 }
 
+const activeJobId = ref(null)
+
+const queryJobStatus = async (jobId) => {
+  try {
+    const res = await api.get(`/upload-jobs/${jobId}`)
+    const job = res.data.data
+    if (job.status === 'completed') {
+      showSnackbar('Pembuatan dokumen selesai. Mengunduh...', 'success')
+      if (job.result_summary && job.result_summary.download_url) {
+        window.open(job.result_summary.download_url, '_blank')
+      }
+      activeJobId.value = null
+      exportLoading.value = false
+    } else if (job.status === 'failed') {
+      showSnackbar('Gagal membuat dokumen: ' + (job.error_message || ''), 'error')
+      activeJobId.value = null
+      exportLoading.value = false
+    } else {
+      setTimeout(() => queryJobStatus(jobId), 3000)
+    }
+  } catch (error) {
+    console.error('Error checking job status', error)
+    showSnackbar('Gagal mengecek status tugas (Job)', 'error')
+    activeJobId.value = null
+    exportLoading.value = false
+  }
+}
+
 const exportData = async (type) => {
   exportLoading.value = true
   try {
     const url = `${config.value.apiBase}/${type}?month=${selectedMonth.value}`
-    const response = await api.get(url, { responseType: 'blob' })
     
-    const blob = new Blob([response.data])
-    const link = document.createElement('a')
-    link.href = window.URL.createObjectURL(blob)
-    link.download = `${config.value.label}_PPPK_PW_2026_${selectedMonth.value}.${type === 'excel' ? 'xlsx' : 'pdf'}`
-    link.click()
+    if (type === 'pdf') {
+      const response = await api.get(url)
+      if (response.data && response.data.job_id) {
+        activeJobId.value = response.data.job_id
+        showSnackbar('Permintaan ekspor PDF dikirim ke antrian background. Mohon tunggu...', 'info')
+        setTimeout(() => queryJobStatus(response.data.job_id), 3000)
+      } else {
+        exportLoading.value = false
+      }
+    } else {
+      const response = await api.get(url, { responseType: 'blob' })
+      const blob = new Blob([response.data])
+      const link = document.createElement('a')
+      link.href = window.URL.createObjectURL(blob)
+      link.download = `${config.value.label}_PPPK_PW_2026_${selectedMonth.value}.${type === 'excel' ? 'xlsx' : 'pdf'}`
+      link.click()
+      exportLoading.value = false
+    }
   } catch (error) {
     console.error(`Error exporting ${type}:`, error)
-    alert(`Gagal mengekspor ${type}. Silakan coba lagi.`)
-  } finally {
+    showSnackbar(`Gagal mengekspor ${type}. Silakan coba lagi.`, 'error')
     exportLoading.value = false
   }
 }

@@ -81,7 +81,9 @@
             :loading="loading"
             class="bg-transparent detail-table"
             hover
-            items-per-page="25"
+            fixed-header
+            height="calc(100vh - 360px)"
+            items-per-page="50"
             density="compact"
           >
             <!-- Currency formatting for detail mode -->
@@ -151,8 +153,8 @@ const currentTab = computed(() => tabs.find(t => t.type === activeTab.value) ?? 
 
 // ── Headers ────────────────────────────────────────────────────────────────
 const summaryHeaders = [
-  { title: 'Kode SKPD',      key: 'kode_skpd',        align: 'start',  width: 140 },
-  { title: 'Nama SKPD',      key: 'nama_skpd',         align: 'start'  },
+  { title: 'Kode SKPD',      key: 'kode_skpd',        align: 'start',  width: 120, fixed: true },
+  { title: 'Nama SKPD',      key: 'nama_skpd',        align: 'start', minWidth: 250, fixed: true },
   { title: 'PEG',            key: 'employee_count',    align: 'center', width: 80  },
   { title: 'Gaji Pokok',     key: 'total_gaji_pokok',  align: 'end'   },
   { title: 'Tunjangan',      key: 'total_tunjangan',   align: 'end'   },
@@ -161,8 +163,8 @@ const summaryHeaders = [
 ]
 
 const detailHeaders = [
-  { title: 'Kode SKPD',   key: 'kode_skpd',       align: 'start',  width: 120 },
-  { title: 'Nama SKPD',   key: 'nama_skpd',        align: 'start'  },
+  { title: 'Kode SKPD',   key: 'kode_skpd',       align: 'start',  width: 120, fixed: true },
+  { title: 'Nama SKPD',   key: 'nama_skpd',       align: 'start', minWidth: 250, fixed: true },
   { title: 'PEG',         key: 'jumlah_pegawai',   align: 'center', width: 60  },
   { title: 'GAPOK',       key: 'gapok',            align: 'end'   },
   { title: 'TJISTRI',     key: 'tj_istri',         align: 'end'   },
@@ -173,7 +175,7 @@ const detailHeaders = [
   { title: 'TJBERAS',     key: 'tj_beras',         align: 'end'   },
   { title: 'TJPAJAK',     key: 'tj_pajak',         align: 'end'   },
   { title: 'TJUMUM',      key: 'tj_umum',          align: 'end'   },
-  { title: 'TBILAT',      key: 'tj_bilat',         align: 'end'   },
+  { title: 'BULAT',       key: 'pembulatan',       align: 'end'   },
   { title: 'KOTOR',       key: 'kotor',            align: 'end'   },
   { title: 'PIWP',        key: 'pot_iwp',          align: 'end'   },
   { title: 'PIWP2',       key: 'pot_iwp2',         align: 'end'   },
@@ -189,7 +191,7 @@ const currentHeaders = computed(() => mode.value === 'detail' ? detailHeaders : 
 const currencyCols = computed(() => {
   if (mode.value === 'detail') {
     return ['gapok','tj_istri','tj_anak','tj_tpp','tj_eselon','tj_fungsi',
-            'tj_beras','tj_pajak','tj_umum','tj_bilat','kotor',
+            'tj_beras','tj_pajak','tj_umum','pembulatan','kotor',
             'pot_iwp','pot_iwp2','pot_iwp8','pot_pajak','total_potongan','bersih']
   }
   return ['total_gaji_pokok','total_tunjangan','total_potongan','total_bersih']
@@ -299,7 +301,13 @@ onMounted(async () => {
   font-size: 0.7rem;
   letter-spacing: 0.04em;
   white-space: nowrap;
+  background-color: rgb(var(--v-theme-surface)) !important;
+  z-index: 2 !important;
 }
-:deep(.v-data-table__td) { white-space: nowrap; font-size: 0.78rem; }
-:deep(.v-data-table__tr:hover) { background-color: rgba(0, 150, 136, 0.05) !important; }
+:deep(.v-data-table__td) {
+  white-space: nowrap;
+  font-size: 0.78rem;
+  background-color: rgb(var(--v-theme-surface)) !important;
+}
+:deep(.v-data-table__tr:hover .v-data-table__td) { background-color: rgba(0, 150, 136, 0.05) !important; }
 </style>

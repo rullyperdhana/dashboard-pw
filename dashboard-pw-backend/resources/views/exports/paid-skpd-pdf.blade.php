@@ -115,7 +115,7 @@
                     <th>TJBERAS</th>
                     <th>TJPAJAK</th>
                     <th>TJUMUM</th>
-                    <th>TBILAT</th>
+                    <th>BULAT</th>
                     <th>KOTOR</th>
                     <th>PIWP</th>
                     <th>PIWP2</th>
@@ -138,7 +138,7 @@
                         'tj_beras',
                         'tj_pajak',
                         'tj_umum',
-                        'tj_bilat',
+                        'pembulatan',
                         'kotor',
                         'pot_iwp',
                         'pot_iwp2',
@@ -166,7 +166,7 @@
                         <td class="r">{{ number_format($item['tj_beras'] ?? 0, 0, ',', '.') }}</td>
                         <td class="r">{{ number_format($item['tj_pajak'] ?? 0, 0, ',', '.') }}</td>
                         <td class="r">{{ number_format($item['tj_umum'] ?? 0, 0, ',', '.') }}</td>
-                        <td class="r">{{ number_format($item['tj_bilat'] ?? 0, 0, ',', '.') }}</td>
+                        <td class="r">{{ number_format($item['pembulatan'] ?? 0, 0, ',', '.') }}</td>
                         <td class="r">{{ number_format($item['kotor'] ?? 0, 0, ',', '.') }}</td>
                         <td class="r">{{ number_format($item['pot_iwp'] ?? 0, 0, ',', '.') }}</td>
                         <td class="r">{{ number_format($item['pot_iwp2'] ?? 0, 0, ',', '.') }}</td>
@@ -188,7 +188,7 @@
                     <td class="r">{{ number_format($totals['tj_beras'], 0, ',', '.') }}</td>
                     <td class="r">{{ number_format($totals['tj_pajak'], 0, ',', '.') }}</td>
                     <td class="r">{{ number_format($totals['tj_umum'], 0, ',', '.') }}</td>
-                    <td class="r">{{ number_format($totals['tj_bilat'], 0, ',', '.') }}</td>
+                    <td class="r">{{ number_format($totals['pembulatan'], 0, ',', '.') }}</td>
                     <td class="r">{{ number_format($totals['kotor'], 0, ',', '.') }}</td>
                     <td class="r">{{ number_format($totals['pot_iwp'], 0, ',', '.') }}</td>
                     <td class="r">{{ number_format($totals['pot_iwp2'], 0, ',', '.') }}</td>
