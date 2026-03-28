@@ -84,10 +84,11 @@ class GenerateExtraPayrollPdfJob implements ShouldQueue
             }
 
             $records = $query->orderBy('skpd_name')->orderBy('nama')->get();
-            \Illuminate\Support\Facades\Log::info("PDF Generation Job [{$this->jobId}]: Found " . $records->count() . " records for {$this->type} (Month: {$this->month}, Year: {$this->year})");
+            $recordCount = $records->count();
+            \Illuminate\Support\Facades\Log::info("PDF Job [{$this->jobId}]: Menemukan {$recordCount} data untuk dikirim ke PDF.");
             
             if ($records->isEmpty()) {
-                throw new \Exception("Tidak ada data ditemukan untuk periode ini.");
+                \Illuminate\Support\Facades\Log::warning("PDF Job [{$this->jobId}]: Kueri menghasilkan 0 data. Cek Filter: Type={$this->type}, Year={$this->year}, Month={$this->month}");
             }
 
             $uploadJob->updateProgress(30, 100);
@@ -135,7 +136,8 @@ class GenerateExtraPayrollPdfJob implements ShouldQueue
             \Illuminate\Support\Facades\Log::info("PDF Job [{$this->jobId}]: Memulai Rendering DomPDF...");
             
             $pdf = Pdf::loadView($viewName, [
-                'data'             => $groupedData, // Gunakan data objek/koleksi langsung agar tidak korup
+                'data'             => $groupedData, 
+                'recordCount'      => $recordCount,
                 'year'             => $this->year,
                 'month'            => $this->month,
                 'thrMonthName'     => $monthNames[(int)$this->month] ?? '',

@@ -102,6 +102,9 @@
     </header>
 
     <main>
+        <div style="background: #fff3cd; padding: 5px; border: 1px solid #ffeeba; margin-bottom: 10px; font-size: 8px; text-align: center;">
+            DEBUG INFO: Data Ditemukan per Filter = <strong>{{ $recordCount ?? 0 }}</strong> Pegawai.
+        </div>
 
         @foreach($data as $skpd)
             <div style="margin-bottom: 20px;">
