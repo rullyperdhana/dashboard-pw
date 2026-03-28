@@ -644,9 +644,16 @@ const queryJobStatus = async (jobId) => {
     const res = await api.get(`/upload-jobs/${jobId}`)
     const job = res.data.data
     if (job.status === 'completed') {
-      showSnackbar('Pembuatan dokumen selesai. Mengunduh...', 'success')
+      showSnackbar('Dokumen siap! Mengunduh otomatis...', 'success')
       if (job.result_summary && job.result_summary.download_url) {
-        window.open(job.result_summary.download_url, '_blank')
+        // Gunakan teknik hidden link agar tidak diblokir popup blocker
+        const link = document.createElement('a')
+        link.href = job.result_summary.download_url
+        link.setAttribute('download', '') // Mencoba memicu download
+        link.setAttribute('target', '_blank')
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
       }
       activeJobId.value = null
       exportLoading.value = false
