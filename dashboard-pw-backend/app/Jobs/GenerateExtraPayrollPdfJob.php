@@ -19,7 +19,7 @@ class GenerateExtraPayrollPdfJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $timeout = 600;
+    public $timeout = 1200;
 
     protected $jobId;
     protected $type;
@@ -50,8 +50,8 @@ class GenerateExtraPayrollPdfJob implements ShouldQueue
      */
     public function handle()
     {
-        ini_set('memory_limit', '1024M');
-        set_time_limit(600);
+        ini_set('memory_limit', '4096M');
+        set_time_limit(1200);
         
         $uploadJob = UploadJob::find($this->jobId);
         if (!$uploadJob) return;
@@ -84,6 +84,11 @@ class GenerateExtraPayrollPdfJob implements ShouldQueue
             }
 
             $records = $query->orderBy('skpd_name')->orderBy('nama')->get();
+            \Illuminate\Support\Facades\Log::info("PDF Generation Job [{$this->jobId}]: Found " . $records->count() . " records for {$this->type} (Month: {$this->month}, Year: {$this->year})");
+            
+            if ($records->isEmpty()) {
+                throw new \Exception("Tidak ada data ditemukan untuk periode ini.");
+            }
 
             $uploadJob->updateProgress(30, 100);
 
@@ -104,31 +109,12 @@ class GenerateExtraPayrollPdfJob implements ShouldQueue
                             'pptk_nip' => $firstItem->pptk_nip,
                             'pptk_jabatan' => $firstItem->pptk_jabatan,
                             'sub_giat_groups' => $pptkItems->groupBy('nama_sub_giat')->map(function ($subGiatItems, $subGiatName) {
-                                $subtotalStr = number_format($subGiatItems->sum('payroll_amount'), 0, ',', '.');
-                                $period = "{$this->month}-{$this->year}";
-                                $verifyPath = $this->type === 'thr' ? '/api/verify-thr' : '/api/verify-gaji13';
-                                $verifyUrl = url($verifyPath) . "?" . http_build_query([
-                                    'total' => $subtotalStr,
-                                    'period' => $period,
-                                    'date' => now()->format('d/m/Y H:i'),
-                                    'sub_giat' => $subGiatName
-                                ]);
-                                
-                                // Fitur barcode sementara dinonaktifkan untuk meningkatkan kecepatan ekspor PDF
-                                $qrCodeBase64 = null;
-                                // try {
-                                //     $qrCodeSvg = QrCode::size(150)->margin(0)->generate($verifyUrl);
-                                //     $qrCodeBase64 = 'data:image/svg+xml;base64,' . base64_encode($qrCodeSvg);
-                                // } catch (\Exception $e) {
-                                //     $qrCodeBase64 = null;
-                                // }
-
                                 return [
                                     'sub_giat_name' => $subGiatName,
-                                    'employees' => $subGiatItems,
+                                    'employees' => $subGiatItems->toArray(),
                                     'subtotal_thr' => $subGiatItems->sum('payroll_amount'),
                                     'employee_count' => $subGiatItems->count(),
-                                    'qr_code' => $qrCodeBase64
+                                    'qr_code' => null
                                 ];
                             })->values(),
                             'total_pptk_thr' => $pptkItems->sum('payroll_amount'),
@@ -146,6 +132,8 @@ class GenerateExtraPayrollPdfJob implements ShouldQueue
             $viewName = $this->type === 'thr' ? 'reports.thr_pppk_pw' : 'reports.thr_pppk_pw'; // Same view used typically
             $title = $this->type === 'thr' ? 'Tunjangan Hari Raya (THR)' : 'Gaji Ke-13';
 
+            \Illuminate\Support\Facades\Log::info("PDF Job [{$this->jobId}]: Memulai Rendering DomPDF...");
+            
             $pdf = Pdf::loadView($viewName, [
                 'data'             => $dataArray,
                 'year'             => $this->year,
@@ -161,7 +149,10 @@ class GenerateExtraPayrollPdfJob implements ShouldQueue
 
             $filename = strtoupper($this->type) . "_PPPK_PW_{$this->year}_{$this->month}_" . time() . ".pdf";
             
-            Storage::disk('public')->put("exports/{$filename}", $pdf->output());
+            $pdfOutput = $pdf->output();
+            \Illuminate\Support\Facades\Log::info("PDF Job [{$this->jobId}]: Rendering Selesai. Ukuran file: " . strlen($pdfOutput) . " bytes");
+            
+            Storage::disk('public')->put("exports/{$filename}", $pdfOutput);
             
             $uploadJob->markCompleted([
                 'download_url' => Storage::disk('public')->url("exports/{$filename}")
