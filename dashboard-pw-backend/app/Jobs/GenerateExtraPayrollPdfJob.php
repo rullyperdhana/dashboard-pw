@@ -70,9 +70,15 @@ class GenerateExtraPayrollPdfJob implements ShouldQueue
                 ->where('month', $this->month);
 
             if ($this->userRole === 'operator' && !empty($this->userInstitution)) {
-                $skpdName = DB::table('skpd')->where('id_skpd', $this->userInstitution)->value('nama_skpd');
+                $skpdInfo = DB::table('skpd')->where('id_skpd', $this->userInstitution)->first();
+                $skpdName = $skpdInfo->nama_skpd ?? '';
                 \Illuminate\Support\Facades\Log::info("PDF Job [{$this->jobId}]: Memfilter data untuk SKPD: '{$skpdName}' (ID: {$this->userInstitution})");
-                $query->where('skpd_name', 'like', $skpdName . '%');
+                
+                // Cari nama SKPD murni tanpa embel-embel untuk kueri yang lebih akurat
+                $query->where(function($q) use ($skpdName) {
+                    $q->where('skpd_name', 'like', $skpdName . '%')
+                      ->orWhere('skpd_name', 'like', '%' . $skpdName . '%');
+                });
             }
 
             if (!empty($this->filters['search'])) {
