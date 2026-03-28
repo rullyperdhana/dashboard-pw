@@ -160,6 +160,9 @@
                   <v-btn icon size="small" variant="text" color="warning" @click.stop="openEditDialog(item)">
                     <v-icon size="18">mdi-pencil</v-icon>
                   </v-btn>
+                  <v-btn icon size="small" variant="text" color="info" @click.stop="copyRecord(item)" title="Salin Data">
+                    <v-icon size="18">mdi-content-copy</v-icon>
+                  </v-btn>
                   <v-btn icon size="small" variant="text" color="error" @click.stop="confirmDelete(item)">
                     <v-icon size="18">mdi-delete</v-icon>
                   </v-btn>
@@ -547,6 +550,15 @@ const openEditDialog = (item) => {
   isEditing.value = true
   form.value = { ...defaultForm, ...item }
   formDialog.value = true
+}
+
+const copyRecord = (item) => {
+  isEditing.value = false
+  // Clone record but remove unique/ID fields
+  const { id, created_at, updated_at, ...rest } = item
+  form.value = { ...defaultForm, ...rest }
+  formDialog.value = true
+  showSnackbar("Data berhasil disalin ke formulir baru", "info")
 }
 
 const saveRecord = async () => {
