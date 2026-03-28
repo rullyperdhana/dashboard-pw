@@ -71,6 +71,7 @@ class GenerateExtraPayrollPdfJob implements ShouldQueue
 
             if ($this->userRole === 'operator' && !empty($this->userInstitution)) {
                 $skpdName = DB::table('skpd')->where('id_skpd', $this->userInstitution)->value('nama_skpd');
+                \Illuminate\Support\Facades\Log::info("PDF Job [{$this->jobId}]: Memfilter data untuk SKPD: '{$skpdName}' (ID: {$this->userInstitution})");
                 $query->where('skpd_name', 'like', $skpdName . '%');
             }
 
