@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\GajiPns;
 use App\Models\GajiPppk;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class EssAuthController extends Controller
 {
@@ -18,11 +20,23 @@ class EssAuthController extends Controller
         $request->validate([
             'nik' => 'required|string',
             'nip' => 'required|string',
+            'captcha_id' => 'required|string',
+            'captcha_answer' => 'required|numeric',
         ]);
+
+        // Validate Captcha
+        $cachedAnswer = Cache::pull('ess_captcha_' . $request->captcha_id);
+        if ($cachedAnswer === null || (int)$request->captcha_answer !== (int)$cachedAnswer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jawaban Keamanan (Captcha) salah. Silakan coba lagi.'
+            ], 422);
+        }
 
         $nik = $request->nik;
         $nip = $request->nip;
-
+        
+        // ... rest of the existing login logic ...
         // Cari di Gaji PNS
         $pns = GajiPns::where('noktp', $nik)->where('nip', $nip)->orderBy('tahun', 'desc')->orderBy('bulan', 'desc')->first();
         if ($pns) {
@@ -69,6 +83,24 @@ class EssAuthController extends Controller
             'success' => false,
             'message' => 'Detail NIK atau NIP tidak ditemukan atau tidak cocok.'
         ], 401);
+    }
+
+    /**
+     * Generate simple math captcha
+     */
+    public function getCaptcha()
+    {
+        $n1 = rand(1, 10);
+        $n2 = rand(1, 10);
+        $id = Str::random(16);
+        
+        Cache::put('ess_captcha_' . $id, $n1 + $n2, now()->addMinutes(10));
+        
+        return response()->json([
+            'success' => true,
+            'captcha_id' => $id,
+            'question' => "Berapa $n1 + $n2 ?"
+        ]);
     }
 
     private function generateEssToken($type, $user)

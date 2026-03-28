@@ -69,6 +69,26 @@
             type="number"
           ></v-text-field>
 
+          <!-- Captcha Section -->
+          <div class="captcha-container mb-6 pa-4 bg-grey-lighten-4 rounded-lg border">
+            <div class="d-flex align-center justify-space-between mb-2">
+              <label class="text-caption font-weight-bold text-primary">Verifikasi Keamanan</label>
+              <v-btn icon="mdi-refresh" variant="text" size="x-small" @click="fetchCaptcha" :loading="captchaLoading"></v-btn>
+            </div>
+            <div class="text-h6 font-weight-bold mb-3">{{ captchaQuestion }}</div>
+            <v-text-field
+              v-model="captchaAnswer"
+              placeholder="Jawaban Angka"
+              variant="outlined"
+              density="compact"
+              hide-details
+              bg-color="white"
+              rounded="md"
+              type="number"
+              :rules="[v => !!v || 'Jawaban wajib diisi']"
+            ></v-text-field>
+          </div>
+
           <v-btn
             type="submit"
             color="primary"
@@ -117,11 +137,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useTheme } from 'vuetify'
 import ThemeToggle from '../../components/ThemeToggle.vue'
 import api from '../../api'
+import { onMounted } from 'vue'
 
 const router = useRouter()
 const theme = useTheme()
@@ -131,6 +149,11 @@ const nik = ref('')
 const nip = ref('')
 const showPassword = ref(false)
 const loading = ref(false)
+
+const captchaQuestion = ref('Memuat keamanan...')
+const captchaId = ref('')
+const captchaAnswer = ref('')
+const captchaLoading = ref(false)
 
 const snackbar = ref(false)
 const snackbarText = ref('')
@@ -144,9 +167,23 @@ const showMessage = (text, type = 'success') => {
   snackbar.value = true
 }
 
+const fetchCaptcha = async () => {
+  captchaLoading.value = true
+  try {
+    const response = await api.get('/ess/captcha')
+    captchaQuestion.value = response.data.question
+    captchaId.value = response.data.captcha_id
+    captchaAnswer.value = ''
+  } catch (error) {
+    showMessage('Gagal memuat sistem keamanan', 'error')
+  } finally {
+    captchaLoading.value = false
+  }
+}
+
 const handleLogin = async () => {
-  if (!formValid.value || !nik.value || !nip.value) {
-    showMessage('Mohon lengkapi NIK dan NIP', 'error')
+  if (!formValid.value || !nik.value || !nip.value || !captchaAnswer.value) {
+    showMessage('Mohon lengkapi NIK, NIP, dan Jawaban Keamanan', 'error')
     return
   }
   
@@ -154,7 +191,9 @@ const handleLogin = async () => {
   try {
     const response = await api.post('/ess/login', {
       nik: nik.value,
-      nip: nip.value
+      nip: nip.value,
+      captcha_id: captchaId.value,
+      captcha_answer: captchaAnswer.value
     })
     
     if (response.data.success) {
@@ -171,10 +210,15 @@ const handleLogin = async () => {
     } else {
       showMessage('Gagal mencoba koneksi ke server', 'error')
     }
+    fetchCaptcha() // Refresh captcha on failure
   } finally {
     loading.value = false
   }
 }
+
+onMounted(() => {
+  fetchCaptcha()
+})
 </script>
 
 <style scoped>
