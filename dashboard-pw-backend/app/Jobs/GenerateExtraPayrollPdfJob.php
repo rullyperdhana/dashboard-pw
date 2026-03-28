@@ -166,8 +166,15 @@ class GenerateExtraPayrollPdfJob implements ShouldQueue
             
             Storage::disk('public')->put("exports/{$filename}", $pdfOutput);
             
+            $downloadUrl = Storage::disk('public')->url("exports/{$filename}");
+            // Pastikan URL tidak menggunakan localhost (terjadi jika APP_URL di .env salah)
+            $actualUrl = str_replace('http://localhost:8000', config('app.url'), $downloadUrl);
+            if (strpos($actualUrl, 'localhost') !== false) {
+                 $actualUrl = "https://sipgaji.my.id/storage/exports/{$filename}";
+            }
+
             $uploadJob->markCompleted([
-                'download_url' => Storage::disk('public')->url("exports/{$filename}")
+                'download_url' => $actualUrl
             ]);
 
         } catch (\Exception $e) {
