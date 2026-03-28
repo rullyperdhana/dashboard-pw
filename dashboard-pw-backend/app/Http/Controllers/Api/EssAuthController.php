@@ -7,8 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\GajiPns;
 use App\Models\GajiPppk;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Http;
 
 class EssAuthController extends Controller
 {
@@ -20,16 +19,20 @@ class EssAuthController extends Controller
         $request->validate([
             'nik' => 'required|string',
             'nip' => 'required|string',
-            'captcha_id' => 'required|string',
-            'captcha_answer' => 'required|numeric',
+            'recaptcha_token' => 'required|string',
         ]);
 
-        // Validate Captcha
-        $cachedAnswer = Cache::pull('ess_captcha_' . $request->captcha_id);
-        if ($cachedAnswer === null || (int)$request->captcha_answer !== (int)$cachedAnswer) {
+        // Verify reCAPTCHA with Google
+        $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+            'secret' => env('RECAPTCHA_SECRET_KEY'),
+            'response' => $request->recaptcha_token,
+            'remoteip' => $request->ip(),
+        ]);
+
+        if (!$response->successful() || !$response->json('success')) {
             return response()->json([
                 'success' => false,
-                'message' => 'Jawaban Keamanan (Captcha) salah. Silakan coba lagi.'
+                'message' => 'Verifikasi reCAPTCHA gagal. Silakan coba lagi.'
             ], 422);
         }
 
@@ -83,24 +86,6 @@ class EssAuthController extends Controller
             'success' => false,
             'message' => 'Detail NIK atau NIP tidak ditemukan atau tidak cocok.'
         ], 401);
-    }
-
-    /**
-     * Generate simple math captcha
-     */
-    public function getCaptcha()
-    {
-        $n1 = rand(1, 10);
-        $n2 = rand(1, 10);
-        $id = Str::random(16);
-        
-        Cache::put('ess_captcha_' . $id, $n1 + $n2, now()->addMinutes(10));
-        
-        return response()->json([
-            'success' => true,
-            'captcha_id' => $id,
-            'question' => "Berapa $n1 + $n2 ?"
-        ]);
     }
 
     private function generateEssToken($type, $user)
