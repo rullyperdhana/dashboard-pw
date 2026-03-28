@@ -49,8 +49,8 @@
                 <table>
                     <thead>
                         <tr>
-                            <th width="30">NO</th>
-                            <th width="180">NAMA / NIP</th>
+                            <th width="20">NO</th>
+                            <th width="190">NAMA / NIP</th>
                             <th>JABATAN</th>
                             <th width="105">JUMLAH DITERIMA (Rp)</th>
                             <th width="130">TANDA TANGAN</th>
