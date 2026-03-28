@@ -129,13 +129,13 @@ class GenerateExtraPayrollPdfJob implements ShouldQueue
             $dataArray = json_decode(json_encode($groupedData), true);
             $uploadJob->updateProgress(60, 100);
 
-            $viewName = $this->type === 'thr' ? 'reports.thr_pppk_pw' : 'reports.thr_pppk_pw'; // Same view used typically
+            $viewName = $this->type === 'thr' ? 'reports.thr_pppk_pw' : 'reports.thr_pppk_pw'; 
             $title = $this->type === 'thr' ? 'Tunjangan Hari Raya (THR)' : 'Gaji Ke-13';
 
             \Illuminate\Support\Facades\Log::info("PDF Job [{$this->jobId}]: Memulai Rendering DomPDF...");
             
             $pdf = Pdf::loadView($viewName, [
-                'data'             => $dataArray,
+                'data'             => $groupedData, // Gunakan data objek/koleksi langsung agar tidak korup
                 'year'             => $this->year,
                 'month'            => $this->month,
                 'thrMonthName'     => $monthNames[(int)$this->month] ?? '',
