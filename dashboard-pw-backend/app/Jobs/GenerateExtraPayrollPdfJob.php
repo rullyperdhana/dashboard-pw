@@ -143,7 +143,7 @@ class GenerateExtraPayrollPdfJob implements ShouldQueue
             \Illuminate\Support\Facades\Log::info("PDF Job [{$this->jobId}]: Memulai Rendering DomPDF...");
             
             $pdf = Pdf::loadView($viewName, [
-                'data'             => $groupedData, 
+                'data'             => $groupedData->toArray(), 
                 'recordCount'      => $recordCount,
                 'year'             => $this->year,
                 'month'            => $this->month,
