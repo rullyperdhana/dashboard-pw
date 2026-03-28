@@ -50,6 +50,9 @@ class GenerateExtraPayrollPdfJob implements ShouldQueue
      */
     public function handle()
     {
+        ini_set('memory_limit', '1024M');
+        set_time_limit(600);
+        
         $uploadJob = UploadJob::find($this->jobId);
         if (!$uploadJob) return;
 
@@ -161,7 +164,7 @@ class GenerateExtraPayrollPdfJob implements ShouldQueue
             Storage::disk('public')->put("exports/{$filename}", $pdf->output());
             
             $uploadJob->markCompleted([
-                'download_url' => url("storage/exports/{$filename}")
+                'download_url' => Storage::disk('public')->url("exports/{$filename}")
             ]);
 
         } catch (\Exception $e) {

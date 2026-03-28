@@ -1028,6 +1028,10 @@ const renderChart = () => {
     chartInstance.destroy()
   }
   
+  if (!trendChart.value) {
+    console.warn('Canvas ref trendChart not found');
+    return;
+  }
   const ctx = trendChart.value.getContext('2d')
   const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
   const datasets = []
