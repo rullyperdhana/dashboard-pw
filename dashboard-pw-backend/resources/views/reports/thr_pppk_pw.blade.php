@@ -39,11 +39,10 @@
                         <thead>
                             <tr>
                                 <th width="30">NO</th>
-                                <th width="150">NAMA / NIP</th>
-                                <th width="80">GOLONGAN</th>
-                                <th width="100">JABATAN</th>
+                                <th width="200">NAMA / NIP</th>
+                                <th width="150">JABATAN</th>
                                 <th>JUMLAH DITERIMA (Rp)</th>
-                                <th width="80">TANDA TANGAN</th>
+                                <th width="100">TANDA TANGAN</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -54,14 +53,13 @@
                                         <strong>{{ $item['nama'] }}</strong><br>
                                         {{ $item['nip'] }}
                                     </td>
-                                    <td class="text-center">{{ $item['golongan'] }}</td>
                                     <td>{{ $item['jabatan'] }}</td>
                                     <td class="text-right">{{ number_format($item['payroll_amount'], 0, ',', '.') }}</td>
                                     <td style="height: 35px;"></td>
                                 </tr>
                             @endforeach
                             <tr style="background:#eee; font-weight:bold;">
-                                <td colspan="4" class="text-right">SUB TOTAL SUBGIAT:</td>
+                                <td colspan="3" class="text-right">SUB TOTAL SUBGIAT:</td>
                                 <td class="text-right">{{ number_format($subGiat['subtotal_thr'], 0, ',', '.') }}</td>
                                 <td></td>
                             </tr>
