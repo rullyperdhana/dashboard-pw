@@ -85,10 +85,10 @@ class GenerateExtraPayrollPdfJob implements ShouldQueue
 
             $records = $query->orderBy('skpd_name')->orderBy('nama')->get();
             $recordCount = $records->count();
-            \Illuminate\Support\Facades\Log::info("PDF Job [{$this->jobId}]: Menemukan {$recordCount} data untuk dikirim ke PDF.");
+            \Illuminate\Support\Facades\Log::info("PDF Job [{$this->jobId}]: Menemukan {$recordCount} data. (Role: {$this->userRole}, InstID: {$this->userInstitution})");
             
             if ($records->isEmpty()) {
-                \Illuminate\Support\Facades\Log::warning("PDF Job [{$this->jobId}]: Kueri menghasilkan 0 data. Cek Filter: Type={$this->type}, Year={$this->year}, Month={$this->month}");
+                \Illuminate\Support\Facades\Log::warning("PDF Job [{$this->jobId}]: Kueri menghasilkan 0 data. Cek Filter: Type={$this->type}, Year={$this->year}, Month={$this->month}, UserRole={$this->userRole}, InstID={$this->userInstitution}");
             }
 
             $uploadJob->updateProgress(30, 100);
