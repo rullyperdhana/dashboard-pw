@@ -96,7 +96,7 @@
                         <v-icon color="teal" size="18">mdi-account-group-outline</v-icon>
                       </v-avatar>
                     </div>
-                    <div class="text-h3 font-weight-black mb-1 text-high-emphasis">
+                    <div class="kpi-value font-weight-black mb-1 text-high-emphasis">
                       {{ (employeeType === 'combined' ? combinedTotal.employees : stats?.total_employees)?.toLocaleString() || 0 }}
                     </div>
                     <div v-if="employeeType === 'combined'" class="text-caption d-flex gap-2">
@@ -112,12 +112,29 @@
                 <v-card class="stat-card glass-panel" elevation="0">
                   <v-card-text class="pa-6">
                     <div class="d-flex justify-space-between align-center mb-4">
+                      <span class="text-overline font-weight-black text-medium-emphasis">Gaji Kotor / Bruto</span>
+                      <v-avatar color="orange-lighten-5" size="32">
+                        <v-icon color="orange-darken-2" size="18">mdi-cash-multiple</v-icon>
+                      </v-avatar>
+                    </div>
+                    <div class="kpi-value font-weight-black text-orange-darken-2 mb-1">
+                      {{ formatCurrencyShort(employeeType === 'combined' ? combinedTotal.gross : stats?.total_gross_salary) }}
+                    </div>
+                    <div class="text-caption text-medium-emphasis">Gross Payroll Before Deductions</div>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3">
+                <v-card class="stat-card glass-panel" elevation="0">
+                  <v-card-text class="pa-6">
+                    <div class="d-flex justify-space-between align-center mb-4">
                       <span class="text-overline font-weight-black text-medium-emphasis">Gaji Bersih</span>
                       <v-avatar color="success-lighten-5" size="32">
                         <v-icon color="success" size="18">mdi-cash-check</v-icon>
                       </v-avatar>
                     </div>
-                    <div class="text-h4 font-weight-black text-success mb-1">
+                    <div class="kpi-value font-weight-black text-success mb-1">
                       {{ formatCurrencyShort(employeeType === 'combined' ? combinedTotal.net : stats?.total_net_salary) }}
                     </div>
                     <div class="text-caption text-medium-emphasis">Net Payroll Disbursement</div>
@@ -134,7 +151,7 @@
                         <v-icon color="info" size="18">mdi-wallet-plus-outline</v-icon>
                       </v-avatar>
                     </div>
-                    <div class="text-h4 font-weight-black text-info mb-1">
+                    <div class="kpi-value font-weight-black text-info mb-1">
                       {{ formatCurrencyShort(employeeType === 'combined' ? combinedTotal.tpp : stats?.total_tunj_tpp) }}
                     </div>
                     <div class="text-caption text-medium-emphasis">Tunjangan Profesi / Kinerja</div>
@@ -151,7 +168,7 @@
                         <v-icon color="error" size="18">mdi-content-cut</v-icon>
                       </v-avatar>
                     </div>
-                    <div class="text-h4 font-weight-black text-error mb-1">
+                    <div class="kpi-value font-weight-black text-error mb-1">
                       {{ formatCurrencyShort(employeeType === 'combined' ? combinedTotal.deductions : stats?.total_deductions) }}
                     </div>
                     <div class="text-caption text-medium-emphasis">IWP, BPJS & Pajak</div>
@@ -407,6 +424,7 @@
                               <th class="text-right text-medium-emphasis">BERAS</th>
                               <th class="text-right text-medium-emphasis">TPP</th>
                               <th class="text-right text-medium-emphasis">BULAT</th>
+                              <th class="text-right text-medium-emphasis text-orange-darken-2 font-weight-bold">KOTOR/BRUTO</th>
                               <th class="text-right text-medium-emphasis text-error">POTONGAN</th>
                               <th class="text-right highlight-col font-weight-bold text-teal-darken-1">BERSIH</th>
                             </tr>
@@ -464,6 +482,12 @@
                                       {{ formatCurrencyShort(type.pns_total_pembulatan) }} | {{ formatCurrencyShort(type.pppk_total_pembulatan) }}
                                     </div>
                                   </td>
+                                  <td class="text-right font-weight-bold text-orange-darken-2">
+                                    <div>{{ formatCurrencyShort(type.total_kotor) }}</div>
+                                    <div v-if="employeeType === 'combined'" style="font-size: 0.65rem" class="opacity-60">
+                                      {{ formatCurrencyShort(type.pns_total_kotor) }} | {{ formatCurrencyShort(type.pppk_total_kotor) }}
+                                    </div>
+                                  </td>
                                   <td class="text-right text-error">{{ formatCurrencyShort(type.total_potongan) }}</td>
                                   <td class="text-right">
                                     <div class="font-weight-bold">{{ formatCurrencyShort(type.total_bersih) }}</div>
@@ -518,6 +542,12 @@
                                       {{ formatCurrencyShort(month.pns_total_pembulatan) }} | {{ formatCurrencyShort(month.pppk_total_pembulatan) }}
                                     </div>
                                   </td>
+                                  <td class="text-right font-weight-black text-orange-darken-2">
+                                    <div>{{ formatCurrencyShort(month.total_kotor) }}</div>
+                                    <div v-if="employeeType === 'combined'" style="font-size: 0.65rem" class="opacity-70 font-weight-medium">
+                                      {{ formatCurrencyShort(month.pns_total_kotor) }} | {{ formatCurrencyShort(month.pppk_total_kotor) }}
+                                    </div>
+                                  </td>
                                   <td class="text-right font-weight-bold text-error">{{ formatCurrencyShort(month.total_potongan) }}</td>
                                   <td class="text-right highlight-col font-weight-black text-teal-darken-2">
                                     <div>{{ formatCurrencyShort(month.total_bersih) }}</div>
@@ -527,7 +557,7 @@
                                   </td>
                                 </tr>
                                 <!-- Spacer Row -->
-                                <tr class="spacer-row"><td colspan="10"></td></tr>
+                                <tr class="spacer-row"><td colspan="11"></td></tr>
                               </template>
                             </template>
                           </tbody>
@@ -574,6 +604,12 @@
                                 <div>{{ formatCurrencyShort(annualReport?.yearly_total?.total_pembulatan) }}</div>
                                 <div v-if="employeeType === 'combined'" style="font-size: 0.75rem; opacity: 0.8">
                                   {{ formatCurrencyShort(annualReport?.yearly_total?.pns_total_pembulatan) }} | {{ formatCurrencyShort(annualReport?.yearly_total?.pppk_total_pembulatan) }}
+                                </div>
+                              </td>
+                              <td class="text-right font-weight-black text-orange-darken-2">
+                                <div>{{ formatCurrencyShort(annualReport?.yearly_total?.total_kotor) }}</div>
+                                <div v-if="employeeType === 'combined'" style="font-size: 0.75rem; opacity: 0.8">
+                                  {{ formatCurrencyShort(annualReport?.yearly_total?.pns_total_kotor) }} | {{ formatCurrencyShort(annualReport?.yearly_total?.pppk_total_kotor) }}
                                 </div>
                               </td>
                               <td class="text-right font-weight-black text-error">
@@ -790,7 +826,8 @@ const combinedTotal = computed(() => ({
 
 const annualSummaryCards = computed(() => [
   { label: 'Avg Personil / Bulan', value: annualReport.value?.summary?.avg_employees_per_month?.toLocaleString() || 0, sub: 'Estimasi beban kerja SDM', class: 'text-teal-600' },
-  { label: 'Total Payroll Tahunan', value: formatCurrencyCompact(annualReport.value?.yearly_total?.total_bersih), sub: 'Total pencairan anggaran', class: 'text-success' },
+  { label: 'Total Gaji Kotor / Bruto', value: formatCurrencyCompact(annualReport.value?.yearly_total?.total_kotor), sub: 'Total sebelum potongan', class: 'text-orange-darken-2' },
+  { label: 'Total Payroll Bersih', value: formatCurrencyCompact(annualReport.value?.yearly_total?.total_bersih), sub: 'Total pencairan anggaran', class: 'text-success' },
   { label: 'Biaya per Personil', value: formatCurrencyCompact(annualReport.value?.summary?.avg_salary_per_employee), sub: 'Rata-rata remunerasi bulanan', class: 'text-primary' }
 ])
 
@@ -1314,5 +1351,37 @@ watch([selectedYear, employeeType, selectedJenisGajiFilter], () => {
   padding: 0 !important;
   height: 8px !important;
   background-color: rgba(var(--v-border-color), 0.02);
+}
+
+/* ═══════════════════════════════════════════════════
+   KPI CARD — Responsive Number Display
+   Uses clamp() so the font shrinks automatically
+   as the card container narrows.
+   ─────────────────────────────────────────────────── */
+.kpi-value {
+  font-size: clamp(1.35rem, 2.5vw, 2rem);
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  max-width: 100%;
+}
+
+/* Slightly smaller on very narrow viewports */
+@media (max-width: 400px) {
+  .kpi-value {
+    font-size: 1.15rem;
+  }
+}
+
+/* Tighten card padding on mobile so numbers have more room */
+@media (max-width: 600px) {
+  .stat-card .v-card-text {
+    padding: 16px !important;
+  }
+  .stat-card .v-card-text .text-overline {
+    font-size: 0.6rem !important;
+  }
 }
 </style>

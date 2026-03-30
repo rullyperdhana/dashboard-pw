@@ -15,7 +15,10 @@
       <!-- Main KPI Card -->
       <v-skeleton-loader v-if="loading" type="card" class="mb-2 rounded-lg" height="200" elevation="10"></v-skeleton-loader>
       <v-card v-else class="glass-card pa-5 mb-2 border-0" elevation="10">
-        <div class="text-overline font-weight-black text-slate-500 mb-3">TOTAL REALISASI BELANJA {{ currentYear }}</div>
+        <div class="d-flex justify-space-between align-center mb-3">
+          <div class="text-overline font-weight-black text-slate-500">TOTAL REALISASI BELANJA {{ currentYear }}</div>
+          <v-chip size="x-small" color="primary" variant="flat" class="font-weight-black px-2">PNS + PPPK + PW</v-chip>
+        </div>
         
         <!-- PNS Total -->
         <div class="mb-3">

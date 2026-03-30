@@ -377,12 +377,26 @@
             </tbody>
           </v-table>
 
-          <v-card class="mt-4 pa-4 bg-primary rounded-lg" flat>
-            <div class="d-flex justify-space-between align-center">
-              <span class="text-body-1 font-weight-bold text-white">PENGHASILAN BERSIH</span>
-              <span class="text-h6 font-weight-black text-white">{{ formatCurrency(selectedRecord.bersih) }}</span>
-            </div>
-          </v-card>
+          <v-row class="mt-4" dense>
+            <v-col cols="12" md="6">
+              <v-card class="pa-4 rounded-lg" color="green-darken-1" flat>
+                <div class="d-flex align-center mb-1">
+                  <v-icon color="white" size="18" class="mr-2">mdi-cash-multiple</v-icon>
+                  <span class="text-caption font-weight-bold text-white opacity-80">GAJI KOTOR / BRUTO</span>
+                </div>
+                <div class="text-h6 font-weight-black text-white">{{ formatCurrency(selectedRecord.kotor) }}</div>
+              </v-card>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-card class="pa-4 rounded-lg" color="primary" flat>
+                <div class="d-flex align-center mb-1">
+                  <v-icon color="white" size="18" class="mr-2">mdi-wallet</v-icon>
+                  <span class="text-caption font-weight-bold text-white opacity-80">PENGHASILAN BERSIH</span>
+                </div>
+                <div class="text-h6 font-weight-black text-white">{{ formatCurrency(selectedRecord.bersih) }}</div>
+              </v-card>
+            </v-col>
+          </v-row>
         </v-card-text>
       </v-card>
     </v-dialog>

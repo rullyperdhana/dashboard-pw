@@ -202,7 +202,11 @@ class DashboardService
 
                 $mPnsTotal = $mGajiPns + $mThrPns + $mGaji13Pns;
                 $mPppkTotal = $mGajiPppk + $mThrPppk + $mGaji13Pppk;
-                $totalNominal = (float)($mPnsTotal + $mTppPns + $mPppkTotal + $mTppPppk + $mPw);
+
+                // standalone TPP for this specific month
+                $mStandaloneTpp = DB::table('standalone_tpp')->where('month', $m)->where('year', $year)->sum('nilai');
+
+                $totalNominal = (float)($mPnsTotal + $mPppkTotal + $mPw + $mStandaloneTpp);
                 $totalEmployees = $mEmpPns + $mEmpPppk + $mEmpPw;
 
                 $yearlyRealization[] = [
@@ -213,7 +217,7 @@ class DashboardService
                     'status' => $totalNominal > 0 ? 'paid' : ($m < date('n') ? 'delayed' : 'upcoming'),
                     'breakdown' => [
                         'pns' => [
-                            'amount' => (float)($mPnsTotal + $mTppPns),
+                            'amount' => (float)($mPnsTotal + ($m === $month ? $tppStandalone : 0)), // Add standalone only if appropriate
                             'gaji' => (float)$mGajiPns, 
                             'thr' => (float)$mThrPns,
                             'gaji13' => (float)$mGaji13Pns,
@@ -221,7 +225,7 @@ class DashboardService
                             'employees' => $mEmpPns
                         ],
                         'pppk' => [
-                            'amount' => (float)($mPppkTotal + $mTppPppk),
+                            'amount' => (float)($mPppkTotal),
                             'gaji' => (float)$mGajiPppk, 
                             'thr' => (float)$mThrPppk,
                             'gaji13' => (float)$mGaji13Pppk,
@@ -257,8 +261,8 @@ class DashboardService
                         : 0,
                 ],
                 'categories' => [
-                    ['label' => 'PNS', 'employees' => $totalPns, 'amount' => (float)($expPns + $tppPns + $tppStandalone), 'gaji' => (float)$expPns, 'tpp' => (float)($tppPns + $tppStandalone)],
-                    ['label' => 'PPPK', 'employees' => $totalPppk, 'amount' => (float)($expPppk + $tppPppk), 'gaji' => (float)$expPppk, 'tpp' => (float)$tppPppk],
+                    ['label' => 'PNS', 'employees' => $totalPns, 'amount' => (float)($expPns + $tppStandalone), 'gaji' => (float)$expPns, 'tpp' => (float)($tppPns + $tppStandalone)],
+                    ['label' => 'PPPK', 'employees' => $totalPppk, 'amount' => (float)($expPppk), 'gaji' => (float)$expPppk, 'tpp' => (float)$tppPppk],
                     ['label' => 'PPPK-PW', 'employees' => $totalPw, 'amount' => (float)$expPw, 'gaji' => (float)$expPw, 'tpp' => 0],
                 ],
                 'yearly_realization' => $yearlyRealization,
