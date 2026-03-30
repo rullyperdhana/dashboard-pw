@@ -42,7 +42,7 @@
                       ></v-select>
                     </v-col>
                     <v-col cols="12" sm="6">
-                      <div class="text-subtitle-2 font-weight-bold mb-2">Scope Waktu (Opsional)</div>
+                      <div class="text-subtitle-2 font-weight-bold mb-2">Scope Waktu</div>
                       <v-select
                         v-model="scopeType"
                         :items="scopeOptions"
@@ -55,14 +55,24 @@
 
                   <v-expand-transition>
                     <v-row v-if="scopeType === 'period'">
-                      <v-col cols="12" sm="6">
+                      <v-col cols="12" sm="6" v-if="clearParams.target !== 'tpg'">
                         <v-select
                           v-model="clearParams.month"
                           :items="months"
                           label="Bulan"
                           variant="outlined"
                           density="comfortable"
-                          :rules="[v => scopeType !== 'period' || !!v || 'Bulan wajib dipilih']"
+                          :rules="[v => scopeType !== 'period' || clearParams.target === 'tpg' || !!v || 'Bulan wajib dipilih']"
+                        ></v-select>
+                      </v-col>
+                      <v-col cols="12" sm="6" v-if="clearParams.target === 'tpg'">
+                        <v-select
+                          v-model="clearParams.triwulan"
+                          :items="triwulanOptions"
+                          label="Triwulan"
+                          variant="outlined"
+                          density="comfortable"
+                          :rules="[v => scopeType !== 'period' || clearParams.target !== 'tpg' || !!v || 'Triwulan wajib dipilih']"
                         ></v-select>
                       </v-col>
                       <v-col cols="12" sm="6">
@@ -74,6 +84,24 @@
                           density="comfortable"
                           :rules="[v => scopeType !== 'period' || !!v || 'Tahun wajib dipilih']"
                         ></v-select>
+                      </v-col>
+                    </v-row>
+                  </v-expand-transition>
+
+                  <v-expand-transition>
+                    <v-row v-if="['pns', 'pppk', 'both', 'tpp'].includes(clearParams.target)">
+                      <v-col cols="12">
+                        <div class="text-subtitle-2 font-weight-bold mb-2">Jenis Gaji (Opsional)</div>
+                        <v-select
+                          v-model="clearParams.jenis_gaji"
+                          :items="jenisGajiOptions"
+                          label="Pilih Jenis Gaji"
+                          placeholder="Semua Jenis Gaji"
+                          variant="outlined"
+                          density="comfortable"
+                          clearable
+                        ></v-select>
+                        <p class="text-caption text-medium-emphasis mt-n2">Kosongkan untuk menghapus semua jenis gaji pada periode terpilih.</p>
                       </v-col>
                     </v-row>
                   </v-expand-transition>
@@ -181,8 +209,14 @@
             <v-card-text>
               Apakah Anda benar-benar yakin ingin menghapus data 
               <strong>{{ getTargetLabel(clearParams.target) }}</strong> 
-              <span v-if="scopeType === 'period'">untuk periode {{ getMonthLabel(clearParams.month) }} {{ clearParams.year }}</span>
-              <span v-else>seluruhnya (tanpa batasan waktu)</span>?
+              <span v-if="scopeType === 'period'">
+                untuk periode 
+                <span v-if="clearParams.target === 'tpg'">Triwulan {{ clearParams.triwulan }}</span>
+                <span v-else>{{ getMonthLabel(clearParams.month) }}</span>
+                {{ clearParams.year }}
+              </span>
+              <span v-else>seluruhnya (tanpa batasan waktu)</span>
+              <span v-if="clearParams.jenis_gaji"> dengan jenis gaji <strong>{{ clearParams.jenis_gaji }}</strong></span>?
               <br><br>
               Tindakan ini <strong>TIDAK DAPAT DIBATALKAN</strong>.
 
@@ -231,7 +265,9 @@ const scopeType = ref('all')
 const clearParams = reactive({
   target: null,
   month: new Date().getMonth() + 1,
-  year: new Date().getFullYear()
+  year: new Date().getFullYear(),
+  triwulan: 1,
+  jenis_gaji: null
 })
 
 const isBackingUp = ref(false)
@@ -245,9 +281,22 @@ const snackbar = reactive({
 })
 
 const targetOptions = [
-  { title: 'Data Gaji PNS', value: 'pns' },
-  { title: 'Data Gaji PPPK', value: 'pppk' },
-  { title: 'Semua Data Gaji (PNS & PPPK)', value: 'both' }
+  { title: 'Data Gaji PNS (Rincian)', value: 'pns' },
+  { title: 'Data Gaji PPPK (Rincian)', value: 'pppk' },
+  { title: 'Gaji PNS & PPPK (Keduanya)', value: 'both' },
+  { title: 'Data TPP Standalone', value: 'tpp' },
+  { title: 'Data TPG (Sertifikasi Guru)', value: 'tpg' },
+]
+
+const jenisGajiOptions = [
+  'Induk', 'Susulan', 'Kekurangan', 'Terusan', 'THR', 'Gaji 13'
+]
+
+const triwulanOptions = [
+  { title: 'Triwulan 1 (Jan-Mar)', value: 1 },
+  { title: 'Triwulan 2 (Apr-Jun)', value: 2 },
+  { title: 'Triwulan 3 (Jul-Sep)', value: 3 },
+  { title: 'Triwulan 4 (Okt-Des)', value: 4 },
 ]
 
 const scopeOptions = [
@@ -278,8 +327,16 @@ const handleClearData = async () => {
     }
 
     if (scopeType.value === 'period') {
-      payload.month = clearParams.month
+      if (clearParams.target === 'tpg') {
+        payload.triwulan = clearParams.triwulan
+      } else {
+        payload.month = clearParams.month
+      }
       payload.year = clearParams.year
+    }
+
+    if (clearParams.jenis_gaji) {
+      payload.jenis_gaji = clearParams.jenis_gaji
     }
 
     payload.confirmation_code = confirmationCode.value
