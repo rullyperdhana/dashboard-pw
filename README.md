@@ -42,7 +42,8 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
   
 
-### 🚀 Gaji PNS & Sinkronisasi SKPD (v4.1.0)
+### 🚀 Gaji PNS & Sinkronisasi SKPD (v4.1.0-v4.2.0)
+- **Cumulative Batch Upload for Arrears (v4.2.0):** Data gaji rincian kini mendukung mode "Tambah" (*Append*) khusus untuk jenis **Kekurangan**. Pengguna dapat mengunggah beberapa file batch kekurangan untuk bulan yang sama tanpa menghapus data sebelumnya, sehingga nilai rekapitulasi akan terakumulasi otomatis.
 - **Real-time Payroll Calculation:** Implementasi *Vue Watchers* pada formulir Gaji PNS yang melakukan kalkulasi otomatis Gaji Kotor, Total Potongan, dan Gaji Bersih saat rincian tunjangan diinput.
 - **Tunjangan Khusus (TJKHUSUS) Support:** Penambahan field Tunjangan Khusus di seluruh sistem, mulai dari Input Form, Detail View, hingga rekapitulasi Laporan Bulanan (Web, Excel, & PDF).
 - **Automated SKPD Discovery:** Sistem kini otomatis mendeteksi dan menyinkronkan kode SKPD baru dari tabel Master Simgaji (`satkers`) ke dalam aplikasi utama, menghilangkan kebutuhan input manual untuk unit baru (seperti sekolah/UPT).

@@ -158,13 +158,18 @@ class ProcessPayrollUpload implements ShouldQueue
 
         $job->updateProgress(0, 100);
 
-        // Delete existing data
-        $deletedCount = GajiPns::where('bulan', $month)
-            ->where('tahun', $year)
-            ->where('jenis_gaji', $jenisGaji)
-            ->delete();
-
-        Log::info("Upload Job #{$this->uploadJobId}: Deleted {$deletedCount} existing PNS records");
+        // Delete existing data ONLY for 'Gaji Induk' (Normal Payroll)
+        // For 'Kekurangan' (Arrears) or others, we append them
+        $deletedCount = 0;
+        if ($jenisGaji === 'Gaji Induk') {
+            $deletedCount = GajiPns::where('bulan', $month)
+                ->where('tahun', $year)
+                ->where('jenis_gaji', $jenisGaji)
+                ->delete();
+            Log::info("Upload Job #{$this->uploadJobId}: Deleted {$deletedCount} existing PNS records for {$jenisGaji}");
+        } else {
+            Log::info("Upload Job #{$this->uploadJobId}: Skipping deletion for {$jenisGaji} (Append Mode)");
+        }
         $job->updateProgress(10, 100);
 
         // Import
@@ -192,10 +197,14 @@ class ProcessPayrollUpload implements ShouldQueue
 
         $job->updateProgress(0, 100);
 
-        $deletedCount = GajiPppk::where('bulan', $month)
-            ->where('tahun', $year)
-            ->where('jenis_gaji', $jenisGaji)
-            ->delete();
+        // Delete existing data ONLY for 'Gaji Induk'
+        $deletedCount = 0;
+        if ($jenisGaji === 'Gaji Induk') {
+            $deletedCount = GajiPppk::where('bulan', $month)
+                ->where('tahun', $year)
+                ->where('jenis_gaji', $jenisGaji)
+                ->delete();
+        }
 
         $job->updateProgress(10, 100);
 
