@@ -115,6 +115,7 @@
                     <th>TJBERAS</th>
                     <th>TJPAJAK</th>
                     <th>TJUMUM</th>
+                    <th>TJKHUSUS</th>
                     <th>BULAT</th>
                     <th>KOTOR</th>
                     <th>PIWP</th>
@@ -138,6 +139,7 @@
                         'tj_beras',
                         'tj_pajak',
                         'tj_umum',
+                        'tj_khusus',
                         'pembulatan',
                         'kotor',
                         'pot_iwp',
@@ -166,6 +168,7 @@
                         <td class="r">{{ number_format($item['tj_beras'] ?? 0, 0, ',', '.') }}</td>
                         <td class="r">{{ number_format($item['tj_pajak'] ?? 0, 0, ',', '.') }}</td>
                         <td class="r">{{ number_format($item['tj_umum'] ?? 0, 0, ',', '.') }}</td>
+                        <td class="r">{{ number_format($item['tj_khusus'] ?? 0, 0, ',', '.') }}</td>
                         <td class="r">{{ number_format($item['pembulatan'] ?? 0, 0, ',', '.') }}</td>
                         <td class="r">{{ number_format($item['kotor'] ?? 0, 0, ',', '.') }}</td>
                         <td class="r">{{ number_format($item['pot_iwp'] ?? 0, 0, ',', '.') }}</td>
@@ -188,6 +191,7 @@
                     <td class="r">{{ number_format($totals['tj_beras'], 0, ',', '.') }}</td>
                     <td class="r">{{ number_format($totals['tj_pajak'], 0, ',', '.') }}</td>
                     <td class="r">{{ number_format($totals['tj_umum'], 0, ',', '.') }}</td>
+                    <td class="r">{{ number_format($totals['tj_khusus'], 0, ',', '.') }}</td>
                     <td class="r">{{ number_format($totals['pembulatan'], 0, ',', '.') }}</td>
                     <td class="r">{{ number_format($totals['kotor'], 0, ',', '.') }}</td>
                     <td class="r">{{ number_format($totals['pot_iwp'], 0, ',', '.') }}</td>

@@ -40,6 +40,7 @@ class PaidSkpdExport implements FromArray, WithHeadings, WithStyles, WithColumnW
                 'TJBERAS',
                 'TJPAJAK',
                 'TJUMUM',
+                'TJKHUSUS',
                 'PEMBULATAN',
                 'KOTOR',
                 'PIWP',
@@ -86,6 +87,7 @@ class PaidSkpdExport implements FromArray, WithHeadings, WithStyles, WithColumnW
                     $item['tj_beras'] ?? 0,
                     $item['tj_pajak'] ?? 0,
                     $item['tj_umum'] ?? 0,
+                    $item['tj_khusus'] ?? 0,
                     $item['pembulatan'] ?? 0,
                     $item['kotor'] ?? 0,
                     $item['pot_iwp'] ?? 0,
@@ -117,8 +119,8 @@ class PaidSkpdExport implements FromArray, WithHeadings, WithStyles, WithColumnW
         $lastRow = count($this->data) + 1;
 
         if ($this->mode === 'detail') {
-            // columns E-U are currency (cols 5-21)
-            $sheet->getStyle("E2:U{$lastRow}")->getNumberFormat()->setFormatCode('#,##0');
+            // columns E-V are currency (cols 5-22)
+            $sheet->getStyle("E2:V{$lastRow}")->getNumberFormat()->setFormatCode('#,##0');
         } else {
             $sheet->getStyle("E2:H{$lastRow}")->getNumberFormat()->setFormatCode('#,##0');
         }
@@ -143,14 +145,15 @@ class PaidSkpdExport implements FromArray, WithHeadings, WithStyles, WithColumnW
                 'I' => 12,
                 'J' => 12,
                 'K' => 12,
-                'N' => 12,
-                'O' => 12,
-                'P' => 12,
-                'Q' => 14,
-                'R' => 12,
-                'S' => 12,
-                'T' => 14,
-                'U' => 15,
+                'N' => 12, // TJKHUSUS
+                'O' => 12, // BULAT
+                'P' => 12, // KOTOR
+                'Q' => 12, // PIWP
+                'R' => 14, // PIWP2
+                'S' => 12, // PIWP8
+                'T' => 12, // PPAJAK
+                'U' => 14, // POTONGAN
+                'V' => 15, // BERSIH
             ];
         }
 

@@ -26,7 +26,6 @@ class Skpd extends Model
      */
     protected $fillable = [
         'kode_skpd',
-        'kode_simgaji',
         'nama_skpd',
         'is_skpd',
     ];

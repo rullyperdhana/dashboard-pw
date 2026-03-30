@@ -175,6 +175,7 @@ const detailHeaders = [
   { title: 'TJBERAS',     key: 'tj_beras',         align: 'end'   },
   { title: 'TJPAJAK',     key: 'tj_pajak',         align: 'end'   },
   { title: 'TJUMUM',      key: 'tj_umum',          align: 'end'   },
+  { title: 'TJKHUSUS',    key: 'tj_khusus',        align: 'end'   },
   { title: 'BULAT',       key: 'pembulatan',       align: 'end'   },
   { title: 'KOTOR',       key: 'kotor',            align: 'end'   },
   { title: 'PIWP',        key: 'pot_iwp',          align: 'end'   },
@@ -191,7 +192,7 @@ const currentHeaders = computed(() => mode.value === 'detail' ? detailHeaders : 
 const currencyCols = computed(() => {
   if (mode.value === 'detail') {
     return ['gapok','tj_istri','tj_anak','tj_tpp','tj_eselon','tj_fungsi',
-            'tj_beras','tj_pajak','tj_umum','pembulatan','kotor',
+            'tj_beras','tj_pajak','tj_umum','tj_khusus','pembulatan','kotor',
             'pot_iwp','pot_iwp2','pot_iwp8','pot_pajak','total_potongan','bersih']
   }
   return ['total_gaji_pokok','total_tunjangan','total_potongan','total_bersih']

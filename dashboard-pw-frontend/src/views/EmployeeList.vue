@@ -51,7 +51,7 @@
                     density="compact"
                     class="mb-4"
                   ></v-select>
-                  <v-select
+                  <v-autocomplete
                     v-model="selectedSkpd"
                     label="SKPD"
                     :items="skpdOptions"
@@ -60,7 +60,8 @@
                     variant="underlined"
                     density="compact"
                     clearable
-                  ></v-select>
+                    no-data-text="Data SKPD tidak ditemukan"
+                  ></v-autocomplete>
                   <v-select
                     v-model="statusFilter"
                     label="Status Pegawai"
@@ -231,7 +232,18 @@
               <!-- Kepegawaian -->
               <v-col cols="12" class="mt-4"><div class="text-overline text-primary mb-2">Data Kepegawaian</div></v-col>
               <v-col cols="12" md="6">
-                <v-select v-model="form.idskpd" label="SKPD *" :items="skpdOptions" item-title="nama_skpd" item-value="id_skpd" variant="outlined" density="compact" :rules="[rules.required]"></v-select>
+                <v-autocomplete
+                  v-model="form.idskpd"
+                  label="SKPD *"
+                  :items="skpdOptions"
+                  item-title="nama_skpd"
+                  item-value="id_skpd"
+                  variant="outlined"
+                  density="compact"
+                  :rules="[rules.required]"
+                  clearable
+                  no-data-text="Data SKPD tidak ditemukan"
+                ></v-autocomplete>
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field v-model="form.upt" label="UPT" variant="outlined" density="compact"></v-text-field>

@@ -57,6 +57,13 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 - **Fixed PPPK-PW PDF Export:** Perbaikan variabel dan mapping data pada template PDF untuk laporan THR dan Gaji-13 PPPK Paruh Waktu.
 - **Dashboard Metric Accuracy:** Penyesuaian logika hitung personil (diambil dari data bulan terakhir, bukan akumulasi tahunan) dan tampilan angka nominal penuh pada footer Dashboard PNS.
 
+### 🚀 Gaji PNS & Sinkronisasi SKPD (v4.1.0)
+- **Real-time Payroll Calculation:** Implementasi *Vue Watchers* pada formulir Gaji PNS yang melakukan kalkulasi otomatis Gaji Kotor, Total Potongan, dan Gaji Bersih saat rincian tunjangan diinput.
+- **Tunjangan Khusus (TJKHUSUS) Support:** Penambahan field Tunjangan Khusus di seluruh sistem, mulai dari Input Form, Detail View, hingga rekapitulasi Laporan Bulanan (Web, Excel, & PDF).
+- **Automated SKPD Discovery:** Sistem kini otomatis mendeteksi dan menyinkronkan kode SKPD baru dari tabel Master Simgaji (`satkers`) ke dalam aplikasi utama, menghilangkan kebutuhan input manual untuk unit baru (seperti sekolah/UPT).
+- **Searchable SKPD Dropdown:** Mengupgrade dropdown SKPD menjadi *Autocomplete* cerdas untuk menangani ratusan data unit kerja dengan performa cepat dan pencarian teks.
+- **Backend Import Re-calculation:** Backend kini menghitung ulang seluruh total gaji saat proses impor DBF dilakukan, memastikan integritas data 100% meskipun file sumber memiliki anomali penjumlahan.
+
 ### 💨 Optimalisasi & Laporan Dinamis (v4.0.0)
 - **ESS Experience Upgrade:** Dashboard Employee Self-Service (ESS) kini mendukung histori slip gaji hingga 5 tahun (60 bulan) dengan fitur pengelompokan tab berbasis tahun (*Yearly Tabs*), serta menampilkan rincian spesifik Gaji Pokok dan TPP pada tiap kartu slip.
 - **Fixed Allowance Data:** Perbaikan kueri inti SQL pada laporan bulanan untuk menyertakan pilar tunjangan **Pembulatan** yang sebelumnya tersembunyi. Data pembulatan kini tampil akurat di tabel UI Web, PNS Dashboard, cetak Excel, hingga *export* PDF.

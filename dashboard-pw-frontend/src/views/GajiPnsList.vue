@@ -267,7 +267,13 @@
                 <v-text-field v-model.number="form.tunj_tpp" label="Tunj. TPP" type="number" variant="outlined" density="compact" prefix="Rp"></v-text-field>
               </v-col>
               <v-col cols="12" md="4">
-                <v-text-field v-model.number="form.kotor" label="Penghasilan Kotor" type="number" variant="outlined" density="compact" prefix="Rp"></v-text-field>
+                <v-text-field v-model.number="form.tunj_khusus" label="Tunj. Khusus" type="number" variant="outlined" density="compact" prefix="Rp"></v-text-field>
+              </v-col>
+              <v-col cols="12" md="4">
+                <v-text-field v-model.number="form.pembulatan" label="Pembulatan" type="number" variant="outlined" density="compact" prefix="Rp"></v-text-field>
+              </v-col>
+              <v-col cols="12" md="4">
+                <v-text-field v-model.number="form.kotor" label="Penghasilan Kotor" type="number" variant="outlined" density="compact" prefix="Rp" readonly bg-color="green-lighten-5"></v-text-field>
               </v-col>
 
               <!-- Potongan -->
@@ -291,10 +297,10 @@
                 <v-text-field v-model.number="form.pot_jkm" label="Pot. JKM" type="number" variant="outlined" density="compact" prefix="Rp"></v-text-field>
               </v-col>
               <v-col cols="12" md="3">
-                <v-text-field v-model.number="form.total_potongan" label="Total Potongan" type="number" variant="outlined" density="compact" prefix="Rp"></v-text-field>
+                <v-text-field v-model.number="form.total_potongan" label="Total Potongan" type="number" variant="outlined" density="compact" prefix="Rp" readonly bg-color="red-lighten-5"></v-text-field>
               </v-col>
               <v-col cols="12" md="3">
-                <v-text-field v-model.number="form.bersih" label="Penghasilan Bersih" type="number" variant="outlined" density="compact" prefix="Rp"></v-text-field>
+                <v-text-field v-model.number="form.bersih" label="Penghasilan Bersih" type="number" variant="outlined" density="compact" prefix="Rp" readonly bg-color="primary-lighten-5"></v-text-field>
               </v-col>
             </v-row>
           </v-form>
@@ -487,6 +493,8 @@ const tunjanganItems = [
   { label: 'Tunj. Beras', key: 'tunj_beras' },
   { label: 'Tunj. PPH', key: 'tunj_pph' },
   { label: 'Tunj. TPP', key: 'tunj_tpp' },
+  { label: 'Tunj. Khusus', key: 'tunj_khusus' },
+  { label: 'Pembulatan', key: 'pembulatan' },
 ]
 
 const potonganItems = [
@@ -634,6 +642,43 @@ const showSnackbar = (message, color = 'success') => {
 }
 
 onMounted(() => { fetchData() })
+
+// Auto-calculation logic
+watch(() => ({
+  gaji_pokok: form.value.gaji_pokok,
+  tunj_istri: form.value.tunj_istri,
+  tunj_anak: form.value.tunj_anak,
+  tunj_fungsional: form.value.tunj_fungsional,
+  tunj_struktural: form.value.tunj_struktural,
+  tunj_umum: form.value.tunj_umum,
+  tunj_beras: form.value.tunj_beras,
+  tunj_pph: form.value.tunj_pph,
+  tunj_tpp: form.value.tunj_tpp,
+  tunj_khusus: form.value.tunj_khusus,
+  pembulatan: form.value.pembulatan,
+}), (newVal) => {
+  const kotor = Object.values(newVal).reduce((acc, curr) => acc + (curr || 0), 0)
+  form.value.kotor = kotor
+}, { deep: true })
+
+watch(() => ({
+  pot_iwp: form.value.pot_iwp,
+  pot_askes: form.value.pot_askes,
+  pot_pph: form.value.pot_pph,
+  pot_taperum: form.value.pot_taperum,
+  pot_jkk: form.value.pot_jkk,
+  pot_jkm: form.value.pot_jkm,
+}), (newVal) => {
+  const totalPot = Object.values(newVal).reduce((acc, curr) => acc + (curr || 0), 0)
+  form.value.total_potongan = totalPot
+}, { deep: true })
+
+watch(() => ({
+  kotor: form.value.kotor,
+  total_potongan: form.value.total_potongan,
+}), (newVal) => {
+  form.value.bersih = (newVal.kotor || 0) - (newVal.total_potongan || 0)
+}, { deep: true })
 
 let searchTimeout = null
 watch(search, () => {

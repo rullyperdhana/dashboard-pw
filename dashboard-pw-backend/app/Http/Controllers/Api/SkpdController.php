@@ -9,25 +9,38 @@ use Illuminate\Support\Facades\DB;
 
 class SkpdController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         // Pastikan Master SKPD sinkron dengan Satker (untuk kode-kode baru seperti sekolah)
         $this->syncMasterSkpd();
 
+        // Paksa refresh cache jika ada parameter ?refresh=1
+        if ($request->has('refresh')) {
+            \Illuminate\Support\Facades\Cache::forget('ref_skpds');
+        }
+
         $skpds = \Illuminate\Support\Facades\Cache::remember('ref_skpds', 3600, function () {
             // Kita ambil data skpd, di-group berdasarkan nama untuk menghindari duplikasi di dropdown
-            // Kita ambil ID terkecil sebagai representatif jika ada nama yang identik
             $sub = DB::table('skpd')
                 ->select(DB::raw('MIN(id_skpd) as id_skpd'), 'nama_skpd')
                 ->groupBy('nama_skpd');
 
-            return DB::table('skpd as s')
+            $data = DB::table('skpd as s')
                 ->joinSub($sub, 'sub', function ($join) {
                     $join->on('s.id_skpd', '=', 'sub.id_skpd');
                 })
                 ->orderBy('s.nama_skpd')
                 ->get();
+
+            // Jika hasil kosong, jangan cache dulu agar bisa dicoba lagi
+            if ($data->isEmpty()) return null;
+            return $data;
         });
+
+        // Jika cache null (akibat kegagalan ambil data), coba ambil direct tanpa cache
+        if (!$skpds) {
+            $skpds = DB::table('skpd')->orderBy('nama_skpd')->get();
+        }
 
         return response()->json([
             'success' => true,
@@ -41,7 +54,7 @@ class SkpdController extends Controller
     private function syncMasterSkpd()
     {
         $missing = DB::table('satkers')
-            ->whereNotIn('kdskpd', DB::table('skpd')->whereNotNull('kode_simgaji')->pluck('kode_simgaji'))
+            ->whereNotIn('kdskpd', DB::table('skpd')->whereNotNull('kode_skpd')->pluck('kode_skpd'))
             ->select('kdskpd', 'nmskpd')
             ->distinct()
             ->get();
@@ -49,7 +62,7 @@ class SkpdController extends Controller
         foreach ($missing as $item) {
             $cleanName = trim($item->nmskpd);
             Skpd::updateOrCreate(
-                ['kode_simgaji' => $item->kdskpd],
+                ['kode_skpd' => $item->kdskpd],
                 [
                     'nama_skpd' => $cleanName,
                     'is_skpd' => 1,
