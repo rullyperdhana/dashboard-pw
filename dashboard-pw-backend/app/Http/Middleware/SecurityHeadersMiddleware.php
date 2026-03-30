@@ -32,11 +32,12 @@ class SecurityHeadersMiddleware
         // 5. Content Security Policy (Hanya mengizinkan sumber data yang dipercaya)
         // Set yang aman untuk Vue + Laravel standard
         $csp = "default-src 'self'; ";
-        $csp .= "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; ";
-        $csp .= "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; ";
+        $csp .= "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.google.com https://www.gstatic.com; ";
+        $csp .= "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://www.gstatic.com; ";
         $csp .= "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; ";
         $csp .= "img-src 'self' data: https:; ";
         $csp .= "connect-src 'self' https:; ";
+        $csp .= "frame-src 'self' https://www.google.com; ";
         $csp .= "frame-ancestors 'none';";
 
         $response->headers->set('Content-Security-Policy', $csp);
