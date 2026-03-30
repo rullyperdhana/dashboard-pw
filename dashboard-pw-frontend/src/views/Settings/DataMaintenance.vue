@@ -88,40 +88,43 @@
                     </v-row>
                   </v-expand-transition>
 
-                  <v-expand-transition>
-                    <v-row v-if="['pns', 'pppk', 'both', 'tpp'].includes(clearParams.target)">
-                      <v-col cols="12" sm="6">
-                        <div class="text-subtitle-2 font-weight-bold mb-2">Jenis Gaji (Opsional)</div>
-                        <v-select
-                          v-model="clearParams.jenis_gaji"
-                          :items="jenisGajiOptions"
-                          label="Pilih Jenis Gaji"
-                          placeholder="Semua Jenis Gaji"
-                          variant="outlined"
-                          density="comfortable"
-                          clearable
-                        ></v-select>
-                      </v-col>
-                      <v-col cols="12" sm="6">
-                        <div class="text-subtitle-2 font-weight-bold mb-2">SKPD (Opsional)</div>
-                        <v-autocomplete
-                          v-model="clearParams.skpd_id"
-                          :items="skpds"
-                          item-title="nama_skpd"
-                          item-value="id_skpd"
-                          label="Cari SKPD"
-                          placeholder="Semua SKPD"
-                          variant="outlined"
-                          density="comfortable"
-                          clearable
-                          :loading="isLoadingSkpd"
-                        ></v-autocomplete>
-                      </v-col>
-                      <v-col cols="12" class="mt-n4">
-                        <p class="text-caption text-medium-emphasis">Biarkan kosong untuk menghapus data seluruh SKPD/Jenis Gaji pada periode terpilih.</p>
-                      </v-col>
-                    </v-row>
-                  </v-expand-transition>
+                  <v-row class="mt-2">
+                    <v-col cols="12" sm="6">
+                      <div class="text-subtitle-2 font-weight-bold mb-2">Jenis Gaji (Opsional)</div>
+                      <v-select
+                        v-model="clearParams.jenis_gaji"
+                        :items="jenisGajiOptions"
+                        label="Pilih Jenis Gaji"
+                        placeholder="Semua Jenis Gaji"
+                        variant="outlined"
+                        density="comfortable"
+                        clearable
+                        :disabled="!['pns', 'pppk', 'both', 'tpp', 'pns_kekurangan', 'pppk_kekurangan'].includes(clearParams.target)"
+                      ></v-select>
+                    </v-col>
+                    <v-col cols="12" sm="6">
+                      <div class="text-subtitle-2 font-weight-bold mb-2">SKPD (Opsional)</div>
+                      <v-autocomplete
+                        v-model="clearParams.skpd_id"
+                        :items="skpds"
+                        item-title="nama_skpd"
+                        item-value="id_skpd"
+                        label="Cari SKPD"
+                        placeholder="Semua SKPD"
+                        variant="outlined"
+                        density="comfortable"
+                        clearable
+                        :loading="isLoadingSkpd"
+                        :disabled="!clearParams.target || clearParams.target === 'tpg'"
+                      ></v-autocomplete>
+                    </v-col>
+                    <v-col cols="12" class="mt-n4">
+                      <p class="text-caption text-medium-emphasis">
+                        <v-icon size="small" icon="mdi-information-outline" class="mr-1"></v-icon>
+                        Gunakan filter di atas untuk menghapus hanya jenis gaji tertentu (misal: Kekurangan, THR) atau per SKPD.
+                      </p>
+                    </v-col>
+                  </v-row>
 
                   <v-divider class="my-6"></v-divider>
 
@@ -305,6 +308,8 @@ const targetOptions = [
   { title: 'Data Gaji PNS (Rincian)', value: 'pns' },
   { title: 'Data Gaji PPPK (Rincian)', value: 'pppk' },
   { title: 'Gaji PNS & PPPK (Keduanya)', value: 'both' },
+  { title: 'Gaji Kekurangan PNS', value: 'pns_kekurangan' },
+  { title: 'Gaji Kekurangan PPPK', value: 'pppk_kekurangan' },
   { title: 'Data TPP Standalone', value: 'tpp' },
   { title: 'Data TPG (Sertifikasi Guru)', value: 'tpg' },
 ]
@@ -362,6 +367,15 @@ const handleClearData = async () => {
       target: clearParams.target
     }
 
+    // Handle shortcuts for Kekurangan
+    if (clearParams.target === 'pns_kekurangan') {
+      payload.target = 'pns'
+      payload.jenis_gaji = 'Kekurangan'
+    } else if (clearParams.target === 'pppk_kekurangan') {
+      payload.target = 'pppk'
+      payload.jenis_gaji = 'Kekurangan'
+    }
+
     if (scopeType.value === 'period') {
       if (clearParams.target === 'tpg') {
         payload.triwulan = clearParams.triwulan
@@ -371,7 +385,7 @@ const handleClearData = async () => {
       payload.year = clearParams.year
     }
 
-    if (clearParams.jenis_gaji) {
+    if (clearParams.jenis_gaji && !payload.jenis_gaji) {
       payload.jenis_gaji = clearParams.jenis_gaji
     }
 
