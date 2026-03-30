@@ -228,7 +228,14 @@
               </v-col>
 
               <!-- Gaji & Tunjangan -->
-              <v-col cols="12" class="mt-4"><div class="text-overline text-teal mb-2">Gaji & Tunjangan</div></v-col>
+              <v-col cols="12" class="mt-4">
+                <div class="d-flex align-center justify-space-between mb-2">
+                  <div class="text-overline text-teal">Gaji & Tunjangan</div>
+                  <v-btn size="x-small" color="error" variant="tonal" prepend-icon="mdi-eraser" @click="clearFinancialData">
+                    KOSONGKAN NILAI
+                  </v-btn>
+                </div>
+              </v-col>
               <v-col cols="12" md="4">
                 <v-text-field v-model.number="form.gaji_pokok" label="Gaji Pokok" type="number" variant="outlined" density="compact" prefix="Rp"></v-text-field>
               </v-col>
@@ -575,6 +582,20 @@ const saveRecord = async () => {
 }
 
 const confirmDelete = (item) => { recordToDelete.value = item; deleteDialog.value = true }
+
+const clearFinancialData = () => {
+  const financialFields = [
+    'gaji_pokok', 'tunj_istri', 'tunj_anak', 'tunj_fungsional', 'tunj_struktural', 
+    'tunj_umum', 'tunj_beras', 'tunj_pph', 'tunj_tpp', 'tunj_eselon', 'tunj_guru', 
+    'tunj_langka', 'tunj_tkd', 'tunj_terpencil', 'tunj_khusus', 'tunj_askes', 
+    'tunj_kk', 'tunj_km', 'pembulatan', 'kotor', 'pot_iwp', 'pot_iwp1', 'pot_iwp8', 
+    'pot_askes', 'pot_pph', 'pot_bulog', 'pot_taperum', 'pot_sewa', 'pot_hutang', 
+    'pot_korpri', 'pot_irdhata', 'pot_koperasi', 'pot_jkk', 'pot_jkm', 'total_potongan', 'bersih'
+  ]
+  financialFields.forEach(field => {
+    form.value[field] = 0
+  })
+}
 
 const deleteRecord = async () => {
   deleting.value = true
