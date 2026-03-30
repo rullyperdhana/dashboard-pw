@@ -39,23 +39,8 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
 ---
  
-### 🚀 Executive Dashboard & Welcome Hub (v3.9.0)
-- **"Simple but Informative" Dashboard:** Redesain total dashboard PPPK-PW dengan fokus pada metrik utama dan kemudahan navigasi.
-- **Submission Progress Gauge:** Meteran progres radial yang memantau status pelaporan SKPD secara *real-time* di header.
-- **Consolidated KPI Cards:** Ringkasan statistik (Anggaran, Pegawai, Unit, Rata-rata Biaya) dalam format kartu premium dengan efek *glassmorphism*.
-- **Smart Insights Panel:** Panel peringatan cerdas yang menampilkan item tindakan (misal: SKPD terlambat, data pending) untuk mempercepat pengambilan keputusan.
-- **Collapsible Detailed Reports:** Layout tabel yang lebih bersih dengan bagian yang dapat disiutkan (*collapsible*) untuk daftar gaji yang belum masuk dan sudah terbayar.
-- **Welcome Hub Experience:** Landing page interaktif dengan desain modern untuk akses cepat ke seluruh modul aplikasi.
-- **Integrated Account Management:** Pengaturan profil dan keamanan (Ganti Password) yang terintegrasi dangan mulus di sidebar dan navbar.
-- **Enhanced Dashboard Filtering:** Dashboard secara cerdas memisahkan data PPPK-PW dari PNS/PPPK Penuh Waktu untuk akurasi laporan.
-- **Global Help Access:** Halaman Pusat Bantuan kini dapat diakses oleh semua level pengguna (Admin & Operator).
-- **Environment Version Indicator:** Label versi aplikasi (v3.9.0) yang transparan di sidebar.
+
   
-### 🛠️ Maintenance & Refinement (v3.9.1)
-- **Automatic SKPD Synchronization:** Penentuan SKPD Utama kini otomatis tersinkron dangan pilihan pertama pada modul Manajemen User, memastikan identitas Sidebar selalu akurat.
-- **Enhanced Login Parity:** Respon otentikasi kini menyertakan data perizinan lengkap (`skpd_access`, `app_access`) untuk menghilangkan jeda sinkronisasi *cache* setelah perubahan admin.
-- **Fixed PPPK-PW PDF Export:** Perbaikan variabel dan mapping data pada template PDF untuk laporan THR dan Gaji-13 PPPK Paruh Waktu.
-- **Dashboard Metric Accuracy:** Penyesuaian logika hitung personil (diambil dari data bulan terakhir, bukan akumulasi tahunan) dan tampilan angka nominal penuh pada footer Dashboard PNS.
 
 ### 🚀 Gaji PNS & Sinkronisasi SKPD (v4.1.0)
 - **Real-time Payroll Calculation:** Implementasi *Vue Watchers* pada formulir Gaji PNS yang melakukan kalkulasi otomatis Gaji Kotor, Total Potongan, dan Gaji Bersih saat rincian tunjangan diinput.
@@ -70,7 +55,25 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 - **PDF Export Resilience:** Mengalihkan *driver* penyimpanan *export* PDF ke direktori publik yang lebih terjamin aksesibilitasnya, serta men-sintesis ulang struktur DomPDF dengan melumpuhkan komponen berat (*QR Code generator*) sementara waktu untuk mengatasi masalah lambatnya proses antrean latar belakang (*Job Queue bottleneck*).
 - **Sticky DataGrid UX:** Mengimplementasikan fitur penguncian layar otomatis (*Freeze Header* & *Freeze SKPD Column*) pada tabel Laporan Bulanan SKPD menggunakan arsitektur CSS modern, mencegah disorientasi pengguna saat menelusuri ratusan kolom tunjangan ke arah kanan.
 
+### 🛠️ Maintenance & Refinement (v3.9.1)
+- **Automatic SKPD Synchronization:** Penentuan SKPD Utama kini otomatis tersinkron dangan pilihan pertama pada modul Manajemen User, memastikan identitas Sidebar selalu akurat.
+- **Enhanced Login Parity:** Respon otentikasi kini menyertakan data perizinan lengkap (`skpd_access`, `app_access`) untuk menghilangkan jeda sinkronisasi *cache* setelah perubahan admin.
+- **Fixed PPPK-PW PDF Export:** Perbaikan variabel dan mapping data pada template PDF untuk laporan THR dan Gaji-13 PPPK Paruh Waktu.
+- **Dashboard Metric Accuracy:** Penyesuaian logika hitung personil (diambil dari data bulan terakhir, bukan akumulasi tahunan) dan tampilan angka nominal penuh pada footer Dashboard PNS.
+
+
 ---
+### 🚀 Executive Dashboard & Welcome Hub (v3.9.0)
+- **"Simple but Informative" Dashboard:** Redesain total dashboard PPPK-PW dengan fokus pada metrik utama dan kemudahan navigasi.
+- **Submission Progress Gauge:** Meteran progres radial yang memantau status pelaporan SKPD secara *real-time* di header.
+- **Consolidated KPI Cards:** Ringkasan statistik (Anggaran, Pegawai, Unit, Rata-rata Biaya) dalam format kartu premium dengan efek *glassmorphism*.
+- **Smart Insights Panel:** Panel peringatan cerdas yang menampilkan item tindakan (misal: SKPD terlambat, data pending) untuk mempercepat pengambilan keputusan.
+- **Collapsible Detailed Reports:** Layout tabel yang lebih bersih dengan bagian yang dapat disiutkan (*collapsible*) untuk daftar gaji yang belum masuk dan sudah terbayar.
+- **Welcome Hub Experience:** Landing page interaktif dengan desain modern untuk akses cepat ke seluruh modul aplikasi.
+- **Integrated Account Management:** Pengaturan profil dan keamanan (Ganti Password) yang terintegrasi dangan mulus di sidebar dan navbar.
+- **Enhanced Dashboard Filtering:** Dashboard secara cerdas memisahkan data PPPK-PW dari PNS/PPPK Penuh Waktu untuk akurasi laporan.
+- **Global Help Access:** Halaman Pusat Bantuan kini dapat diakses oleh semua level pengguna (Admin & Operator).
+- **Environment Version Indicator:** Label versi aplikasi (v3.9.0) yang transparan di sidebar.
  
 ### 📑 Pajak TER & Bukti Potong A2 (v3.8)
 - **Unified SKPD Engine:** Perhitungan PPh 21 kini menggunakan `skpd_id` tunggal yang terintegrasi untuk seluruh jenis pegawai (PNS & PPPK), memastikan laporan akurat meskipun dari sumber data yang berbeda.
