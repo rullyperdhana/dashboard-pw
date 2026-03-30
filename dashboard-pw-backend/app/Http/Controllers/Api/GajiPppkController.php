@@ -53,14 +53,19 @@ class GajiPppkController extends Controller
                 DB::raw('CASE WHEN mp.kdfungsi = "00000" THEN re.uraian ELSE gaji_pppk.jabatan END as resolved_jabatan_name')
             );
 
-        // Stats
-        $statsQuery = clone $query;
-        $stats = [
-            'total' => $statsQuery->count(),
-            'total_gaji_pokok' => (clone $statsQuery)->sum('gaji_pokok'),
-            'total_kotor' => (clone $statsQuery)->sum('kotor'),
-            'total_bersih' => (clone $statsQuery)->sum('bersih'),
-        ];
+        // Stats (Optimized to single query)
+        $stats = (clone $query)->select(
+            DB::raw('count(*) as total'),
+            DB::raw('sum(gaji_pokok) as total_gaji_pokok'),
+            DB::raw('sum(kotor) as total_kotor'),
+            DB::raw('sum(bersih) as total_bersih')
+        )->first()->toArray();
+        
+        // Ensure values are numbers
+        $stats['total'] = (int) $stats['total'];
+        $stats['total_gaji_pokok'] = (float) ($stats['total_gaji_pokok'] ?? 0);
+        $stats['total_kotor'] = (float) ($stats['total_kotor'] ?? 0);
+        $stats['total_bersih'] = (float) ($stats['total_bersih'] ?? 0);
 
         // Available periods
         $periods = GajiPppk::select('bulan', 'tahun')
