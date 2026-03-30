@@ -71,7 +71,7 @@
 
           <!-- Google reCAPTCHA -->
           <div class="d-flex justify-center mb-6">
-            <div class="g-recaptcha" data-sitekey="6LftjpssAAAAAJJSiF6jEKwdVKKHXazhv9vYVWG5"></div>
+            <div id="recaptcha-container"></div>
           </div>
 
           <v-btn
@@ -122,7 +122,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTheme } from 'vuetify'
 import ThemeToggle from '../../components/ThemeToggle.vue'
@@ -186,11 +186,32 @@ const handleLogin = async () => {
       showMessage('Gagal mencoba koneksi ke server', 'error')
     }
     // Reset reCAPTCHA on failure
-    if (window.grecaptcha) window.grecaptcha.reset()
+    if (window.grecaptcha && typeof window.grecaptcha.reset === 'function') {
+        window.grecaptcha.reset()
+    }
   } finally {
     loading.value = false
   }
 }
+
+const initRecaptcha = () => {
+  if (window.grecaptcha && typeof window.grecaptcha.render === 'function') {
+    try {
+      window.grecaptcha.render('recaptcha-container', {
+        'sitekey': '6LftjpssAAAAAJJSiF6jEKwdVKKHXazhv9vYVWG5'
+      })
+    } catch (e) {
+      console.warn('reCAPTCHA already rendered or failed:', e)
+    }
+  } else {
+    // Tunggu script Google selesai loading jika belum ada
+    setTimeout(initRecaptcha, 500)
+  }
+}
+
+onMounted(() => {
+  initRecaptcha()
+})
 </script>
 
 <style scoped>
