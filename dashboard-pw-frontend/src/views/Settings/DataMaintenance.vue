@@ -90,7 +90,7 @@
 
                   <v-expand-transition>
                     <v-row v-if="['pns', 'pppk', 'both', 'tpp'].includes(clearParams.target)">
-                      <v-col cols="12">
+                      <v-col cols="12" sm="6">
                         <div class="text-subtitle-2 font-weight-bold mb-2">Jenis Gaji (Opsional)</div>
                         <v-select
                           v-model="clearParams.jenis_gaji"
@@ -101,7 +101,24 @@
                           density="comfortable"
                           clearable
                         ></v-select>
-                        <p class="text-caption text-medium-emphasis mt-n2">Kosongkan untuk menghapus semua jenis gaji pada periode terpilih.</p>
+                      </v-col>
+                      <v-col cols="12" sm="6">
+                        <div class="text-subtitle-2 font-weight-bold mb-2">SKPD (Opsional)</div>
+                        <v-autocomplete
+                          v-model="clearParams.skpd_id"
+                          :items="skpds"
+                          item-title="nama_skpd"
+                          item-value="id_skpd"
+                          label="Cari SKPD"
+                          placeholder="Semua SKPD"
+                          variant="outlined"
+                          density="comfortable"
+                          clearable
+                          :loading="isLoadingSkpd"
+                        ></v-autocomplete>
+                      </v-col>
+                      <v-col cols="12" class="mt-n4">
+                        <p class="text-caption text-medium-emphasis">Biarkan kosong untuk menghapus data seluruh SKPD/Jenis Gaji pada periode terpilih.</p>
                       </v-col>
                     </v-row>
                   </v-expand-transition>
@@ -216,7 +233,8 @@
                 {{ clearParams.year }}
               </span>
               <span v-else>seluruhnya (tanpa batasan waktu)</span>
-              <span v-if="clearParams.jenis_gaji"> dengan jenis gaji <strong>{{ clearParams.jenis_gaji }}</strong></span>?
+              <span v-if="clearParams.jenis_gaji"> dengan jenis gaji <strong>{{ clearParams.jenis_gaji }}</strong></span>
+              <span v-if="clearParams.skpd_id"> untuk <strong>{{ getSkpdName(clearParams.skpd_id) }}</strong></span>?
               <br><br>
               Tindakan ini <strong>TIDAK DAPAT DIBATALKAN</strong>.
 
@@ -261,13 +279,16 @@ const isSubmitting = ref(false)
 const confirmDialog = ref(false)
 const confirmationCode = ref('')
 const scopeType = ref('all')
+const skpds = ref([])
+const isLoadingSkpd = ref(false)
 
 const clearParams = reactive({
   target: null,
   month: new Date().getMonth() + 1,
   year: new Date().getFullYear(),
   triwulan: 1,
-  jenis_gaji: null
+  jenis_gaji: null,
+  skpd_id: null
 })
 
 const isBackingUp = ref(false)
@@ -318,6 +339,21 @@ const years = computed(() => {
 
 const getTargetLabel = (val) => targetOptions.find(o => o.value === val)?.title || ''
 const getMonthLabel = (val) => months.find(m => m.value === val)?.title || ''
+const getSkpdName = (id) => skpds.value.find(s => s.id_skpd === id)?.nama_skpd || id
+
+const fetchSkpds = async () => {
+  isLoadingSkpd.value = true
+  try {
+    const res = await api.get('/skpd')
+    skpds.value = res.data
+  } catch (e) {
+    console.error('Failed to fetch SKPDs', e)
+  } finally {
+    isLoadingSkpd.value = false
+  }
+}
+
+fetchSkpds()
 
 const handleClearData = async () => {
   isSubmitting.value = true
@@ -337,6 +373,10 @@ const handleClearData = async () => {
 
     if (clearParams.jenis_gaji) {
       payload.jenis_gaji = clearParams.jenis_gaji
+    }
+
+    if (clearParams.skpd_id) {
+      payload.skpd_id = clearParams.skpd_id
     }
 
     payload.confirmation_code = confirmationCode.value

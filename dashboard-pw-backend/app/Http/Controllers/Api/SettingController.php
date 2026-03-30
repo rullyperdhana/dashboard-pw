@@ -443,6 +443,7 @@ class SettingController extends Controller
             'year' => 'nullable|integer',
             'triwulan' => 'nullable|integer|between:1,4',
             'jenis_gaji' => 'nullable|string',
+            'skpd_id' => 'nullable', // Can be numeric ID or raw code
             'confirmation_code' => 'required|string',
         ]);
 
@@ -460,6 +461,7 @@ class SettingController extends Controller
         $year = $validated['year'] ?? null;
         $triwulan = $validated['triwulan'] ?? null;
         $jenisGaji = $validated['jenis_gaji'] ?? null;
+        $skpdId = $validated['skpd_id'] ?? null;
 
         $results = [];
 
@@ -469,6 +471,24 @@ class SettingController extends Controller
             if ($month) $query->where('bulan', $month);
             if ($year) $query->where('tahun', $year);
             if ($jenisGaji) $query->where('jenis_gaji', $jenisGaji);
+            if ($skpdId) {
+                // If it's a numeric ID from skpd table, we need to handle mapping, 
+                // but usually in these clear cases, the user selects from a list of SKPDs.
+                // We'll support both raw code (kdskpd) or mapped ID.
+                if (is_numeric($skpdId)) {
+                    $mappedCodes = \App\Models\SkpdMapping::where('skpd_id', $skpdId)
+                        ->whereIn('type', ['pns', 'all'])
+                        ->pluck('source_code')
+                        ->toArray();
+                    if (!empty($mappedCodes)) {
+                        $query->whereIn('kdskpd', $mappedCodes);
+                    } else {
+                        $query->where('kdskpd', $skpdId);
+                    }
+                } else {
+                    $query->where('kdskpd', $skpdId);
+                }
+            }
             $results['pns'] = $query->delete();
         }
 
@@ -478,6 +498,21 @@ class SettingController extends Controller
             if ($month) $query->where('bulan', $month);
             if ($year) $query->where('tahun', $year);
             if ($jenisGaji) $query->where('jenis_gaji', $jenisGaji);
+            if ($skpdId) {
+                if (is_numeric($skpdId)) {
+                    $mappedCodes = \App\Models\SkpdMapping::where('skpd_id', $skpdId)
+                        ->whereIn('type', ['pppk', 'all'])
+                        ->pluck('source_code')
+                        ->toArray();
+                    if (!empty($mappedCodes)) {
+                        $query->whereIn('kdskpd', $mappedCodes);
+                    } else {
+                        $query->where('kdskpd', $skpdId);
+                    }
+                } else {
+                    $query->where('kdskpd', $skpdId);
+                }
+            }
             $results['pppk'] = $query->delete();
         }
 
@@ -487,6 +522,9 @@ class SettingController extends Controller
             if ($month) $query->where('month', $month);
             if ($year) $query->where('year', $year);
             if ($jenisGaji) $query->where('jenis_gaji', $jenisGaji);
+            if ($skpdId) {
+                $query->where('skpd_id', $skpdId);
+            }
             $results['tpp'] = $query->delete();
         }
 
@@ -495,7 +533,7 @@ class SettingController extends Controller
             $query = \App\Models\TpgData::query();
             if ($triwulan) $query->where('triwulan', $triwulan);
             if ($year) $query->where('tahun', $year);
-            // TPG usually doesn't have jenis_gaji filter
+            // TPG doesn't have a direct skpd_id yet, usually identified by satdik
             $results['tpg'] = $query->delete();
         }
 

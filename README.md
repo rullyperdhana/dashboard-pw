@@ -42,11 +42,11 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
   
 
-### 🛠️ Advanced Data Maintenance & Selective Clear (v4.4.0)
-- **Granular Data Clearing:** Fitur "Kosongkan Data Gaji" kini lebih bertenaga dengan opsi target yang lebih luas (PNS, PPPK, TPP, TPG).
-- **Jenis Gaji Filtering:** Administrator dapat menghapus data secara spesifik berdasarkan **Jenis Gaji** (misal: hanya menghapus THR bulan tertentu jika ada kesalahan upload, tanpa menghapus gaji Induk).
-- **Time Scope Flexibility:** Dukungan pembersihan data berdasarkan bulan/tahun regular atau triwulan (khusus TPG Sertifikasi Guru).
-- **Audit Consistency:** Setiap tindakan pembersihan data dicatat dengan detail parameter yang digunakan ke dalam Audit Log sistem untuk akuntabilitas.
+### 🛠️ Advanced Data Maintenance & SKPD Filter (v4.4.1)
+- **SKPD-Specific Clearing:** Menambahkan filter **SKPD** pada fitur Kosongkan Data Gaji. Administrator kini dapat menghapus data yang salah upload hanya untuk satu instansi tertentu.
+- **Granular Data Clearing:** Dukungan target data PNS, PPPK, TPP, dan TPG.
+- **Jenis Gaji Filtering:** Filter spesifik berdasarkan Gaji Induk, Kekurangan, Terusan, THR, atau Gaji 13.
+- **Time Scope Flexibility:** Dukungan Bulan/Tahun regular atau Triwulan (khusus TPG).
 
 ### 📊 Komprehensif Analytics & Gross Salary (v4.3.0)
 - **Gaji Kotor / Bruto Visibility:** Menambahkan metrik Gaji Kotor (Gross Salary) di seluruh Dashboard PNS, termasuk KPI card utama, kolom baru di tabel Histori Transaksi Tahunan, dan ringkasan data tahunan. Mendukung tampilan gabungan (PNS | PPPK).
@@ -86,7 +86,7 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 - **Integrated Account Management:** Pengaturan profil dan keamanan (Ganti Password) yang terintegrasi dangan mulus di sidebar dan navbar.
 - **Enhanced Dashboard Filtering:** Dashboard secara cerdas memisahkan data PPPK-PW dari PNS/PPPK Penuh Waktu untuk akurasi laporan.
 - **Global Help Access:** Halaman Pusat Bantuan kini dapat diakses oleh semua level pengguna (Admin & Operator).
-- **Environment Version Indicator:** Label versi aplikasi (v4.4.0) yang transparan di sidebar.
+- **Environment Version Indicator:** Label versi aplikasi (v4.4.1) yang transparan di sidebar.
  
 ### 📑 Pajak TER & Bukti Potong A2 (v3.8)
 - **Unified SKPD Engine:** Perhitungan PPh 21 kini menggunakan `skpd_id` tunggal yang terintegrasi untuk seluruh jenis pegawai (PNS & PPPK), memastikan laporan akurat meskipun dari sumber data yang berbeda.
