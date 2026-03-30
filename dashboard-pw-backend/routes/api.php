@@ -46,6 +46,7 @@ Route::get('/verify-thr', [ThrController::class, 'verifyThr']);
 Route::get('/verify-payment', [PaymentController::class, 'verifyPayment']);
 
 // ESS Public routes
+Route::get('/ess/captcha', [EssAuthController::class, 'getCaptcha']);
 Route::post('/ess/login', [EssAuthController::class, 'login'])->middleware('throttle:10,1');
 Route::get('/ess/slips', [EssAuthController::class, 'slips']);
 
