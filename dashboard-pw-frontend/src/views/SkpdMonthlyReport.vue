@@ -109,6 +109,31 @@
                 <div>Tidak ada data untuk periode ini.</div>
               </div>
             </template>
+
+            <!-- Summary Footer Row -->
+            <template v-slot:tfoot v-if="items.length > 0">
+              <tr class="summary-footer-row">
+                <td class="text-start font-weight-bold summary-cell" colspan="2">
+                  <v-icon size="16" class="mr-1">mdi-sigma</v-icon>
+                  TOTAL ({{ items.length }} SKPD)
+                </td>
+                <td class="text-center summary-cell">
+                  <v-chip size="x-small" color="teal" variant="flat" class="font-weight-bold">
+                    {{ formatNumber(columnTotal(mode === 'detail' ? 'jumlah_pegawai' : 'employee_count')) }}
+                  </v-chip>
+                </td>
+                <template v-if="mode === 'detail'">
+                  <td v-for="col in detailCurrencyCols" :key="col" class="text-end summary-cell font-weight-bold">
+                    <span :class="col === 'bersih' ? 'text-teal' : ''">{{ formatCurrency(columnTotal(col)) }}</span>
+                  </td>
+                </template>
+                <template v-else>
+                  <td v-for="col in summaryCurrencyCols" :key="col" class="text-end summary-cell font-weight-bold">
+                    <span :class="col === 'total_bersih' ? 'text-teal' : ''">{{ formatCurrency(columnTotal(col)) }}</span>
+                  </td>
+                </template>
+              </tr>
+            </template>
           </v-data-table>
         </v-card>
       </v-container>
@@ -189,14 +214,19 @@ const detailHeaders = [
 const currentHeaders = computed(() => mode.value === 'detail' ? detailHeaders : summaryHeaders)
 
 // columns that need currency formatting
-const currencyCols = computed(() => {
-  if (mode.value === 'detail') {
-    return ['gapok','tj_istri','tj_anak','tj_tpp','tj_eselon','tj_fungsi',
+const detailCurrencyCols = ['gapok','tj_istri','tj_anak','tj_tpp','tj_eselon','tj_fungsi',
             'tj_beras','tj_pajak','tj_umum','tj_khusus','pembulatan','kotor',
             'pot_iwp','pot_iwp2','pot_iwp8','pot_pajak','total_potongan','bersih']
-  }
-  return ['total_gaji_pokok','total_tunjangan','total_potongan','total_bersih']
+const summaryCurrencyCols = ['total_gaji_pokok','total_tunjangan','total_potongan','total_bersih']
+
+const currencyCols = computed(() => {
+  if (mode.value === 'detail') return detailCurrencyCols
+  return summaryCurrencyCols
 })
+
+const columnTotal = (col) => {
+  return items.value.reduce((sum, row) => sum + (parseFloat(row[col]) || 0), 0)
+}
 
 const months = [
   { title: 'Januari',   value: 1  }, { title: 'Februari',  value: 2  },
@@ -309,6 +339,20 @@ onMounted(async () => {
   white-space: nowrap;
   font-size: 0.78rem;
   background-color: rgb(var(--v-theme-surface)) !important;
+}
+
+/* Summary Footer */
+.summary-footer-row {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+}
+.summary-cell {
+  background-color: rgba(0, 150, 136, 0.08) !important;
+  border-top: 2px solid rgba(0, 150, 136, 0.3) !important;
+  white-space: nowrap;
+  font-size: 0.78rem;
+  padding: 8px 16px !important;
 }
 :deep(.v-data-table__tr:hover .v-data-table__td) { background-color: rgba(0, 150, 136, 0.05) !important; }
 </style>
