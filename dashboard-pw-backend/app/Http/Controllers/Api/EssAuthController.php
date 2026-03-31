@@ -15,6 +15,42 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 class EssAuthController extends Controller
 {
     /**
+     * Enrich user/slip data with mapping from SKPD and Ref Jabatan tables
+     */
+    private function enrichData($item)
+    {
+        // Fix SKPD name if "Unknown" or empty
+        if (isset($item->skpd) && (empty($item->skpd) || strtolower($item->skpd) === 'unknown')) {
+            $kdskpd = $item->kdskpd ?? null;
+            if ($kdskpd) {
+                // Try matching by id_skpd (as integer) or kode_simgaji
+                $skpdRow = DB::table('skpd')
+                    ->where('id_skpd', (int)$kdskpd)
+                    ->orWhere('kode_simgaji', $kdskpd)
+                    ->first();
+                if ($skpdRow) {
+                    $item->skpd = $skpdRow->nama_skpd;
+                }
+            }
+        }
+
+        // Fix Jabatan if empty
+        if (isset($item->jabatan) && empty($item->jabatan)) {
+            $kdfungsi = $item->kdfungsi ?? null;
+            if ($kdfungsi) {
+                $jabatanRow = DB::table('ref_jabatan_fungsional')
+                    ->where('kdfungsi', $kdfungsi)
+                    ->first();
+                if ($jabatanRow) {
+                    $item->jabatan = $jabatanRow->nama_jabatan;
+                }
+            }
+        }
+
+        return $item;
+    }
+
+    /**
      * Authenticate ESS user using NIK (noktp) and NIP.
      */
     public function login(Request $request)
@@ -42,43 +78,51 @@ class EssAuthController extends Controller
         // Cari di Gaji PNS
         $pns = GajiPns::where('noktp', $nik)->where('nip', $nip)->orderBy('tahun', 'desc')->orderBy('bulan', 'desc')->first();
         if ($pns) {
-            $user = [
+            $user = (object)[
                 'type' => 'PNS',
                 'nip' => $pns->nip,
                 'nama' => $pns->nama,
                 'skpd' => $pns->skpd,
+                'kdskpd' => $pns->kdskpd,
                 'jabatan' => $pns->jabatan,
                 'golongan' => $pns->golongan
             ];
-            return $this->generateEssToken('PNS', $user);
+            $user = $this->enrichData($user);
+            return $this->generateEssToken('PNS', (array)$user);
         }
 
         // Cari di Gaji PPPK
         $pppk = GajiPppk::where('noktp', $nik)->where('nip', $nip)->orderBy('tahun', 'desc')->orderBy('bulan', 'desc')->first();
         if ($pppk) {
-            $user = [
+            $user = (object)[
                 'type' => 'PPPK',
                 'nip' => $pppk->nip,
                 'nama' => $pppk->nama,
                 'skpd' => $pppk->skpd,
+                'kdskpd' => $pppk->kdskpd,
+                'kdfungsi' => $pppk->kdfungsi,
                 'jabatan' => $pppk->jabatan,
                 'golongan' => $pppk->golongan
             ];
-            return $this->generateEssToken('PPPK', $user);
+            $user = $this->enrichData($user);
+            return $this->generateEssToken('PPPK', (array)$user);
         }
 
         // Cek juga di Master Pegawai jika belum ada penggajian
         $masterPns = DB::table('master_pegawai')->where('noktp', $nik)->where('nip', $nip)->first();
         if ($masterPns) {
-            $user = [
+            $user = (object)[
                 'type' => 'PNS',
                 'nip' => $masterPns->nip,
                 'nama' => $masterPns->nama,
                 'skpd' => '-',
+                'kdskpd' => $masterPns->kdskpd,
+                'kdfungsi' => $masterPns->kdfungsi,
                 'jabatan' => '-',
                 'golongan' => $masterPns->blgolt ?? '-'
             ];
-            return $this->generateEssToken('PNS', $user);
+            $user = $this->enrichData($user);
+            return $this->generateEssToken('PNS', (array)$user);
         }
 
         return response()->json([
@@ -133,12 +177,18 @@ class EssAuthController extends Controller
 
         // Mengambil histori maksimal 5 tahun terakhir (60 bulan) dan menyertakan rincian
         $slipsPns = GajiPns::where('nip', $nip)
-            ->select('id', 'bulan', 'tahun', 'jenis_gaji', 'kotor', 'bersih', 'skpd', 'gaji_pokok', 'tunj_tpp')
-            ->orderBy('tahun', 'desc')->orderBy('bulan', 'desc')->limit(60)->get()->map(function($i) { $i->tipe = 'PNS'; return $i; });
+            ->select('id', 'bulan', 'tahun', 'jenis_gaji', 'kotor', 'bersih', 'skpd', 'kdskpd', 'kdfungsi', 'jabatan', 'gaji_pokok', 'tunj_tpp')
+            ->orderBy('tahun', 'desc')->orderBy('bulan', 'desc')->limit(60)->get()->map(function($i) { 
+                $i->tipe = 'PNS'; 
+                return $this->enrichData($i); 
+            });
         
         $slipsPppk = GajiPppk::where('nip', $nip)
-            ->select('id', 'bulan', 'tahun', 'jenis_gaji', 'kotor', 'bersih', 'skpd', 'gaji_pokok', 'tunj_tpp')
-            ->orderBy('tahun', 'desc')->orderBy('bulan', 'desc')->limit(60)->get()->map(function($i) { $i->tipe = 'PPPK'; return $i; });
+            ->select('id', 'bulan', 'tahun', 'jenis_gaji', 'kotor', 'bersih', 'skpd', 'kdskpd', 'kdfungsi', 'jabatan', 'gaji_pokok', 'tunj_tpp')
+            ->orderBy('tahun', 'desc')->orderBy('bulan', 'desc')->limit(60)->get()->map(function($i) { 
+                $i->tipe = 'PPPK'; 
+                return $this->enrichData($i); 
+            });
 
         $slips = $slipsPns->merge($slipsPppk)->sortByDesc('tahun')->sortByDesc('bulan')->values();
 
@@ -169,6 +219,7 @@ class EssAuthController extends Controller
             ], 404);
         }
 
+        $detail = $this->enrichData($detail);
         $detail->tipe = $type; // Ensure type is returned so frontend knows it
 
         return response()->json([
@@ -195,6 +246,8 @@ class EssAuthController extends Controller
         if (!$data) {
             abort(404, 'Detail slip tidak ditemukan.');
         }
+
+        $data = $this->enrichData($data);
 
         $months = [
             1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 
