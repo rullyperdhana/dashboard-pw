@@ -484,9 +484,19 @@ class ProcessPayrollUpload implements ShouldQueue
         $job->updateProgress(0, 100);
 
         DB::transaction(function () use ($job, $filePath, $month, $year, $jenisGaji, $params) {
-            // Delete existing data for both
-            GajiPns::where('bulan', $month)->where('tahun', $year)->where('jenis_gaji', $jenisGaji)->delete();
-            GajiPppk::where('bulan', $month)->where('tahun', $year)->where('jenis_gaji', $jenisGaji)->delete();
+            // For 'Kekurangan', 'Susulan', 'Terusan' — APPEND mode (allow multiple uploads)
+            // For 'Induk', 'THR', 'Gaji 13' — REPLACE mode (delete existing first)
+            $deletedPns = 0;
+            $deletedPppk = 0;
+            $appendTypes = ['Kekurangan', 'Susulan', 'Terusan'];
+            
+            if (!in_array($jenisGaji, $appendTypes)) {
+                $deletedPns = GajiPns::where('bulan', $month)->where('tahun', $year)->where('jenis_gaji', $jenisGaji)->delete();
+                $deletedPppk = GajiPppk::where('bulan', $month)->where('tahun', $year)->where('jenis_gaji', $jenisGaji)->delete();
+                Log::info("Upload Job #{$this->uploadJobId}: Deleted {$deletedPns} PNS + {$deletedPppk} PPPK records for {$jenisGaji} (Replace Mode)");
+            } else {
+                Log::info("Upload Job #{$this->uploadJobId}: Skipping deletion for {$jenisGaji} (Append Mode — multiple uploads allowed)");
+            }
 
             $reader = new DbfReader($filePath);
             $totalRecords = $reader->getRecordCount();
