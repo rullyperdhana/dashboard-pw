@@ -494,6 +494,12 @@ class ReportController extends Controller
             $jenisGajiFilter = " AND g.jenis_gaji = " . DB::getPdo()->quote($jenisGaji);
         }
 
+        $stIdFilter = "";
+        if (!$isSuperAdmin && $accessibleIds) {
+            $idList = implode(',', array_map('intval', $accessibleIds));
+            $stIdFilter = " AND st.skpd_id IN ($idList) ";
+        }
+
         // ── Detailed mode for PNS / PPPK / Gabungan ──────────────────────────
         if (in_array($type, ['pns', 'pppk', 'all'])) {
             $parts = [];
@@ -557,7 +563,7 @@ class ReportController extends Controller
                         SUM(st.nilai) AS bersih
                     FROM standalone_tpp st
                     JOIN skpd s ON st.skpd_id = s.id_skpd
-                    WHERE st.month = ? AND st.year = ? 
+                    WHERE st.month = ? AND st.year = ? {$stIdFilter}
                     AND st.employee_type = " . DB::getPdo()->quote($t) . "
                     AND st.jenis_gaji = " . DB::getPdo()->quote($jenisGaji === 'Semua' ? 'Induk' : $jenisGaji) . "
                     AND NOT EXISTS (
