@@ -126,14 +126,9 @@ class User extends Authenticatable
             return null;
         }
 
-        $rawAccess = $this->skpd_access;
+        $groupAccess = ($this->user_group_id) ? ($this->userGroup->skpd_access ?? []) : [];
+        $rawAccess = array_merge($rawAccess ?: [], $groupAccess);
         
-        // If user specific access is empty, fallback to group access
-        if (empty($rawAccess) && $this->user_group_id) {
-            $rawAccess = $this->userGroup->skpd_access ?? [];
-        }
-
-        $rawAccess = $rawAccess ?: [];
         $access = [];
 
         // Normalize access based on type
@@ -195,14 +190,13 @@ class User extends Authenticatable
     public function getAppAccessAttribute($value)
     {
         // $value might be already cast to array if using $casts
-        $access = is_array($value) ? $value : json_decode($value, true);
+        $userAccess = is_array($value) ? $value : json_decode($value, true);
+        $userAccess = $userAccess ?: [];
         
-        // If user specific access is empty, fallback to group access
-        if (empty($access) && $this->user_group_id) {
-            $access = $this->userGroup->app_access ?? [];
-        }
+        $groupAccess = ($this->user_group_id) ? ($this->userGroup->app_access ?? []) : [];
 
-        return $access ?: [];
+        // Return unique merge of user + group access
+        return array_values(array_unique(array_merge($userAccess, $groupAccess)));
     }
 
     /**
