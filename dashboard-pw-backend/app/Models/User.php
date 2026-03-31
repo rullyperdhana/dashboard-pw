@@ -194,7 +194,8 @@ class User extends Authenticatable
      */
     public function getAppAccessAttribute($value)
     {
-        $access = json_decode($value, true);
+        // $value might be already cast to array if using $casts
+        $access = is_array($value) ? $value : json_decode($value, true);
         
         // If user specific access is empty, fallback to group access
         if (empty($access) && $this->user_group_id) {
