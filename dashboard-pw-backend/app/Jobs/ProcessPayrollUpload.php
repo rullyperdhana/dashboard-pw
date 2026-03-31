@@ -484,13 +484,22 @@ class ProcessPayrollUpload implements ShouldQueue
         $job->updateProgress(0, 100);
 
         DB::transaction(function () use ($job, $filePath, $month, $year, $jenisGaji, $params) {
-            // For 'Kekurangan', 'Susulan', 'Terusan' — APPEND mode (allow multiple uploads)
-            // For 'Induk', 'THR', 'Gaji 13' — REPLACE mode (delete existing first)
+            // Determine delete behavior based on upload_mode parameter
+            $uploadMode = $params['upload_mode'] ?? 'auto';
             $deletedPns = 0;
             $deletedPppk = 0;
             $appendTypes = ['Kekurangan', 'Susulan', 'Terusan'];
             
-            if (!in_array($jenisGaji, $appendTypes)) {
+            // 'auto' = smart default (append for Kekurangan etc, replace for others)
+            // 'append' = always append
+            // 'replace' = always replace
+            $shouldDelete = match($uploadMode) {
+                'append' => false,
+                'replace' => true,
+                default => !in_array($jenisGaji, $appendTypes), // auto mode
+            };
+            
+            if ($shouldDelete) {
                 $deletedPns = GajiPns::where('bulan', $month)->where('tahun', $year)->where('jenis_gaji', $jenisGaji)->delete();
                 $deletedPppk = GajiPppk::where('bulan', $month)->where('tahun', $year)->where('jenis_gaji', $jenisGaji)->delete();
                 Log::info("Upload Job #{$this->uploadJobId}: Deleted {$deletedPns} PNS + {$deletedPppk} PPPK records for {$jenisGaji} (Replace Mode)");

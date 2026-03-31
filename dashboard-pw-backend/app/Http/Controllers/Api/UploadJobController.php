@@ -223,6 +223,7 @@ class UploadJobController extends Controller
                 'month' => (int) $request->input('month'),
                 'year' => (int) $request->input('year'),
                 'jenis_gaji' => $request->input('jenis_gaji'),
+                'upload_mode' => $request->input('upload_mode', 'auto'),
             ],
             'tpp' => [
                 'month' => (int) $request->input('month'),

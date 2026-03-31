@@ -658,6 +658,35 @@
               <div v-if="!activeJobId">
                 <p class="text-caption text-medium-emphasis mb-6">Pilih file DBF hasil ekspor SIMDA/Simgaji untuk memproses data gaji periode ini.</p>
                 <v-select v-model="jenisGaji" :items="jenisGajiOptions" label="Jenis Pembayaran" variant="filled" density="comfortable" rounded="lg" class="mb-4"></v-select>
+                
+                <!-- Upload Mode Toggle (for Kekurangan/Susulan/Terusan) -->
+                <v-expand-transition>
+                  <v-alert v-if="isAppendableType" :type="uploadMode === 'append' ? 'info' : 'warning'" variant="tonal" class="rounded-xl mb-4 border-0" density="compact">
+                    <div class="d-flex align-center justify-space-between">
+                      <div>
+                        <div class="text-caption font-weight-bold">
+                          {{ uploadMode === 'append' ? '📥 Mode Tambah (Append)' : '🔄 Mode Ganti (Replace)' }}
+                        </div>
+                        <div class="text-caption" style="opacity: 0.8">
+                          {{ uploadMode === 'append' 
+                            ? 'Data baru akan ditambahkan ke data yang sudah ada.' 
+                            : 'Data lama akan dihapus dan diganti dengan data baru.' 
+                          }}
+                        </div>
+                      </div>
+                      <v-switch
+                        v-model="uploadMode"
+                        true-value="append"
+                        false-value="replace"
+                        color="teal" 
+                        hide-details 
+                        density="compact"
+                        class="flex-grow-0 ml-4"
+                      ></v-switch>
+                    </div>
+                  </v-alert>
+                </v-expand-transition>
+
                 <v-file-input v-model="file" label="Klik untuk pilih file" prepend-inner-icon="mdi-database-plus" variant="outlined" accept=".dbf" rounded="lg" show-size></v-file-input>
                 <v-alert v-if="uploadError" type="error" variant="tonal" class="mt-6 rounded-lg text-caption border-0">
                   {{ uploadError }}
@@ -1165,6 +1194,8 @@ const renderChart = () => {
 
 // ═════════ UPLOAD HANDLER ═════════
 const uploadDialog = ref(false); const uploading = ref(false); const file = ref(null); const uploadError = ref(''); const jenisGaji = ref('Induk')
+const uploadMode = ref('append')
+const isAppendableType = computed(() => ['Kekurangan', 'Susulan', 'Terusan'].includes(jenisGaji.value))
 const activeJobId = ref(null); const activeJobStatus = ref(''); const activeJobProgress = ref(0); const activeJobFileName = ref(''); const activeJobResult = ref(null); const activeJobError = ref('')
 let pollInterval = null
 
@@ -1174,6 +1205,7 @@ const uploadData = async () => {
   const fd = new FormData()
   fd.append('file', Array.isArray(file.value) ? file.value[0] : file.value)
   fd.append('type', 'payroll_dbf'); fd.append('month', selectedMonth.value); fd.append('year', selectedYear.value); fd.append('jenis_gaji', jenisGaji.value)
+  if (isAppendableType.value) fd.append('upload_mode', uploadMode.value)
   try {
     const res = await api.post('/upload-jobs', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
     activeJobId.value = res.data.data.job_id; activeJobFileName.value = res.data.data.file_name; startPolling()
