@@ -19,8 +19,17 @@
               density="compact"
               hide-details
               style="max-width: 120px"
-              @update:model-value="fetchData"
+              @update:model-value="() => { page = 1; fetchData(); }"
             ></v-select>
+            <v-btn
+              v-if="isSuperAdmin"
+              color="success"
+              prepend-icon="mdi-plus"
+              variant="flat"
+              @click="openAddDialog"
+            >
+              Tambah Data
+            </v-btn>
             <v-btn
               v-if="isSuperAdmin"
               color="secondary"
@@ -65,7 +74,7 @@
               @keyup.enter="fetchData"
               style="max-width: 400px"
             ></v-text-field>
-            <v-tabs v-model="selectedType" color="primary" @update:model-value="fetchData">
+            <v-tabs v-model="selectedType" color="primary" @update:model-value="() => { page = 1; fetchData(); }">
               <v-tab value="">Semua</v-tab>
               <v-tab value="pns">PNS</v-tab>
               <v-tab value="pppk">PPPK</v-tab>
@@ -212,6 +221,73 @@
           </v-card>
         </v-dialog>
 
+        <!-- Add Dialog -->
+        <v-dialog v-model="addDialog" max-width="550px" persistent>
+          <v-card class="rounded-xl pa-4">
+            <v-card-title class="px-0 pt-0 font-weight-bold d-flex align-center">
+              Tambah Status Pajak
+              <v-spacer></v-spacer>
+              <v-btn icon="mdi-close" variant="text" size="small" @click="closeAddDialog"></v-btn>
+            </v-card-title>
+            <v-card-text class="px-0">
+              <p class="text-body-2 mb-4">Cari pegawai dari database master (PNS/PPPK) untuk ditambahkan ke daftar status pajak tahun {{ selectedYear }}.</p>
+              
+              <v-autocomplete
+                v-model="selectedEmployee"
+                v-model:search="employeeSearch"
+                :items="employeeOptions"
+                :loading="loadingEmployees"
+                item-title="search_label"
+                item-value="nip"
+                label="Cari NIP atau Nama Pegawai..."
+                placeholder="Ketik minimal 3 karakter..."
+                variant="outlined"
+                density="comfortable"
+                hide-no-data
+                hide-details
+                return-object
+                clearable
+                class="mb-4"
+              >
+                <template v-slot:item="{ props, item }">
+                  <v-list-item v-bind="props" :subtitle="item.raw.nip">
+                    <template v-slot:prepend>
+                      <v-chip size="x-small" :color="item.raw.type === 'pns' ? 'info' : 'warning'" class="mr-2">
+                        {{ item.raw.type.toUpperCase() }}
+                      </chip>
+                    </template>
+                  </v-list-item>
+                </template>
+              </v-autocomplete>
+
+              <v-expand-transition>
+                <div v-if="selectedEmployee">
+                  <v-select
+                    v-model="newTaxStatus"
+                    :items="taxStatusOptions"
+                    label="Pilih Status Pajak (PTKP)"
+                    variant="outlined"
+                    density="comfortable"
+                    class="mt-2"
+                  ></v-select>
+                </div>
+              </v-expand-transition>
+            </v-card-text>
+            <v-card-actions class="px-0 pb-0">
+              <v-btn 
+                block 
+                color="primary" 
+                size="large" 
+                @click="handleAdd" 
+                :loading="saving"
+                :disabled="!selectedEmployee || !newTaxStatus"
+              >
+                Tambahkan Data
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+
         <!-- Inisialisasi Tahun Dialog -->
         <v-dialog v-model="initYearDialog" max-width="500px">
           <v-card class="rounded-xl pa-4">
@@ -234,7 +310,7 @@
               </v-radio-group>
 
               <v-alert type="warning" variant="tonal" density="compact" class="text-caption">
-                Data yang sudah ada untuk tahun {{ selectedYear }} tidak akan ditimpa. Hanya data pegawai yang belum ada yang akan ditambahkan.
+                <b>Perhatian:</b> Data yang sudah terbentuk untuk tahun {{ selectedYear }} (PTKP yang sudah ada) <u>tidak akan ditimpa atau diubah</u> secara massal. Hanya data pegawai baru yang belum terdaftar yang akan ditambahkan.
               </v-alert>
             </v-card-text>
             <v-card-actions class="px-0 pb-0">
@@ -262,7 +338,7 @@
                 class="mb-4"
               ></v-file-input>
               <v-alert type="info" variant="tonal" density="compact" class="text-caption">
-                Pastikan format file sesuai dengan hasil export (NIP, NAMA, TIPE, STATUS PAJAK).
+                <b>Keamanan Data:</b> Proses impor ini hanya akan menambah data baru. Menghindari perubahan data yang sudah ada (tidak akan menimpa data NIP yang sudah ada di database tahun ini).
               </v-alert>
             </v-card-text>
             <v-card-actions class="px-0 pb-0">
@@ -317,6 +393,19 @@ const snackbar = ref({
   text: '',
   color: 'success'
 })
+ 
+const addDialog = ref(false)
+const selectedEmployee = ref(null)
+const employeeSearch = ref('')
+const employeeOptions = ref([])
+const loadingEmployees = ref(false)
+const newTaxStatus = ref('TK/0')
+ 
+const isSuperAdmin = computed(() => {
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  // Allow superadmin and admin (role 1 & 2)
+  return user.role_id === 1 || user.role_id === 2 || user.role === 'admin' || user.role === 'superadmin'
+})
 
 const yearOptions = computed(() => {
   const current = new Date().getFullYear()
@@ -366,6 +455,84 @@ watch(search, () => {
     fetchData()
   }, 500)
 })
+ 
+// Search employees for Add Dialog
+let employeeSearchTimer = null
+watch(employeeSearch, (val) => {
+  if (!val || val.length < 3) {
+    employeeOptions.value = []
+    return
+  }
+  
+  if (employeeSearchTimer) clearTimeout(employeeSearchTimer)
+  employeeSearchTimer = setTimeout(() => {
+    fetchEmployeesSearch(val)
+  }, 500)
+})
+ 
+const fetchEmployeesSearch = async (val) => {
+  loadingEmployees.value = true
+  try {
+    // Search both PNS and PPPK
+    const [pnsRes, pppkRes] = await Promise.all([
+      api.get('/master-pegawai', { params: { search: val, per_page: 10 } }),
+      api.get('/employees', { params: { search: val, per_page: 10 } })
+    ])
+ 
+    const pns = (pnsRes.data.data.data || []).map(p => ({
+      nip: p.nip,
+      nama: p.nama,
+      type: 'pns',
+      search_label: `${p.nip} - ${p.nama} (PNS)`
+    }))
+ 
+    const pppk = (pppkRes.data.data.data || []).map(p => ({
+      nip: p.nip,
+      nama: p.nama,
+      type: 'pppk',
+      search_label: `${p.nip} - ${p.nama} (PPPK)`
+    }))
+ 
+    employeeOptions.value = [...pns, ...pppk]
+  } catch (error) {
+    console.error('Error searching employees:', error)
+  } finally {
+    loadingEmployees.value = false
+  }
+}
+ 
+const openAddDialog = () => {
+  addDialog.value = true
+  selectedEmployee.value = null
+  employeeSearch.value = ''
+  newTaxStatus.value = 'TK/0'
+}
+ 
+const closeAddDialog = () => {
+  addDialog.value = false
+}
+ 
+const handleAdd = async () => {
+  if (!selectedEmployee.value) return
+  
+  saving.value = true
+  try {
+    await api.post('/tax-status', {
+      nip: selectedEmployee.value.nip,
+      nama: selectedEmployee.value.nama,
+      employee_type: selectedEmployee.value.type,
+      tax_status: newTaxStatus.value,
+      year: selectedYear.value
+    })
+    showSnackbar('Status pajak berhasil ditambahkan')
+    closeAddDialog()
+    fetchData()
+  } catch (error) {
+    showSnackbar(error.response?.data?.message || 'Gagal menambahkan data', 'error')
+  } finally {
+    saving.value = false
+  }
+}
 
 const getStatusColor = (status) => {
   if (!status || status === '-') return 'grey'

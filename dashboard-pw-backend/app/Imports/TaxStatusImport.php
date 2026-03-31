@@ -21,17 +21,20 @@ class TaxStatusImport implements ToModel, WithHeadingRow
             return null;
         }
 
-        return TaxStatus::updateOrCreate(
-            [
-                'nip' => trim($row['nip']),
-                'year' => $this->year
-            ],
-            [
-                'nama' => $row['nama'] ?? null,
-                'employee_type' => strtolower($row['tipe'] ?? 'pns'),
-                'tax_status' => strtoupper($row['status_pajak'] ?? '-'),
-                'is_manual' => true
-            ]
-        );
+        $nip = trim($row['nip']);
+        $exists = TaxStatus::where('nip', $nip)->where('year', $this->year)->exists();
+
+        if ($exists) {
+            return null;
+        }
+
+        return new TaxStatus([
+            'nip' => $nip,
+            'year' => $this->year,
+            'nama' => $row['nama'] ?? null,
+            'employee_type' => strtolower($row['tipe'] ?? 'pns'),
+            'tax_status' => strtoupper($row['status_pajak'] ?? '-'),
+            'is_manual' => true
+        ]);
     }
 }
