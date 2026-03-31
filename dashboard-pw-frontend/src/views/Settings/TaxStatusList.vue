@@ -254,7 +254,7 @@
                     <template v-slot:prepend>
                       <v-chip size="x-small" :color="item.raw.type === 'pns' ? 'info' : 'warning'" class="mr-2">
                         {{ item.raw.type.toUpperCase() }}
-                      </chip>
+                      </v-chip>
                     </template>
                   </v-list-item>
                 </template>
