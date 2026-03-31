@@ -169,6 +169,8 @@ class EssAuthController extends Controller
             ], 404);
         }
 
+        $detail->tipe = $type; // Ensure type is returned so frontend knows it
+
         return response()->json([
             'success' => true,
             'data' => $detail

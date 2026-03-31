@@ -396,7 +396,7 @@ const handleDownloadPdf = async () => {
     try {
         const response = await api.get(`/ess/slips/${selectedSlipDetail.value.id}/pdf`, {
             params: { 
-                type: user.value.type,
+                type: selectedSlipDetail.value.tipe || user.value.type,
                 nip: user.value.nip
             },
             responseType: 'blob',
