@@ -44,6 +44,7 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10
 Route::get('/settings/pppk-pw-estimation', [SettingController::class, 'pppkPwEstimation']);
 Route::get('/verify-thr', [ThrController::class, 'verifyThr']);
 Route::get('/verify-payment', [PaymentController::class, 'verifyPayment']);
+Route::get('/verify/slip', [EssAuthController::class, 'verifySlip']);
 
 // ESS Public routes
 Route::get('/ess/captcha', [EssAuthController::class, 'getCaptcha']);

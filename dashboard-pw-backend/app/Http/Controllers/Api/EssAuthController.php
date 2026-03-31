@@ -268,7 +268,7 @@ class EssAuthController extends Controller
             // Generate QR Code as SVG (more reliable in DomPDF)
             // Link to validation page
             $baseUrl = request()->getSchemeAndHttpHost() ?: 'https://sipgaji.my.id';
-            $validationUrl = rtrim($baseUrl, '/') . "/verify/slip?" . http_build_query([
+            $validationUrl = rtrim($baseUrl, '/') . "/api/verify/slip?" . http_build_query([
                 'nip' => $data->nip,
                 'id' => $data->id,
                 'hash' => md5($data->nip . $data->id . $data->updated_at)
