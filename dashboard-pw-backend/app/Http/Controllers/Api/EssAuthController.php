@@ -267,7 +267,7 @@ class EssAuthController extends Controller
         try {
             // Generate QR Code as SVG (more reliable in DomPDF)
             // Link to validation page
-            $baseUrl = config('app.url') ?: 'https://sipgaji.my.id';
+            $baseUrl = request()->getSchemeAndHttpHost() ?: 'https://sipgaji.my.id';
             $validationUrl = rtrim($baseUrl, '/') . "/verify/slip?" . http_build_query([
                 'nip' => $data->nip,
                 'id' => $data->id,
@@ -291,5 +291,41 @@ class EssAuthController extends Controller
                 'message' => 'Gagal membuat PDF: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Public route to verify slip authenticity via QR Code
+     */
+    public function verifySlip(Request $request)
+    {
+        $nip = $request->query('nip');
+        $id = $request->query('id');
+        $hash = $request->query('hash');
+
+        if (!$nip || !$id || !$hash) {
+            return view('reports.verify_slip', ['success' => false, 'message' => 'Data verifikasi tidak lengkap.']);
+        }
+
+        // Search in both tables
+        $data = GajiPns::where('nip', $nip)->where('id', $id)->first() 
+                ?? GajiPppk::where('nip', $nip)->where('id', $id)->first();
+
+        if (!$data) {
+            return view('reports.verify_slip', ['success' => false, 'message' => 'Dokumen tidak ditemukan dalam database resmi.']);
+        }
+
+        // Verify Hash
+        $expectedHash = md5($data->nip . $data->id . $data->updated_at);
+        if ($hash !== $expectedHash) {
+            return view('reports.verify_slip', ['success' => false, 'message' => 'Tanda tangan digital tidak cocok. Dokumen mungkin telah dimodifikasi.']);
+        }
+
+        $data = $this->enrichData($data);
+
+        return view('reports.verify_slip', [
+            'success' => true,
+            'data' => $data,
+            'message' => 'Dokumen ini ASLI dan terdaftar dalam sistem SIP-Gaji.'
+        ]);
     }
 }

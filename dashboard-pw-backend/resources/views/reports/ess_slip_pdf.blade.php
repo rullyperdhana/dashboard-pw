@@ -43,7 +43,7 @@
     <div class="watermark">SIP-GAJI OFFICIAL</div>
 
     <div class="header">
-        <h1>Pemerintah Kabupaten / Kota</h1>
+        <h1>PEMERINTAH PROVINSI KALIMANTAN SELATAN</h1>
         <p>SLIP GAJI PEGAWAI - {{ strtoupper($data->jenis_gaji) }}</p>
         <p>Periode: {{ $bulan_nama }} {{ $data->tahun }}</p>
     </div>
