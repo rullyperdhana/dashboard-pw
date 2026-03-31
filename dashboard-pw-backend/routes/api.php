@@ -49,6 +49,8 @@ Route::get('/verify-payment', [PaymentController::class, 'verifyPayment']);
 Route::get('/ess/captcha', [EssAuthController::class, 'getCaptcha']);
 Route::post('/ess/login', [EssAuthController::class, 'login'])->middleware('throttle:10,1');
 Route::get('/ess/slips', [EssAuthController::class, 'slips']);
+Route::get('/ess/slips/{id}/detail', [EssAuthController::class, 'slipDetail']);
+Route::get('/ess/slips/{id}/pdf', [EssAuthController::class, 'downloadPdf']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {

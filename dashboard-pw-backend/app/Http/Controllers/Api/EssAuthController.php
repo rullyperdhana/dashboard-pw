@@ -9,6 +9,8 @@ use App\Models\GajiPns;
 use App\Models\GajiPppk;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Barryvdh\DomPDF\Facade\Pdf;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class EssAuthController extends Controller
 {
@@ -144,5 +146,77 @@ class EssAuthController extends Controller
             'success' => true,
             'data' => $slips
         ]);
+    }
+    /**
+     * Get detailed breakdown of a specific slip.
+     */
+    public function slipDetail(Request $request, $id)
+    {
+        $nip = $request->header('X-ESS-NIP');
+        $type = $request->query('type'); // PNS or PPPK
+
+        if (!$nip) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $model = $type === 'PPPK' ? GajiPppk::class : GajiPns::class;
+        $detail = $model::where('nip', $nip)->where('id', $id)->first();
+
+        if (!$detail) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Detail slip tidak ditemukan.'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $detail
+        ]);
+    }
+
+    /**
+     * Download PDF slip.
+     */
+    public function downloadPdf(Request $request, $id)
+    {
+        $nip = $request->header('X-ESS-NIP') ?: $request->query('nip');
+        $type = $request->query('type'); // PNS or PPPK
+
+        if (!$nip) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $model = $type === 'PPPK' ? GajiPppk::class : GajiPns::class;
+        $data = $model::where('nip', $nip)->where('id', $id)->first();
+
+        if (!$data) {
+            abort(404, 'Detail slip tidak ditemukan.');
+        }
+
+        $months = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+        $bulan_nama = $months[$data->bulan] ?? 'Unknown';
+
+        // Generate QR Code for validation
+        // Link to validation page (placeholder)
+        $validationUrl = config('app.url') . "/verify/slip?" . http_build_query([
+            'nip' => $data->nip,
+            'id' => $data->id,
+            'hash' => md5($data->nip . $data->id . $data->updated_at)
+        ]);
+        
+        $qrcode = base64_encode(QrCode::format('png')->size(200)->margin(2)->generate($validationUrl));
+
+        $pdf = Pdf::loadView('reports.ess_slip_pdf', [
+            'data' => $data,
+            'bulan_nama' => $bulan_nama,
+            'qrcode' => $qrcode
+        ]);
+
+        return $pdf->download("Slip_Gaji_{$data->nip}_{$data->bulan}_{$data->tahun}.pdf");
     }
 }

@@ -160,21 +160,128 @@
       </v-container>
     </v-main>
 
-    <!-- Dialog Placeholder -->
-    <v-dialog v-model="slipDialog" max-width="500">
-      <v-card class="rounded-xl pa-2">
-         <v-card-title class="pa-4 d-flex align-center font-weight-bold">
-            Detail Slip
+    <!-- Pay Slip Detail Dialog -->
+    <v-dialog v-model="slipDialog" max-width="700" persistent scrollable>
+      <v-card class="rounded-xl overflow-hidden shadow-2xl">
+         <v-card-title class="pa-6 d-flex align-center bg-surface border-b">
+            <div>
+              <div class="text-h6 font-weight-black">Rincian Slip Gaji</div>
+              <div class="text-caption text-medium-emphasis mt-n1" v-if="selectedSlipDetail">
+                Periode {{ getMonthName(selectedSlipDetail.bulan) }} {{ selectedSlipDetail.tahun }}
+              </div>
+            </div>
             <v-spacer></v-spacer>
-            <v-btn icon="mdi-close" variant="text" size="small" @click="slipDialog = false"></v-btn>
+            <v-btn icon="mdi-close" variant="text" size="small" @click="slipDialog = false" :disabled="downloading"></v-btn>
          </v-card-title>
-         <v-card-text class="pa-4 text-center">
-             <v-icon icon="mdi-tools" size="64" color="warning" class="mb-4"></v-icon>
-             <h3 class="text-h6 font-weight-black mb-2">Segera Hadir</h3>
-             <p class="text-medium-emphasis">Fitur pengunduhan slip PDF rinci sedang dalam tahap pengembangan akhir dan integrasi tanda tangan elektronik.</p>
+
+         <v-card-text class="pa-0 bg-light">
+            <div v-if="!selectedSlipDetail" class="pa-12 text-center">
+              <v-progress-circular indeterminate color="primary"></v-progress-circular>
+              <div class="mt-4 text-caption text-medium-emphasis">Memuat rincian slip...</div>
+            </div>
+            <div v-else class="pa-6">
+              <!-- Employee Info Header -->
+              <div class="mb-6 pa-4 rounded-xl bg-surface border">
+                <v-row dense>
+                  <v-col cols="12" sm="6">
+                    <div class="text-overline text-medium-emphasis">Nama Pegawai</div>
+                    <div class="text-subtitle-1 font-weight-bold">{{ selectedSlipDetail.nama }}</div>
+                    <div class="text-caption font-weight-medium text-primary">{{ selectedSlipDetail.nip }}</div>
+                  </v-col>
+                  <v-col cols="12" sm="6" class="text-sm-right">
+                    <div class="text-overline text-medium-emphasis">Unit Kerja / SKPD</div>
+                    <div class="text-body-2 font-weight-bold">{{ selectedSlipDetail.skpd }}</div>
+                    <div class="text-caption">{{ selectedSlipDetail.jabatan }}</div>
+                  </v-col>
+                </v-row>
+              </div>
+
+              <!-- Breakdown Sections -->
+              <v-row>
+                <!-- Income Section -->
+                <v-col cols="12" md="6">
+                  <div class="d-flex align-center mb-3">
+                    <v-icon icon="mdi-cash-plus" color="success" size="20" class="mr-2"></v-icon>
+                    <span class="text-overline font-weight-black">Penghasilan (Income)</span>
+                  </div>
+                  <v-card variant="flat" border class="rounded-xl overflow-hidden">
+                    <v-table density="compact">
+                      <tbody>
+                        <tr><td class="text-caption">Gaji Pokok</td><td class="text-right text-caption font-weight-bold">{{ formatCurrency(selectedSlipDetail.gaji_pokok) }}</td></tr>
+                        <tr v-if="selectedSlipDetail.tunj_istri > 0"><td class="text-caption">Tunj. Istri / Suami</td><td class="text-right text-caption font-weight-bold">{{ formatCurrency(selectedSlipDetail.tunj_istri) }}</td></tr>
+                        <tr v-if="selectedSlipDetail.tunj_anak > 0"><td class="text-caption">Tunj. Anak</td><td class="text-right text-caption font-weight-bold">{{ formatCurrency(selectedSlipDetail.tunj_anak) }}</td></tr>
+                        <tr v-if="selectedSlipDetail.tunj_fungsional > 0"><td class="text-caption">Tunj. Fungsional</td><td class="text-right text-caption font-weight-bold">{{ formatCurrency(selectedSlipDetail.tunj_fungsional) }}</td></tr>
+                        <tr v-if="selectedSlipDetail.tunj_struktural > 0"><td class="text-caption">Tunj. Struktural</td><td class="text-right text-caption font-weight-bold">{{ formatCurrency(selectedSlipDetail.tunj_struktural) }}</td></tr>
+                        <tr v-if="selectedSlipDetail.tunj_umum > 0"><td class="text-caption">Tunj. Umum</td><td class="text-right text-caption font-weight-bold">{{ formatCurrency(selectedSlipDetail.tunj_umum) }}</td></tr>
+                        <tr v-if="selectedSlipDetail.tunj_beras > 0"><td class="text-caption">Tunj. Beras</td><td class="text-right text-caption font-weight-bold">{{ formatCurrency(selectedSlipDetail.tunj_beras) }}</td></tr>
+                        <tr v-if="selectedSlipDetail.tunj_tpp > 0"><td class="text-caption">Tambahan TPP</td><td class="text-right text-caption font-weight-bold text-teal">{{ formatCurrency(selectedSlipDetail.tunj_tpp) }}</td></tr>
+                        <tr class="bg-grey-lighten-4">
+                          <td class="text-caption font-weight-black">TOTAL KOTOR</td>
+                          <td class="text-right text-caption font-weight-black">{{ formatCurrency(selectedSlipDetail.kotor) }}</td>
+                        </tr>
+                      </tbody>
+                    </v-table>
+                  </v-card>
+                </v-col>
+
+                <!-- Deduction Section -->
+                <v-col cols="12" md="6">
+                  <div class="d-flex align-center mb-3">
+                    <v-icon icon="mdi-cash-minus" color="error" size="20" class="mr-2"></v-icon>
+                    <span class="text-overline font-weight-black">Potongan (Deductions)</span>
+                  </div>
+                  <v-card variant="flat" border class="rounded-xl overflow-hidden">
+                    <v-table density="compact">
+                      <tbody>
+                        <tr v-if="selectedSlipDetail.pot_iwp > 0"><td class="text-caption">IWP (1%)</td><td class="text-right text-caption font-weight-bold text-error">{{ formatCurrency(selectedSlipDetail.pot_iwp) }}</td></tr>
+                        <tr v-if="selectedSlipDetail.pot_iwp1 > 0"><td class="text-caption">IWP (2%)</td><td class="text-right text-caption font-weight-bold text-error">{{ formatCurrency(selectedSlipDetail.pot_iwp1) }}</td></tr>
+                        <tr v-if="selectedSlipDetail.pot_iwp8 > 0"><td class="text-caption">IWP (8%)</td><td class="text-right text-caption font-weight-bold text-error">{{ formatCurrency(selectedSlipDetail.pot_iwp8) }}</td></tr>
+                        <tr v-if="selectedSlipDetail.pot_askes > 0"><td class="text-caption">BPJS Kes / Askes</td><td class="text-right text-caption font-weight-bold text-error">{{ formatCurrency(selectedSlipDetail.pot_askes) }}</td></tr>
+                        <tr v-if="selectedSlipDetail.pot_pph > 0"><td class="text-caption">PPh 21</td><td class="text-right text-caption font-weight-bold text-error">{{ formatCurrency(selectedSlipDetail.pot_pph) }}</td></tr>
+                        <tr v-if="selectedSlipDetail.pot_taperum > 0"><td class="text-caption">Taperum</td><td class="text-right text-caption font-weight-bold text-error">{{ formatCurrency(selectedSlipDetail.pot_taperum) }}</td></tr>
+                        <tr v-if="selectedSlipDetail.pot_jkk > 0"><td class="text-caption">JKK</td><td class="text-right text-caption font-weight-bold text-error">{{ formatCurrency(selectedSlipDetail.pot_jkk) }}</td></tr>
+                        <tr v-if="selectedSlipDetail.pot_jkm > 0"><td class="text-caption">JKM</td><td class="text-right text-caption font-weight-bold text-error">{{ formatCurrency(selectedSlipDetail.pot_jkm) }}</td></tr>
+                        <tr v-if="selectedSlipDetail.pot_koperasi > 0"><td class="text-caption">Koperasi</td><td class="text-right text-caption font-weight-bold text-error">{{ formatCurrency(selectedSlipDetail.pot_koperasi) }}</td></tr>
+                        <tr class="bg-grey-lighten-4">
+                          <td class="text-caption font-weight-black">TOTAL POTONGAN</td>
+                          <td class="text-right text-caption font-weight-black text-error">{{ formatCurrency(selectedSlipDetail.total_potongan) }}</td>
+                        </tr>
+                      </tbody>
+                    </v-table>
+                  </v-card>
+                </v-col>
+              </v-row>
+
+              <!-- Final Net Pay Footer -->
+              <v-card color="primary" variant="flat" class="mt-6 pa-4 rounded-xl d-flex align-center justify-space-between">
+                <div>
+                  <div class="text-caption text-white opacity-80">Gaji Bersih Diterima (Take Home Pay)</div>
+                  <div class="text-h5 font-weight-black text-white">{{ formatCurrency(selectedSlipDetail.bersih) }}</div>
+                </div>
+                <div class="d-flex align-center justify-center bg-white rounded-lg pa-1" style="width: 70px; height: 70px;">
+                  <v-icon icon="mdi-qrcode" color="primary" size="60"></v-icon>
+                </div>
+              </v-card>
+            </div>
          </v-card-text>
-         <v-card-actions class="pa-4 pt-0">
-             <v-btn block color="primary" variant="flat" rounded="lg" @click="slipDialog = false" class="text-none">Kembali</v-btn>
+
+         <v-card-actions class="pa-6 border-t bg-surface">
+             <v-btn variant="text" color="error" rounded="lg" @click="slipDialog = false" :disabled="downloading" class="px-6 text-none">Tutup</v-btn>
+             <v-spacer></v-spacer>
+             <v-btn 
+              block 
+              sm="auto"
+              color="primary" 
+              variant="flat" 
+              rounded="pill" 
+              prepend-icon="mdi-file-pdf-box"
+              @click="handleDownloadPdf" 
+              :loading="downloading"
+              class="px-8 text-none font-weight-black shadow-lg"
+              style="letter-spacing: 0.5px"
+             >
+                Unduh Slip Gaji (PDF)
+             </v-btn>
          </v-card-actions>
       </v-card>
     </v-dialog>
@@ -192,8 +299,10 @@ const user = ref(JSON.parse(localStorage.getItem('ess_user') || '{}'))
 const essToken = localStorage.getItem('ess_token')
 const slips = ref([])
 const loading = ref(false)
+const downloading = ref(false)
 const slipDialog = ref(false)
 const selectedYear = ref(null)
+const selectedSlipDetail = ref(null)
 
 const groupedSlips = computed(() => {
   const groups = {}
@@ -264,8 +373,50 @@ const fetchSlips = async () => {
   }
 }
 
-const viewSlip = (slipObj) => {
+const viewSlip = async (slipRow) => {
+    selectedSlipDetail.value = null;
     slipDialog.value = true;
+    
+    try {
+        const response = await api.get(`/ess/slips/${slipRow.id}/detail`, {
+            params: { type: slipRow.tipe || user.value.type },
+            headers: { 'X-ESS-NIP': user.value.nip }
+        })
+        if (response.data.success) {
+            selectedSlipDetail.value = response.data.data;
+        }
+    } catch (error) {
+        console.error('Error fetching detail:', error)
+    }
+}
+
+const handleDownloadPdf = async () => {
+    if (!selectedSlipDetail.value) return;
+    downloading.value = true;
+    try {
+        const response = await api.get(`/ess/slips/${selectedSlipDetail.value.id}/pdf`, {
+            params: { 
+                type: user.value.type,
+                nip: user.value.nip
+            },
+            responseType: 'blob',
+            headers: { 'X-ESS-NIP': user.value.nip }
+        });
+        
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `Slip_Gaji_${user.value.nip}_${selectedSlipDetail.value.bulan}_${selectedSlipDetail.value.tahun}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        alert('Gagal mendownload PDF. Silakan coba lagi.');
+    } finally {
+        downloading.value = false;
+    }
 }
 
 onMounted(() => {
