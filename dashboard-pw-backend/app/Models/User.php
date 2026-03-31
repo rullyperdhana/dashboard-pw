@@ -127,7 +127,7 @@ class User extends Authenticatable
         }
 
         $groupAccess = ($this->user_group_id) ? ($this->userGroup->skpd_access ?? []) : [];
-        $rawAccess = array_merge($rawAccess ?: [], $groupAccess);
+        $rawAccess = array_merge($this->skpd_access ?: [], $groupAccess);
         
         $access = [];
 
@@ -211,7 +211,11 @@ class User extends Authenticatable
         }
 
         $codes = \App\Models\Skpd::whereIn('id_skpd', $ids)->pluck('kode_skpd')->toArray();
-        $simgajiCodes = \App\Models\Skpd::whereIn('id_skpd', $ids)->whereNotNull('kode_simgaji')->pluck('kode_simgaji')->toArray();
+        
+        $simgajiCodes = [];
+        if (\Illuminate\Support\Facades\Schema::hasColumn('skpd', 'kode_simgaji')) {
+            $simgajiCodes = \App\Models\Skpd::whereIn('id_skpd', $ids)->whereNotNull('kode_simgaji')->pluck('kode_simgaji')->toArray();
+        }
         
         $mappingCodes = \Illuminate\Support\Facades\DB::table('skpd_mapping')
             ->whereIn('skpd_id', $ids)
