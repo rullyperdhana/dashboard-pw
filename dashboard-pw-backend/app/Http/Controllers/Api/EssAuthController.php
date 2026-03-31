@@ -201,22 +201,32 @@ class EssAuthController extends Controller
         ];
         $bulan_nama = $months[$data->bulan] ?? 'Unknown';
 
-        // Generate QR Code for validation
-        // Link to validation page (placeholder)
-        $validationUrl = config('app.url') . "/verify/slip?" . http_build_query([
-            'nip' => $data->nip,
-            'id' => $data->id,
-            'hash' => md5($data->nip . $data->id . $data->updated_at)
-        ]);
-        
-        $qrcode = base64_encode(QrCode::format('png')->size(200)->margin(2)->generate($validationUrl));
+        try {
+            // Generate QR Code as SVG (more reliable in DomPDF)
+            // Link to validation page
+            $baseUrl = config('app.url') ?: 'https://sipgaji.my.id';
+            $validationUrl = rtrim($baseUrl, '/') . "/verify/slip?" . http_build_query([
+                'nip' => $data->nip,
+                'id' => $data->id,
+                'hash' => md5($data->nip . $data->id . $data->updated_at)
+            ]);
+            
+            // Format to SVG (standard for simplesoftwareio/simple-qrcode)
+            $qrcode = base64_encode(QrCode::size(200)->margin(2)->generate($validationUrl));
 
-        $pdf = Pdf::loadView('reports.ess_slip_pdf', [
-            'data' => $data,
-            'bulan_nama' => $bulan_nama,
-            'qrcode' => $qrcode
-        ]);
+            $pdf = Pdf::loadView('reports.ess_slip_pdf', [
+                'data' => $data,
+                'bulan_nama' => $bulan_nama,
+                'qrcode' => $qrcode
+            ]);
 
-        return $pdf->download("Slip_Gaji_{$data->nip}_{$data->bulan}_{$data->tahun}.pdf");
+            return $pdf->download("Slip_Gaji_{$data->nip}_{$data->bulan}_{$data->tahun}.pdf");
+        } catch (\Exception $e) {
+            \Log::error("ESS PDF Error: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membuat PDF: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
