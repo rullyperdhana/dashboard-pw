@@ -78,7 +78,7 @@ class PPh21Service
             ->get();
             
         if ($allRates->isEmpty()) {
-            throw new \Exception("Tabel pph21_ter_rates kosong. Silakan jalankan perintah php artisan db:seed --class=PPh21TerSeeder");
+            throw new \Exception("Tabel tarif (pph21_ter_rates) masih kosong. Silakan jalankan seeder di terminal VPS: php artisan db:seed --class=PPh21TerSeeder");
         }
             
         // Ensure inner stdClass objects are converted to arrays

@@ -32,220 +32,222 @@ class PPh21Controller extends Controller
             'type' => 'required|in:pns,pppk'
         ]);
 
-        set_time_limit(0);
-        ini_set('memory_limit', '1024M');
+        try {
+            set_time_limit(0);
+            ini_set('memory_limit', '1024M');
 
-        $year = $request->year;
-        $month = $request->month;
-        $type = $request->type;
-        $skpd = $request->skpd;
+            $year = $request->year;
+            $month = $request->month;
+            $type = $request->type;
+            $skpd = $request->skpd;
 
-        $user = auth()->user();
-        $records = collect();
-        
-        // Comprehensive SKPD Mapping: 
-        // 1. From skpd_mapping (source_code -> skpd_id)
-        // 2. From skpd table directly (kode_simgaji -> id_skpd)
-        $skpdIdMap = DB::table('skpd_mapping')->pluck('skpd_id', 'source_code')->toArray();
-        $directSimGajiMap = DB::table('skpd')->whereNotNull('kode_simgaji')->pluck('id_skpd', 'kode_simgaji')->toArray();
-        $skpdIdMap = $skpdIdMap + $directSimGajiMap; // Mapping takes priority if duplicates
-
-        $table = ($type === 'pns') ? 'gaji_pns' : 'gaji_pppk';
-        $query = DB::table($table . ' as g')
-            ->join('master_pegawai as m', 'g.nip', '=', 'm.nip')
-            ->where('g.tahun', $year)
-            ->where('g.bulan', $month)
-            ->where('g.jenis_gaji', 'Induk');
-
-        if ($skpd) {
-            if (!$user->isSuperAdmin()) {
-                $allowedIds = $user->getAccessibleSkpds();
-                // Resolve ID to codes if needed, or just check inclusion in IDs
-                $allowedIds = $user->getAccessibleSkpds();
-                if (!in_array($skpd, $allowedIds)) {
-                    return response()->json(['success' => false, 'message' => 'Unauthorized SKPD access.'], 403);
-                }
+            $user = auth()->user();
+            $records = collect();
+            
+            // Comprehensive SKPD Mapping: 
+            // 1. From skpd_mapping (source_code -> skpd_id)
+            // 2. From skpd table directly (kode_simgaji -> id_skpd)
+            $skpdIdMap = DB::table('skpd_mapping')->pluck('skpd_id', 'source_code')->toArray();
+            
+            // Safety check for kode_simgaji column existence (in case migration desynced on VPS)
+            $directSimGajiMap = [];
+            if (\Illuminate\Support\Facades\Schema::hasColumn('skpd', 'kode_simgaji')) {
+                $directSimGajiMap = DB::table('skpd')->whereNotNull('kode_simgaji')->pluck('id_skpd', 'kode_simgaji')->toArray();
             }
             
-            // Resolve the provided skpd_id to its SimGaji codes for filtering the legacy table
-            $targetCodes = DB::table('skpd')
-                ->where('id_skpd', $skpd)
-                ->whereNotNull('kode_simgaji')
-                ->pluck('kode_simgaji')
-                ->merge(
-                    DB::table('skpd_mapping')
+            $skpdIdMap = $skpdIdMap + $directSimGajiMap; // Mapping takes priority if duplicates
+
+            $table = ($type === 'pns') ? 'gaji_pns' : 'gaji_pppk';
+            $query = DB::table($table . ' as g')
+                ->join('master_pegawai as m', 'g.nip', '=', 'm.nip')
+                ->where('g.tahun', $year)
+                ->where('g.bulan', $month)
+                ->where('g.jenis_gaji', 'Induk');
+
+            if ($skpd) {
+                if (!$user->isSuperAdmin()) {
+                    $allowedIds = $user->getAccessibleSkpds();
+                    if (!in_array($skpd, $allowedIds)) {
+                        return response()->json(['success' => false, 'message' => 'Unauthorized SKPD access.'], 403);
+                    }
+                }
+                
+                // Resolve the provided skpd_id to its SimGaji codes for filtering the legacy table
+                $targetCodesQuery = DB::table('skpd')->where('id_skpd', $skpd);
+                
+                if (\Illuminate\Support\Facades\Schema::hasColumn('skpd', 'kode_simgaji')) {
+                    $targetCodesQuery->whereNotNull('kode_simgaji');
+                    $targetCodes = $targetCodesQuery->pluck('kode_simgaji')
+                        ->merge(
+                            DB::table('skpd_mapping')
+                                ->where('skpd_id', $skpd)
+                                ->pluck('source_code')
+                        )
+                        ->unique()
+                        ->toArray();
+                } else {
+                    $targetCodes = DB::table('skpd_mapping')
                         ->where('skpd_id', $skpd)
                         ->pluck('source_code')
-                )
-                ->unique()
-                ->toArray();
-            
-            if (empty($targetCodes)) {
-                // Fallback to kode_skpd if no mapping/simgaji code
-                $kodeSkpd = DB::table('skpd')->where('id_skpd', $skpd)->value('kode_skpd');
-                if ($kodeSkpd) $targetCodes = [$kodeSkpd];
-            }
-
-            $query->whereIn('g.kdskpd', $targetCodes);
-        } else {
-            $skpds = $user->getAccessibleSkpdCodes();
-            if ($skpds !== null) {
-                $query->whereIn('g.kdskpd', $skpds);
-            }
-        }
-
-        $records = $query->select('g.*', 'm.kdstawin', 'm.janak', 'm.kdpangkat', 'm.noktp', 'm.npwp')->get()->map(function($r) use ($skpdIdMap) {
-            $code = trim((string)$r->kdskpd);
-            $r->skpd_id = $skpdIdMap[$code] ?? null;
-            return $r;
-        });
-        
-        $processed = 0;
-        $this->service->preLoadRates();
-        
-        // Fetch extra payrolls
-        // Note: For PW, we currently don't have separate extra payroll records in SimGaji tables
-        $extraGaji = collect()->groupBy('nip');
-        if (isset($table)) {
-            $extraGaji = DB::table($table)
-                ->where('tahun', $year)
-                ->where('bulan', $month)
-                ->where('jenis_gaji', '!=', 'Induk')
-                ->get()
-                ->groupBy('nip');
-        }
-
-        $extraPayroll = collect();
-        if ($type === 'pppk') {
-            $extraPayroll = DB::table('tb_extra_payroll_pppk_pw')
-                ->where('year', $year)
-                ->where('month', $month)
-                ->get()
-                ->groupBy('nip');
-        }
-
-        // Optimasi Desember: Ambil semua data perhitungan sebelumnya dalam satu query
-        $prevCalculationsGrouped = [];
-        if ($month == 12) {
-            $prevCalculationsGrouped = DB::table('pph21_calculations')
-                ->where('tahun', $year)
-                ->where('bulan', '<', 12)
-                ->where('jenis_gaji', 'Induk')
-                ->get()
-                ->groupBy('nip');
-        }
-
-        // Fetch fixed tax statuses for this year
-        $fixedTaxStatuses = DB::table('tax_statuses')
-            ->where('year', $year)
-            ->pluck('tax_status', 'nip')
-            ->toArray();
-
-        $upsertData = [];
-        foreach ($records as $rec) {
-            // Priority: Fixed Status -> Dynamic Calculation
-            $status = $fixedTaxStatuses[$rec->nip] ?? $this->service->getPTKPStatus($rec->kdstawin, $rec->janak);
-            $cat = $this->service->getTERCategory($status);
-
-            // 2. Determine Bruto (Simgaji + TPP + Extra Payroll)
-            $extraSum = $extraGaji->get($rec->nip, collect())->sum('kotor');
-            $extraPayrollSum = $extraPayroll->get($rec->nip, collect())->sum('payroll_amount');
-            
-            $bruto = (float)$rec->kotor + (float)$rec->tunj_tpp + $extraSum + $extraPayrollSum;
-            
-            $tax = 0;
-            $calcDetails = [
-                'gross_simgaji' => (float)$rec->kotor,
-                'tpp' => (float)$rec->tunj_tpp,
-                'extra_salary' => $extraSum,
-                'extra_payroll' => $extraPayrollSum,
-                'status_ptkp' => $status,
-                'ter_category' => $cat,
-                'gaji_pokok' => (float)$rec->gaji_pokok,
-                'tunj_istri' => (float)$rec->tunj_istri,
-                'tunj_anak' => (float)$rec->tunj_anak,
-                'tunj_struk_fung' => (float)$rec->tunj_struktural + (float)$rec->tunj_fungsional,
-                'tunj_beras' => (float)$rec->tunj_beras,
-                'tunj_lain' => (float)$rec->tunj_umum + (float)$rec->tunj_khusus + (float)$rec->tunj_langka + (float)$rec->tunj_pph,
-                'pot_iwp' => (float)$rec->pot_iwp,
-                'extra_records' => $extraGaji->get($rec->nip, collect())->toArray(),
-                'extra_payroll_records' => $extraPayroll->get($rec->nip, collect())->toArray(),
-            ];
-
-            if ($month < 12) {
-                // JAN - NOV: Standard TER
-                $tax = $this->service->calculateMonthlyTER($bruto, $cat);
-                $calcDetails['method'] = 'TER';
-            } else {
-                // DEC: Annual Re-calculation (Pasal 17)
-                $prevMonths = $prevCalculationsGrouped->get($rec->nip, collect());
-                
-                $totalGross = $prevMonths->sum('gross_base') + $bruto;
-                $totalPaid = $prevMonths->sum('tax_amount');
-                
-                // Deductions (Biaya Jabatan: 5% max 6M/year)
-                $bj = min(6000000, $totalGross * 0.05);
-                
-                // Iuran Pensiun / THT
-                $totalIuran = 0;
-                foreach($prevMonths as $pm) {
-                    $pmDetails = json_decode($pm->calc_details, true);
-                    $totalIuran += ($pmDetails['pot_iwp'] ?? 0);
+                        ->unique()
+                        ->toArray();
                 }
-                $totalIuran += (float)$rec->pot_iwp;
                 
-                $ptkp = $this->service->getPTKPAmount($status);
-                $pkp = max(0, $totalGross - $bj - $totalIuran - $ptkp);
-                $pkpRounded = floor($pkp / 1000) * 1000;
-                
-                $annualTax = $this->service->calculateAnnualPasal17($pkpRounded);
-                $tax = max(0, $annualTax - $totalPaid);
-                
-                $calcDetails['method'] = 'Pasal 17';
-                $calcDetails['annual_gross'] = $totalGross;
-                $calcDetails['annual_pkp'] = $pkpRounded;
-                $calcDetails['annual_tax_total'] = $annualTax;
-                $calcDetails['tax_paid_jan_nov'] = $totalPaid;
-                $calcDetails['annual_iuran'] = $totalIuran;
+                if (empty($targetCodes)) {
+                    // Fallback to kode_skpd if no mapping/simgaji code
+                    $kodeSkpd = DB::table('skpd')->where('id_skpd', $skpd)->value('kode_skpd');
+                    if ($kodeSkpd) $targetCodes = [$kodeSkpd];
+                }
+
+                $query->whereIn('g.kdskpd', $targetCodes);
+            } else {
+                $skpds = $user->getAccessibleSkpdCodes();
+                if ($skpds !== null) {
+                    $query->whereIn('g.kdskpd', $skpds);
+                }
             }
 
-            // 4. Collect for bulk upsert
-            $upsertData[] = [
-                'nip' => $rec->nip,
-                'nik' => (string)($rec->noktp ?? $rec->npwp),
-                'skpd_id' => $rec->skpd_id,
-                'bulan' => $month,
-                'tahun' => $year,
-                'jenis_gaji' => 'Induk',
-                'nama' => $rec->nama,
-                'status_ptkp' => $status,
-                'kdpangkat' => $rec->kdpangkat,
-                'ter_category' => $cat,
-                'gross_base' => $bruto,
-                'tax_amount' => $tax,
-                'calc_details' => json_encode($calcDetails),
-                'updated_at' => now(),
-                'created_at' => now()
-            ];
-            $processed++;
+            $records = $query->select('g.*', 'm.kdstawin', 'm.janak', 'm.kdpangkat', 'm.noktp', 'm.npwp')->get()->map(function($r) use ($skpdIdMap) {
+                $code = trim((string)$r->kdskpd);
+                $r->skpd_id = $skpdIdMap[$code] ?? null;
+                return $r;
+            });
+            
+            $processed = 0;
+            $this->service->preLoadRates();
+            
+            $extraGaji = collect()->groupBy('nip');
+            if (isset($table)) {
+                $extraGaji = DB::table($table)
+                    ->where('tahun', $year)
+                    ->where('bulan', $month)
+                    ->where('jenis_gaji', '!=', 'Induk')
+                    ->get()
+                    ->groupBy('nip');
+            }
 
-            // Batch upsert every 500 records to save memory
-            if (count($upsertData) >= 500) {
+            $extraPayroll = collect();
+            if ($type === 'pppk') {
+                $extraPayroll = DB::table('tb_extra_payroll_pppk_pw')
+                    ->where('year', $year)
+                    ->where('month', $month)
+                    ->get()
+                    ->groupBy('nip');
+            }
+
+            // Optimasi Desember
+            $prevCalculationsGrouped = [];
+            if ($month == 12) {
+                $prevCalculationsGrouped = DB::table('pph21_calculations')
+                    ->where('tahun', $year)
+                    ->where('bulan', '<', 12)
+                    ->where('jenis_gaji', 'Induk')
+                    ->get()
+                    ->groupBy('nip');
+            }
+
+            $fixedTaxStatuses = DB::table('tax_statuses')
+                ->where('year', $year)
+                ->pluck('tax_status', 'nip')
+                ->toArray();
+
+            $upsertData = [];
+            foreach ($records as $rec) {
+                $status = $fixedTaxStatuses[$rec->nip] ?? $this->service->getPTKPStatus($rec->kdstawin, $rec->janak);
+                $cat = $this->service->getTERCategory($status);
+
+                $extraSum = $extraGaji->get($rec->nip, collect())->sum('kotor');
+                $extraPayrollSum = $extraPayroll->get($rec->nip, collect())->sum('payroll_amount');
+                
+                $bruto = (float)$rec->kotor + (float)$rec->tunj_tpp + $extraSum + $extraPayrollSum;
+                
+                $tax = 0;
+                $calcDetails = [
+                    'gross_simgaji' => (float)$rec->kotor,
+                    'tpp' => (float)$rec->tunj_tpp,
+                    'extra_salary' => $extraSum,
+                    'extra_payroll' => $extraPayrollSum,
+                    'status_ptkp' => $status,
+                    'ter_category' => $cat,
+                    'gaji_pokok' => (float)$rec->gaji_pokok,
+                    'tunj_istri' => (float)$rec->tunj_istri,
+                    'tunj_anak' => (float)$rec->tunj_anak,
+                    'tunj_struk_fung' => (float)$rec->tunj_struktural + (float)$rec->tunj_fungsional,
+                    'tunj_beras' => (float)$rec->tunj_beras,
+                    'tunj_lain' => (float)$rec->tunj_umum + (float)$rec->tunj_khusus + (float)$rec->tunj_langka + (float)$rec->tunj_pph,
+                    'pot_iwp' => (float)$rec->pot_iwp,
+                    'extra_records' => $extraGaji->get($rec->nip, collect())->toArray(),
+                    'extra_payroll_records' => $extraPayroll->get($rec->nip, collect())->toArray(),
+                ];
+
+                if ($month < 12) {
+                    $tax = $this->service->calculateMonthlyTER($bruto, $cat);
+                    $calcDetails['method'] = 'TER';
+                } else {
+                    $prevMonths = $prevCalculationsGrouped->get($rec->nip, collect());
+                    $totalGross = $prevMonths->sum('gross_base') + $bruto;
+                    $totalPaid = $prevMonths->sum('tax_amount');
+                    $bj = min(6000000, $totalGross * 0.05);
+                    $totalIuran = 0;
+                    foreach($prevMonths as $pm) {
+                        $pmDetails = json_decode($pm->calc_details, true);
+                        $totalIuran += ($pmDetails['pot_iwp'] ?? 0);
+                    }
+                    $totalIuran += (float)$rec->pot_iwp;
+                    $ptkp = $this->service->getPTKPAmount($status);
+                    $pkp = max(0, $totalGross - $bj - $totalIuran - $ptkp);
+                    $pkpRounded = floor($pkp / 1000) * 1000;
+                    $annualTax = $this->service->calculateAnnualPasal17($pkpRounded);
+                    $tax = max(0, $annualTax - $totalPaid);
+                    
+                    $calcDetails['method'] = 'Pasal 17';
+                }
+
+                $upsertData[] = [
+                    'nip' => $rec->nip,
+                    'nik' => (string)($rec->noktp ?? $rec->npwp),
+                    'skpd_id' => $rec->skpd_id,
+                    'bulan' => $month,
+                    'tahun' => $year,
+                    'jenis_gaji' => 'Induk',
+                    'nama' => $rec->nama,
+                    'status_ptkp' => $status,
+                    'kdpangkat' => $rec->kdpangkat,
+                    'ter_category' => $cat,
+                    'gross_base' => $bruto,
+                    'tax_amount' => $tax,
+                    'calc_details' => json_encode($calcDetails),
+                    'updated_at' => now(),
+                    'created_at' => now()
+                ];
+                $processed++;
+
+                if (count($upsertData) >= 500) {
+                    $this->doUpsert($upsertData);
+                    $upsertData = [];
+                }
+            }
+
+            if (!empty($upsertData)) {
                 $this->doUpsert($upsertData);
-                $upsertData = [];
             }
-        }
 
-        // Final upsert
-        if (!empty($upsertData)) {
-            $this->doUpsert($upsertData);
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully processed $processed records.",
+                'processed' => $processed
+            ]);
+        } catch (\Exception $e) {
+            Log::error('PPh 21 Calculation Error: ' . $e->getMessage(), [
+                'year' => $request->year,
+                'month' => $request->month,
+                'type' => $request->type
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghitung pajak: ' . $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'success' => true,
-            'message' => "Successfully processed $processed records.",
-            'processed' => $processed
-        ]);
     }
 
     /**
