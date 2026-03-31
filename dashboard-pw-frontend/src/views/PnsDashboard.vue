@@ -659,32 +659,41 @@
                 <p class="text-caption text-medium-emphasis mb-6">Pilih file DBF hasil ekspor SIMDA/Simgaji untuk memproses data gaji periode ini.</p>
                 <v-select v-model="jenisGaji" :items="jenisGajiOptions" label="Jenis Pembayaran" variant="filled" density="comfortable" rounded="lg" class="mb-4"></v-select>
                 
-                <!-- Upload Mode Toggle (for Kekurangan/Susulan/Terusan) -->
+                <!-- Upload Mode Selector (for Kekurangan/Susulan/Terusan) -->
                 <v-expand-transition>
-                  <v-alert v-if="isAppendableType" :type="uploadMode === 'append' ? 'info' : 'warning'" variant="tonal" class="rounded-xl mb-4 border-0" density="compact">
-                    <div class="d-flex align-center justify-space-between">
-                      <div>
-                        <div class="text-caption font-weight-bold">
-                          {{ uploadMode === 'append' ? '📥 Mode Tambah (Append)' : '🔄 Mode Ganti (Replace)' }}
-                        </div>
-                        <div class="text-caption" style="opacity: 0.8">
-                          {{ uploadMode === 'append' 
-                            ? 'Data baru akan ditambahkan ke data yang sudah ada.' 
-                            : 'Data lama akan dihapus dan diganti dengan data baru.' 
-                          }}
-                        </div>
-                      </div>
-                      <v-switch
-                        v-model="uploadMode"
-                        true-value="append"
-                        false-value="replace"
-                        color="teal" 
-                        hide-details 
-                        density="compact"
-                        class="flex-grow-0 ml-4"
-                      ></v-switch>
-                    </div>
-                  </v-alert>
+                  <div v-if="isAppendableType" class="mb-4">
+                    <div class="text-caption font-weight-bold text-medium-emphasis mb-2">Mode Upload</div>
+                    <v-row dense>
+                      <v-col cols="6">
+                        <v-card
+                          :color="uploadMode === 'append' ? 'teal-lighten-5' : undefined"
+                          :variant="uploadMode === 'append' ? 'flat' : 'outlined'"
+                          class="upload-mode-card rounded-lg pa-3 text-center"
+                          :class="{ 'upload-mode-active': uploadMode === 'append' }"
+                          @click="uploadMode = 'append'"
+                          role="button"
+                        >
+                          <v-icon :color="uploadMode === 'append' ? 'teal' : 'grey'" size="24" class="mb-1">mdi-database-plus</v-icon>
+                          <div class="text-caption font-weight-bold" :class="uploadMode === 'append' ? 'text-teal' : ''">Tambah</div>
+                          <div class="text-caption" style="font-size: 0.65rem !important; opacity: 0.7; line-height: 1.2">Data ditambahkan ke yang sudah ada</div>
+                        </v-card>
+                      </v-col>
+                      <v-col cols="6">
+                        <v-card
+                          :color="uploadMode === 'replace' ? 'orange-lighten-5' : undefined"
+                          :variant="uploadMode === 'replace' ? 'flat' : 'outlined'"
+                          class="upload-mode-card rounded-lg pa-3 text-center"
+                          :class="{ 'upload-mode-active': uploadMode === 'replace' }"
+                          @click="uploadMode = 'replace'"
+                          role="button"
+                        >
+                          <v-icon :color="uploadMode === 'replace' ? 'orange-darken-2' : 'grey'" size="24" class="mb-1">mdi-database-sync</v-icon>
+                          <div class="text-caption font-weight-bold" :class="uploadMode === 'replace' ? 'text-orange-darken-2' : ''">Ganti Semua</div>
+                          <div class="text-caption" style="font-size: 0.65rem !important; opacity: 0.7; line-height: 1.2">Hapus data lama, ganti yang baru</div>
+                        </v-card>
+                      </v-col>
+                    </v-row>
+                  </div>
                 </v-expand-transition>
 
                 <v-file-input v-model="file" label="Klik untuk pilih file" prepend-inner-icon="mdi-database-plus" variant="outlined" accept=".dbf" rounded="lg" show-size></v-file-input>
@@ -1415,5 +1424,39 @@ watch([selectedYear, employeeType, selectedJenisGajiFilter], () => {
   .stat-card .v-card-text .text-overline {
     font-size: 0.6rem !important;
   }
+}
+
+/* Upload Mode Cards — Premium & Mobile Friendly v4.4.14 */
+.upload-mode-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  cursor: pointer;
+  border: 1.5px solid rgba(var(--v-border-color), 0.1) !important;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-mode-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(var(--v-theme-primary), 0.3) !important;
+  background-color: rgba(var(--v-theme-on-surface), 0.02);
+}
+
+.upload-mode-active {
+  border-width: 2px !important;
+  box-shadow: 0 8px 24px rgba(var(--v-theme-primary), 0.12) !important;
+}
+
+.upload-mode-active.teal-lighten-5 {
+  border-color: rgb(var(--v-theme-teal)) !important;
+  box-shadow: 0 8px 24px rgba(0, 150, 136, 0.15) !important;
+}
+
+.upload-mode-active.orange-lighten-5 {
+  border-color: rgb(var(--v-theme-orange-darken-2)) !important;
+  box-shadow: 0 8px 24px rgba(255, 152, 0, 0.15) !important;
 }
 </style>
