@@ -21,10 +21,13 @@ class EssAuthController extends Controller
     {
         // Fallback for missing kdskpd or kdfungsi by checking master_pegawai
         if (empty($item->kdskpd) || empty($item->kdfungsi)) {
-            $master = DB::table('master_pegawai')->where('nip', $item->nip)->first();
-            if ($master) {
-                if (empty($item->kdskpd)) $item->kdskpd = $master->kdskpd;
-                if (empty($item->kdfungsi)) $item->kdfungsi = $master->kdfungsi;
+            $nip = isset($item->nip) ? $item->nip : null;
+            if ($nip) {
+                $master = DB::table('master_pegawai')->where('nip', $nip)->first();
+                if ($master) {
+                    if (empty($item->kdskpd)) $item->kdskpd = $master->kdskpd;
+                    if (empty($item->kdfungsi)) $item->kdfungsi = $master->kdfungsi;
+                }
             }
         }
 
@@ -32,13 +35,10 @@ class EssAuthController extends Controller
         if (isset($item->skpd) && (empty($item->skpd) || strtolower($item->skpd) === 'unknown')) {
             $kdskpd = $item->kdskpd ?? null;
             if ($kdskpd) {
-                // Try matching by id_skpd (as integer) or kode_simgaji
-                $skpdRow = DB::table('skpd')
-                    ->where('id_skpd', (int)$kdskpd)
-                    ->orWhere('kode_simgaji', $kdskpd)
-                    ->first();
-                if ($skpdRow) {
-                    $item->skpd = $skpdRow->nama_skpd;
+                // Use skpd_mapping for accurate name based on source_code (kdskpd)
+                $mapping = DB::table('skpd_mapping')->where('source_code', $kdskpd)->first();
+                if ($mapping) {
+                    $item->skpd = $mapping->source_name;
                 }
             }
         }
@@ -185,14 +185,14 @@ class EssAuthController extends Controller
 
         // Mengambil histori maksimal 5 tahun terakhir (60 bulan) dan menyertakan rincian
         $slipsPns = GajiPns::where('nip', $nip)
-            ->select('id', 'bulan', 'tahun', 'jenis_gaji', 'kotor', 'bersih', 'skpd', 'kdskpd', 'jabatan', 'gaji_pokok', 'tunj_tpp')
+            ->select('id', 'nip', 'bulan', 'tahun', 'jenis_gaji', 'kotor', 'bersih', 'skpd', 'kdskpd', 'jabatan', 'gaji_pokok', 'tunj_tpp')
             ->orderBy('tahun', 'desc')->orderBy('bulan', 'desc')->limit(60)->get()->map(function($i) { 
                 $i->tipe = 'PNS'; 
                 return $this->enrichData($i); 
             });
         
         $slipsPppk = GajiPppk::where('nip', $nip)
-            ->select('id', 'bulan', 'tahun', 'jenis_gaji', 'kotor', 'bersih', 'skpd', 'kdskpd', 'jabatan', 'gaji_pokok', 'tunj_tpp')
+            ->select('id', 'nip', 'bulan', 'tahun', 'jenis_gaji', 'kotor', 'bersih', 'skpd', 'kdskpd', 'jabatan', 'gaji_pokok', 'tunj_tpp')
             ->orderBy('tahun', 'desc')->orderBy('bulan', 'desc')->limit(60)->get()->map(function($i) { 
                 $i->tipe = 'PPPK'; 
                 return $this->enrichData($i); 
