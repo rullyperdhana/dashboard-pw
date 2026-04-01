@@ -24,6 +24,10 @@ class EmployeeController extends Controller
         if ($request->has('status') && $request->status !== 'Semua') {
             $query->where('status', $request->status);
         }
+        
+        if ($request->has('status_code')) {
+            $query->where('status', $request->status_code);
+        }
 
         // Filter gender
         if ($request->has('gender') && $request->gender !== 'Semua') {
@@ -486,6 +490,40 @@ class EmployeeController extends Controller
         return response()->file($filePath, [
             'Content-Type' => $mimeType,
             'Content-Disposition' => 'inline; filename="' . $document->file_name . '"',
+        ]);
+    }
+
+    /**
+     * Get statistics for employee distribution (Ribbon view)
+     */
+    public function stats(Request $request)
+    {
+        $query = Employee::query();
+
+        // Filter SKPD for admin_skpd
+        if ($request->user()->isAdminSkpd()) {
+            $query->where('idskpd', $request->user()->institution);
+        }
+
+        $summary = [
+            'total' => (clone $query)->count(),
+            'male' => (clone $query)->where('jk', 'LAKI - LAKI')->count(),
+            'female' => (clone $query)->where('jk', 'PEREMPUAN')->count(),
+        ];
+
+        // Get count per status for ribbon
+        $byStatus = (clone $query)->select('status', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->whereNotNull('status')
+            ->groupBy('status')
+            ->orderBy('count', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'summary' => $summary,
+                'by_status' => $byStatus,
+            ],
         ]);
     }
 }

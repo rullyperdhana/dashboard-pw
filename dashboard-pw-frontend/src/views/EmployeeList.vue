@@ -5,79 +5,123 @@
 
     <v-main>
       <v-container fluid class="pa-8">
+        <!-- Status Distribution Ribbon (Matches MasterPegawai) -->
+        <v-card class="mb-6 rounded-xl overflow-hidden stat-ribbon-card" elevation="0" border>
+          <v-card-text class="pa-6">
+            <v-row align="center">
+              <v-col cols="12" md="3" class="border-md-right">
+                <div class="text-overline text-grey-darken-1 mb-1">TOTAL PEGAWAI PW</div>
+                <div class="d-flex align-baseline">
+                  <span class="text-h3 font-weight-black primary--text">{{ (stats.total || 0).toLocaleString() }}</span>
+                  <span class="text-caption text-grey ml-2">Orang</span>
+                </div>
+                <div class="mt-2 d-flex align-center cursor-pointer" @click="clearCardFilter">
+                  <v-icon size="small" :color="activeFilter === 'Semua' ? 'primary' : 'grey'">
+                    {{ activeFilter === 'Semua' ? 'mdi-filter-check' : 'mdi-filter-off-outline' }}
+                  </v-icon>
+                  <span class="text-caption ml-1" :class="activeFilter === 'Semua' ? 'text-primary font-weight-bold' : 'text-grey'">
+                    {{ activeFilter === 'Semua' ? 'Semua Data Terpilih' : 'Klik untuk Reset Filter' }}
+                  </span>
+                </div>
+              </v-col>
+              
+              <v-col cols="12" md="9" class="pl-md-8">
+                <div class="text-overline text-grey-darken-1 mb-4 d-flex justify-space-between align-center">
+                  <span>DISTRIBUSI STATUS PEGAWAI</span>
+                  <span v-if="activeFilter !== 'Semua'" class="text-primary font-weight-bold">
+                    Filter Status: {{ activeFilter }}
+                  </span>
+                </div>
+                
+                <div class="ribbon-container mb-6">
+                  <div 
+                    v-for="(seg, idx) in ribbonSegments" 
+                    :key="idx"
+                    class="ribbon-segment"
+                    :style="{ 
+                      width: seg.percent + '%', 
+                      backgroundColor: seg.color,
+                      opacity: activeFilter === 'Semua' || activeFilter === seg.filter ? 1 : 0.3
+                    }"
+                    @click="applyCardFilter(seg.filter, seg.label)"
+                  >
+                    <v-tooltip activator="parent" location="top">
+                      <div class="text-center pa-1">
+                        <div class="font-weight-bold">{{ seg.label }}</div>
+                        <div>{{ seg.count }} Orang ({{ seg.percent }}%)</div>
+                      </div>
+                    </v-tooltip>
+                  </div>
+                </div>
+
+                <div class="legend-grid">
+                  <div 
+                    v-for="(seg, idx) in ribbonSegments" 
+                    :key="'leg-'+idx"
+                    class="legend-item"
+                    :class="{ 'legend-active': activeFilter === seg.filter }"
+                    @click="applyCardFilter(seg.filter, seg.label)"
+                  >
+                    <div class="legend-dot" :style="{ backgroundColor: seg.color }"></div>
+                    <div class="legend-info">
+                      <div class="legend-label">{{ seg.label }}</div>
+                      <div class="legend-count text-grey">{{ seg.count }}</div>
+                    </div>
+                  </div>
+                </div>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+
+        <!-- Horizontal Filters -->
+        <v-card class="glass-card rounded-xl mb-6 pa-4" elevation="0" border>
+          <v-row dense align="center">
+            <v-col cols="12" md="3">
+              <v-select
+                v-model="genderFilter"
+                label="Jenis Kelamin"
+                :items="['Semua', 'Laki-laki', 'Perempuan']"
+                variant="outlined"
+                density="compact"
+                hide-details
+                @update:model-value="fetchEmployees"
+              ></v-select>
+            </v-col>
+            <v-col cols="12" md="5">
+              <v-autocomplete
+                v-model="selectedSkpd"
+                label="SKPD"
+                :items="skpdOptions"
+                item-title="nama_skpd"
+                item-value="id_skpd"
+                variant="outlined"
+                density="compact"
+                hide-details
+                clearable
+                no-data-text="Data SKPD tidak ditemukan"
+                @update:model-value="fetchEmployees"
+              ></v-autocomplete>
+            </v-col>
+            <v-col cols="12" md="4">
+              <v-select
+                v-model="statusFilter"
+                label="Filter Tambahan (Status)"
+                :items="['Semua', 'Aktif', 'Pensiun', 'Keluar', 'Diberhentikan', 'Meninggal']"
+                variant="outlined"
+                density="compact"
+                hide-details
+                clearable
+                @update:model-value="fetchEmployees"
+              ></v-select>
+            </v-col>
+          </v-row>
+        </v-card>
+
         <v-row>
-          <!-- Statistics Sidebar -->
-          <v-col cols="12" md="3">
-            <div class="sticky-top">
-              <v-card class="glass-card rounded-xl mb-6 pa-4" elevation="0">
-                <v-card-text>
-                  <div class="text-overline text-grey mb-4">Quick Stats</div>
-                  
-                  <div class="stat-item mb-4">
-                    <div class="d-flex align-center justify-space-between">
-                      <span class="text-body-2 text-grey">Total Pegawai</span>
-                      <v-chip size="small" color="primary" variant="flat">{{ stats.total }}</v-chip>
-                    </div>
-                  </div>
-
-                  <div class="stat-item mb-4">
-                    <div class="d-flex align-center justify-space-between">
-                      <span class="text-body-2 text-grey">Laki-laki</span>
-                      <v-chip size="small" color="blue" variant="tonal" class="font-weight-bold">
-                        {{ stats.male }}
-                      </v-chip>
-                    </div>
-                  </div>
-
-                  <div class="stat-item">
-                    <div class="d-flex align-center justify-space-between">
-                      <span class="text-body-2 text-grey">Perempuan</span>
-                      <v-chip size="small" color="pink" variant="tonal" class="font-weight-bold">
-                        {{ stats.female }}
-                      </v-chip>
-                    </div>
-                  </div>
-                </v-card-text>
-              </v-card>
-
-              <v-card class="glass-card rounded-xl pa-4" elevation="0">
-                <v-card-text>
-                  <div class="text-overline text-grey mb-4">Filter</div>
-                  <v-select
-                    v-model="genderFilter"
-                    label="Jenis Kelamin"
-                    :items="['Semua', 'Laki-laki', 'Perempuan']"
-                    variant="underlined"
-                    density="compact"
-                    class="mb-4"
-                  ></v-select>
-                  <v-autocomplete
-                    v-model="selectedSkpd"
-                    label="SKPD"
-                    :items="skpdOptions"
-                    item-title="nama_skpd"
-                    item-value="id_skpd"
-                    variant="underlined"
-                    density="compact"
-                    clearable
-                    no-data-text="Data SKPD tidak ditemukan"
-                  ></v-autocomplete>
-                  <v-select
-                    v-model="statusFilter"
-                    label="Status Pegawai"
-                    :items="['Semua', 'Aktif', 'Pensiun', 'Keluar', 'Diberhentikan', 'Meninggal']"
-                    variant="underlined"
-                    density="compact"
-                    clearable
-                  ></v-select>
-                </v-card-text>
-              </v-card>
-            </div>
-          </v-col>
-
           <!-- Main Directory Table -->
-          <v-col cols="12" md="9">
-            <v-card class="glass-card rounded-xl overflow-hidden" elevation="0">
+          <v-col cols="12">
+            <v-card class="glass-card rounded-xl overflow-hidden" elevation="0" border>
               <v-toolbar color="transparent" flat class="px-6 py-4">
                 <v-toolbar-title class="font-weight-bold text-h6">Daftar Pegawai</v-toolbar-title>
                 <v-spacer></v-spacer>
@@ -537,12 +581,33 @@ const user = ref(JSON.parse(localStorage.getItem('user') || '{}'))
 const loading = ref(true)
 const search = ref('')
 const employees = ref([])
-const stats = ref({ total: 0, male: 0, female: 0 })
+const stats = ref({ total: 0, male: 0, female: 0, by_status: [] })
 const genderFilter = ref('Semua')
 const statusFilter = ref('Semua')
+const activeFilter = ref('Semua')
+const activeFilterLabel = ref('')
 const selectedSkpd = ref(null)
 const skpdOptions = ref([])
 const exportLoading = ref(null)
+
+const ribbonSegments = computed(() => {
+  const total = stats.value.total || 0
+  if (total === 0) return []
+  
+  const colors = [
+    '#1e40af', '#7e22ce', '#d97706', '#dc2626', '#ea580c', '#0284c7', '#64748b',
+    '#059669', '#0891b2', '#4f46e5', '#7c3aed', '#c026d3', '#db2777', '#dc2626',
+    '#facc15', '#4ade80', '#22d3ee', '#818cf8', '#fb7185', '#a78bfa'
+  ]
+  
+  return (stats.value.by_status || []).map((s, idx) => ({
+    label: s.status,
+    count: s.count,
+    color: colors[idx % colors.length],
+    filter: s.status,
+    percent: ((s.count / total) * 100).toFixed(1)
+  })).sort((a, b) => b.count - a.count)
+})
 
 // Dialogs
 const formDialog = ref(false)
@@ -615,29 +680,52 @@ const formatDate = (date) => {
 const fetchEmployees = async () => {
   loading.value = true
   try {
-    const response = await api.get('/employees', {
-      params: { 
-        search: search.value,
-        skpd_id: route.query.skpd_id || selectedSkpd.value || undefined,
-        gender: genderFilter.value,
-        status: statusFilter.value,
-        per_page: 50
-      }
-    })
+    const params = { 
+      search: search.value,
+      skpd_id: route.query.skpd_id || selectedSkpd.value || undefined,
+      gender: genderFilter.value,
+      status: statusFilter.value,
+      status_code: activeFilter.value !== 'Semua' ? activeFilter.value : undefined,
+      per_page: 50
+    }
+    const response = await api.get('/employees', { params })
     
     if (response.data.success) {
       employees.value = response.data.data.data || []
-      // Use stats from server
-      if (response.data.stats) {
-        stats.value = response.data.stats
-      }
     }
   } catch (err) {
     console.error('Error:', err)
-    showSnackbar('Gagal memuat data pegawai', 'error')
+    showSnack('Gagal memuat data pegawai', 'error')
   } finally {
     loading.value = false
   }
+}
+
+const fetchStats = async () => {
+  try {
+    const response = await api.get('/employees/get-stats')
+    if (response.data.success) {
+      stats.value = {
+        total: response.data.data.summary.total,
+        male: response.data.data.summary.male,
+        female: response.data.data.summary.female,
+        by_status: response.data.data.by_status
+      }
+    }
+  } catch (e) {
+    console.error('Failed to fetch stats', e)
+  }
+}
+
+const applyCardFilter = (filter, label) => {
+    activeFilter.value = filter
+    activeFilterLabel.value = label
+    statusFilter.value = 'Semua' // Reset select filter to avoid conflict
+    fetchEmployees()
+}
+
+const clearCardFilter = () => {
+    applyCardFilter('Semua', '')
 }
 
 // Watch for search query from Navbar
@@ -870,6 +958,7 @@ const showSnackbar = (message, color = 'success') => {
 onMounted(() => {
   fetchEmployees()
   fetchSkpds()
+  fetchStats()
 })
 
 watch(() => route.query.skpd_id, () => {
@@ -890,41 +979,104 @@ watch(search, () => {
 </script>
 
 <style scoped>
-.sticky-top {
-  position: sticky;
-  top: 96px;
+.modern-bg {
+  min-height: 100vh;
+  background: #f8fafc;
 }
 
-.stat-item {
-  background: rgba(var(--v-border-color), 0.04);
-  padding: 12px;
+.stat-ribbon-card {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(10px);
+}
+
+.border-md-right {
+  border-right: 1px solid rgba(var(--v-border-color), 0.1);
+}
+
+.ribbon-container {
+  display: flex;
+  height: 42px;
+  width: 100%;
   border-radius: 12px;
-  transition: all 0.2s;
+  overflow: hidden;
+  background: rgba(0,0,0,0.05);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
 }
 
-.stat-item:hover {
-  background: rgb(var(--v-theme-surface));
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+.ribbon-segment {
+  height: 100%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
 }
 
-:deep(.modern-table) {
-  background: transparent !important;
+.ribbon-segment:hover {
+  transform: scaleY(1.15);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 2;
+  filter: brightness(1.1);
 }
 
-:deep(.v-data-table-header) {
-  background: rgba(var(--v-border-color), 0.05) !important;
+.legend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
 }
 
-:deep(.v-data-table-header th) {
-  font-weight: 700 !important;
-  color: rgb(var(--v-theme-on-surface)) !important;
-  opacity: 0.7;
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.legend-item:hover {
+  background: rgba(0,0,0,0.03);
+}
+
+.legend-active {
+  background: rgba(var(--v-theme-primary), 0.08) !important;
+  border: 1px solid rgba(var(--v-theme-primary), 0.2);
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legend-label {
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
-  font-size: 0.7rem !important;
-  letter-spacing: 0.05em;
+  color: #475569;
 }
 
-:deep(.v-data-table__tr:hover) {
-  background-color: rgba(var(--v-theme-primary), 0.02) !important;
+.legend-count {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.modern-table :deep(.v-data-table-header) {
+  background: #f1f5f9 !important;
+  font-weight: 700 !important;
+}
+
+@media (max-width: 960px) {
+  .border-md-right {
+    border-right: none;
+    border-bottom: 1px solid rgba(var(--v-border-color), 0.1);
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+  }
 }
 </style>

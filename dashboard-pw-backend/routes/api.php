@@ -158,6 +158,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tpg/export', [TpgController::class, 'export']);
 
     // Employees
+    Route::get('/employees/get-stats', [EmployeeController::class, 'stats']);
     Route::get('/employees/statuses', [EmployeeController::class, 'getStatuses']);
     Route::get('/employees/export', [EmployeeController::class, 'export']);
     Route::get('/employees/{id}/history', [EmployeeController::class, 'payrollHistory']);
