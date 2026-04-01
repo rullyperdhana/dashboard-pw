@@ -981,12 +981,13 @@ watch(search, () => {
 <style scoped>
 .modern-bg {
   min-height: 100vh;
-  background: #f8fafc;
+  background: rgb(var(--v-theme-background));
 }
 
 .stat-ribbon-card {
-  background: rgba(255, 255, 255, 0.9) !important;
+  background: rgba(var(--v-theme-surface), 0.9) !important;
   backdrop-filter: blur(10px);
+  color: rgb(var(--v-theme-on-surface));
 }
 
 .border-md-right {
@@ -999,7 +1000,7 @@ watch(search, () => {
   width: 100%;
   border-radius: 12px;
   overflow: hidden;
-  background: rgba(0,0,0,0.05);
+  background: rgba(var(--v-border-color), 0.1);
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
 }
 
@@ -1034,12 +1035,12 @@ watch(search, () => {
 }
 
 .legend-item:hover {
-  background: rgba(0,0,0,0.03);
+  background: rgba(var(--v-border-color), 0.05);
 }
 
 .legend-active {
-  background: rgba(var(--v-theme-primary), 0.08) !important;
-  border: 1px solid rgba(var(--v-theme-primary), 0.2);
+  background: rgba(var(--v-theme-primary), 0.12) !important;
+  border: 1px solid rgba(var(--v-theme-primary), 0.3);
 }
 
 .legend-dot {
@@ -1052,22 +1053,25 @@ watch(search, () => {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  color: #475569;
+  color: rgb(var(--v-theme-on-surface));
+  opacity: 0.7;
 }
 
 .legend-count {
   font-size: 12px;
   font-weight: 500;
+  color: rgb(var(--v-theme-on-surface));
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(var(--v-theme-surface), 0.7);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(var(--v-border-color), 0.1);
+  color: rgb(var(--v-theme-on-surface));
 }
 
 .modern-table :deep(.v-data-table-header) {
-  background: #f1f5f9 !important;
+  background: rgba(var(--v-border-color), 0.05) !important;
   font-weight: 700 !important;
 }
 
