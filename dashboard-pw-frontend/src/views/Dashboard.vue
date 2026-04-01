@@ -287,11 +287,11 @@
                 <div :key="showAllJabatan">
                   <v-row v-if="distribution.by_jabatan?.length > 0" dense>
                     <v-col cols="12" md="4" v-for="item in (showAllJabatan ? distribution.by_jabatan : distribution.by_jabatan.slice(0, 6))" :key="item.jabatan" class="py-1">
-                      <div class="d-flex align-center py-2 px-3 rounded-lg bg-surface-variant bg-opacity-10">
+                      <div class="d-flex align-center py-2 px-3 rounded-lg border-opacity-10" style="border: 1px solid rgba(var(--v-border-color), 0.2); background: rgba(var(--v-border-color), 0.05);">
                         <v-avatar size="24" color="primary" variant="tonal" class="mr-2 text-caption font-weight-bold">
                           {{ item.count }}
                         </v-avatar>
-                        <span class="text-caption font-weight-bold text-uppercase text-truncate" style="max-width: 160px">
+                        <span class="text-caption font-weight-bold text-uppercase text-truncate" style="max-width: 160px; color: rgb(var(--v-theme-on-surface));">
                           <v-tooltip activator="parent" location="top">{{ item.jabatan }}</v-tooltip>
                           {{ item.jabatan }}
                         </span>

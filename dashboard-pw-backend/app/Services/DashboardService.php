@@ -55,13 +55,12 @@ class DashboardService
                 $q->select('idskpd')->from('pegawai_pw');
             })->count();
 
-            // Pegawai per SKPD (Top 10)
+            // Pegawai per SKPD (All)
             $employeesPerSkpdQuery = DB::table('pegawai_pw')
                 ->join('skpd', 'pegawai_pw.idskpd', '=', 'skpd.id_skpd')
                 ->select('skpd.nama_skpd', DB::raw('COUNT(*) as total'))
                 ->groupBy('skpd.id_skpd', 'skpd.nama_skpd')
-                ->orderByDesc('total')
-                ->limit(10);
+                ->orderByDesc('total');
 
             if ($user->isAdminSkpd()) {
                 $employeesPerSkpdQuery->where('pegawai_pw.idskpd', $user->institution);
