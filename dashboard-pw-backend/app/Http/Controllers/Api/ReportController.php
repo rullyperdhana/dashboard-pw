@@ -372,6 +372,7 @@ class ReportController extends Controller
                 'pegawai_pw.nip',
                 'pegawai_pw.tgl_lahir',
                 'pegawai_pw.jabatan',
+                'pegawai_pw.status',
                 'skpd.nama_skpd',
                 DB::raw("TIMESTAMPDIFF(YEAR, tgl_lahir, CURDATE()) AS current_age")
             )
@@ -390,6 +391,7 @@ class ReportController extends Controller
                 'nama' => $emp->nama,
                 'nip' => $emp->nip,
                 'jabatan' => $emp->jabatan,
+                'status_pegawai' => $emp->status,
                 'nama_skpd' => $emp->nama_skpd,
                 'age' => $emp->current_age,
                 'retirement_date' => $retirementDate->format('Y-m-d'),

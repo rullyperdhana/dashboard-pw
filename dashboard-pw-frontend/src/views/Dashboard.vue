@@ -517,6 +517,11 @@
                   <div class="text-caption text-grey">{{ item.jabatan }}</div>
                   <div class="text-caption text-primary">{{ item.nama_skpd }}</div>
                 </template>
+                <template v-slot:item.status_pegawai="{ item }">
+                  <v-chip :color="getStatusColor(item.status_pegawai)" size="x-small" variant="flat" class="font-weight-bold">
+                    {{ item.status_pegawai || 'Aktif' }}
+                  </v-chip>
+                </template>
                 <template v-slot:item.age="{ item }">
                   <v-chip :color="item.age >= 58 ? 'red' : 'orange'" variant="tonal" size="small" class="font-weight-bold">
                     {{ item.age }} Tahun
@@ -921,9 +926,10 @@ const topEarnersHeaders = [
 
 const retirementHeaders = [
   { title: 'PEGAWAI', key: 'nama', sortable: true },
+  { title: 'STATUS PEGAWAI', key: 'status_pegawai', sortable: true, align: 'center' },
   { title: 'USIA', key: 'age', sortable: true, align: 'center' },
   { title: 'ESTIMASI PENSIUNAN', key: 'retirement_date', sortable: true },
-  { title: 'STATUS', key: 'status', sortable: false, align: 'center' },
+  { title: 'MONITORING', key: 'status', sortable: false, align: 'center' },
 ]
 
 // ═══════════════════════════════════════════
