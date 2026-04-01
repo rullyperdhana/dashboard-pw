@@ -85,6 +85,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Reports
     Route::get('/reports', [ReportController::class, 'index']);
     Route::get('/export-logs', [ExportLogController::class, 'index']);
+    Route::delete('/export-logs/cleanup', [ExportLogController::class, 'cleanup']);
     Route::get('/reports/unpaid-skpds', [ReportController::class, 'unpaidSkpds']);
     Route::get('/reports/unpaid-upts', [ReportController::class, 'unpaidUpts']);
     Route::get('/reports/unpaid-employees', [ReportController::class, 'unpaidEmployees']);

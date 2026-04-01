@@ -15,6 +15,16 @@
               Pantau aktivitas cetak PDF dan unduh Excel dari sistem.
             </p>
           </div>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="error"
+            variant="tonal"
+            prepend-icon="mdi-delete-sweep"
+            class="text-none font-weight-bold rounded-lg"
+            @click="showCleanupDialog = true"
+          >
+            Hapus Log Lama
+          </v-btn>
         </div>
 
         <!-- Filter Card -->
@@ -141,6 +151,34 @@
         </v-card>
       </v-container>
     </v-main>
+
+    <!-- Dialog Konfirmasi Cleanup -->
+    <v-dialog v-model="showCleanupDialog" max-width="450px" persistent>
+      <v-card class="rounded-xl pa-4">
+        <v-card-title class="d-flex align-center">
+          <v-icon color="error" class="mr-3">mdi-alert-circle</v-icon>
+          Hapus Log Riwayat
+        </v-card-title>
+        <v-card-text>
+          Pilih rentang waktu log yang akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.
+          <v-select
+            v-model="cleanupDays"
+            :items="cleanupOptions"
+            label="Hapus log yang lebih tua dari"
+            variant="outlined"
+            class="mt-4"
+            density="comfortable"
+          ></v-select>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showCleanupDialog = false" class="text-none">Batal</v-btn>
+          <v-btn color="error" variant="flat" :loading="cleanupLoading" @click="handleCleanup" class="text-none px-6 rounded-lg">
+            Hapus Sekarang
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -154,6 +192,17 @@ import Navbar from '../../components/Navbar.vue'
 const router = useRouter()
 const loading = ref(true)
 const logs = ref([])
+ 
+// Cleanup Dialog
+const showCleanupDialog = ref(false)
+const cleanupLoading = ref(false)
+const cleanupDays = ref(30)
+const cleanupOptions = [
+  { title: '30 Hari Terakhir', value: 30 },
+  { title: '60 Hari Terakhir', value: 60 },
+  { title: '90 Hari Terakhir', value: 90 },
+  { title: 'Semua Log', value: 0 },
+]
 
 const pagination = ref({
   page: 1,
@@ -204,6 +253,24 @@ const fetchLogs = async (options = {}) => {
     }
   } finally {
     loading.value = false
+  }
+}
+ 
+const handleCleanup = async () => {
+  cleanupLoading.value = true
+  try {
+    const response = await api.delete('/export-logs/cleanup', {
+      params: { days: cleanupDays.value }
+    })
+    if (response.data.success) {
+      showCleanupDialog.value = false
+      alert(response.data.message)
+      await fetchLogs()
+    }
+  } catch (error) {
+    alert('Gagal menghapus log: ' + (error.response?.data?.message || error.message))
+  } finally {
+    cleanupLoading.value = false
   }
 }
 

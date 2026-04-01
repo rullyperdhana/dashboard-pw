@@ -48,4 +48,29 @@ class ExportLogController extends Controller
             ]
         ]);
     }
+
+    /**
+     * Delete old logs (Superadin only).
+     */
+    public function cleanup(Request $request)
+    {
+        $user = auth()->user();
+        if ($user->role !== 'superadmin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access.'
+            ], 403);
+        }
+
+        $days = $request->input('days', 30);
+        $date = now()->subDays($days);
+        
+        $count = ExportLog::where('created_at', '<', $date)->count();
+        ExportLog::where('created_at', '<', $date)->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Berhasil menghapus {$count} log yang lebih tua dari {$days} hari."
+        ]);
+    }
 }

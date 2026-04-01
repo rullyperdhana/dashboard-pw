@@ -16,8 +16,11 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\CombinedAllowanceExport;
 
 
+use App\Traits\HasExportLogs;
+
 class ReportController extends Controller
 {
+    use HasExportLogs;
     /**
      * Analytics Hub data
      */
@@ -439,6 +442,8 @@ class ReportController extends Controller
 
         $filename = "missing_payrolls_{$viewBy}_{$month}_{$year}";
 
+        $this->logExport("Laporan Kekurangan Payroll ({$viewBy})", $format === 'pdf' ? 'Cetak PDF' : 'Ekspor Excel', "Periode: {$monthName} {$year}");
+
         if ($format === 'pdf') {
             $totalCount = $responseData['meta']['unpaid_count'] ?? count($data);
 
@@ -712,6 +717,8 @@ class ReportController extends Controller
         $jgSlug = $jenisGaji !== 'Semua' ? "_" . strtolower(str_replace(' ', '_', $jenisGaji)) : '';
         $filename = "skpd_daftar_gaji{$typeSlug}{$jgSlug}_{$month}_{$year}";
 
+        $this->logExport("Daftar Gaji SKPD ({$type})", $format === 'pdf' ? 'Cetak PDF' : 'Ekspor Excel', "Periode: {$monthName} {$year}, Jenis: {$jenisGaji}");
+
         if ($format === 'pdf') {
             if ($mode === 'detail') {
                 // Detail totals (PNS / PPPK)
@@ -839,6 +846,8 @@ class ReportController extends Controller
         $monthName = $months[(int) $month] ?? 'Unknown';
 
         $filename = "daftar_gaji_pegawai_{$month}_{$year}";
+
+        $this->logExport("Daftar Gaji Pegawai (Detailed)", $format === 'pdf' ? 'Cetak PDF' : 'Ekspor Excel', "Periode: {$monthName} {$year}");
 
         if ($format === 'pdf') {
             // Calculate totals for PDF
@@ -1071,6 +1080,8 @@ class ReportController extends Controller
             12 => 'Desember'
         ];
         $monthName = $monthNames[(int) $month] ?? 'Unknown';
+
+        $this->logExport("Rincian Tunjangan Gabungan", "Ekspor Excel", "Periode: {$monthName} {$year}");
 
         return Excel::download(
             new CombinedAllowanceExport($combined, $month, $year, $monthName),
