@@ -157,30 +157,44 @@
             </v-card>
           </v-col>
 
-          <!-- Position Summary (Top 10) -->
+          <!-- Position Summary (Expandable) -->
           <v-col cols="12" md="8">
-            <v-card class="glass-card rounded-xl h-100" elevation="0" border>
+            <v-card class="glass-card rounded-xl h-100 transition-card" elevation="0" border>
               <v-card-text class="pa-6">
-                <div class="text-overline text-grey-darken-1 mb-4">RINGKASAN JABATAN (TOP 10)</div>
-                <v-row v-if="stats.by_jabatan && stats.by_jabatan.length > 0">
-                  <v-col cols="12" md="6" v-for="(group, idx) in [stats.by_jabatan.slice(0, 5), stats.by_jabatan.slice(5, 10)]" :key="idx">
-                    <v-list density="compact" bg-color="transparent" class="pa-0">
-                      <v-list-item v-for="item in group" :key="item.jabatan" class="px-0">
-                        <template v-slot:prepend>
-                          <v-avatar size="24" color="primary" variant="tonal" class="mr-2 text-caption font-weight-bold">
+                <div class="d-flex align-center justify-space-between mb-4">
+                  <div class="text-overline text-grey-darken-1">RINGKASAN JABATAN</div>
+                  <v-btn 
+                    v-if="stats.by_jabatan.length > 6"
+                    variant="text" 
+                    color="primary" 
+                    size="small" 
+                    :prepend-icon="showAllJabatan ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                    @click="showAllJabatan = !showAllJabatan"
+                  >
+                    {{ showAllJabatan ? 'Sembunyikan' : 'Lihat Semua (' + stats.by_jabatan.length + ')' }}
+                  </v-btn>
+                </div>
+                
+                <v-expand-transition>
+                  <div :key="showAllJabatan">
+                    <v-row v-if="stats.by_jabatan && stats.by_jabatan.length > 0">
+                      <v-col cols="12" md="4" v-for="item in displayedJabatan" :key="item.jabatan" class="py-1">
+                        <div class="d-flex align-center py-1">
+                          <v-avatar size="22" color="primary" variant="tonal" class="mr-2 text-caption font-weight-bold" style="font-size: 10px !important;">
                             {{ item.count }}
                           </v-avatar>
-                        </template>
-                        <v-list-item-title class="text-caption font-weight-bold text-uppercase">
-                          {{ item.jabatan }}
-                        </v-list-item-title>
-                      </v-list-item>
-                    </v-list>
-                  </v-col>
-                </v-row>
-                <div v-else class="text-center py-4 text-grey">
-                  Tidak ada data jabatan
-                </div>
+                          <span class="text-caption font-weight-bold text-uppercase text-truncate" style="max-width: 150px;">
+                            <v-tooltip activator="parent" location="top">{{ item.jabatan }}</v-tooltip>
+                            {{ item.jabatan }}
+                          </span>
+                        </div>
+                      </v-col>
+                    </v-row>
+                    <div v-else class="text-center py-4 text-grey">
+                      Tidak ada data jabatan
+                    </div>
+                  </div>
+                </v-expand-transition>
               </v-card-text>
             </v-card>
           </v-col>
@@ -650,6 +664,11 @@ const loading = ref(true)
 const search = ref('')
 const employees = ref([])
 const stats = ref({ total: 0, male: 0, female: 0, by_status: [], by_jabatan: [] })
+const showAllJabatan = ref(false)
+const displayedJabatan = computed(() => {
+  if (showAllJabatan.value) return stats.value.by_jabatan
+  return stats.value.by_jabatan.slice(0, 6)
+})
 const genderFilter = ref('Semua')
 const statusFilter = ref('Semua')
 const activeFilter = ref('Semua')
