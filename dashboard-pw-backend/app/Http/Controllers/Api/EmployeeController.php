@@ -518,11 +518,20 @@ class EmployeeController extends Controller
             ->orderBy('count', 'desc')
             ->get();
 
+        // Get top 10 positions
+        $byJabatan = (clone $query)->select('jabatan', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->whereNotNull('jabatan')
+            ->groupBy('jabatan')
+            ->orderBy('count', 'desc')
+            ->limit(10)
+            ->get();
+
         return response()->json([
             'success' => true,
             'data' => [
                 'summary' => $summary,
                 'by_status' => $byStatus,
+                'by_jabatan' => $byJabatan,
             ],
         ]);
     }

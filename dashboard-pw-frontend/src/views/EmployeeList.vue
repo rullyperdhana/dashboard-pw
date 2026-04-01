@@ -118,6 +118,74 @@
           </v-row>
         </v-card>
 
+        <v-row class="mb-6">
+          <!-- Gender Summary -->
+          <v-col cols="12" md="4">
+            <v-card class="glass-card rounded-xl h-100" elevation="0" border>
+              <v-card-text class="pa-6">
+                <div class="text-overline text-grey-darken-1 mb-4">DISTRIBUSI JENIS KELAMIN</div>
+                
+                <div class="d-flex align-center justify-space-between mb-2">
+                  <div class="d-flex align-center">
+                    <v-icon color="blue" class="mr-2">mdi-gender-male</v-icon>
+                    <span class="text-body-1 font-weight-bold">Laki-laki</span>
+                  </div>
+                  <span class="text-h6 font-weight-bold">{{ stats.male }}</span>
+                </div>
+                <v-progress-linear
+                  :model-value="stats.total > 0 ? (stats.male / stats.total) * 100 : 0"
+                  color="blue"
+                  height="12"
+                  rounded
+                  class="mb-6"
+                ></v-progress-linear>
+
+                <div class="d-flex align-center justify-space-between mb-2">
+                  <div class="d-flex align-center">
+                    <v-icon color="pink" class="mr-2">mdi-gender-female</v-icon>
+                    <span class="text-body-1 font-weight-bold">Perempuan</span>
+                  </div>
+                  <span class="text-h6 font-weight-bold">{{ stats.female }}</span>
+                </div>
+                <v-progress-linear
+                  :model-value="stats.total > 0 ? (stats.female / stats.total) * 100 : 0"
+                  color="pink"
+                  height="12"
+                  rounded
+                ></v-progress-linear>
+              </v-card-text>
+            </v-card>
+          </v-col>
+
+          <!-- Position Summary (Top 10) -->
+          <v-col cols="12" md="8">
+            <v-card class="glass-card rounded-xl h-100" elevation="0" border>
+              <v-card-text class="pa-6">
+                <div class="text-overline text-grey-darken-1 mb-4">RINGKASAN JABATAN (TOP 10)</div>
+                <v-row v-if="stats.by_jabatan && stats.by_jabatan.length > 0">
+                  <v-col cols="12" md="6" v-for="(group, idx) in [stats.by_jabatan.slice(0, 5), stats.by_jabatan.slice(5, 10)]" :key="idx">
+                    <v-list density="compact" bg-color="transparent" class="pa-0">
+                      <v-list-item v-for="item in group" :key="item.jabatan" class="px-0">
+                        <template v-slot:prepend>
+                          <v-avatar size="24" color="primary" variant="tonal" class="mr-2 text-caption font-weight-bold">
+                            {{ item.count }}
+                          </v-avatar>
+                        </template>
+                        <v-list-item-title class="text-caption font-weight-bold text-uppercase">
+                          {{ item.jabatan }}
+                        </v-list-item-title>
+                      </v-list-item>
+                    </v-list>
+                  </v-col>
+                </v-row>
+                <div v-else class="text-center py-4 text-grey">
+                  Tidak ada data jabatan
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+
         <v-row>
           <!-- Main Directory Table -->
           <v-col cols="12">
@@ -581,7 +649,7 @@ const user = ref(JSON.parse(localStorage.getItem('user') || '{}'))
 const loading = ref(true)
 const search = ref('')
 const employees = ref([])
-const stats = ref({ total: 0, male: 0, female: 0, by_status: [] })
+const stats = ref({ total: 0, male: 0, female: 0, by_status: [], by_jabatan: [] })
 const genderFilter = ref('Semua')
 const statusFilter = ref('Semua')
 const activeFilter = ref('Semua')
@@ -709,7 +777,8 @@ const fetchStats = async () => {
         total: response.data.data.summary.total,
         male: response.data.data.summary.male,
         female: response.data.data.summary.female,
-        by_status: response.data.data.by_status
+        by_status: response.data.data.by_status,
+        by_jabatan: response.data.data.by_jabatan
       }
     }
   } catch (e) {
