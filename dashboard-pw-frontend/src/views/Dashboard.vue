@@ -275,14 +275,48 @@
               </div>
 
               <div class="pa-2" style="max-height: 400px; overflow-y: auto;">
+                <!-- View: SKPD -->
                 <v-list v-if="viewBy === 'skpd'" class="bg-transparent" lines="one">
                   <v-list-item v-for="skpd in unpaidSkpds" :key="skpd.id_skpd" class="mb-1 rounded-lg">
                     <template v-slot:prepend><v-icon color="error" size="18">mdi-office-building-remove</v-icon></template>
                     <v-list-item-title class="text-caption font-weight-bold">{{ skpd.nama_skpd }}</v-list-item-title>
                     <template v-slot:append><v-chip size="x-small" color="error" variant="tonal">BELUM LAPOR</v-chip></template>
                   </v-list-item>
+                  <div v-if="!unpaidSkpds.length" class="text-center py-8 text-grey text-caption">Semua SKPD sudah mengunggah data gaji.</div>
                 </v-list>
-                <div v-if="!unpaidSkpds.length" class="text-center py-8 text-grey text-caption">Semua SKPD sudah mengunggah data gaji.</div>
+
+                <!-- View: UPT -->
+                <v-list v-if="viewBy === 'upt'" class="bg-transparent" lines="two">
+                  <v-list-item v-for="(upt, idx) in unpaidUpts" :key="idx" class="mb-1 rounded-lg">
+                    <template v-slot:prepend><v-icon color="error" size="18">mdi-domain-off</v-icon></template>
+                    <v-list-item-title class="text-caption font-weight-bold">{{ upt.upt }}</v-list-item-title>
+                    <v-list-item-subtitle class="text-caption">{{ upt.nama_skpd }}</v-list-item-subtitle>
+                    <template v-slot:append><v-chip size="x-small" color="error" variant="tonal">BELUM LAPOR</v-chip></template>
+                  </v-list-item>
+                  <div v-if="!unpaidUpts.length" class="text-center py-8 text-grey text-caption">Semua UPT sudah mengunggah data gaji.</div>
+                </v-list>
+
+                <!-- View: Employees -->
+                <v-list v-if="viewBy === 'employees'" class="bg-transparent">
+                  <v-list-group v-for="(group, idx) in unpaidEmployees" :key="idx" :value="group.skpd_name">
+                    <template v-slot:activator="{ props }">
+                      <v-list-item v-bind="props" class="rounded-lg mb-1 bg-error-lighten-5">
+                        <template v-slot:prepend><v-icon color="error">mdi-office-building</v-icon></template>
+                        <v-list-item-title class="text-caption font-weight-bold">{{ group.skpd_name }}</v-list-item-title>
+                        <template v-slot:append><v-chip size="x-small" color="error" variant="flat">{{ group.count }} Orang</v-chip></template>
+                      </v-list-item>
+                    </template>
+
+                    <v-list-item v-for="emp in group.employees" :key="emp.id" class="pl-8 border-b-sm border-opacity-10 border-error">
+                      <v-list-item-title class="text-caption font-weight-bold">{{ emp.nama }}</v-list-item-title>
+                      <v-list-item-subtitle class="text-caption">{{ emp.nip }} - {{ emp.jabatan }}</v-list-item-subtitle>
+                      <template v-slot:append>
+                        <v-icon color="error" size="14">mdi-clock-alert-outline</v-icon>
+                      </template>
+                    </v-list-item>
+                  </v-list-group>
+                  <div v-if="!unpaidEmployees.length" class="text-center py-8 text-grey text-caption">Semua pegawai sudah masuk dalam daftar gaji.</div>
+                </v-list>
               </div>
             </div>
           </v-expand-transition>
