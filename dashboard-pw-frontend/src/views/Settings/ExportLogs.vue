@@ -169,6 +169,18 @@
             class="mt-4"
             density="comfortable"
           ></v-select>
+ 
+          <v-text-field
+            v-model="cleanupPassword"
+            label="Password Konfirmasi"
+            type="password"
+            variant="outlined"
+            class="mt-2"
+            density="comfortable"
+            placeholder="Masukkan password akun Anda"
+            prepend-inner-icon="mdi-lock"
+            hide-details
+          ></v-text-field>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -197,6 +209,7 @@ const logs = ref([])
 const showCleanupDialog = ref(false)
 const cleanupLoading = ref(false)
 const cleanupDays = ref(30)
+const cleanupPassword = ref('')
 const cleanupOptions = [
   { title: '30 Hari Terakhir', value: 30 },
   { title: '60 Hari Terakhir', value: 60 },
@@ -257,13 +270,22 @@ const fetchLogs = async (options = {}) => {
 }
  
 const handleCleanup = async () => {
+  if (!cleanupPassword.value) {
+    alert('Silakan masukkan password konfirmasi.')
+    return
+  }
+ 
   cleanupLoading.value = true
   try {
     const response = await api.delete('/export-logs/cleanup', {
-      params: { days: cleanupDays.value }
+      params: { 
+        days: cleanupDays.value,
+        password: cleanupPassword.value
+      }
     })
     if (response.data.success) {
       showCleanupDialog.value = false
+      cleanupPassword.value = ''
       alert(response.data.message)
       await fetchLogs()
     }

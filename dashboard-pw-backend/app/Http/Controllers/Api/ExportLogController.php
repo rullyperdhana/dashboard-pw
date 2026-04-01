@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\ExportLog;
 use Illuminate\Http\Request;
 
+use Illuminate\Support\Facades\Hash;
+
 class ExportLogController extends Controller
 {
     /**
@@ -60,6 +62,18 @@ class ExportLogController extends Controller
                 'success' => false,
                 'message' => 'Unauthorized access.'
             ], 403);
+        }
+
+        $request->validate([
+            'password' => 'required|string',
+            'days' => 'required|integer',
+        ]);
+
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password konfirmasi salah.'
+            ], 422);
         }
 
         $days = $request->input('days', 30);
