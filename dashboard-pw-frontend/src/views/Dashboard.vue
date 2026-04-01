@@ -211,7 +211,7 @@
 
           <!-- Status Kepegawaian -->
           <v-col cols="12" md="5">
-            <v-card class="glass-card rounded-xl pa-6 shadow-premium h-100" elevation="0">
+            <v-card class="glass-card rounded-xl pa-6 shadow-premium h-100" elevation="0" to="/employees">
               <h2 class="text-h6 font-weight-bold mb-6">Status Pegawai</h2>
               <v-row dense>
                 <v-col v-for="(s, idx) in distribution.status" :key="idx" cols="6">
@@ -221,6 +221,76 @@
                   </div>
                 </v-col>
               </v-row>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <!-- New Section: Gender & Jabatan (Moved from EmployeeList) -->
+        <v-row class="mb-8">
+          <!-- Gender Summary -->
+          <v-col cols="12" md="4">
+            <v-card class="glass-card rounded-xl pa-6 shadow-premium h-100" elevation="0">
+              <h2 class="text-h6 font-weight-bold mb-6">Distribusi Jenis Kelamin</h2>
+              
+              <div v-for="g in distribution.gender" :key="g.jk" class="mb-4">
+                <div class="d-flex align-center justify-space-between mb-2">
+                  <div class="d-flex align-center">
+                    <v-icon :color="g.jk === 'LAKI - LAKI' ? 'blue' : 'pink'" class="mr-2">
+                      {{ g.jk === 'LAKI - LAKI' ? 'mdi-gender-male' : 'mdi-gender-female' }}
+                    </v-icon>
+                    <span class="text-body-2 font-weight-bold">{{ g.jk === 'LAKI - LAKI' ? 'Laki-laki' : 'Perempuan' }}</span>
+                  </div>
+                  <span class="text-subtitle-2 font-weight-bold">{{ g.total }}</span>
+                </div>
+                <v-progress-linear
+                  :model-value="(g.total / stats.total_employees) * 100"
+                  :color="g.jk === 'LAKI - LAKI' ? 'blue' : 'pink'"
+                  height="8"
+                  rounded
+                ></v-progress-linear>
+              </div>
+            </v-card>
+          </v-col>
+
+          <!-- Position Summary (Expandable) -->
+          <v-col cols="12" md="8">
+            <v-card class="glass-card rounded-xl pa-6 shadow-premium h-100 transition-card" elevation="0">
+              <div class="d-flex align-center justify-space-between mb-6">
+                <h2 class="text-h6 font-weight-bold">Ringkasan Jabatan</h2>
+                <v-btn 
+                  v-if="distribution.by_jabatan?.length > 6"
+                  variant="text" 
+                  color="primary" 
+                  size="small" 
+                  rounded="pill"
+                  :prepend-icon="showAllJabatan ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                  @click="showAllJabatan = !showAllJabatan"
+                >
+                  {{ showAllJabatan ? 'Sembunyikan' : 'Lihat Semua (' + distribution.by_jabatan.length + ')' }}
+                </v-btn>
+              </div>
+              
+              <v-expand-transition>
+                <div :key="showAllJabatan">
+                  <v-row v-if="distribution.by_jabatan?.length > 0" dense>
+                    <v-col cols="12" md="4" v-for="item in (showAllJabatan ? distribution.by_jabatan : distribution.by_jabatan.slice(0, 6))" :key="item.jabatan" class="py-1">
+                      <div class="d-flex align-center py-2 px-3 rounded-lg bg-surface-variant bg-opacity-10">
+                        <v-avatar size="24" color="primary" variant="tonal" class="mr-2 text-caption font-weight-bold">
+                          {{ item.count }}
+                        </v-avatar>
+                        <span class="text-caption font-weight-bold text-uppercase text-truncate" style="max-width: 160px">
+                          <v-tooltip activator="parent" location="top">{{ item.jabatan }}</v-tooltip>
+                          {{ item.jabatan }}
+                        </span>
+                      </div>
+                    </v-col>
+                  </v-row>
+                  <div v-else class="text-center py-8 text-grey">
+                    <v-icon size="40" class="mb-2 opacity-20">mdi-account-search-outline</v-icon>
+                    <div class="text-caption">Tidak ada data jabatan</div>
+                  </div>
+                </div>
+              </v-expand-transition>
             </v-card>
           </v-col>
         </v-row>
@@ -530,7 +600,8 @@ const stats = ref({
   monthly_payment: 0,
   total_skpd: 0,
 })
-const distribution = ref({ gender: [] })
+const distribution = ref({ gender: [], by_jabatan: [] })
+const showAllJabatan = ref(false)
 const charts = ref({
   employees_per_skpd: [],
   payment_trend: [],

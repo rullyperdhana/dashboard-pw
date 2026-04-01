@@ -130,6 +130,12 @@ class DashboardService
                         ->select('status', DB::raw('COUNT(*) as total'))
                         ->groupBy('status')
                         ->get(),
+                    'by_jabatan' => (clone $employeeQuery)
+                        ->select('jabatan', DB::raw('COUNT(*) as count'))
+                        ->whereNotNull('jabatan')
+                        ->groupBy('jabatan')
+                        ->orderBy('count', 'desc')
+                        ->get(),
                     'composition' => $composition,
                 ],
                 'charts' => [

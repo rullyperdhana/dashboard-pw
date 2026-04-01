@@ -118,88 +118,6 @@
           </v-row>
         </v-card>
 
-        <v-row class="mb-6">
-          <!-- Gender Summary -->
-          <v-col cols="12" md="4">
-            <v-card class="glass-card rounded-xl h-100" elevation="0" border>
-              <v-card-text class="pa-6">
-                <div class="text-overline text-grey-darken-1 mb-4">DISTRIBUSI JENIS KELAMIN</div>
-                
-                <div class="d-flex align-center justify-space-between mb-2">
-                  <div class="d-flex align-center">
-                    <v-icon color="blue" class="mr-2">mdi-gender-male</v-icon>
-                    <span class="text-body-1 font-weight-bold">Laki-laki</span>
-                  </div>
-                  <span class="text-h6 font-weight-bold">{{ stats.male }}</span>
-                </div>
-                <v-progress-linear
-                  :model-value="stats.total > 0 ? (stats.male / stats.total) * 100 : 0"
-                  color="blue"
-                  height="12"
-                  rounded
-                  class="mb-6"
-                ></v-progress-linear>
-
-                <div class="d-flex align-center justify-space-between mb-2">
-                  <div class="d-flex align-center">
-                    <v-icon color="pink" class="mr-2">mdi-gender-female</v-icon>
-                    <span class="text-body-1 font-weight-bold">Perempuan</span>
-                  </div>
-                  <span class="text-h6 font-weight-bold">{{ stats.female }}</span>
-                </div>
-                <v-progress-linear
-                  :model-value="stats.total > 0 ? (stats.female / stats.total) * 100 : 0"
-                  color="pink"
-                  height="12"
-                  rounded
-                ></v-progress-linear>
-              </v-card-text>
-            </v-card>
-          </v-col>
-
-          <!-- Position Summary (Expandable) -->
-          <v-col cols="12" md="8">
-            <v-card class="glass-card rounded-xl h-100 transition-card" elevation="0" border>
-              <v-card-text class="pa-6">
-                <div class="d-flex align-center justify-space-between mb-4">
-                  <div class="text-overline text-grey-darken-1">RINGKASAN JABATAN</div>
-                  <v-btn 
-                    v-if="stats.by_jabatan.length > 6"
-                    variant="text" 
-                    color="primary" 
-                    size="small" 
-                    :prepend-icon="showAllJabatan ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-                    @click="showAllJabatan = !showAllJabatan"
-                  >
-                    {{ showAllJabatan ? 'Sembunyikan' : 'Lihat Semua (' + stats.by_jabatan.length + ')' }}
-                  </v-btn>
-                </div>
-                
-                <v-expand-transition>
-                  <div :key="showAllJabatan">
-                    <v-row v-if="stats.by_jabatan && stats.by_jabatan.length > 0">
-                      <v-col cols="12" md="4" v-for="item in displayedJabatan" :key="item.jabatan" class="py-1">
-                        <div class="d-flex align-center py-1">
-                          <v-avatar size="22" color="primary" variant="tonal" class="mr-2 text-caption font-weight-bold" style="font-size: 10px !important;">
-                            {{ item.count }}
-                          </v-avatar>
-                          <span class="text-caption font-weight-bold text-uppercase text-truncate" style="max-width: 150px;">
-                            <v-tooltip activator="parent" location="top">{{ item.jabatan }}</v-tooltip>
-                            {{ item.jabatan }}
-                          </span>
-                        </div>
-                      </v-col>
-                    </v-row>
-                    <div v-else class="text-center py-4 text-grey">
-                      Tidak ada data jabatan
-                    </div>
-                  </div>
-                </v-expand-transition>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-
         <v-row>
           <!-- Main Directory Table -->
           <v-col cols="12">
@@ -663,12 +581,7 @@ const user = ref(JSON.parse(localStorage.getItem('user') || '{}'))
 const loading = ref(true)
 const search = ref('')
 const employees = ref([])
-const stats = ref({ total: 0, male: 0, female: 0, by_status: [], by_jabatan: [] })
-const showAllJabatan = ref(false)
-const displayedJabatan = computed(() => {
-  if (showAllJabatan.value) return stats.value.by_jabatan
-  return stats.value.by_jabatan.slice(0, 6)
-})
+const stats = ref({ total: 0, male: 0, female: 0, by_status: [] })
 const genderFilter = ref('Semua')
 const statusFilter = ref('Semua')
 const activeFilter = ref('Semua')
@@ -796,8 +709,7 @@ const fetchStats = async () => {
         total: response.data.data.summary.total,
         male: response.data.data.summary.male,
         female: response.data.data.summary.female,
-        by_status: response.data.data.by_status,
-        by_jabatan: response.data.data.by_jabatan
+        by_status: response.data.data.by_status
       }
     }
   } catch (e) {
