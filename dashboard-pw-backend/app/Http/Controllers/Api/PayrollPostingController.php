@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\PayrollPosting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\CacheClearer;
 
 class PayrollPostingController extends Controller
 {
+    use CacheClearer;
     /**
      * Get posting status for a year.
      */
@@ -53,6 +55,8 @@ class PayrollPostingController extends Controller
             ]
         );
 
+        $this->clearDashboardCache();
+
         return response()->json([
             'success' => true,
             'message' => "Data {$request->type} periode {$request->month}/{$request->year} berhasil di-POSTING (Dikunci).",
@@ -83,6 +87,8 @@ class PayrollPostingController extends Controller
                 'posted_by' => null,
             ]);
         }
+
+        $this->clearDashboardCache();
 
         return response()->json([
             'success' => true,
