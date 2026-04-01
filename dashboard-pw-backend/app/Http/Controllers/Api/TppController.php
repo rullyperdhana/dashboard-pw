@@ -11,8 +11,11 @@ use Illuminate\Support\Facades\Log;
 use App\Services\ExcelValidationService;
 use App\Exports\TppTemplateExport; 
 
+use App\Traits\CacheClearer;
+
 class TppController extends Controller
 {
+    use CacheClearer;
     public function validateUpload(Request $request)
     {
         $request->validate([
@@ -53,6 +56,8 @@ class TppController extends Controller
             }
 
             Excel::import(new TppImport($month, $year, $type), $file);
+
+            $this->clearDashboardCache();
 
             return response()->json([
                 'success' => true,

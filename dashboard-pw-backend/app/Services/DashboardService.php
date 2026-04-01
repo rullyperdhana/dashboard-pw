@@ -8,8 +8,11 @@ use App\Models\Skpd;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 
+use App\Traits\CacheClearer;
+
 class DashboardService
 {
+    use CacheClearer;
     public function getIndexData($user)
     {
         $cacheKey = 'dashboard_index_user_' . $user->id;

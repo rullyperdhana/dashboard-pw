@@ -9,9 +9,11 @@ use App\Models\MasterKeluarga;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Traits\CacheClearer;
 
 class DbfImportController extends Controller
 {
+    use CacheClearer;
     public function importMasterPegawai(Request $request)
     {
         $request->validate([
@@ -45,6 +47,8 @@ class DbfImportController extends Controller
             }
 
             DB::commit();
+
+            $this->clearDashboardCache();
 
             return response()->json([
                 'success' => true,
@@ -101,6 +105,8 @@ class DbfImportController extends Controller
             }
 
             DB::commit();
+
+            $this->clearDashboardCache();
 
             return response()->json([
                 'success' => true,

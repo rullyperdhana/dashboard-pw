@@ -40,7 +40,10 @@ API backend dikonfigurasi di `src/api.js`:
 | `/settings/sumber-dana` | `SumberDanaSetting.vue` | Sumber dana per SKPD |
 | `/settings/users` | `UserManagement.vue` | Manajemen user |
 
-## Fitur UI
+## Fitur UI Terbaru (v4.5.0)
+- ✅ **Advanced Budget Simulation**: Slider interaktif untuk simulasi kenaikan gaji & input pegawai baru pada Analitik TAPD.
+- ✅ **Manual Cache Management**: Tombol "Refresh Data" untuk membersihkan cache dashboard secara manual.
+- ✅ **Improved Data Consistency**: Integrasi real-time dashboard dengan backend caching.
 - ✅ Light & Dark mode
 - ✅ Responsive layout
 - ✅ Export CSV/Excel/PDF

@@ -11,9 +11,11 @@ use App\Imports\Sp2dPotonganImport;
 use App\Exports\Sp2dReconExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
+use App\Traits\CacheClearer;
 
 class Sp2dController extends Controller
 {
+    use CacheClearer;
     public function import(Request $request)
     {
         $request->validate([
@@ -49,6 +51,8 @@ class Sp2dController extends Controller
                 ]);
             }
 
+            $this->clearDashboardCache();
+
             return response()->json(['message' => 'Data SP2D berhasil diimpor/sinkronisasi.']);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Gagal impor: ' . $e->getMessage()], 500);
@@ -74,6 +78,8 @@ class Sp2dController extends Controller
             'brutto' => $request->netto, // Default brutto to netto for manual entries if not provided
             'potongan' => 0
         ]));
+
+        $this->clearDashboardCache();
 
         return response()->json([
             'status' => 'success',
@@ -288,6 +294,8 @@ class Sp2dController extends Controller
         $realization = Sp2dRealization::findOrFail($id);
         $realization->update($request->only(['netto', 'nomor_sp2d', 'jenis_data']));
 
+        $this->clearDashboardCache();
+
         return response()->json([
             'status' => 'success',
             'message' => 'Data realisasi berhasil diperbarui',
@@ -299,6 +307,8 @@ class Sp2dController extends Controller
     {
         $realization = Sp2dRealization::findOrFail($id);
         $realization->delete();
+
+        $this->clearDashboardCache();
 
         return response()->json([
             'status' => 'success',

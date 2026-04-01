@@ -20,6 +20,9 @@ class BudgetPredictionController extends Controller
         $isSuperAdmin = $user && $user->role === 'superadmin';
 
         $growthFactor = $request->query('growth_factor', 5);
+        $salaryIncreasePct = $request->query('salary_increase_pct', 0);
+        $newHireCount = $request->query('new_hire_count', 0);
+        $newHireAvgSalary = $request->query('new_hire_avg_salary', 3000000);
         $category = $request->query('category');
         
         // If category not provided, default based on role
@@ -35,19 +38,33 @@ class BudgetPredictionController extends Controller
             ], 403);
         }
 
+        $params = [
+            'growthFactor' => $growthFactor,
+            'salaryIncreasePct' => $salaryIncreasePct,
+            'newHireCount' => $newHireCount,
+            'newHireAvgSalary' => $newHireAvgSalary,
+            'request' => $request
+        ];
+
         if ($category === 'pw') {
-            return $this->predictPW($growthFactor, $request);
+            return $this->predictPW($params);
         } elseif ($category === 'pns') {
-            return $this->predictPNS($growthFactor, $request);
+            return $this->predictMasterPegawai('gaji_pns', $params);
         } elseif ($category === 'pppk') {
-            return $this->predictPPPK($growthFactor, $request);
+            return $this->predictMasterPegawai('gaji_pppk', $params);
         }
 
         return response()->json(['success' => false, 'message' => 'Kategori tidak valid.']);
     }
 
-    private function predictPW($growthFactor, Request $request)
+    private function predictPW(array $params)
     {
+        $growthFactor = $params['growthFactor'];
+        $salaryIncreasePct = $params['salaryIncreasePct'];
+        $newHireCount = $params['newHireCount'];
+        $newHireAvgSalary = $params['newHireAvgSalary'];
+        $request = $params['request'];
+
         $now = Carbon::now()->startOfDay();
         $currentDate = $now->format('Y-m-d');
         $targetDate = $now->copy()->addYear()->format('Y-m-d');
@@ -92,7 +109,7 @@ class BudgetPredictionController extends Controller
             [
                 'kode' => '5.1.01.01.0001',
                 'nama' => 'Belanja Gaji Pokok PPPK-PW',
-                'amount' => ($avgGajiPokok * 14) * (1 + ($growthFactor / 100))
+                'amount' => ($avgGajiPokok * 14) * (1 + ($growthFactor / 100)) * (1 + ($salaryIncreasePct / 100))
             ],
             [
                 'kode' => '5.1.01.01.0002',
@@ -100,6 +117,17 @@ class BudgetPredictionController extends Controller
                 'amount' => ($avgTunjangan * 14) * (1 + ($growthFactor / 100))
             ]
         ];
+
+        // 1.1 New Hire Simulation
+        $newHireCost = 0;
+        if ($newHireCount > 0) {
+            $newHireCost = $newHireCount * $newHireAvgSalary * 13; // Estimated 13 months for new hires
+            $breakdown[] = [
+                'kode' => '5.1.01.01.9999',
+                'nama' => 'Simulasi Pegawai Baru (PW)',
+                'amount' => $newHireCost
+            ];
+        }
 
         // 2. Optimized Retirement Search using SQL
         $retiredQuery = DB::table('pegawai_pw')
@@ -145,21 +173,18 @@ class BudgetPredictionController extends Controller
         $avgGapok = DB::table('pegawai_pw')->where('status', 'Aktif')->avg('gapok') ?: 0;
         $totalKgbIncrease = $kgbEmployeesCount * ($avgGapok * 0.025) * 6; // Average 6 months of raise
 
-        return $this->formatResponse($growthFactor, $avgMonthlyTotal, $retiringEmployees, $totalRetirementReduction, $kgbEmployeesCount, $totalKgbIncrease, 0, 0, $breakdown);
+        return $this->formatResponse($growthFactor, $avgMonthlyTotal, $retiringEmployees, $totalRetirementReduction, $kgbEmployeesCount, $totalKgbIncrease, 0, 0, $breakdown, $newHireCost);
     }
 
-    private function predictPNS($growthFactor, Request $request)
-    {
-        return $this->predictMasterPegawai('gaji_pns', $growthFactor, $request);
-    }
 
-    private function predictPPPK($growthFactor, Request $request)
+    private function predictMasterPegawai($table, array $params)
     {
-        return $this->predictMasterPegawai('gaji_pppk', $growthFactor, $request);
-    }
+        $growthFactor = $params['growthFactor'];
+        $salaryIncreasePct = $params['salaryIncreasePct'];
+        $newHireCount = $params['newHireCount'];
+        $newHireAvgSalary = $params['newHireAvgSalary'];
+        $request = $params['request'];
 
-    private function predictMasterPegawai($table, $growthFactor, Request $request)
-    {
         $now = Carbon::now()->startOfDay();
         $currentDate = $now->format('Y-m-d');
         $targetDate = $now->copy()->addYear()->format('Y-m-d');
@@ -246,13 +271,28 @@ class BudgetPredictionController extends Controller
         $calculatedSum = 0;
         foreach ($components as $c) {
             $avg = count($c['avgs']) > 0 ? array_sum($c['avgs']) / count($c['avgs']) : 0;
-            $amount = ($avg * 14) * (1 + ($growthFactor / 100));
+            
+            // Apply salary increase ONLY to Gaji Pokok if specified
+            $factor = ($c['nama'] === 'Gaji Pokok') ? (1 + ($salaryIncreasePct / 100)) : 1;
+            
+            $amount = ($avg * 14) * (1 + ($growthFactor / 100)) * $factor;
             $breakdown[] = [
                 'kode' => $c['kode'],
                 'nama' => $c['nama'],
                 'amount' => $amount
             ];
             $calculatedSum += $amount;
+        }
+
+        // 1.1 New Hire Simulation
+        $newHireCost = 0;
+        if ($newHireCount > 0) {
+            $newHireCost = $newHireCount * $newHireAvgSalary * 13;
+            $breakdown[] = [
+                'kode' => '5.1.01.01.9999',
+                'nama' => "Simulasi Pegawai Baru (" . strtoupper(explode('_', $table)[1]) . ")",
+                'amount' => $newHireCost
+            ];
         }
 
         // Add "Lain-lain" for mapping errors or missing columns to ensure total matches
@@ -345,14 +385,15 @@ class BudgetPredictionController extends Controller
             $totalKgbIncrease,
             $kpEmployeesCount,
             $totalKpIncrease,
-            $breakdown
+            $breakdown,
+            $newHireCost
         );
     }
 
-    private function formatResponse($growthFactor, $avgMonthlyTotal, $retiringEmployees, $totalRetirementReduction, $kgbCount = 0, $kgbAmount = 0, $kpCount = 0, $kpAmount = 0, $breakdown = [])
+    private function formatResponse($growthFactor, $avgMonthlyTotal, $retiringEmployees, $totalRetirementReduction, $kgbCount = 0, $kgbAmount = 0, $kpCount = 0, $kpAmount = 0, $breakdown = [], $newHireCost = 0)
     {
         $baseYearly = $avgMonthlyTotal * 14;
-        $afterEvents = $baseYearly - $totalRetirementReduction + $kgbAmount + $kpAmount;
+        $afterEvents = $baseYearly - $totalRetirementReduction + $kgbAmount + $kpAmount + $newHireCost;
         $finalForecast = $afterEvents * (1 + ($growthFactor / 100));
 
         // Adjust breakdown total to exactly match finalForecast
@@ -369,6 +410,8 @@ class BudgetPredictionController extends Controller
             'data' => [
                 'parameters' => [
                     'growth_factor' => (float) $growthFactor,
+                    'salary_increase_pct' => (float) ($params['salaryIncreasePct'] ?? 0),
+                    'new_hire_count' => (int) ($params['newHireCount'] ?? 0),
                     'avg_monthly_base' => (float) $avgMonthlyTotal,
                 ],
                 'factors' => [

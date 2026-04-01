@@ -7,9 +7,11 @@ use App\Models\GajiPns;
 use App\Models\PayrollPosting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Traits\CacheClearer;
 
 class GajiPnsController extends Controller
 {
+    use CacheClearer;
     public function index(Request $request)
     {
         $query = GajiPns::query();
@@ -184,6 +186,7 @@ class GajiPnsController extends Controller
         }
 
         $record = GajiPns::create($validated);
+        $this->clearDashboardCache();
 
         return response()->json([
             'success' => true,
@@ -269,6 +272,7 @@ class GajiPnsController extends Controller
         }
 
         $record->update($validated);
+        $this->clearDashboardCache();
 
         return response()->json([
             'success' => true,
@@ -290,6 +294,7 @@ class GajiPnsController extends Controller
         }
 
         $record->delete();
+        $this->clearDashboardCache();
 
         return response()->json([
             'success' => true,

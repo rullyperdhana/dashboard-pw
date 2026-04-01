@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\AnalyticsController;
 use App\Http\Controllers\Api\PPh21Controller;
 use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\EssAuthController;
+use App\Http\Controllers\Api\CacheController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -183,7 +184,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/settings/pppk-estimation-export', [SettingController::class, 'pppkEstimationExport']);
     Route::get('/settings/pns-estimation-export', [SettingController::class, 'pnsEstimationExport']);
     Route::get('/settings/pppk-pw-estimation-export', [SettingController::class, 'pppkPwEstimationExport']);
-    // Route::post('/settings/clear-payroll', [SettingController::class, 'clearPayrollData']); // Moved to superadmin group below
 
     // Payments
     Route::prefix('payments')->group(function () {
@@ -213,8 +213,6 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('/{id}/toggle', [App\Http\Controllers\Api\ApiKeyController::class, 'toggleActive']);
             Route::delete('/{id}', [App\Http\Controllers\Api\ApiKeyController::class, 'destroy']);
         });
-
-        // BKD Reconciliation
     });
 
     Route::middleware('role:superadmin,operator')->group(function () {
@@ -288,6 +286,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/announcements/{announcement}', [AnnouncementController::class, 'update']);
         Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy']);
     });
+    Route::post('/cache/clear', [CacheController::class, 'clear']);
 });
 
 // Simgaji Integration API (protected by API Key)
@@ -296,4 +295,3 @@ Route::middleware('api.key')->group(function () {
     Route::get('/listpegawai', [App\Http\Controllers\Api\SimgajiController::class, 'listPegawai']);
     Route::get('/listgaji', [App\Http\Controllers\Api\SimgajiController::class, 'listGaji']);
 });
-

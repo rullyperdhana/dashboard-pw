@@ -7,9 +7,11 @@ use App\Models\GajiPppk;
 use App\Models\PayrollPosting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Traits\CacheClearer;
 
 class GajiPppkController extends Controller
 {
+    use CacheClearer;
     public function index(Request $request)
     {
         $query = GajiPppk::query();
@@ -184,6 +186,7 @@ class GajiPppkController extends Controller
         }
 
         $record = GajiPppk::create($validated);
+        $this->clearDashboardCache();
 
         return response()->json([
             'success' => true,
@@ -269,6 +272,7 @@ class GajiPppkController extends Controller
         }
 
         $record->update($validated);
+        $this->clearDashboardCache();
 
         return response()->json([
             'success' => true,
@@ -290,6 +294,7 @@ class GajiPppkController extends Controller
         }
 
         $record->delete();
+        $this->clearDashboardCache();
 
         return response()->json([
             'success' => true,

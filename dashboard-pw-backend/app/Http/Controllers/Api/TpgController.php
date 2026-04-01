@@ -12,8 +12,11 @@ use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
+use App\Traits\CacheClearer;
+
 class TpgController extends Controller
 {
+    use CacheClearer;
     /**
      * Upload TPG XLSX file.
      */
@@ -59,6 +62,8 @@ class TpgController extends Controller
                 ->count();
 
             $jenisLabel = $jenis === 'INDUK' ? 'Induk' : 'Susulan';
+
+            $this->clearDashboardCache();
 
             return response()->json([
                 'success' => true,

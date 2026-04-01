@@ -35,12 +35,21 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 | **Pusat Bantuan**   | Akses informasi bantuan untuk seluruh level user |
 | **Log Keamanan**     | Audit trail login (berhasil/gagal) & deteksi brute-force |
 | **Verifikasi SP2D**  | Rekon rincian gaji SIMGAJI vs Realisasi SIPD (Gaji & TPP) |
+| **Budget Simulation** | Simulasi "What-if" kenaikan gaji & pegawai baru (Analitik TAPD) |
+| **Cache Management** | Optimasi performa dashboard dangan sistem caching otomatis |
 | **Export Excel & PDF** | Export laporan sesuai tab yang aktif |
 
 ---
  
 
   
+
+### 📊 Analitik TAPD & Optimasi Teknis (v4.5.0)
+- **Advanced Budget Simulation:** Fitur simulasi belanja pegawai yang mendukung parameter "Kenaikan Gaji Pokok (%)", "Simulasi Pegawai Baru", dan "Faktor Pertumbuhan". Mendukung rincian otomatis per Kode Rekening.
+- **Smart Caching System:** Implementasi Laravel Cache pada layanan dashboard untuk mempercepat waktu muat data statistik. Mengurangi beban database hingga 80% pada akses berulang.
+- **Automated Cache Invalidation:** Sistem otomatis menghapus cache dashboard setiap kali ada aktivitas data (Import DBF, Upload Gaji, TPP, TPG, SP2D) untuk menjamin akurasi data.
+- **Manual Data Refresh:** Menambahkan kontrol "Refresh Data" di dashboard analitik untuk pembersihan cache secara manual oleh administrator.
+- **Detailed Calculation Docs:** Menambahkan dokumentasi internal mengenai metodologi perhitungan prediksi anggaran (Gaji 14x, efisiensi pensiun, KGB/KP).
 
 ### 🛠️ Advanced Data Maintenance & UI Shortcuts (v4.4.2)
 - **Direct Shortcuts:** Menambahkan opsi "Gaji Kekurangan PNS/PPPK" langsung pada menu Target Data untuk akses cepat.

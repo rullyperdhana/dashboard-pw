@@ -38,13 +38,37 @@
                 hide-details
               ></v-slider>
             </v-col>
-            <v-col cols="12" md="3" class="text-center">
-              <div class="text-overline text-grey">Status Data</div>
-              <v-chip color="success" prepend-icon="mdi-check-circle" variant="tonal">Data Riil Terverifikasi</v-chip>
+            <v-col cols="12" md="3">
+              <div class="text-subtitle-1 font-weight-bold mb-2">Kenaikan Gaji Pokok (%)</div>
+              <v-slider
+                v-model="salaryIncreasePct"
+                :min="0"
+                :max="20"
+                :step="1"
+                color="orange"
+                thumb-label="always"
+                hide-details
+              ></v-slider>
             </v-col>
-            <v-col cols="12" md="6" class="text-right">
-              <v-btn color="primary" prepend-icon="mdi-refresh" @click="fetchPrediction" :loading="loading" rounded="lg">
+            <v-col cols="12" md="2">
+              <v-text-field
+                v-model.number="newHireCount"
+                label="Simulasi Pegawai Baru"
+                type="number"
+                variant="outlined"
+                density="compact"
+                hide-details
+                prepend-inner-icon="mdi-account-plus"
+              ></v-text-field>
+            </v-col>
+            <v-col cols="12" md="2" class="text-right">
+              <v-btn color="primary" prepend-icon="mdi-refresh" @click="fetchPrediction" :loading="loading" rounded="lg" block>
                 Jalankan Simulasi
+              </v-btn>
+            </v-col>
+            <v-col cols="12" md="2" class="text-right">
+              <v-btn color="secondary" variant="outlined" prepend-icon="mdi-cached" @click="clearCache" :loading="clearingCache" rounded="lg" block>
+                Refresh Data
               </v-btn>
             </v-col>
           </v-row>
@@ -213,8 +237,12 @@ const loading = ref(false)
 const error = ref('')
 const category = ref(user.role === 'superadmin' ? 'pw' : 'pns')
 const growthFactor = ref(5)
+const salaryIncreasePct = ref(0)
+const newHireCount = ref(0)
+const newHireAvgSalary = ref(category.value === 'pw' ? 3000000 : 4500000)
 const prediction = ref(null)
 const healthData = ref(null)
+const clearingCache = ref(false)
 
 const breakdownHeaders = [
   { title: 'KODE REKENING', key: 'kode', sortable: false },
@@ -233,8 +261,11 @@ const fetchPrediction = async () => {
   try {
     const response = await api.get('/budget-prediction', {
       params: { 
-        category: category.value,
-        growth_factor: growthFactor.value
+          category: category.value,
+          growth_factor: growthFactor.value,
+          salary_increase_pct: salaryIncreasePct.value,
+          new_hire_count: newHireCount.value,
+          new_hire_avg_salary: newHireAvgSalary.value
       }
     })
     
@@ -260,6 +291,21 @@ const fetchHealthData = async () => {
     healthData.value = response.data.data
   } catch (error) {
     console.error('Error fetching health data:', error)
+  }
+}
+
+const clearCache = async () => {
+  clearingCache.value = true
+  try {
+    const response = await api.post('/cache/clear')
+    if (response.data.success) {
+      await fetchPrediction()
+      await fetchHealthData()
+    }
+  } catch (err) {
+    console.error('Failed to clear cache:', err)
+  } finally {
+    clearingCache.value = false
   }
 }
 
