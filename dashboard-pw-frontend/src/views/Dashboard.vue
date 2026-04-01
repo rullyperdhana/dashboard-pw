@@ -189,23 +189,36 @@
           <!-- Pegawai per Instansi -->
           <v-col cols="12" md="7">
             <v-card class="glass-card rounded-xl pa-6 shadow-premium h-100" elevation="0">
-              <div class="d-flex align-center mb-6">
-                <h2 class="text-h6 font-weight-bold">Sebaran Pegawai (Top 6)</h2>
-                <v-spacer></v-spacer>
-                <v-btn variant="text" size="small" color="primary" rounded="pill" to="/skpd">Lihat Semua</v-btn>
+              <div class="d-flex align-center justify-space-between mb-6">
+                <h2 class="text-h6 font-weight-bold">Sebaran Pegawai</h2>
+                <v-btn 
+                  v-if="charts.employees_per_skpd?.length > 6"
+                  variant="text" 
+                  size="small" 
+                  color="primary" 
+                  rounded="pill"
+                  :prepend-icon="showAllSkpd ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                  @click="showAllSkpd = !showAllSkpd"
+                >
+                  {{ showAllSkpd ? 'Sembunyikan' : 'Lihat Semua (' + charts.employees_per_skpd?.length + ')' }}
+                </v-btn>
               </div>
-              <v-row dense>
-                <v-col v-for="(item, index) in charts.employees_per_skpd?.slice(0, 6)" :key="index" cols="12" sm="6" class="mb-2">
-                  <div class="d-flex justify-space-between mb-1 px-1">
-                    <span class="text-caption font-weight-bold text-truncate" style="max-width: 140px">{{ item.nama_skpd }}</span>
-                    <span class="text-caption font-weight-bold text-primary">{{ item.total }}</span>
-                  </div>
-                  <v-progress-linear
-                    :model-value="(item.total / stats.total_employees) * 100"
-                    color="primary" height="6" rounded class="bg-blue-lighten-5"
-                  ></v-progress-linear>
-                </v-col>
-              </v-row>
+              <v-expand-transition>
+                <div :key="showAllSkpd">
+                  <v-row dense>
+                    <v-col v-for="(item, index) in (showAllSkpd ? charts.employees_per_skpd : charts.employees_per_skpd?.slice(0, 6))" :key="index" cols="12" sm="6" class="mb-2">
+                      <div class="d-flex justify-space-between mb-1 px-1">
+                        <span class="text-caption font-weight-bold text-truncate" style="max-width: 140px">{{ item.nama_skpd }}</span>
+                        <span class="text-caption font-weight-bold text-primary">{{ item.total }}</span>
+                      </div>
+                      <v-progress-linear
+                        :model-value="(item.total / stats.total_employees) * 100"
+                        color="primary" height="6" rounded class="bg-blue-lighten-5"
+                      ></v-progress-linear>
+                    </v-col>
+                  </v-row>
+                </div>
+              </v-expand-transition>
             </v-card>
           </v-col>
 
@@ -602,6 +615,7 @@ const stats = ref({
 })
 const distribution = ref({ gender: [], by_jabatan: [] })
 const showAllJabatan = ref(false)
+const showAllSkpd = ref(false)
 const charts = ref({
   employees_per_skpd: [],
   payment_trend: [],
