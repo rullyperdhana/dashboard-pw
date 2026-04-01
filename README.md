@@ -20,7 +20,7 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 | **Laporan Bulanan per SKPD** | Laporan gaji per SKPD dengan tab PNS, PPPK, PW, Gabungan |
 | **Laporan Tahunan** | Rekapitulasi gaji 12 bulan per jenis kepegawaian |
 | **Laporan Individual** | Slip gaji per pegawai dengan export PDF |
-| **Rekon BPJS 4%** | Rekonsiliasi BPJS Kesehatan 4% dengan rumus UMP |
+| **Rekon BPJS 4%** | Rekonsiliasi BPJS Kesehatan 4% dengan rekap per SKPD & Jabatan |
 | **Estimasi JKK/JKM/JKN** | Estimasi iuran ketenagakerjaan per SKPD |
 | **Sumber Dana SKPD** | Setting APBD/BLUD per SKPD (bulk update) |
 | **Trace Gaji Pegawai** | Riwayat gaji per pegawai + kelola status & SK |
@@ -95,6 +95,7 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 - **December Final Tax:** Perhitungan Pasal 17 otomatis pada bulan Desember untuk menyeimbangkan total pajak tahunan.
 - **PTKP Intelligence:** Pemetaan otomatis status PTKP (Kawin/Anak) pegawai ke Kategori TER yang sesuai secara *real-time*.
 - **Official A2 Export:** Export Bukti Potong A2 ke Excel sesuai format resmi.
+- **Tunjangan Pembulatan Support:** Perhitungan PPh 21 kini secara eksplisit mencakup Tunjangan Pembulatan dari Simgaji sebagai objek pajak.
 
 ### 📄 Laporan & Transparansi (v3.6)
 - **AI-Driven Analytics (TAPD):** Dashboard cerdas untuk Tim Anggaran Pemerintah Daerah yang mensimulasikan kenaikan anggaran berdasarkan data rill **KGB** (2 tahunan), **Kenaikan Pangkat** (4 tahunan), dan jadwal pensiun massal.
@@ -307,6 +308,9 @@ Lihat [README_DEPLOY.md](README_DEPLOY.md) untuk panduan update mesin dan troubl
 |---|---|
 | Gaji Pokok ≥ UMP | BPJS = Gaji Pokok × 4% |
 | Gaji Pokok < UMP | BPJS = UMP × 4% (fixed) |
+
+> [!NOTE]
+> Laporan kini mendukung tampilan **Rekap per Jabatan** untuk memudahkan analisis distribusi iuran berdasarkan jenis posisi pegawai.
 
 > UMP default Kalsel: **Rp 3.725.000** → BPJS minimum: **Rp 149.000**
 

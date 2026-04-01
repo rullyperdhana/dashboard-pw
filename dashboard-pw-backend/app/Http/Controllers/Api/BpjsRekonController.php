@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 use App\Exports\BpjsRekonSkpdExport;
+use App\Exports\BpjsRekonJabatanExport;
 use App\Exports\BpjsRekonDetailExport;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -92,6 +93,32 @@ class BpjsRekonController extends Controller
             ->orderBy('pegawai_pw.skpd')
             ->get();
 
+        // Summary per Jabatan
+        $jabatanQuery = DB::table('tb_payment_detail')
+            ->join('tb_payment', 'tb_payment_detail.payment_id', '=', 'tb_payment.id')
+            ->join('pegawai_pw', 'tb_payment_detail.employee_id', '=', 'pegawai_pw.id')
+            ->where('tb_payment.month', $month)
+            ->where('tb_payment.year', $year);
+
+        if ($sumberDana && $sumberDana !== 'Semua') {
+            $jabatanQuery->where('pegawai_pw.sumber_dana', $sumberDana);
+        }
+
+        $jabatanSummary = $jabatanQuery->select(
+            'pegawai_pw.jabatan',
+            DB::raw('COUNT(*) as jumlah_pegawai'),
+            DB::raw('SUM(tb_payment_detail.gaji_pokok) as total_gaji_pokok'),
+            DB::raw("SUM(CASE 
+                    WHEN tb_payment_detail.gaji_pokok < {$ump} THEN {$bpjsUmp}
+                    ELSE ROUND(tb_payment_detail.gaji_pokok * 0.04, 0) 
+                END) as total_bpjs_4_persen"),
+            DB::raw('SUM(tb_payment_detail.total_amoun) as total_gaji_bersih'),
+            DB::raw("SUM(CASE WHEN tb_payment_detail.gaji_pokok < {$ump} THEN 1 ELSE 0 END) as pegawai_bawah_ump")
+        )
+            ->groupBy('pegawai_pw.jabatan')
+            ->orderBy('pegawai_pw.jabatan')
+            ->get();
+
         // Grand total
         $grandTotal = [
             'jumlah_pegawai' => $data->count(),
@@ -107,6 +134,7 @@ class BpjsRekonController extends Controller
             'data' => [
                 'detail' => $data,
                 'skpd_summary' => $skpdSummary,
+                'jabatan_summary' => $jabatanSummary,
                 'grand_total' => $grandTotal,
                 'period' => [
                     'month' => $month,
@@ -126,7 +154,7 @@ class BpjsRekonController extends Controller
         $request->validate([
             'month' => 'required|integer|min:1|max:12',
             'year' => 'required|integer|min:2000',
-            'type' => 'required|in:skpd,detail',
+            'type' => 'required|in:skpd,detail,jabatan',
         ]);
 
         $month = (int) $request->month;
@@ -174,6 +202,34 @@ class BpjsRekonController extends Controller
 
             $fileName = "Rekon_BPJS_4persen_PerSKPD_{$month}_{$year}.xlsx";
             return Excel::download(new BpjsRekonSkpdExport($summary->toArray(), $month, $year, $grandTotal), $fileName);
+
+        } elseif ($type === 'jabatan') {
+            $summary = $query->select(
+                'pegawai_pw.jabatan',
+                DB::raw('COUNT(*) as jumlah_pegawai'),
+                DB::raw('SUM(tb_payment_detail.gaji_pokok) as total_gaji_pokok'),
+                DB::raw("SUM(CASE 
+                        WHEN tb_payment_detail.gaji_pokok < {$ump} THEN {$bpjsUmp}
+                        ELSE ROUND(tb_payment_detail.gaji_pokok * 0.04, 0) 
+                    END) as total_bpjs_4_persen"),
+                DB::raw('SUM(tb_payment_detail.total_amoun) as total_gaji_bersih'),
+                DB::raw("SUM(CASE WHEN tb_payment_detail.gaji_pokok < {$ump} THEN 1 ELSE 0 END) as pegawai_bawah_ump")
+            )
+                ->groupBy('pegawai_pw.jabatan')
+                ->orderBy('pegawai_pw.jabatan')
+                ->get();
+
+            // Calculate grand total for heading/footer
+            $grandTotal = [
+                'jumlah_pegawai' => $summary->sum('jumlah_pegawai'),
+                'total_gaji_pokok' => $summary->sum('total_gaji_pokok'),
+                'total_bpjs_4_persen' => $summary->sum('total_bpjs_4_persen'),
+                'total_gaji_bersih' => $summary->sum('total_gaji_bersih'),
+                'pegawai_bawah_ump' => $summary->sum('pegawai_bawah_ump'),
+            ];
+
+            $fileName = "Rekon_BPJS_4persen_PerJabatan_{$month}_{$year}.xlsx";
+            return Excel::download(new BpjsRekonJabatanExport($summary->toArray(), $month, $year, $grandTotal), $fileName);
 
         } else {
             $detail = $query->select(
