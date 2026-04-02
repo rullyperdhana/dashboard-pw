@@ -211,7 +211,8 @@
                 <tr>
                     <th width="4%">No</th>
                     <th width="10%">Kode SKPD</th>
-                    <th width="32%">Nama SKPD</th>
+                    <th width="22%">Nama SKPD</th>
+                    <th width="10%">Sumber Dana</th>
                     <th width="7%">Jml Peg</th>
                     <th width="12%">Gaji Pokok</th>
                     <th width="12%">Tunjangan</th>
@@ -226,6 +227,7 @@
                         <td class="c">{{ $idx + 1 }}</td>
                         <td>{{ $item['kode_skpd'] ?? '-' }}</td>
                         <td>{{ $item['nama_skpd'] ?? '-' }}</td>
+                        <td class="c">{{ $item['sumber_dana'] ?? '-' }}</td>
                         <td class="c">{{ $item['employee_count'] ?? 0 }}</td>
                         <td class="r">{{ number_format($item['total_gaji_pokok'] ?? 0, 0, ',', '.') }}</td>
                         <td class="r">{{ number_format($item['total_tunjangan'] ?? 0, 0, ',', '.') }}</td>
@@ -234,7 +236,7 @@
                     </tr>
                 @endforeach
                 <tr class="totals">
-                    <td colspan="3">TOTAL</td>
+                    <td colspan="4">TOTAL</td>
                     <td class="c">{{ $totalEmployees }}</td>
                     <td class="r">{{ number_format($sumGajiPokok, 0, ',', '.') }}</td>
                     <td class="r">{{ number_format($sumTunjangan, 0, ',', '.') }}</td>

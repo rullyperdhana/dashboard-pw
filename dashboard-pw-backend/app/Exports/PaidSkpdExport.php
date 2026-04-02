@@ -56,6 +56,7 @@ class PaidSkpdExport implements FromArray, WithHeadings, WithStyles, WithColumnW
             'No',
             'Kode SKPD',
             'Nama SKPD',
+            'Sumber Dana',
             'Jumlah Pegawai',
             'Total Gaji Pokok',
             'Total Tunjangan',
@@ -102,6 +103,7 @@ class PaidSkpdExport implements FromArray, WithHeadings, WithStyles, WithColumnW
                     $no++,
                     $item['kode_skpd'] ?? '',
                     $item['nama_skpd'] ?? '',
+                    $item['sumber_dana'] ?? '',
                     $item['employee_count'] ?? 0,
                     $item['total_gaji_pokok'] ?? 0,
                     $item['total_tunjangan'] ?? 0,
@@ -122,7 +124,7 @@ class PaidSkpdExport implements FromArray, WithHeadings, WithStyles, WithColumnW
             // columns E-V are currency (cols 5-22)
             $sheet->getStyle("E2:V{$lastRow}")->getNumberFormat()->setFormatCode('#,##0');
         } else {
-            $sheet->getStyle("E2:H{$lastRow}")->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle("F2:I{$lastRow}")->getNumberFormat()->setFormatCode('#,##0');
         }
 
         return [
@@ -161,11 +163,12 @@ class PaidSkpdExport implements FromArray, WithHeadings, WithStyles, WithColumnW
             'A' => 5,
             'B' => 14,
             'C' => 40,
-            'D' => 15,
-            'E' => 18,
+            'D' => 14,
+            'E' => 15,
             'F' => 18,
             'G' => 18,
-            'H' => 20,
+            'H' => 18,
+            'I' => 20,
         ];
     }
 }

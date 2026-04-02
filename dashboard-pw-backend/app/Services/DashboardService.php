@@ -36,7 +36,31 @@ class DashboardService
             // Total pembayaran bulan ini (Latest found in tb_payment)
             $latestPayment = Payment::orderBy('year', 'desc')->orderBy('month', 'desc')->first();
             $monthlyPayment = 0;
+            
+            // Funding Source Distribution + Realization
+            $fundingDistribution = [];
             if ($latestPayment) {
+                $fundingQuery = DB::table('pegawai_pw')
+                    ->leftJoin('tb_payment_detail', 'pegawai_pw.id', '=', 'tb_payment_detail.employee_id')
+                    ->leftJoin('tb_payment', function($join) use ($latestPayment) {
+                        $join->on('tb_payment_detail.payment_id', '=', 'tb_payment.id')
+                             ->where('tb_payment.year', $latestPayment->year)
+                             ->where('tb_payment.month', $latestPayment->month);
+                    })
+                    ->select(
+                        'pegawai_pw.sumber_dana',
+                        DB::raw('COUNT(DISTINCT pegawai_pw.id) as total'),
+                        DB::raw('SUM(tb_payment_detail.total_amoun) as realization')
+                    )
+                    ->groupBy('pegawai_pw.sumber_dana');
+
+                if ($user->isAdminSkpd()) {
+                    $fundingQuery->where('pegawai_pw.idskpd', $user->institution);
+                }
+
+                $fundingDistribution = $fundingQuery->get();
+
+                // Calculate Monthly Payment for display
                 $monthlyQuery = DB::table('tb_payment_detail')
                     ->join('pegawai_pw', 'tb_payment_detail.employee_id', '=', 'pegawai_pw.id')
                     ->join('tb_payment', 'tb_payment_detail.payment_id', '=', 'tb_payment.id')
@@ -48,6 +72,11 @@ class DashboardService
                 }
 
                 $monthlyPayment = $monthlyQuery->sum('tb_payment_detail.total_amoun');
+            } else {
+                $fundingDistribution = (clone $employeeQuery)
+                    ->select('sumber_dana', DB::raw('COUNT(*) as total'), DB::raw('0 as realization'))
+                    ->groupBy('sumber_dana')
+                    ->get();
             }
 
             // Total SKPD (Only those with PPPK-PW employees)
@@ -129,6 +158,7 @@ class DashboardService
                         ->select('status', DB::raw('COUNT(*) as total'))
                         ->groupBy('status')
                         ->get(),
+                    'funding' => $fundingDistribution,
                     'by_jabatan' => (clone $employeeQuery)
                         ->select('jabatan', DB::raw('COUNT(*) as count'))
                         ->whereNotNull('jabatan')
@@ -153,17 +183,29 @@ class DashboardService
             // 1. Employee Counts
             $totalPns = DB::table('gaji_pns')->where('bulan', $month)->where('tahun', $year)->count(DB::raw('DISTINCT nip'));
             $totalPppk = DB::table('gaji_pppk')->where('bulan', $month)->where('tahun', $year)->count(DB::raw('DISTINCT nip'));
-            $totalPw = DB::table('pegawai_pw')->count();
+            
+            $pwStats = DB::table('pegawai_pw')
+                ->select('sumber_dana', DB::raw('COUNT(*) as total'))
+                ->groupBy('sumber_dana')
+                ->pluck('total', 'sumber_dana');
+            
+            $totalPwApbd = $pwStats['APBD'] ?? 0;
+            $totalPwBlud = $pwStats['BLUD'] ?? 0;
+            $totalPw = $totalPwApbd + $totalPwBlud;
 
             // 2. Monthly Expenditure
             $expPns = DB::table('gaji_pns')->where('bulan', $month)->where('tahun', $year)->sum('kotor');
             $expPppk = DB::table('gaji_pppk')->where('bulan', $month)->where('tahun', $year)->sum('kotor');
             
-            $expPw = DB::table('tb_payment_detail as pd')
+            $expPwQuery = DB::table('tb_payment_detail as pd')
                 ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
+                ->join('pegawai_pw as pw', 'pd.employee_id', '=', 'pw.id')
                 ->where('p.month', $month)
-                ->where('p.year', $year)
-                ->sum('pd.total_amoun');
+                ->where('p.year', $year);
+
+            $expPwApbd = (clone $expPwQuery)->where('pw.sumber_dana', 'APBD')->sum('pd.total_amoun');
+            $expPwBlud = (clone $expPwQuery)->where('pw.sumber_dana', 'BLUD')->sum('pd.total_amoun');
+            $expPw = $expPwApbd + $expPwBlud;
 
             // 3. TPP & Tax Totals
             $tppPns = DB::table('gaji_pns')->where('bulan', $month)->where('tahun', $year)->sum('tunj_tpp');
@@ -192,11 +234,15 @@ class DashboardService
                 $mGaji13Pppk = DB::table('gaji_pppk')->where('bulan', $m)->where('tahun', $year)->where('jenis_gaji', 'Gaji 13')->sum('kotor');
                 $mTppPppk = DB::table('gaji_pppk')->where('bulan', $m)->where('tahun', $year)->sum('tunj_tpp');
 
-                $mPw = DB::table('tb_payment_detail as pd')
+                $mPwQuery = DB::table('tb_payment_detail as pd')
                     ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
+                    ->join('pegawai_pw as pw', 'pd.employee_id', '=', 'pw.id')
                     ->where('p.month', $m)
-                    ->where('p.year', $year)
-                    ->sum('pd.total_amoun');
+                    ->where('p.year', $year);
+
+                $mPwApbd = (clone $mPwQuery)->where('pw.sumber_dana', 'APBD')->sum('pd.total_amoun');
+                $mPwBlud = (clone $mPwQuery)->where('pw.sumber_dana', 'BLUD')->sum('pd.total_amoun');
+                $mPw = $mPwApbd + $mPwBlud;
 
                 $mEmpPns = DB::table('gaji_pns')->where('bulan', $m)->where('tahun', $year)->count(DB::raw('DISTINCT nip'));
                 $mEmpPppk = DB::table('gaji_pppk')->where('bulan', $m)->where('tahun', $year)->count(DB::raw('DISTINCT nip'));
@@ -240,6 +286,22 @@ class DashboardService
                             'tpp' => (float)$mTppPppk, 
                             'employees' => $mEmpPppk
                         ],
+                        'pw_apbd' => [
+                            'amount' => (float)$mPwApbd, 
+                            'gaji' => (float)$mPwApbd, 
+                            'thr' => 0,
+                            'gaji13' => 0,
+                            'tpp' => 0, 
+                            'employees' => (clone $mPwQuery)->where('pw.sumber_dana', 'APBD')->count(DB::raw('DISTINCT pd.employee_id'))
+                        ],
+                        'pw_blud' => [
+                            'amount' => (float)$mPwBlud, 
+                            'gaji' => (float)$mPwBlud, 
+                            'thr' => 0,
+                            'gaji13' => 0,
+                            'tpp' => 0, 
+                            'employees' => (clone $mPwQuery)->where('pw.sumber_dana', 'BLUD')->count(DB::raw('DISTINCT pd.employee_id'))
+                        ],
                         'pw' => [
                             'amount' => (float)$mPw, 
                             'gaji' => (float)$mPw, 
@@ -271,6 +333,8 @@ class DashboardService
                 'categories' => [
                     ['label' => 'PNS', 'employees' => $totalPns, 'amount' => (float)($expPns + $tppStandalone), 'gaji' => (float)$expPns, 'tpp' => (float)($tppPns + $tppStandalone)],
                     ['label' => 'PPPK', 'employees' => $totalPppk, 'amount' => (float)($expPppk), 'gaji' => (float)$expPppk, 'tpp' => (float)$tppPppk],
+                    ['label' => 'PPPK-PW (APBD)', 'employees' => $totalPwApbd, 'amount' => (float)$expPwApbd, 'gaji' => (float)$expPwApbd, 'tpp' => 0],
+                    ['label' => 'PPPK-PW (BLUD)', 'employees' => $totalPwBlud, 'amount' => (float)$expPwBlud, 'gaji' => (float)$expPwBlud, 'tpp' => 0],
                     ['label' => 'PPPK-PW', 'employees' => $totalPw, 'amount' => (float)$expPw, 'gaji' => (float)$expPw, 'tpp' => 0],
                 ],
                 'yearly_realization' => $yearlyRealization,

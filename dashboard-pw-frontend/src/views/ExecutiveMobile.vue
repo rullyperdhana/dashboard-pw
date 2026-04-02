@@ -213,8 +213,37 @@
               </div>
               <v-divider class="mx-4 opacity-10 my-3"></v-divider>
 
-              <!-- PW Breakdown -->
-              <div class="d-flex justify-space-between align-center px-4 mt-3 mb-2">
+              <!-- PW Breakdown (Split) -->
+              <div v-if="row.breakdown.pw_apbd?.amount > 0" class="px-4 my-3">
+                <div class="d-flex justify-space-between align-center mb-1">
+                  <div class="d-flex align-center">
+                    <div class="cat-dot bg-orange mr-2"></div>
+                    <span class="text-caption font-weight-bold text-slate-800">PPPK-PW (APBD)</span>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-body-2 font-weight-black text-slate-900">{{ formatCurrencyFull(row.breakdown.pw_apbd.amount) }}</div>
+                    <div class="text-caption text-slate-500">{{ row.breakdown.pw_apbd.employees }} Pegawai</div>
+                  </div>
+                </div>
+              </div>
+
+              <v-divider v-if="row.breakdown.pw_apbd?.amount > 0 && row.breakdown.pw_blud?.amount > 0" class="mx-4 opacity-10 my-3"></v-divider>
+
+              <div v-if="row.breakdown.pw_blud?.amount > 0" class="px-4 my-3">
+                <div class="d-flex justify-space-between align-center mb-1">
+                  <div class="d-flex align-center">
+                    <div class="cat-dot bg-teal mr-2"></div>
+                    <span class="text-caption font-weight-bold text-slate-800">PPPK-PW (BLUD)</span>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-body-2 font-weight-black text-slate-900">{{ formatCurrencyFull(row.breakdown.pw_blud.amount) }}</div>
+                    <div class="text-caption text-slate-500">{{ row.breakdown.pw_blud.employees }} Pegawai</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Fallback for legacy data -->
+              <div v-if="!row.breakdown.pw_apbd && !row.breakdown.pw_blud && row.breakdown.pw" class="d-flex justify-space-between align-center px-4 mt-3 mb-2">
                 <div class="d-flex align-center">
                   <div class="cat-dot bg-orange mr-2"></div>
                   <span class="text-caption font-weight-bold text-slate-800">PPPK PARUH WAKTU</span>

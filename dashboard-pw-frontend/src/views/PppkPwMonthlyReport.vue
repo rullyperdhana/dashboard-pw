@@ -32,6 +32,9 @@
                   <v-col cols="12">
                     <v-select v-model="selectedJenisGaji" :items="jenisGajiOptions" label="Jenis Gaji" density="compact" variant="outlined" hide-details></v-select>
                   </v-col>
+                  <v-col cols="12">
+                    <v-select v-model="selectedSumberDana" :items="sumberDanaOptions" label="Sumber Dana" density="compact" variant="outlined" hide-details></v-select>
+                  </v-col>
                   <v-col cols="12" class="mt-2 text-right">
                     <v-btn block color="orange-darken-2" @click="fetchData(); menu = false">TERAPKAN</v-btn>
                   </v-col>
@@ -83,6 +86,11 @@
             <template v-slot:item.kode_skpd="{ item }">
               <span class="font-weight-medium text-caption text-grey-darken-1">{{ item.kode_skpd }}</span>
             </template>
+            <template v-slot:item.sumber_dana="{ item }">
+              <v-chip size="x-small" :color="item.sumber_dana === 'APBD' ? 'indigo' : 'teal'" variant="tonal" class="font-weight-bold">
+                {{ item.sumber_dana }}
+              </v-chip>
+            </template>
 
             <template v-slot:no-data>
               <div class="py-8 text-center text-medium-emphasis">
@@ -111,11 +119,14 @@ const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedYear  = ref(new Date().getFullYear())
 const selectedJenisGaji = ref('Induk')
 const jenisGajiOptions = ['Semua', 'Induk', 'THR', 'Gaji 13', 'Susulan', 'Kekurangan', 'Terusan']
+const selectedSumberDana = ref('Semua')
+const sumberDanaOptions = ['Semua', 'APBD', 'BLUD']
 const menu          = ref(false)
 
 const summaryHeaders = [
   { title: 'Kode SKPD',      key: 'kode_skpd',        align: 'start',  width: 140 },
   { title: 'Nama SKPD',      key: 'nama_skpd',         align: 'start'  },
+  { title: 'Sumber Dana',    key: 'sumber_dana',       align: 'start',  width: 120 },
   { title: 'PEG',            key: 'employee_count',    align: 'center', width: 80  },
   { title: 'Gaji Pokok',     key: 'total_gaji_pokok',  align: 'end'   },
   { title: 'Tunjangan',      key: 'total_tunjangan',   align: 'end'   },
@@ -144,7 +155,8 @@ const fetchData = async () => {
         month: selectedMonth.value, 
         year: selectedYear.value, 
         type: 'pw',
-        jenis_gaji: selectedJenisGaji.value
+        jenis_gaji: selectedJenisGaji.value,
+        sumber_dana: selectedSumberDana.value
       }
     })
     items.value = res.data.data
@@ -165,7 +177,8 @@ const exportData = async (format) => {
         year: selectedYear.value, 
         format, 
         type: 'pw',
-        jenis_gaji: selectedJenisGaji.value
+        jenis_gaji: selectedJenisGaji.value,
+        sumber_dana: selectedSumberDana.value
       },
       responseType: 'blob'
     })

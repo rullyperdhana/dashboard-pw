@@ -44,6 +44,12 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
   
 
+### 📊 PPPK-PW Fund Source Split & Realization (v4.6.0)
+- **Separate Funding Sources:** Pemisahan total anggaran dan jumlah pegawai antara **APBD** dan **BLUD** pada seluruh modul dashboard & laporan (Dashboard Utama, Dashboard Eksekutif/Mobile, dan Laporan Bulanan).
+- **Dashboard Realization (IDR):** Kartu distribusi "Sumber Dana" kini menyertakan nilai nominal Rupiah (Total Realisasi) di samping jumlah pegawai untuk transparansi anggaran yang lebih baik.
+- **Enhanced Monthly Filters:** Penambahan filter "Sumber Dana" pada Laporan Bulanan PPPK-PW, memungkinkan penyaringan data dan ekspor (Excel/PDF) yang spesifik per sumber dana.
+- **Backward Compatibility:** Dukungan kunci data `pw` dan label `PPPK-PW` tetap tersedia di backend untuk menjamin kompatibilitas fitur lama yang belum diperbarui.
+
 ### 📊 Analitik TAPD & Optimasi Teknis (v4.5.0)
 - **Advanced Budget Simulation:** Fitur simulasi belanja pegawai yang mendukung parameter "Kenaikan Gaji Pokok (%)", "Simulasi Pegawai Baru", dan "Faktor Pertumbuhan". Mendukung rincian otomatis per Kode Rekening.
 - **Smart Caching System:** Implementasi Laravel Cache pada layanan dashboard untuk mempercepat waktu muat data statistik. Mengurangi beban database hingga 80% pada akses berulang.

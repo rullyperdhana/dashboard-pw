@@ -166,6 +166,10 @@ class ReportController extends Controller
                     'avg_per_employee' => (float) $avgPerEmployee,
                     'active_units' => count($skpdPerformance),
                 ],
+                'funding' => DB::table('pegawai_pw')
+                    ->select('sumber_dana', DB::raw('COUNT(*) as total'))
+                    ->groupBy('sumber_dana')
+                    ->get(),
                 'performance' => $skpdPerformance,
                 'growth' => $growthTrend,
                 'trend' => $growthTrend, // Payroll Expenditure Trend
@@ -635,10 +639,17 @@ class ReportController extends Controller
 
         // --- PPPK-PW (Paruh Waktu) --- from tb_payment_detail
         if ($type === 'pw') {
+            $sumberDana = $request->sumber_dana;
+            $sumberDanaFilter = "";
+            if ($sumberDana && $sumberDana !== 'Semua') {
+                $sumberDanaFilter = " AND pw.sumber_dana = " . DB::getPdo()->quote($sumberDana);
+            }
+
             $parts[] = "
                 SELECT
                     s.kode_skpd COLLATE utf8mb4_unicode_ci AS kode_skpd,
                     s.nama_skpd,
+                    pw.sumber_dana,
                     COUNT(DISTINCT pw.id) AS employee_count,
                     SUM(pd.gaji_pokok)    AS total_gaji_pokok,
                     SUM(pd.tunjangan)     AS total_tunjangan,
@@ -648,25 +659,27 @@ class ReportController extends Controller
                 JOIN pegawai_pw pw ON pd.employee_id = pw.id
                 JOIN skpd s        ON pw.idskpd = s.id_skpd
                 JOIN tb_payment p  ON pd.payment_id = p.id
-                WHERE p.month = ? AND p.year = ? {$idFilter}
-                GROUP BY s.id_skpd, s.kode_skpd, s.nama_skpd";
+                WHERE p.month = ? AND p.year = ? {$idFilter} {$sumberDanaFilter}
+                GROUP BY s.id_skpd, s.kode_skpd, s.nama_skpd, pw.sumber_dana";
             $params = array_merge($params, [$month, $year]);
         }
 
         $unionSql = implode("\n UNION ALL \n", $parts);
 
-        $paidSkpds = collect(DB::select("
+        $unionResults = DB::select("
             SELECT
-                kode_skpd, nama_skpd,
+                kode_skpd, nama_skpd, sumber_dana,
                 SUM(employee_count)    as employee_count,
                 SUM(total_gaji_pokok)  as total_gaji_pokok,
                 SUM(total_tunjangan)   as total_tunjangan,
                 SUM(total_potongan)    as total_potongan,
                 SUM(total_bersih)      as total_bersih
             FROM ($unionSql) AS combined
-            GROUP BY kode_skpd, nama_skpd
-            ORDER BY nama_skpd
-        ", $params));
+            GROUP BY kode_skpd, nama_skpd, sumber_dana
+            ORDER BY nama_skpd, sumber_dana
+        ", $params);
+
+        $paidSkpds = collect($unionResults);
 
         return response()->json([
             'success' => true,
@@ -676,6 +689,7 @@ class ReportController extends Controller
                 'year' => (int) $year,
                 'type' => $type,
                 'jenis_gaji' => $jenisGaji,
+                'sumber_dana' => $request->sumber_dana ?? 'Semua',
                 'total_skpd' => $paidSkpds->count(),
                 'total_employees' => $paidSkpds->sum('employee_count'),
                 'grand_total' => $paidSkpds->sum('total_bersih'),

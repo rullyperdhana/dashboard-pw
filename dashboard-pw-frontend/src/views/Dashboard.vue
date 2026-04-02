@@ -241,7 +241,7 @@
         <!-- New Section: Gender & Jabatan (Moved from EmployeeList) -->
         <v-row class="mb-8">
           <!-- Gender Summary -->
-          <v-col cols="12" md="4">
+          <v-col cols="12" md="3">
             <v-card class="glass-card rounded-xl pa-6 shadow-premium h-100" elevation="0">
               <h2 class="text-h6 font-weight-bold mb-6">Distribusi Jenis Kelamin</h2>
               
@@ -265,8 +265,36 @@
             </v-card>
           </v-col>
 
+          <!-- Funding Source Summary -->
+          <v-col cols="12" md="3">
+            <v-card class="glass-card rounded-xl pa-6 shadow-premium h-100" elevation="0">
+              <h2 class="text-h6 font-weight-bold mb-6">Sumber Dana</h2>
+              
+              <div v-for="f in distribution.funding" :key="f.sumber_dana" class="mb-4">
+                <div class="d-flex align-center justify-space-between mb-2">
+                  <div class="d-flex align-center">
+                    <v-icon :color="f.sumber_dana === 'APBD' ? 'indigo' : 'teal'" class="mr-2">
+                      {{ f.sumber_dana === 'APBD' ? 'mdi-bank-outline' : 'mdi-warehouse' }}
+                    </v-icon>
+                    <span class="text-body-2 font-weight-bold">{{ f.sumber_dana || 'Unknown' }}</span>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-subtitle-2 font-weight-bold">{{ f.total }} Pegawai</div>
+                    <div class="text-caption font-weight-bold text-grey-darken-1">{{ formatCurrencyShort(f.realization) }}</div>
+                  </div>
+                </div>
+                <v-progress-linear
+                  :model-value="(f.total / stats.total_employees) * 100"
+                  :color="f.sumber_dana === 'APBD' ? 'indigo' : 'teal'"
+                  height="8"
+                  rounded
+                ></v-progress-linear>
+              </div>
+            </v-card>
+          </v-col>
+
           <!-- Position Summary (Expandable) -->
-          <v-col cols="12" md="8">
+          <v-col cols="12" md="6">
             <v-card class="glass-card rounded-xl pa-6 shadow-premium h-100 transition-card" elevation="0">
               <div class="d-flex align-center justify-space-between mb-6">
                 <h2 class="text-h6 font-weight-bold">Ringkasan Jabatan</h2>
@@ -286,12 +314,12 @@
               <v-expand-transition>
                 <div :key="showAllJabatan">
                   <v-row v-if="distribution.by_jabatan?.length > 0" dense>
-                    <v-col cols="12" md="4" v-for="item in (showAllJabatan ? distribution.by_jabatan : distribution.by_jabatan.slice(0, 6))" :key="item.jabatan" class="py-1">
+                    <v-col cols="12" md="6" v-for="item in (showAllJabatan ? distribution.by_jabatan : distribution.by_jabatan.slice(0, 6))" :key="item.jabatan" class="py-1">
                       <div class="d-flex align-center py-2 px-3 rounded-lg border-opacity-10" style="border: 1px solid rgba(var(--v-border-color), 0.2); background: rgba(var(--v-border-color), 0.05);">
                         <v-avatar size="24" color="primary" variant="tonal" class="mr-2 text-caption font-weight-bold">
                           {{ item.count }}
                         </v-avatar>
-                        <span class="text-caption font-weight-bold text-uppercase text-truncate" style="max-width: 160px; color: rgb(var(--v-theme-on-surface));">
+                        <span class="text-caption font-weight-bold text-uppercase text-truncate" style="max-width: 120px; color: rgb(var(--v-theme-on-surface));">
                           <v-tooltip activator="parent" location="top">{{ item.jabatan }}</v-tooltip>
                           {{ item.jabatan }}
                         </span>
@@ -618,7 +646,7 @@ const stats = ref({
   monthly_payment: 0,
   total_skpd: 0,
 })
-const distribution = ref({ gender: [], by_jabatan: [] })
+const distribution = ref({ gender: [], by_jabatan: [], funding: [] })
 const showAllJabatan = ref(false)
 const showAllSkpd = ref(false)
 const charts = ref({
@@ -636,7 +664,7 @@ const fetchDashboardData = async () => {
     const response = await api.get('/dashboard')
     if (response.data.success) {
       stats.value = response.data.data.summary
-      distribution.value = response.data.data.distribution || { gender: [], composition: [] }
+      distribution.value = response.data.data.distribution || { gender: [], composition: [], funding: [] }
       charts.value = response.data.data.charts
     }
   } catch (err) {
