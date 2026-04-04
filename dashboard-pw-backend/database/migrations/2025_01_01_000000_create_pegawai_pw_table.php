@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('pegawai_pw', function (Blueprint $table) {
-            $table->id();
+            $table->integer('id')->autoIncrement();
             $table->integer('idskpd')->nullable();
             $table->string('nip')->nullable();
             $table->string('nama')->nullable();
