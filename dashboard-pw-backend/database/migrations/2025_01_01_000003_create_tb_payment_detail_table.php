@@ -11,20 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tb_payment_detail', function (Blueprint $table) {
-            $table->integer('id')->autoIncrement();
-            $table->integer('payment_id');
-            $table->integer('employee_id');
-            $table->decimal('gapok', 15, 2)->nullable();
-            $table->decimal('tunjangan', 15, 2)->nullable();
-            $table->decimal('pajak', 15, 2)->nullable();
-            $table->decimal('iwp', 15, 2)->nullable();
-            $table->decimal('netto', 15, 2)->nullable();
-            $table->timestamps();
-            
-            // Note: Foreign keys are handled after tables are created to avoid order issues
-            // but we ensure the basic structure exists for indexing migrations.
-        });
+        if (!Schema::hasTable('tb_payment_detail')) {
+            Schema::create('tb_payment_detail', function (Blueprint $table) {
+                $table->integer('id')->autoIncrement();
+                $table->integer('payment_id');
+                $table->integer('employee_id');
+                $table->decimal('gapok', 15, 2)->nullable();
+                $table->decimal('tunjangan', 15, 2)->nullable();
+                $table->decimal('pajak', 15, 2)->nullable();
+                $table->decimal('iwp', 15, 2)->nullable();
+                $table->decimal('netto', 15, 2)->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

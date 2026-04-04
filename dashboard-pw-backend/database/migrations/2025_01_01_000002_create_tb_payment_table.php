@@ -11,16 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tb_payment', function (Blueprint $table) {
-            $table->id();
-            $table->integer('id_skpd')->nullable();
-            $table->integer('year')->nullable();
-            $table->integer('month')->nullable();
-            $table->decimal('netto', 15, 2)->default(0);
-            $table->integer('count')->default(0);
-            $table->timestamps();
-            
-        });
+        if (!Schema::hasTable('tb_payment')) {
+            Schema::create('tb_payment', function (Blueprint $table) {
+                $table->id();
+                $table->integer('id_skpd')->nullable();
+                $table->integer('year')->nullable();
+                $table->integer('month')->nullable();
+                $table->decimal('netto', 15, 2)->default(0);
+                $table->integer('count')->default(0);
+                $table->timestamps();
+            });
+        }
     }
 
     /**
