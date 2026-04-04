@@ -17,8 +17,7 @@ return new class extends Migration
             $table->text('content');
             $table->string('type')->default('info'); // info, success, warning, error
             $table->boolean('is_active')->default(true);
-            $table->integer('user_id');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }
