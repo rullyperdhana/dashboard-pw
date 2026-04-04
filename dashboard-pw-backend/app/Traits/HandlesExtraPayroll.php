@@ -29,8 +29,9 @@ trait HandlesExtraPayroll
     protected function getBasicQuery(Request $request)
     {
         $year = $request->year ?? 2026;
-        $month = $request->month ?? ($this->getPayrollType() === 'thr' ? 4 : 6);
+        $month = $request->month ?? ($this->getPayrollType() === 'thr' ? 3 : 6);
         $search = $request->search;
+        $sumberDana = $request->sumber_dana;
         $user = auth()->user();
 
         $query = ExtraPayrollPppkPw::where('type', $this->getPayrollType())
@@ -44,6 +45,10 @@ trait HandlesExtraPayroll
         }
 
         // Server-side Searching
+        if (!empty($sumberDana) && $sumberDana !== 'Semua') {
+            $query->where('sumber_dana', $sumberDana);
+        }
+
         if (!empty($search)) {
             $query->where(function($q) use ($search) {
                 $q->where('nama', 'like', "%{$search}%")
@@ -55,11 +60,18 @@ trait HandlesExtraPayroll
         return $query;
     }
 
+    protected function getDefaultMonth(): int
+    {
+        return $this->getPayrollType() === 'thr' ? 3 : 6;
+    }
+
     public function index(Request $request)
     {
         $year = $request->year ?? 2026;
-        $month = $request->month ?? ($this->getPayrollType() === 'thr' ? 4 : 6);
-        $perPage = $request->per_page ?? 50;
+        $month = $request->month ?? $this->getDefaultMonth();
+        $perPage = $request->per_page ?? 15;
+        $search = $request->search;
+        $sumberDana = $request->sumber_dana;
 
         $query = $this->getBasicQuery($request);
         $totalAmount = (float) $query->sum('payroll_amount');
@@ -74,6 +86,7 @@ trait HandlesExtraPayroll
                 'jabatan' => $record->jabatan,
                 'skpd' => $record->skpd_name,
                 'sub_giat' => $record->nama_sub_giat,
+                'sumber_dana' => $record->sumber_dana,
                 'gapok_basis' => (float)$record->gapok_basis,
                 'n_months' => (int)$record->n_months,
                 'payroll_amount' => (float)$record->payroll_amount,
@@ -105,7 +118,8 @@ trait HandlesExtraPayroll
                 'n_months' => $sample ? $sample->n_months : 2,
                 'is_generated' => $sample ? true : false,
                 'calculation_basis' => "Data Tersimpan (Database)",
-                'method' => Setting::where('key', $this->getPayrollType() . '_pppk_pw_method')->value('value') ?? 'proporsional'
+                'method' => Setting::where('key', $this->getPayrollType() . '_pppk_pw_method')->value('value') ?? 'proporsional',
+                'multiplier' => (int) (Setting::where('key', ($this->getPayrollType() === 'thr' ? 'thr_pppk_pw_multiplier' : 'gaji13_pppk_pw_multiplier'))->value('value') ?? 2)
             ]
         ]);
     }
@@ -113,21 +127,29 @@ trait HandlesExtraPayroll
     public function summary(Request $request)
     {
         $year = $request->year ?? 2026;
-        $month = $request->month ?? ($this->getPayrollType() === 'thr' ? 4 : 6);
+        $month = $request->month ?? $this->getDefaultMonth();
         $perPage = $request->per_page ?? 15;
         $search = $request->search;
+        $sumberDana = $request->sumber_dana;
         $user = auth()->user();
 
         $query = ExtraPayrollPppkPw::where('type', $this->getPayrollType())
             ->where('year', $year)
-            ->where('month', $month)
-            ->select(
+            ->where('month', $month);
+
+        if (!empty($sumberDana) && $sumberDana !== 'Semua') {
+            $query->where('sumber_dana', $sumberDana);
+        }
+
+        $query->select(
                 'skpd_name',
+                'sumber_dana',
                 DB::raw('count(*) as total_employees_skpd'),
                 DB::raw('sum(payroll_amount) as total_amount_skpd')
             )
-            ->groupBy('skpd_name');
+            ->groupBy('skpd_name', 'sumber_dana');
 
+        $skpdName = null;
         if ($user && $user->role === 'operator' && !empty($user->institution)) {
             $skpdName = DB::table('skpd')->where('id_skpd', $user->institution)->value('nama_skpd');
             $query->where('skpd_name', 'like', $skpdName . '%');
@@ -138,14 +160,20 @@ trait HandlesExtraPayroll
         }
 
         // Get global totals for meta
-        $totalStats = DB::table('tb_extra_payroll_pppk_pw')
+        $totalStatsQuery = DB::table('tb_extra_payroll_pppk_pw')
             ->where('type', $this->getPayrollType())
             ->where('year', $year)
-            ->where('month', $month)
-            ->when($user && $user->role === 'operator' && !empty($user->institution), function($q) use ($skpdName) {
-                return $q->where('skpd_name', 'like', $skpdName . '%');
-            })
-            ->select(
+            ->where('month', $month);
+
+        if (!empty($sumberDana) && $sumberDana !== 'Semua') {
+            $totalStatsQuery->where('sumber_dana', $sumberDana);
+        }
+
+        if ($skpdName) {
+            $totalStatsQuery->where('skpd_name', 'like', $skpdName . '%');
+        }
+
+        $totalStats = $totalStatsQuery->select(
                 DB::raw('count(*) as total_employees'),
                 DB::raw('sum(payroll_amount) as total_amount')
             )
@@ -178,11 +206,15 @@ trait HandlesExtraPayroll
         ini_set('memory_limit', '1024M');
 
         $year = $request->year ?? 2026;
-        $payMonth = $request->month ?? ($this->getPayrollType() === 'thr' ? 4 : 6);
+        $payMonth = $request->month ?? $this->getDefaultMonth();
         
         // Configuration
-        $basisMonth = (int) (Setting::where('key', $this->getBasisMonthSettingKey())->value('value') ?? 2);
-        $nMonths = min((int) $payMonth, 2); // Policy specific n/12? Might need to generalize further
+        $basisMonthSettingKey = $this->getBasisMonthSettingKey();
+        $basisMonth = (int) (Setting::where('key', $basisMonthSettingKey)->value('value') ?? 2);
+        
+        $nMultiplierKey = ($this->getPayrollType() === 'thr' ? 'thr_pppk_pw_multiplier' : 'gaji13_pppk_pw_multiplier');
+        $nMultiplier = (int) (Setting::where('key', $nMultiplierKey)->value('value') ?? 2);
+        $nMonths = $nMultiplier; // Use the multiplier from settings
         
         $method = Setting::where('key', $this->getPayrollType() . '_pppk_pw_method')->value('value') ?? 'proporsional';
         $fixedAmount = (float) (Setting::where('key', $this->getPayrollType() . '_pppk_pw_amount')->value('value') ?? 600000);
@@ -200,6 +232,7 @@ trait HandlesExtraPayroll
                 'e.nip',
                 'e.nama',
                 'e.jabatan',
+                'e.sumber_dana',
                 DB::raw('MAX(pd.gaji_pokok) as gapok_basis'),
                 DB::raw("CASE WHEN e.upt IS NOT NULL THEN CONCAT(COALESCE(s.nama_skpd, e.skpd), ' - ', e.upt) ELSE COALESCE(s.nama_skpd, e.skpd) END as skpd_name"),
                 'rs.kode_sub_giat',
@@ -208,7 +241,7 @@ trait HandlesExtraPayroll
                 'ps.nip_pptk',
                 'ps.pangkat_pptk'
             )
-            ->groupBy('e.nip', 'rs.kode_sub_giat', 'rs.nama_sub_giat', 'e.id', 'e.nama', 'e.jabatan', 'skpd_name', 'ps.nama_pptk', 'ps.nip_pptk', 'ps.pangkat_pptk')
+            ->groupBy('e.nip', 'rs.kode_sub_giat', 'rs.nama_sub_giat', 'e.id', 'e.nama', 'e.jabatan', 'skpd_name', 'ps.nama_pptk', 'ps.nip_pptk', 'ps.pangkat_pptk', 'e.sumber_dana')
             ->get();
 
         DB::beginTransaction();
@@ -232,6 +265,7 @@ trait HandlesExtraPayroll
                     'nama' => $emp->nama,
                     'jabatan' => $emp->jabatan,
                     'skpd_name' => $emp->skpd_name,
+                    'sumber_dana' => $emp->sumber_dana,
                     'kode_sub_giat' => $emp->kode_sub_giat,
                     'nama_sub_giat' => '[' . $emp->kode_sub_giat . '] ' . $emp->nama_sub_giat,
                     'pptk_nama' => $emp->nama_pptk,
@@ -312,7 +346,7 @@ trait HandlesExtraPayroll
     public function missing(Request $request)
     {
         $year = $request->year ?? 2026;
-        $payMonth = $request->month ?? ($this->getPayrollType() === 'thr' ? 4 : 6);
+        $payMonth = $request->month ?? $this->getDefaultMonth();
         $basisMonth = (int) (Setting::where('key', $this->getBasisMonthSettingKey())->value('value') ?? 2);
         
         $perPage = $request->per_page ?? 50;

@@ -37,9 +37,10 @@ class ThrExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
                 'NIP',
                 'Nama',
                 'Jabatan',
+                'Sumber Dana',
                 'Gaji Pokok Basis',
                 'Masa Kerja (Bulan)',
-                'Besaran THR'
+                'Besaran ' . $this->thrMonthName // Label dynamically based on type
             ]
         ];
     }
@@ -51,11 +52,11 @@ class ThrExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
 
         foreach ($this->data as $skpd) {
             // Level 1: SKPD Header
-            $rows[] = ['SKPD: ' . $skpd['skpd_name'], '', '', '', '', '', ''];
+            $rows[] = ['SKPD: ' . $skpd['skpd_name'], '', '', '', '', '', '', ''];
 
             foreach ($skpd['sub_giat_groups'] as $subGiat) {
                 // Level 2: Sub Kegiatan Header
-                $rows[] = ['', 'Sub Kegiatan: ' . $subGiat['sub_giat_name'], '', '', '', '', ''];
+                $rows[] = ['', 'Sub Kegiatan: ' . $subGiat['sub_giat_name'], '', '', '', '', '', ''];
 
                 $no = 1;
                 foreach ($subGiat['employees'] as $item) {
@@ -64,9 +65,10 @@ class ThrExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
                         "'" . ($item['nip'] ?? ''),
                         $item['nama'] ?? '',
                         $item['jabatan'] ?? '',
+                        $item['sumber_dana'] ?? 'APBD',
                         $item['gapok_basis'] ?? 0,
                         $item['n_months'] ?? 0,
-                        $item['thr_amount'] ?? 0,
+                        $item['payroll_amount'] ?? 0,
                     ];
                 }
 
@@ -74,6 +76,7 @@ class ThrExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
                 $rows[] = [
                     '',
                     'SUBTOTAL SUB KEGIATAN',
+                    '',
                     '',
                     '',
                     '',
@@ -91,6 +94,7 @@ class ThrExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
                 '',
                 '',
                 '',
+                '',
                 $skpd['total_thr_skpd']
             ];
             $rows[] = ['']; // Big Spacer
@@ -101,7 +105,8 @@ class ThrExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
 
         // Grand Total row
         $rows[] = [
-            'TOTAL KESELURUHAN THR',
+            'TOTAL KESELURUHAN ' . strtoupper($this->thrMonthName),
+            '',
             '',
             '',
             '',
@@ -116,15 +121,15 @@ class ThrExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
     public function styles(Worksheet $sheet): array
     {
         // Styling headers and summary rows
-        $sheet->mergeCells("A1:G1");
-        $sheet->mergeCells("A2:G2");
-        $sheet->mergeCells("A3:G3");
+        $sheet->mergeCells("A1:H1");
+        $sheet->mergeCells("A2:H2");
+        $sheet->mergeCells("A3:H3");
 
         $sheet->getStyle('A1:A3')->getAlignment()->setHorizontal('center');
 
         // Styles for header
-        $sheet->getStyle('A5:G5')->getFont()->setBold(true);
-        $sheet->getStyle('A5:G5')->getFill()->setFillType('solid')->getStartColor()->setRGB('E9ECEF');
+        $sheet->getStyle('A5:H5')->getFont()->setBold(true);
+        $sheet->getStyle('A5:H5')->getFill()->setFillType('solid')->getStartColor()->setRGB('E9ECEF');
 
         // Loop through data to find subtotal and group header rows for styling
         $rowIdx = 6;
@@ -136,28 +141,28 @@ class ThrExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
 
         foreach ($this->data as $skpd) {
             // SKPD Header
-            $sheet->mergeCells("A{$rowIdx}:G{$rowIdx}");
+            $sheet->mergeCells("A{$rowIdx}:H{$rowIdx}");
             $sheet->getStyle("A{$rowIdx}")->getFont()->setBold(true);
             $sheet->getStyle("A{$rowIdx}")->getFill()->setFillType('solid')->getStartColor()->setRGB('D1ECF1');
             $rowIdx++;
 
             foreach ($skpd['sub_giat_groups'] as $subGiat) {
                 // Sub Giat Header
-                $sheet->mergeCells("B{$rowIdx}:G{$rowIdx}");
+                $sheet->mergeCells("B{$rowIdx}:H{$rowIdx}");
                 $sheet->getStyle("B{$rowIdx}")->getFont()->setBold(true);
                 $rowIdx++;
 
                 // Data rows
                 $dataCount = count($subGiat['employees']);
                 if ($dataCount > 0) {
-                    $sheet->getStyle("E{$rowIdx}:G" . ($rowIdx + $dataCount - 1))
+                    $sheet->getStyle("F{$rowIdx}:H" . ($rowIdx + $dataCount - 1))
                         ->getNumberFormat()->setFormatCode('#,##0');
                     $rowIdx += $dataCount;
                 }
 
                 // Subtotal Row
-                $sheet->getStyle("A{$rowIdx}:G{$rowIdx}")->getFont()->setBold(true);
-                $sheet->getStyle("G{$rowIdx}")->getNumberFormat()->setFormatCode('#,##0');
+                $sheet->getStyle("A{$rowIdx}:H{$rowIdx}")->getFont()->setBold(true);
+                $sheet->getStyle("H{$rowIdx}")->getNumberFormat()->setFormatCode('#,##0');
                 $rowIdx++;
 
                 // Spacer Row
@@ -165,9 +170,9 @@ class ThrExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
             }
 
             // Total SKPD Row
-            $sheet->getStyle("A{$rowIdx}:G{$rowIdx}")->getFont()->setBold(true);
-            $sheet->getStyle("G{$rowIdx}")->getNumberFormat()->setFormatCode('#,##0');
-            $sheet->getStyle("A{$rowIdx}:G{$rowIdx}")->getFill()->setFillType('solid')->getStartColor()->setRGB('E2E3E5');
+            $sheet->getStyle("A{$rowIdx}:H{$rowIdx}")->getFont()->setBold(true);
+            $sheet->getStyle("H{$rowIdx}")->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle("A{$rowIdx}:H{$rowIdx}")->getFill()->setFillType('solid')->getStartColor()->setRGB('E2E3E5');
             $rowIdx++;
 
             // Big Spacers
@@ -175,10 +180,10 @@ class ThrExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
         }
 
         // Grand Total Row
-        $sheet->getStyle("A{$rowIdx}:G{$rowIdx}")->getFont()->setBold(true);
+        $sheet->getStyle("A{$rowIdx}:H{$rowIdx}")->getFont()->setBold(true);
         $sheet->getStyle("A{$rowIdx}")->getFont()->setSize(12);
-        $sheet->getStyle("G{$rowIdx}")->getNumberFormat()->setFormatCode('#,##0');
-        $sheet->getStyle("A{$rowIdx}:G{$rowIdx}")->getFill()->setFillType('solid')->getStartColor()->setRGB('CCE5FF');
+        $sheet->getStyle("H{$rowIdx}")->getNumberFormat()->setFormatCode('#,##0');
+        $sheet->getStyle("A{$rowIdx}:H{$rowIdx}")->getFill()->setFillType('solid')->getStartColor()->setRGB('CCE5FF');
 
         return $styles;
     }
@@ -190,9 +195,10 @@ class ThrExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
             'B' => 22,
             'C' => 35,
             'D' => 30,
-            'E' => 18,
-            'F' => 18,
-            'G' => 20,
+            'E' => 15, // Sumber Dana
+            'F' => 18, // Gapok
+            'G' => 18, // N Months
+            'H' => 20, // Total
         ];
     }
 }

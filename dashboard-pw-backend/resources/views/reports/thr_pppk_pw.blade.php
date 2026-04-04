@@ -102,10 +102,6 @@
     </header>
 
     <main>
-        <div style="background: #fff3cd; padding: 5px; border: 1px solid #ffeeba; margin-bottom: 10px; font-size: 8px; text-align: center;">
-            DEBUG INFO: Data Ditemukan per Filter = <strong>{{ $recordCount ?? 0 }}</strong> Pegawai.
-        </div>
-
         @foreach($data as $skpd)
             <div style="margin-bottom: 20px;">
                 <h1 style="text-align: center; border-bottom: 3px double #000; padding-bottom: 5px; margin-bottom: 15px; font-size: 14px;">
@@ -131,6 +127,7 @@
                                             <th width="110">NIP</th>
                                             <th>Nama</th>
                                             <th>Jabatan</th>
+                                            <th width="50">Sumber Dana</th>
                                             <th width="85">Gapok Basis</th>
                                             <th width="65">Masa Kerja</th>
                                             <th width="95">Besaran {{ $title ?? 'Pembayaran' }}</th>
@@ -144,6 +141,7 @@
                                                 <td>{{ $item['nip'] }}</td>
                                                 <td>{{ $item['nama'] }}</td>
                                                 <td>{{ $item['jabatan'] }}</td>
+                                                <td class="text-center">{{ $item['sumber_dana'] ?? 'APBD' }}</td>
                                                 <td class="text-right">{{ number_format($item['gapok_basis'], 0, ',', '.') }}</td>
                                                 <td class="text-center">{{ $item['n_months'] }} Bln</td>
                                                 <td class="text-right">{{ number_format($item['payroll_amount'], 0, ',', '.') }}</td>
@@ -157,7 +155,7 @@
                                             </tr>
                                         @endforeach
                                         <tr class="total-row">
-                                            <td colspan="6" class="text-right">SUBTOTAL SUB KEGIATAN &nbsp;</td>
+                                            <td colspan="7" class="text-right">SUBTOTAL SUB KEGIATAN &nbsp;</td>
                                             <td class="text-right">{{ number_format($subGiat['subtotal_thr'] ?? $subGiat['subtotal_payroll'], 0, ',', '.') }}</td>
                                             <td></td>
                                         </tr>
