@@ -20,7 +20,6 @@ return new class extends Migration
             $table->integer('count')->default(0);
             $table->timestamps();
             
-            $table->index(['year', 'month'], 'tb_payment_period_idx');
         });
     }
 
