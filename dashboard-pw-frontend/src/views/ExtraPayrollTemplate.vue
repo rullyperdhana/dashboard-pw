@@ -70,6 +70,19 @@
             >
               Cetak PDF
             </v-btn>
+            <v-btn
+              v-if="activeTab === 'skpd'"
+              prepend-icon="mdi-file-chart-outline"
+              color="indigo"
+              variant="flat"
+              rounded="lg"
+              @click="exportSummary"
+              :loading="exportLoading"
+              class="text-none"
+              elevation="2"
+            >
+              Ekspor Rekap Excel
+            </v-btn>
           </div>
         </div>
 
@@ -229,31 +242,18 @@
             <!-- SKPD Tab -->
             <v-window-item value="skpd">
               <v-card-text class="pa-0">
-                <div class="d-flex justify-end pa-4">
-                  <v-btn
-                    prepend-icon="mdi-file-chart-outline"
-                    color="indigo"
-                    variant="flat"
-                    rounded="lg"
-                    @click="exportSummary"
-                    :loading="exportLoading"
-                    class="text-none"
-                    elevation="2"
-                  >
-                    Ekspor Rekap Excel
-                  </v-btn>
-                </div>
                 <v-data-table-server
-                :headers="skpdHeaders"
-                :items="skpdGroups"
-                :loading="loadingSummary"
-                class="custom-table"
-                hover
-                v-model:items-per-page="itemsPerPageSummary"
-                :items-length="totalSummary"
-                :search="search"
-                @update:options="loadSummaryItems"
-              >
+                  :headers="skpdHeaders"
+                  :items="skpdGroups"
+                  :loading="loadingSummary"
+                  class="custom-table"
+                  hover
+                  v-model:items-per-page="itemsPerPageSummary"
+                  v-model:page="pageSummary"
+                  :items-length="totalSummary"
+                  :search="search"
+                  @update:options="loadSummaryItems"
+                >
                 <template v-slot:item.sumber_dana="{ item }">
               <v-chip size="x-small" :color="item.sumber_dana === 'APBD' ? 'indigo' : 'teal'" variant="tonal" class="font-weight-bold">
                 {{ item.sumber_dana }}
@@ -448,6 +448,8 @@ const totalSummary = ref(0)
 const itemsPerPageMissing = ref(15)
 const totalMissing = ref(0)
 const page = ref(1)
+const pageSummary = ref(1)
+const pageMissing = ref(1)
 const search = ref('')
 const searchInput = ref('')
 const serverOptions = ref({})

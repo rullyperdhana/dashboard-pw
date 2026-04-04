@@ -159,6 +159,26 @@ trait HandlesExtraPayroll
             $query->where('skpd_name', 'like', "%{$search}%");
         }
 
+        // Ensure page is at least 1
+        $page = max((int)($request->page ?? 1), 1);
+        $perPage = (int)($request->per_page ?? 15);
+
+        // Pre-count total groups for accurate pagination
+        $total = DB::table('tb_extra_payroll_pppk_pw')
+            ->where('type', $this->getPayrollType())
+            ->where('year', $year)
+            ->where('month', $month)
+            ->where('payroll_amount', '>', 0)
+            ->select('skpd_name', 'sumber_dana')
+            ->groupBy('skpd_name', 'sumber_dana')
+            ->get()
+            ->count();
+
+        $summary = $query->orderBy('skpd_name')
+            ->offset(($page - 1) * $perPage)
+            ->limit($perPage)
+            ->get();
+
         // Get global totals for meta
         $totalStatsQuery = DB::table('tb_extra_payroll_pppk_pw')
             ->where('type', $this->getPayrollType())
@@ -179,18 +199,18 @@ trait HandlesExtraPayroll
             )
             ->first();
 
-        $summary = $query->orderBy('skpd_name')->paginate($perPage);
-
         return response()->json([
             'success' => true,
-            'data' => $summary->items(),
+            'data' => $summary,
             'meta' => [
-                'current_page' => $summary->currentPage(),
-                'last_page' => $summary->lastPage(),
-                'per_page' => $summary->perPage(),
-                'total' => $summary->total(),
+                'current_page' => $page,
+                'last_page' => ceil($total / $perPage),
+                'per_page' => $perPage,
+                'total' => $total,
                 'total_employees' => (int) ($totalStats->total_employees ?? 0),
-                'total_amount' => (float) ($totalStats->total_amount ?? 0)
+                'total_amount' => (float) ($totalStats->total_amount ?? 0),
+                'method' => $this->getCalculationMethod($this->getPayrollType(), $year, $month),
+                'calculation_basis' => $this->getCalculationBasis($this->getPayrollType(), $year, $month)
             ]
         ]);
     }
