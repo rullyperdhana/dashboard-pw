@@ -209,8 +209,8 @@ trait HandlesExtraPayroll
                 'total' => $total,
                 'total_employees' => (int) ($totalStats->total_employees ?? 0),
                 'total_amount' => (float) ($totalStats->total_amount ?? 0),
-                'method' => $this->getCalculationMethod($this->getPayrollType(), $year, $month),
-                'calculation_basis' => $this->getCalculationBasis($this->getPayrollType(), $year, $month)
+                'method' => Setting::where('key', $this->getPayrollType() . '_pppk_pw_method')->value('value') ?? 'proporsional',
+                'calculation_basis' => 'Data Tersimpan (Database)'
             ]
         ]);
     }
