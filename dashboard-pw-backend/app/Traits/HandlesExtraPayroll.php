@@ -479,6 +479,15 @@ trait HandlesExtraPayroll
             return [
                 'skpd_name' => $skpdName,
                 'signatory' => $signatory,
+                'sub_giat_groups' => $skpdItems->groupBy('nama_sub_giat')->map(function ($subGiatItems, $subGiatName) {
+                    return [
+                        'sub_giat_name' => $subGiatName,
+                        'employees' => $subGiatItems,
+                        'subtotal_thr' => $subGiatItems->sum('payroll_amount'),
+                        'employee_count' => $subGiatItems->count(),
+                        'qr_code' => null
+                    ];
+                })->values(),
                 'pptk_groups' => $skpdItems->groupBy(function ($item) {
                     return $item->pptk_nama ?: 'Tanpa PPTK';
                 })->map(function ($pptkItems, $pptkName) use ($request) {
