@@ -12,15 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         // 1. Delete duplicates, keeping the latest one
-        DB::statement("
-            DELETE c1 FROM pph21_calculations c1
-            INNER JOIN pph21_calculations c2 
-            WHERE c1.id < c2.id 
-            AND c1.nip = c2.nip 
-            AND c1.bulan = c2.bulan 
-            AND c1.tahun = c2.tahun 
-            AND c1.jenis_gaji = c2.jenis_gaji
-        ");
+        // 1. Delete duplicates, keeping the latest one (Database Agnostic)
+        DB::table('pph21_calculations')
+            ->whereNotIn('id', function($query) {
+                $query->selectRaw('MAX(id)')
+                    ->from('pph21_calculations')
+                    ->groupBy('nip', 'bulan', 'tahun', 'jenis_gaji');
+            })
+            ->delete();
 
         Schema::table('pph21_calculations', function (Blueprint $table) {
             // 2. Drop old index if exists (it was named automatically or manually in previous migration)
