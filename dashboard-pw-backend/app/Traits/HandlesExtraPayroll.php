@@ -163,13 +163,26 @@ trait HandlesExtraPayroll
         $page = max((int)($request->page ?? 1), 1);
         $perPage = (int)($request->per_page ?? 15);
 
-        // Pre-count total groups for accurate pagination
-        $total = DB::table('tb_extra_payroll_pppk_pw')
+        // Pre-count total groups with filters for accurate pagination
+        $totalQuery = DB::table('tb_extra_payroll_pppk_pw')
             ->where('type', $this->getPayrollType())
             ->where('year', $year)
             ->where('month', $month)
-            ->where('payroll_amount', '>', 0)
-            ->select('skpd_name', 'sumber_dana')
+            ->where('payroll_amount', '>', 0);
+            
+        if (!empty($sumberDana) && $sumberDana !== 'Semua') {
+            $totalQuery->where('sumber_dana', $sumberDana);
+        }
+
+        if ($skpdName) {
+            $totalQuery->where('skpd_name', 'like', $skpdName . '%');
+        }
+
+        if (!empty($search)) {
+            $totalQuery->where('skpd_name', 'like', "%{$search}%");
+        }
+
+        $total = $totalQuery->select('skpd_name', 'sumber_dana')
             ->groupBy('skpd_name', 'sumber_dana')
             ->get()
             ->count();
