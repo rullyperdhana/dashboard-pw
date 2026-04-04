@@ -514,4 +514,40 @@ trait HandlesExtraPayroll
             ];
         })->values();
     }
+
+    public function exportSummaryExcel(Request $request)
+    {
+        $year = $request->year ?? 2026;
+        $month = $request->month ?? $this->getDefaultMonth();
+        $user = auth()->user();
+
+        $query = ExtraPayrollPppkPw::where('type', $this->getPayrollType())
+            ->where('year', $year)
+            ->where('month', $month);
+
+        $query->select(
+                'skpd_name',
+                'sumber_dana',
+                DB::raw('count(*) as total_employees_skpd'),
+                DB::raw('sum(payroll_amount) as total_amount_skpd')
+            )
+            ->groupBy('skpd_name', 'sumber_dana');
+
+        if ($user && $user->role === 'operator' && !empty($user->institution)) {
+            $skpdName = DB::table('skpd')->where('id_skpd', $user->institution)->value('nama_skpd');
+            $query->where('skpd_name', 'like', $skpdName . '%');
+        }
+
+        $data = $query->orderBy('skpd_name')->get();
+        $dataArray = json_decode(json_encode($data), true);
+
+        $title = "REKAPITULASI PEMBAYARAN " . strtoupper($this->getPayrollLabel()) . " PER SKPD";
+        $monthNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        $monthName = $monthNames[(int)$month] ?? '';
+
+        return Excel::download(
+            new \App\Exports\ExtraPayrollSummaryExport($dataArray, $title, $year, $monthName),
+            "REKAP_" . strtoupper($this->getPayrollType()) . "_PER_SKPD_{$year}_{$month}.xlsx"
+        );
+    }
 }

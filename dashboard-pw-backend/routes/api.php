@@ -100,6 +100,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/thr/pppk-pw/{id}', [ThrController::class, 'updateRow']);
     Route::delete('/thr/pppk-pw/{id}', [ThrController::class, 'deleteRow']);
     Route::get('/thr/pppk-pw/excel', [ThrController::class, 'exportExcel']);
+    Route::get('/thr/pppk-pw/summary/export', [ThrController::class, 'exportSummaryExcel']);
     Route::get('/thr/pppk-pw/pdf', [ThrController::class, 'exportPdf']);
 
     // Gaji 13 (PPPK Paruh Waktu)
@@ -112,6 +113,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/gaji13/pppk-pw/{id}', [Gaji13Controller::class, 'updateRow']);
     Route::delete('/gaji13/pppk-pw/{id}', [Gaji13Controller::class, 'deleteRow']);
     Route::get('/gaji13/pppk-pw/excel', [Gaji13Controller::class, 'exportExcel']);
+    Route::get('/gaji13/pppk-pw/summary/export', [Gaji13Controller::class, 'exportSummaryExcel']);
     Route::get('/gaji13/pppk-pw/pdf', [Gaji13Controller::class, 'exportPdf']);
 
     // PNS Payroll
