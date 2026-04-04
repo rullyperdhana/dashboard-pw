@@ -187,10 +187,14 @@ trait HandlesExtraPayroll
             ->get()
             ->count();
 
-        $summary = $query->orderBy('skpd_name')
-            ->offset(($page - 1) * $perPage)
-            ->limit($perPage)
-            ->get();
+        $summaryQuery = $query->orderBy('skpd_name');
+
+        if ($perPage > 0) {
+            $summaryQuery->offset(($page - 1) * $perPage)
+                         ->limit($perPage);
+        }
+
+        $summary = $summaryQuery->get();
 
         // Get global totals for meta
         $totalStatsQuery = DB::table('tb_extra_payroll_pppk_pw')
@@ -217,7 +221,7 @@ trait HandlesExtraPayroll
             'data' => $summary,
             'meta' => [
                 'current_page' => $page,
-                'last_page' => ceil($total / $perPage),
+                'last_page' => $perPage > 0 ? ceil($total / $perPage) : 1,
                 'per_page' => $perPage,
                 'total' => $total,
                 'total_employees' => (int) ($totalStats->total_employees ?? 0),

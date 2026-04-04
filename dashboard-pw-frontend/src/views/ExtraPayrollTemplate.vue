@@ -70,19 +70,6 @@
             >
               Cetak PDF
             </v-btn>
-            <v-btn
-              v-if="activeTab === 'skpd'"
-              prepend-icon="mdi-file-chart-outline"
-              color="indigo"
-              variant="flat"
-              rounded="lg"
-              @click="exportSummary"
-              :loading="exportLoading"
-              class="text-none"
-              elevation="2"
-            >
-              Ekspor Rekap Excel
-            </v-btn>
           </div>
         </div>
 
@@ -254,6 +241,22 @@
                   :search="search"
                   @update:options="loadSummaryItems"
                 >
+                  <template v-slot:top>
+                    <v-toolbar flat color="transparent" class="px-4 pt-2">
+                      <v-spacer></v-spacer>
+                      <v-btn
+                        prepend-icon="mdi-file-chart-outline"
+                        color="indigo"
+                        variant="flat"
+                        rounded="lg"
+                        @click="exportSummary"
+                        :loading="exportLoading"
+                        class="text-none shadow-sm"
+                      >
+                        Ekspor Rekap Excel
+                      </v-btn>
+                    </v-toolbar>
+                  </template>
                 <template v-slot:item.sumber_dana="{ item }">
               <v-chip size="x-small" :color="item.sumber_dana === 'APBD' ? 'indigo' : 'teal'" variant="tonal" class="font-weight-bold">
                 {{ item.sumber_dana }}
