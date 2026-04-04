@@ -31,10 +31,10 @@ class ExtraPayrollSummaryExport implements FromArray, WithHeadings, WithStyles, 
             [''],
             [
                 'No',
-                'Nama SKPD / Unit Kerja',
+                'Satuan Kerja (SKPD)',
                 'Sumber Dana',
                 'Jumlah Pegawai',
-                'Total Nominal (Rp)'
+                'Total Pembayaran'
             ]
         ];
     }
@@ -102,10 +102,10 @@ class ExtraPayrollSummaryExport implements FromArray, WithHeadings, WithStyles, 
     public function columnWidths(): array
     {
         return [
-            'A' => 8,
-            'B' => 50,
-            'C' => 20,
-            'D' => 15,
+            'A' => 6,
+            'B' => 55,
+            'C' => 15,
+            'D' => 18,
             'E' => 25,
         ];
     }
