@@ -12,9 +12,11 @@ return new class extends Migration {
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('username')->unique()->nullable()->after('email');
+            $table->string('nip', 20)->nullable()->after('username');
             $table->string('role')->default('user')->after('password');
             $table->string('status')->default('approved')->after('role');
             $table->unsignedBigInteger('institution')->nullable()->after('status');
+            $table->json('app_access')->nullable()->after('institution');
         });
     }
 
