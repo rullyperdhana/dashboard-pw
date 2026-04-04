@@ -14,12 +14,17 @@ class AnnouncementController extends Controller
      */
     public function index()
     {
-        $announcements = Announcement::where('is_active', true)
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
-            
-        return response()->json($announcements);
+        try {
+            $announcements = Announcement::where('is_active', true)
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get();
+                
+            return response()->json($announcements);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error fetching announcements: ' . $e->getMessage());
+            return response()->json([]); // Return empty list rather than 500
+        }
     }
 
     /**
