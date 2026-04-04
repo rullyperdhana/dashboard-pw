@@ -228,7 +228,22 @@
 
             <!-- SKPD Tab -->
             <v-window-item value="skpd">
-              <v-data-table-server
+              <v-card-text class="pa-0">
+                <div class="d-flex justify-end pa-4">
+                  <v-btn
+                    prepend-icon="mdi-file-chart-outline"
+                    color="indigo"
+                    variant="flat"
+                    rounded="lg"
+                    @click="exportSummary"
+                    :loading="exportLoading"
+                    class="text-none"
+                    elevation="2"
+                  >
+                    Ekspor Rekap Excel
+                  </v-btn>
+                </div>
+                <v-data-table-server
                 :headers="skpdHeaders"
                 :items="skpdGroups"
                 :loading="loadingSummary"
@@ -259,6 +274,7 @@
                   </div>
                 </template>
               </v-data-table-server>
+              </v-card-text>
             </v-window-item>
 
             <!-- Missing Data Tab -->
@@ -797,10 +813,29 @@ const exportMissingData = async () => {
     link.href = window.URL.createObjectURL(blob)
     link.download = `DAFTAR_TERLEWAT_${config.value.label}_2026_${selectedMonth.value}.xlsx`
     link.click()
+    exportLoading.value = false
   } catch (error) {
     console.error('Error exporting missing data:', error)
-    alert('Gagal mengekspor daftar terlewat.')
-  } finally {
+    showSnackbar('Gagal mengekspor daftar terlewat.', 'error')
+    exportLoading.value = false
+  }
+}
+
+const exportSummary = async () => {
+  exportLoading.value = true
+  try {
+    const url = `${config.value.apiBase}/summary/export?month=${selectedMonth.value}`
+    const response = await api.get(url, { responseType: 'blob' })
+    
+    const blob = new Blob([response.data])
+    const link = document.createElement('a')
+    link.href = window.URL.createObjectURL(blob)
+    link.download = `REKAP_${config.value.label}_PER_SKPD_2026_${selectedMonth.value}.xlsx`
+    link.click()
+    exportLoading.value = false
+  } catch (error) {
+    console.error('Error exporting summary:', error)
+    showSnackbar('Gagal mengekspor rekap per SKPD.', 'error')
     exportLoading.value = false
   }
 }
