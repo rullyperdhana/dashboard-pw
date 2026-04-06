@@ -31,3 +31,7 @@ curl http://localhost:8000/api/login
 
 ## Catatan:
 Setelah import database SQL, semua API akan berfungsi normal.
+
+### 4. ✅ Estimasi Iuran BPJS Membengkak
+**Error**: Perhitungan Estimasi Iuran (JKK, JKM, BPJS) di `/settings/pppk` PNS dan PPPK Penuh Waktu menjadi tidak akurat (terlalu besar) karena mengikutsertakan gaji tambahan seperti THR dan Gaji 13.
+**Fix**: Menambahkan fungsi penyaringan `whereNotIn('jenis_gaji', ['THR', 'Gaji 13', '13', 'Gaji ke-13'])` pada model (GajiPns & GajiPppk) di `SettingController.php`.
