@@ -79,7 +79,8 @@ class SettingController extends Controller
         }
 
         $query = GajiPppk::where('bulan', $month)
-            ->where('tahun', $year);
+            ->where('tahun', $year)
+            ->whereNotIn('jenis_gaji', ['THR', 'Gaji 13', '13', 'Gaji ke-13']);
 
         $totalGajiPokok = (clone $query)->sum('gaji_pokok');
         $totalPegawai = (clone $query)->count();
@@ -324,7 +325,9 @@ class SettingController extends Controller
             ]);
         }
 
-        $query = GajiPns::where('bulan', $month)->where('tahun', $year);
+        $query = GajiPns::where('bulan', $month)
+            ->where('tahun', $year)
+            ->whereNotIn('jenis_gaji', ['THR', 'Gaji 13', '13', 'Gaji ke-13']);
 
         $totalGajiPokok = (clone $query)->sum('gaji_pokok');
         $totalPegawai = (clone $query)->count();
@@ -535,7 +538,9 @@ class SettingController extends Controller
         $bpjsPercent = 4.0;
         $bpjsCap = 12000000;
 
-        $query = $modelClass::where($modelTable . '.bulan', $month)->where($modelTable . '.tahun', $year);
+        $query = $modelClass::where($modelTable . '.bulan', $month)
+            ->where($modelTable . '.tahun', $year)
+            ->whereNotIn($modelTable . '.jenis_gaji', ['THR', 'Gaji 13', '13', 'Gaji ke-13']);
 
         // Add joins for Name Resolution
         $query->leftJoin('skpd_mapping', function ($join) use ($modelTable, $type) {
