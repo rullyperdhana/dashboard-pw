@@ -79,7 +79,8 @@ class SettingController extends Controller
         }
 
         $query = GajiPppk::where('bulan', $month)
-            ->where('tahun', $year);
+            ->where('tahun', $year)
+            ->whereNotIn('jenis_gaji', ['THR', 'Gaji 13', '13', 'Gaji ke-13']);
 
         $totalGajiPokok = (clone $query)->sum('gaji_pokok');
         $totalPegawai = (clone $query)->count();
@@ -324,7 +325,9 @@ class SettingController extends Controller
             ]);
         }
 
-        $query = GajiPns::where('bulan', $month)->where('tahun', $year);
+        $query = GajiPns::where('bulan', $month)
+            ->where('tahun', $year)
+            ->whereNotIn('jenis_gaji', ['THR', 'Gaji 13', '13', 'Gaji ke-13']);
 
         $totalGajiPokok = (clone $query)->sum('gaji_pokok');
         $totalPegawai = (clone $query)->count();
@@ -438,12 +441,10 @@ class SettingController extends Controller
     public function clearPayrollData(Request $request)
     {
         $validated = $request->validate([
-            'target' => 'required|string|in:pns,pppk,both,tpp,tpg',
+            'target' => 'required|string|in:pns,pppk,both',
             'month' => 'nullable|integer|between:1,12',
             'year' => 'nullable|integer',
-            'triwulan' => 'nullable|integer|between:1,4',
             'jenis_gaji' => 'nullable|string',
-            'skpd_id' => 'nullable', // Can be numeric ID or raw code
             'confirmation_code' => 'required|string',
         ]);
 
@@ -459,82 +460,34 @@ class SettingController extends Controller
         $target = $validated['target'];
         $month = $validated['month'] ?? null;
         $year = $validated['year'] ?? null;
-        $triwulan = $validated['triwulan'] ?? null;
         $jenisGaji = $validated['jenis_gaji'] ?? null;
-        $skpdId = $validated['skpd_id'] ?? null;
 
         $results = [];
 
-        // 1. PNS
         if ($target === 'pns' || $target === 'both') {
             $query = GajiPns::query();
-            if ($month) $query->where('bulan', $month);
-            if ($year) $query->where('tahun', $year);
-            if ($jenisGaji) $query->where('jenis_gaji', $jenisGaji);
-            if ($skpdId) {
-                // If it's a numeric ID from skpd table, we need to handle mapping, 
-                // but usually in these clear cases, the user selects from a list of SKPDs.
-                // We'll support both raw code (kdskpd) or mapped ID.
-                if (is_numeric($skpdId)) {
-                    $mappedCodes = \App\Models\SkpdMapping::where('skpd_id', $skpdId)
-                        ->whereIn('type', ['pns', 'all'])
-                        ->pluck('source_code')
-                        ->toArray();
-                    if (!empty($mappedCodes)) {
-                        $query->whereIn('kdskpd', $mappedCodes);
-                    } else {
-                        $query->where('kdskpd', $skpdId);
-                    }
-                } else {
-                    $query->where('kdskpd', $skpdId);
-                }
-            }
-            $results['pns'] = $query->delete();
+            if ($month)
+                $query->where('bulan', $month);
+            if ($year)
+                $query->where('tahun', $year);
+            if ($jenisGaji)
+                $query->where('jenis_gaji', $jenisGaji);
+
+            $count = $query->delete();
+            $results['pns'] = $count;
         }
 
-        // 2. PPPK (Regular)
         if ($target === 'pppk' || $target === 'both') {
             $query = GajiPppk::query();
-            if ($month) $query->where('bulan', $month);
-            if ($year) $query->where('tahun', $year);
-            if ($jenisGaji) $query->where('jenis_gaji', $jenisGaji);
-            if ($skpdId) {
-                if (is_numeric($skpdId)) {
-                    $mappedCodes = \App\Models\SkpdMapping::where('skpd_id', $skpdId)
-                        ->whereIn('type', ['pppk', 'all'])
-                        ->pluck('source_code')
-                        ->toArray();
-                    if (!empty($mappedCodes)) {
-                        $query->whereIn('kdskpd', $mappedCodes);
-                    } else {
-                        $query->where('kdskpd', $skpdId);
-                    }
-                } else {
-                    $query->where('kdskpd', $skpdId);
-                }
-            }
-            $results['pppk'] = $query->delete();
-        }
+            if ($month)
+                $query->where('bulan', $month);
+            if ($year)
+                $query->where('tahun', $year);
+            if ($jenisGaji)
+                $query->where('jenis_gaji', $jenisGaji);
 
-        // 3. TPP Standalone
-        if ($target === 'tpp') {
-            $query = \App\Models\StandaloneTpp::query();
-            if ($month) $query->where('month', $month);
-            if ($year) $query->where('year', $year);
-            if ($jenisGaji) $query->where('jenis_gaji', $jenisGaji);
-            if ($skpdId) {
-                $query->where('skpd_id', $skpdId);
-            }
-            $results['tpp'] = $query->delete();
-        }
-
-        // 4. TPG (Sertifikasi Guru)
-        if ($target === 'tpg') {
-            $query = \App\Models\TpgData::query();
-            if ($triwulan) $query->where('triwulan', $triwulan);
-            if ($year) $query->where('tahun', $year);
-            // TPG doesn't have a direct skpd_id yet, usually identified by satdik
-            $results['tpg'] = $query->delete();
+            $count = $query->delete();
+            $results['pppk'] = $count;
         }
 
         Log::info("User " . auth()->user()->username . " cleared payroll data", [
@@ -543,18 +496,19 @@ class SettingController extends Controller
         ]);
 
         try {
-            \App\Models\AuditLog::log('clear_data', 'Hapus data gaji (' . $target . ')', [
-                'table_name' => $target === 'both' ? 'gaji_pns, gaji_pppk' : $target,
+            \App\Models\AuditLog::log('clear_data', 'Hapus data gaji', [
+                'table_name' => $target === 'both' ? 'gaji_pns, gaji_pppk' : 'gaji_' . $target,
                 'new_values' => $results,
                 'old_values' => ['params' => $validated],
             ]);
         } catch (\Exception $e) {
+            // Fallback: if foreign key fails (e.g. user_id mismatch on VPS), log without user_id relation
             DB::table('audit_logs')->insert([
-                'user_id' => null,
+                'user_id' => null, // Set null to bypass FK
                 'username' => auth()->user()->username ?? 'system',
                 'action' => 'clear_data',
-                'description' => 'Hapus data gaji (FK Fallback) - ' . $target,
-                'table_name' => $target,
+                'description' => 'Hapus data gaji (FK Fallback)',
+                'table_name' => $target === 'both' ? 'gaji_pns, gaji_pppk' : 'gaji_' . $target,
                 'new_values' => json_encode($results),
                 'old_values' => json_encode(['params' => $validated]),
                 'ip_address' => request()->ip(),
@@ -584,7 +538,9 @@ class SettingController extends Controller
         $bpjsPercent = 4.0;
         $bpjsCap = 12000000;
 
-        $query = $modelClass::where($modelTable . '.bulan', $month)->where($modelTable . '.tahun', $year);
+        $query = $modelClass::where($modelTable . '.bulan', $month)
+            ->where($modelTable . '.tahun', $year)
+            ->whereNotIn($modelTable . '.jenis_gaji', ['THR', 'Gaji 13', '13', 'Gaji ke-13']);
 
         // Add joins for Name Resolution
         $query->leftJoin('skpd_mapping', function ($join) use ($modelTable, $type) {
