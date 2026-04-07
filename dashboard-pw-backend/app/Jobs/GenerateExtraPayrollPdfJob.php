@@ -119,7 +119,10 @@ class GenerateExtraPayrollPdfJob implements ShouldQueue
                             'sub_giat_groups' => $pptkItems->groupBy('nama_sub_giat')->map(function ($subGiatItems, $subGiatName) {
                                 return [
                                     'sub_giat_name' => $subGiatName,
-                                    'employees' => $subGiatItems->toArray(),
+                                    'employees' => $subGiatItems->map(function($item) {
+                                        $arr = $item->toArray();
+                                        return $arr;
+                                    })->toArray(),
                                     'subtotal_thr' => $subGiatItems->sum('payroll_amount'),
                                     'employee_count' => $subGiatItems->count(),
                                     'qr_code' => null
@@ -167,10 +170,10 @@ class GenerateExtraPayrollPdfJob implements ShouldQueue
             Storage::disk('public')->put("exports/{$filename}", $pdfOutput);
             
             $downloadUrl = Storage::disk('public')->url("exports/{$filename}");
-            // Pastikan URL tidak menggunakan localhost (terjadi jika APP_URL di .env salah)
+            // Fix URL for local development while keeping production working
             $actualUrl = str_replace('http://localhost:8000', config('app.url'), $downloadUrl);
-            if (strpos($actualUrl, 'localhost') !== false) {
-                 $actualUrl = "https://sipgaji.my.id/storage/exports/{$filename}";
+            if (config('app.env') === 'production' || strpos($actualUrl, 'localhost') !== false) {
+                $actualUrl = str_replace('http://localhost:8000', 'https://sipgaji.my.id', $actualUrl);
             }
 
             $uploadJob->markCompleted([

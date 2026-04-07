@@ -74,9 +74,9 @@
         </div>
 
         <!-- Filter Card -->
-        <v-card class="glass-card mb-6 pa-4" variant="flat">
+        <v-card class="glass-card mb-4 pa-4" variant="flat">
           <v-row align="center">
-            <v-col cols="12" sm="4">
+            <v-col cols="12" sm="2">
               <v-select
                 v-model="selectedMonth"
                 :items="months"
@@ -91,10 +91,23 @@
                 rounded="lg"
               ></v-select>
             </v-col>
-            <v-col cols="12" sm="4">
+            <v-col cols="12" sm="2">
+              <v-select
+                v-model="selectedSumberDana"
+                :items="sumberDanaOptions"
+                label="Sumber Dana"
+                variant="outlined"
+                density="comfortable"
+                hide-details
+                rounded="lg"
+                prepend-inner-icon="mdi-bank"
+                @update:model-value="refreshAll"
+              ></v-select>
+            </v-col>
+            <v-col cols="12" sm="3">
               <v-text-field
                 v-model="searchInput"
-                label="Cari Nama / NIP / SKPD..."
+                label="Cari Pegawai / SKPD..."
                 variant="outlined"
                 density="comfortable"
                 hide-details
@@ -103,26 +116,60 @@
                 clearable
               ></v-text-field>
             </v-col>
-            <v-col cols="12" sm="4">
-              <div class="d-flex ga-4 justify-end">
-                <v-chip color="primary" variant="flat" size="large" class="px-4 py-6 rounded-xl">
-                  <v-icon start icon="mdi-account-group"></v-icon>
-                  <div class="d-flex flex-column align-start ml-2">
-                    <span class="text-caption" style="line-height: 1">Total Pegawai</span>
-                    <span class="text-h6 font-weight-black">{{ meta.total_employees || 0 }}</span>
-                  </div>
-                </v-chip>
-                <v-chip color="secondary" variant="flat" size="large" class="px-4 py-6 rounded-xl">
-                  <v-icon start icon="mdi-cash-multiple"></v-icon>
-                  <div class="d-flex flex-column align-start ml-2">
-                    <span class="text-caption" style="line-height: 1">Total {{ config.label }}</span>
-                    <span class="text-h6 font-weight-black">{{ formatCurrency(meta.total_amount || 0) }}</span>
-                  </div>
-                </v-chip>
-              </div>
+            <v-col cols="12" sm="2" v-if="isSuperadmin">
+              <v-text-field
+                v-model="multiplierInput"
+                label="Parameter n/12"
+                type="number"
+                variant="outlined"
+                density="comfortable"
+                hide-details
+                prepend-inner-icon="mdi-calculator"
+                rounded="lg"
+                suffix="/12"
+                @update:modelValue="saveMultiplierDebounced"
+              ></v-text-field>
+            </v-col>
+            <v-col cols="12" sm="auto">
+              <v-btn
+                color="primary"
+                size="large"
+                class="rounded-xl font-weight-bold"
+                @click="refreshAll"
+                prepend-icon="mdi-refresh"
+                :loading="loading"
+              >
+                Refresh
+              </v-btn>
             </v-col>
           </v-row>
         </v-card>
+
+        <!-- Stats row -->
+        <v-row class="mb-4">
+          <v-col cols="12" md="6" lg="3">
+            <v-card class="glass-card gradient-card-primary" variant="flat">
+              <v-card-text class="d-flex align-center py-4">
+                <v-icon size="40" color="white" class="mr-4">mdi-account-group</v-icon>
+                <div>
+                  <div class="text-white text-caption">Total Pegawai</div>
+                  <div class="text-white text-h5 font-weight-black">{{ meta.total_employees || 0 }}</div>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <v-col cols="12" md="6" lg="3">
+            <v-card class="glass-card gradient-card-secondary" variant="flat">
+              <v-card-text class="d-flex align-center py-4">
+                <v-icon size="40" color="white" class="mr-4">mdi-cash-multiple</v-icon>
+                <div>
+                  <div class="text-white text-caption">Total {{ config.label }}</div>
+                  <div class="text-white text-h5 font-weight-black">{{ formatCurrency(meta.total_amount || 0) }}</div>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
 
         <!-- Tabs and Table Section -->
         <v-card class="glass-card overflow-hidden" variant="flat">
@@ -181,18 +228,41 @@
 
             <!-- SKPD Tab -->
             <v-window-item value="skpd">
-              <v-data-table-server
-                :headers="skpdHeaders"
-                :items="skpdGroups"
-                :loading="loadingSummary"
-                class="custom-table"
-                hover
-                v-model:items-per-page="itemsPerPageSummary"
-                :items-length="totalSummary"
-                :search="search"
-                @update:options="loadSummaryItems"
-              >
-                <template v-slot:item.total_amount_skpd="{ item }">
+              <v-card-text class="pa-0">
+                <v-data-table-server
+                  :headers="skpdHeaders"
+                  :items="skpdGroups"
+                  :loading="loadingSummary"
+                  class="custom-table"
+                  hover
+                  v-model:items-per-page="itemsPerPageSummary"
+                  v-model:page="pageSummary"
+                  :items-length="totalSummary"
+                  :search="search"
+                  @update:options="loadSummaryItems"
+                >
+                  <template v-slot:top>
+                    <v-toolbar flat color="transparent" class="px-4 pt-2">
+                      <v-spacer></v-spacer>
+                      <v-btn
+                        prepend-icon="mdi-file-chart-outline"
+                        color="indigo"
+                        variant="flat"
+                        rounded="lg"
+                        @click="exportSummary"
+                        :loading="exportLoading"
+                        class="text-none shadow-sm"
+                      >
+                        Ekspor Rekap Excel
+                      </v-btn>
+                    </v-toolbar>
+                  </template>
+                <template v-slot:item.sumber_dana="{ item }">
+              <v-chip size="x-small" :color="item.sumber_dana === 'APBD' ? 'indigo' : 'teal'" variant="tonal" class="font-weight-bold">
+                {{ item.sumber_dana }}
+              </v-chip>
+            </template>
+            <template v-slot:item.total_amount_skpd="{ item }">
                   <span class="font-weight-bold text-primary">{{ formatCurrency(item.total_amount_skpd) }}</span>
                 </template>
                 <template v-slot:item.total_employees_skpd="{ item }">
@@ -207,6 +277,7 @@
                   </div>
                 </template>
               </v-data-table-server>
+              </v-card-text>
             </v-window-item>
 
             <!-- Missing Data Tab -->
@@ -346,7 +417,7 @@ const config = computed(() => {
       label: 'THR',
       icon: 'mdi-cash-fast',
       apiBase: '/thr/pppk-pw',
-      defaultMonth: 4
+      defaultMonth: 3
     }
   }
   return {
@@ -380,6 +451,8 @@ const totalSummary = ref(0)
 const itemsPerPageMissing = ref(15)
 const totalMissing = ref(0)
 const page = ref(1)
+const pageSummary = ref(1)
+const pageMissing = ref(1)
 const search = ref('')
 const searchInput = ref('')
 const serverOptions = ref({})
@@ -412,6 +485,10 @@ const newItem = ref({
   month: selectedMonth.value
 })
 
+const multiplierInput = ref(2)
+const selectedSumberDana = ref('Semua')
+const selectedYear = ref(2026)
+const sumberDanaOptions = ['Semua', 'APBD', 'BLUD']
 const snackbar = ref(false)
 const snackbarText = ref('')
 const snackbarColor = ref('success')
@@ -432,10 +509,12 @@ const months = [
 ]
 
 const headers = [
+  { title: 'Jabatan', key: 'jabatan', align: 'start', sortable: true },
   { title: 'SKPD', key: 'skpd', align: 'start', sortable: true },
+  { title: 'Sumber Dana', key: 'sumber_dana', align: 'start', width: 120 },
+  { title: 'Gaji Pokok', key: 'gapok_basis', align: 'end', sortable: true },
   { title: 'Nama Pegawai', key: 'nama', align: 'start', sortable: true },
   { title: 'NIP', key: 'nip', align: 'start' },
-  { title: 'Jabatan', key: 'jabatan', align: 'start' },
   { title: 'Sub Kegiatan', key: 'sub_giat', align: 'start' },
   { title: 'PPTK', key: 'pptk_nama', align: 'start' },
   { title: 'Gapok (Basis)', key: 'gapok_basis', align: 'end' },
@@ -446,6 +525,7 @@ const headers = [
 
 const skpdHeaders = [
   { title: 'Satuan Kerja (SKPD)', key: 'skpd_name', align: 'start', sortable: true },
+  { title: 'Sumber Dana', key: 'sumber_dana', align: 'start', width: 120 },
   { title: 'Jumlah Pegawai', key: 'total_employees_skpd', align: 'center', sortable: true },
   { title: 'Total Pembayaran ' + config.value.label, key: 'total_amount_skpd', align: 'end', sortable: true },
 ]
@@ -466,33 +546,28 @@ const showSnackbar = (text, color = 'success') => {
   snackbar.value = true
 }
 
-const refreshAll = () => {
-  if (activeTab.value === 'detail') {
-    loadItems(serverOptions.value)
-  } else if (activeTab.value === 'skpd') {
-    loadSummaryItems(serverOptionsSummary.value)
-  } else if (activeTab.value === 'missing') {
-    loadMissingItems(serverOptionsMissing.value)
-  }
-}
-
 const loadItems = async (options) => {
   serverOptions.value = options
   loading.value = true
   try {
     const { page, itemsPerPage, sortBy, search } = options
     const response = await api.get(config.value.apiBase, {
-      params: { 
-        month: selectedMonth.value,
+      params: {
         page,
         per_page: itemsPerPage,
-        search
+        search,
+        sumber_dana: selectedSumberDana.value,
+        year: selectedYear.value,
+        month: selectedMonth.value
       }
     })
     
     items.value = response.data.data
     totalItems.value = response.data.meta.total
     meta.value = response.data.meta
+    if (response.data.meta.multiplier) {
+      multiplierInput.value = response.data.meta.multiplier
+    }
   } catch (error) {
     console.error('Error loading payroll items:', error)
     showSnackbar('Gagal memuat data pegawai', 'error')
@@ -508,7 +583,9 @@ const loadSummaryItems = async (options) => {
     const { page, itemsPerPage, search } = options
     const response = await api.get(config.value.apiBase + '/summary', {
       params: { 
+        year: selectedYear.value,
         month: selectedMonth.value,
+        sumber_dana: selectedSumberDana.value,
         page,
         per_page: itemsPerPage,
         search
@@ -534,6 +611,7 @@ const loadMissingItems = async (options) => {
     const { page, itemsPerPage, search } = options
     const response = await api.get(config.value.apiBase + '/missing', {
       params: { 
+        year: selectedYear.value,
         month: selectedMonth.value,
         page,
         per_page: itemsPerPage,
@@ -551,11 +629,25 @@ const loadMissingItems = async (options) => {
   }
 }
 
+const refreshAll = () => {
+  loadItems({ 
+    page: 1, 
+    itemsPerPage: serverOptions.value.itemsPerPage || 15, 
+    sortBy: serverOptions.value.sortBy || [],
+    search: searchInput.value 
+  })
+  if (activeTab.value === 'skpd') {
+    loadSummaryItems({ page: 1, itemsPerPage: 15, search: searchInput.value })
+  } else if (activeTab.value === 'missing') {
+    loadMissingItems({ page: 1, itemsPerPage: 15, search: searchInput.value })
+  }
+}
+
 watch(activeTab, (newTab) => {
   if (newTab === 'skpd' && skpdGroups.value.length === 0) {
-    loadSummaryItems({ page: 1, itemsPerPage: 15, search: search.value })
+    loadSummaryItems({ page: 1, itemsPerPage: 15, search: searchInput.value })
   } else if (newTab === 'missing' && missingItems.value.length === 0) {
-    loadMissingItems({ page: 1, itemsPerPage: 15, search: search.value })
+    loadMissingItems({ page: 1, itemsPerPage: 15, search: searchInput.value })
   }
 })
 
@@ -621,6 +713,26 @@ const openAddDialog = () => {
     month: selectedMonth.value
   }
   dialogAdd.value = true
+}
+
+const saveMultiplier = async () => {
+  try {
+    const key = props.type === 'thr' ? 'thr_pppk_pw_multiplier' : 'gaji13_pppk_pw_multiplier'
+    await api.post('/settings', {
+      settings: [{ key, value: multiplierInput.value }]
+    })
+    showSnackbar('Parameter berhasil disimpan. Silahkan Generate Ulang data.')
+  } catch (error) {
+    showSnackbar('Gagal menyimpan parameter', 'error')
+  }
+}
+
+let multiplierTimeout = null
+const saveMultiplierDebounced = () => {
+  if (multiplierTimeout) clearTimeout(multiplierTimeout)
+  multiplierTimeout = setTimeout(() => {
+    saveMultiplier()
+  }, 1000)
 }
 
 const saveAdd = async () => {
@@ -713,10 +825,29 @@ const exportMissingData = async () => {
     link.href = window.URL.createObjectURL(blob)
     link.download = `DAFTAR_TERLEWAT_${config.value.label}_2026_${selectedMonth.value}.xlsx`
     link.click()
+    exportLoading.value = false
   } catch (error) {
     console.error('Error exporting missing data:', error)
-    alert('Gagal mengekspor daftar terlewat.')
-  } finally {
+    showSnackbar('Gagal mengekspor daftar terlewat.', 'error')
+    exportLoading.value = false
+  }
+}
+
+const exportSummary = async () => {
+  exportLoading.value = true
+  try {
+    const url = `${config.value.apiBase}/summary/export?month=${selectedMonth.value}`
+    const response = await api.get(url, { responseType: 'blob' })
+    
+    const blob = new Blob([response.data])
+    const link = document.createElement('a')
+    link.href = window.URL.createObjectURL(blob)
+    link.download = `REKAP_${config.value.label}_PER_SKPD_2026_${selectedMonth.value}.xlsx`
+    link.click()
+    exportLoading.value = false
+  } catch (error) {
+    console.error('Error exporting summary:', error)
+    showSnackbar('Gagal mengekspor rekap per SKPD.', 'error')
     exportLoading.value = false
   }
 }
@@ -769,5 +900,15 @@ onMounted(() => {
 
 .transition-all {
   transition: all 0.3s ease;
+}
+
+.gradient-card-primary {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+  box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3) !important;
+}
+
+.gradient-card-secondary {
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%) !important;
+  box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3) !important;
 }
 </style>

@@ -79,10 +79,62 @@
                       :loading="loading"
                     ></v-select>
                   </v-col>
+                  <v-col cols="12" md="4" v-if="settings.thr_pppk_pw_method === 'proporsional'">
+                    <v-text-field
+                      v-model="settings.thr_pppk_pw_multiplier"
+                      label="Parameter Multiplier (n/12)"
+                      type="number" min="1" max="12"
+                      hint="Default: 2 (Artinya 2/12)" persistent-hint
+                      variant="filled" flat rounded="lg"
+                      :loading="loading"
+                      prefix="n ="
+                      suffix="/ 12"
+                    ></v-text-field>
+                  </v-col>
                   <v-col cols="12" md="4" v-if="settings.thr_pppk_pw_method === 'tetap'">
                     <v-text-field
                       v-model="settings.thr_pppk_pw_amount"
                       label="Nominal THR (Bernilai Tetap)"
+                      type="number" min="0"
+                      hint="Contoh: 600000" persistent-hint
+                      variant="filled" flat rounded="lg"
+                      :loading="loading"
+                    ></v-text-field>
+                  </v-col>
+                </v-row>
+
+                <!-- Gaji 13 PPPK PW Settings -->
+                <v-divider class="my-4 border-opacity-10"></v-divider>
+                <div class="text-overline font-weight-black mb-4 text-primary px-2">KONFIGURASI PERHITUNGAN GAJI 13 PPPK-PW</div>
+                <v-row align="center">
+                  <v-col cols="12" md="4">
+                    <v-select
+                      v-model="settings.gaji13_pppk_pw_method"
+                      :items="[
+                        { title: 'Proporsional Bulan (n/12)', value: 'proporsional' },
+                        { title: 'Bernilai Tetap (Nominal Spesifik)', value: 'tetap' }
+                      ]"
+                      label="Metode Perhitungan Gaji 13"
+                      variant="filled" flat rounded="lg"
+                      :loading="loading"
+                    ></v-select>
+                  </v-col>
+                  <v-col cols="12" md="4" v-if="settings.gaji13_pppk_pw_method === 'proporsional'">
+                    <v-text-field
+                      v-model="settings.gaji13_pppk_pw_multiplier"
+                      label="Parameter Multiplier (n/12)"
+                      type="number" min="1" max="12"
+                      hint="Default: 2 (Artinya 2/12)" persistent-hint
+                      variant="filled" flat rounded="lg"
+                      :loading="loading"
+                      prefix="n ="
+                      suffix="/ 12"
+                    ></v-text-field>
+                  </v-col>
+                  <v-col cols="12" md="4" v-if="settings.gaji13_pppk_pw_method === 'tetap'">
+                    <v-text-field
+                      v-model="settings.gaji13_pppk_pw_amount"
+                      label="Nominal Gaji 13 (Bernilai Tetap)"
                       type="number" min="0"
                       hint="Contoh: 600000" persistent-hint
                       variant="filled" flat rounded="lg"
@@ -795,7 +847,11 @@ const settings = ref({
   pppk_jkk_percentage: 0.24,
   pppk_jkm_percentage: 0.72,
   thr_pppk_pw_method: 'proporsional',
-  thr_pppk_pw_amount: 600000
+  thr_pppk_pw_amount: 600000,
+  thr_pppk_pw_multiplier: 2,
+  gaji13_pppk_pw_method: 'proporsional',
+  gaji13_pppk_pw_amount: 600000,
+  gaji13_pppk_pw_multiplier: 2
 })
 
 const estimation = ref(null)
@@ -812,6 +868,10 @@ const fetchSettings = async () => {
             if (data.pppk_jkm_percentage) settings.value.pppk_jkm_percentage = parseFloat(data.pppk_jkm_percentage.value)
             if (data.thr_pppk_pw_method) settings.value.thr_pppk_pw_method = data.thr_pppk_pw_method.value
             if (data.thr_pppk_pw_amount) settings.value.thr_pppk_pw_amount = parseFloat(data.thr_pppk_pw_amount.value)
+            if (data.thr_pppk_pw_multiplier) settings.value.thr_pppk_pw_multiplier = parseInt(data.thr_pppk_pw_multiplier.value)
+            if (data.gaji13_pppk_pw_method) settings.value.gaji13_pppk_pw_method = data.gaji13_pppk_pw_method.value
+            if (data.gaji13_pppk_pw_amount) settings.value.gaji13_pppk_pw_amount = parseFloat(data.gaji13_pppk_pw_amount.value)
+            if (data.gaji13_pppk_pw_multiplier) settings.value.gaji13_pppk_pw_multiplier = parseInt(data.gaji13_pppk_pw_multiplier.value)
         }
     } catch (error) {
         console.error('Error fetching settings:', error)
@@ -832,6 +892,10 @@ const saveSettings = async () => {
         if (user.value?.role === 'superadmin') {
             payload.push({ key: 'thr_pppk_pw_method', value: settings.value.thr_pppk_pw_method })
             payload.push({ key: 'thr_pppk_pw_amount', value: settings.value.thr_pppk_pw_amount })
+            payload.push({ key: 'thr_pppk_pw_multiplier', value: settings.value.thr_pppk_pw_multiplier })
+            payload.push({ key: 'gaji13_pppk_pw_method', value: settings.value.gaji13_pppk_pw_method })
+            payload.push({ key: 'gaji13_pppk_pw_amount', value: settings.value.gaji13_pppk_pw_amount })
+            payload.push({ key: 'gaji13_pppk_pw_multiplier', value: settings.value.gaji13_pppk_pw_multiplier })
         }
 
         const response = await api.post('/settings', { settings: payload })

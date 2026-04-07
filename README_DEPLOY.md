@@ -23,6 +23,14 @@ bash push.sh "Pesan perubahan Anda di sini"
 bash deploy.sh
 ```
 
+---
+
+## 2.1 Lingkungan Pengembangan (Development / Dev)
+Jika Anda ingin menyiapkan satu folder terpisah di VPS untuk testing dari branch `dev`, silakan ikuti panduan khusus ini:
+**[Panduan Setup DEV VPS](file:///Users/rullyperdhana/dashboard-pw/DEV_SETUP_VPS.md)**
+
+---
+
 > [!IMPORTANT]
 > Jika ada penambahan fitur besar (seperti Master Data DBF atau **Redesain Dashboard v3.9.0**), script `deploy.sh` akan otomatis mendeteksi perubahan tabel dan menjalankan `php artisan migrate` serta melakukan build ulang untuk frontend.
 

@@ -12,13 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         // We use a raw query because index names might vary between environments
-        $indexName = null;
-        $indexes = DB::select("SHOW INDEX FROM skpd_mapping WHERE Non_unique = 0 AND Key_name != 'PRIMARY'");
+        // Use Laravel's database-agnostic Schema::getIndexes helper
+        $indexes = Schema::getIndexes('skpd_mapping');
+        
         foreach ($indexes as $index) {
-            // We are looking for the unique index on source_name/type
-            if (str_contains($index->Key_name, 'source') || str_contains($index->Key_name, 'unique')) {
-                $indexName = $index->Key_name;
-                break;
+            // Looking for a unique index (besides primary) that mentions 'source' or 'unique'
+            if ($index['unique'] && $index['name'] !== 'primary') {
+                if (str_contains($index['name'], 'source') || str_contains($index['name'], 'unique')) {
+                    $indexName = $index['name'];
+                    break;
+                }
             }
         }
 

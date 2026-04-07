@@ -101,6 +101,25 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 - **Enhanced Dashboard Filtering:** Dashboard secara cerdas memisahkan data PPPK-PW dari PNS/PPPK Penuh Waktu untuk akurasi laporan.
 - **Global Help Access:** Halaman Pusat Bantuan kini dapat diakses oleh semua level pengguna (Admin & Operator).
 - **Environment Version Indicator:** Label versi aplikasi (v4.5.0) yang transparan di sidebar.
+
+### 🛠️ Maintenance & Refinement (v3.9.1)
+- **Automatic SKPD Synchronization:** Penentuan SKPD Utama kini otomatis tersinkron dangan pilihan pertama pada modul Manajemen User, memastikan identitas Sidebar selalu akurat.
+- **Enhanced Login Parity:** Respon otentikasi kini menyertakan data perizinan lengkap (`skpd_access`, `app_access`) untuk menghilangkan jeda sinkronisasi *cache* setelah perubahan admin.
+- **Fixed PPPK-PW PDF Export:** Perbaikan variabel dan mapping data pada template PDF untuk laporan THR dan Gaji-13 PPPK Paruh Waktu.
+- **Dashboard Metric Accuracy:** Penyesuaian logika hitung personil (diambil dari data bulan terakhir, bukan akumulasi tahunan) dan tampilan angka nominal penuh pada footer Dashboard PNS.
+
+### 💨 Optimalisasi & Laporan Dinamis (v4.0.0)
+- **ESS Experience Upgrade:** Dashboard Employee Self-Service (ESS) kini mendukung histori slip gaji hingga 5 tahun (60 bulan) dengan fitur pengelompokan tab berbasis tahun (*Yearly Tabs*), serta menampilkan rincian spesifik Gaji Pokok dan TPP pada tiap kartu slip.
+- **Fixed Allowance Data:** Perbaikan kueri inti SQL pada laporan bulanan untuk menyertakan pilar tunjangan **Pembulatan** yang sebelumnya tersembunyi. Data pembulatan kini tampil akurat di tabel UI Web, PNS Dashboard, cetak Excel, hingga *export* PDF.
+- **PDF Export Resilience:** Mengalihkan *driver* penyimpanan *export* PDF ke direktori publik yang lebih terjamin aksesibilitasnya, serta men-sintesis ulang struktur DomPDF dengan melumpuhkan komponen berat (*QR Code generator*) sementara waktu untuk mengatasi masalah lambatnya proses antrean latar belakang (*Job Queue bottleneck*).
+- **Sticky DataGrid UX:** Mengimplementasikan fitur penguncian layar otomatis (*Freeze Header* & *Freeze SKPD Column*) pada tabel Laporan Bulanan SKPD menggunakan arsitektur CSS modern, mencegah disorientasi pengguna saat menelusuri ratusan kolom tunjangan ke arah kanan.
+
+### 🐛 Patch & UX Improvements (v4.0.1)
+- **Standalone TPP Reactivity:** Perbaikan kueri Frontend pada halaman Upload TPP untuk memastikan tabel *Data TPP Belum Terhubung (Standalone)* dan *Laporan Selisih* otomatis diperbarui (re-fetch) secara real-time setiap kali user mengubah filter Bulan, Tahun, atau Tipe Pegawai.
+- **Enhanced Estimations Filter:** Modifikasi *query* estimasi iuran (JKK/JKM/BPJS) untuk secara eksplisit mengecualikan data *Extra Payroll* (THR & Gaji 13) sehingga proyeksi iuran gaji bulanan reguler menjadi lebih akurat.
+- **Reporting Stability:** Memperbaiki insiden 500 Internal Server error pada *endpoint* Executive Summary akibat inisialisasi variabel kosong, serta perbaikan peletakan tombol export Excel yang tadinya tumpang tindih.
+
+---
  
 ### 📑 Pajak TER & Bukti Potong A2 (v3.8)
 - **Unified SKPD Engine:** Perhitungan PPh 21 kini menggunakan `skpd_id` tunggal yang terintegrasi untuk seluruh jenis pegawai (PNS & PPPK), memastikan laporan akurat meskipun dari sumber data yang berbeda.
