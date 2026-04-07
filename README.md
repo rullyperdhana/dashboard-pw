@@ -63,6 +63,11 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 - **PDF Export Resilience:** Mengalihkan *driver* penyimpanan *export* PDF ke direktori publik yang lebih terjamin aksesibilitasnya, serta men-sintesis ulang struktur DomPDF dengan melumpuhkan komponen berat (*QR Code generator*) sementara waktu untuk mengatasi masalah lambatnya proses antrean latar belakang (*Job Queue bottleneck*).
 - **Sticky DataGrid UX:** Mengimplementasikan fitur penguncian layar otomatis (*Freeze Header* & *Freeze SKPD Column*) pada tabel Laporan Bulanan SKPD menggunakan arsitektur CSS modern, mencegah disorientasi pengguna saat menelusuri ratusan kolom tunjangan ke arah kanan.
 
+### 🐛 Patch & UX Improvements (v4.0.1)
+- **Standalone TPP Reactivity:** Perbaikan kueri Frontend pada halaman Upload TPP untuk memastikan tabel *Data TPP Belum Terhubung (Standalone)* dan *Laporan Selisih* otomatis diperbarui (re-fetch) secara real-time setiap kali user mengubah filter Bulan, Tahun, atau Tipe Pegawai.
+- **Enhanced Estimations Filter:** Modifikasi *query* estimasi iuran (JKK/JKM/BPJS) untuk secara eksplisit mengecualikan data *Extra Payroll* (THR & Gaji 13) sehingga proyeksi iuran gaji bulanan reguler menjadi lebih akurat.
+- **Reporting Stability:** Memperbaiki insiden 500 Internal Server error pada *endpoint* Executive Summary akibat inisialisasi variabel kosong, serta perbaikan peletakan tombol export Excel yang tadinya tumpang tindih.
+
 ---
  
 ### 📑 Pajak TER & Bukti Potong A2 (v3.8)
