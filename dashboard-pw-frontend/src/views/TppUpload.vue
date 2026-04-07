@@ -386,7 +386,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import api from '../api'
 import Navbar from '../components/Navbar.vue'
 import Sidebar from '../components/Sidebar.vue'
@@ -703,6 +703,11 @@ const resetUpload = () => {
 fetchSkpds()
 fetchStandaloneTpps()
 fetchDiscrepancies()
+
+watch([selectedMonth, selectedYear, employeeType], () => {
+    fetchStandaloneTpps()
+    fetchDiscrepancies()
+})
 
 onUnmounted(() => {
   if (pollInterval) clearInterval(pollInterval)
