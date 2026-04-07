@@ -235,6 +235,18 @@ const router = createRouter({
             meta: { requiresAuth: true, breadcrumb: 'Update NIK Massal', app_access: 'employees' },
         },
         {
+            path: '/budget/input',
+            name: 'BudgetInput',
+            component: () => import('../views/Budget/Input.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Input Anggaran Belanja' },
+        },
+        {
+            path: '/budget/report',
+            name: 'BudgetReport',
+            component: () => import('../views/Budget/Laporan.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Laporan Realisasi Belanja' },
+        },
+        {
             path: '/settings/export-logs',
             name: 'ExportLogs',
             component: () => import('../views/Settings/ExportLogs.vue'),

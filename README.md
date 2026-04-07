@@ -36,6 +36,7 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 | **Log Keamanan**     | Audit trail login (berhasil/gagal) & deteksi brute-force |
 | **Verifikasi SP2D**  | Rekon rincian gaji SIMGAJI vs Realisasi SIPD (Gaji & TPP) |
 | **Budget Simulation** | Simulasi "What-if" kenaikan gaji & pegawai baru (Analitik TAPD) |
+| **Anggaran & Realisasi**| Input Pagu Anggaran (Murni/Pergeseran) & Komparasi Kinerja Penyerapan SP2D Bruto |
 | **Cache Management** | Optimasi performa dashboard dangan sistem caching otomatis |
 | **Export Excel & PDF** | Export laporan sesuai tab yang aktif |
 
@@ -43,6 +44,11 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
  
 
   
+
+### 📊 Anggaran & Realisasi Belanja (v4.7.0)
+- **Kategori Anggaran Fleksibel:** Kini mendukung pemisahan struktur anggaran (PNS, PPPK, TPP, dll.) dalam input Pagu.
+- **Multiple Budget Revisions:** Laporan mendukung multi-skenario (Murni, Pergeseran/Perubahan ke-N, hingga nilai Terakhir).
+- **Bruto Realizations Check:** Perhitungan "Sisa Anggaran" dan penyerapan performa dikalkulasi berdasarkan Realisasi SSP2D berbasis "Bruto" yang presisi agar sinkron dengan laporan formal.
 
 ### 📊 PPPK-PW Fund Source Split & Realization (v4.6.0)
 - **Separate Funding Sources:** Pemisahan total anggaran dan jumlah pegawai antara **APBD** dan **BLUD** pada seluruh modul dashboard & laporan (Dashboard Utama, Dashboard Eksekutif/Mobile, dan Laporan Bulanan).

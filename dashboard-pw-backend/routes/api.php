@@ -269,6 +269,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/sp2d/realizations/{id}', [App\Http\Controllers\Api\Sp2dController::class, 'update']);
     Route::delete('/sp2d/realizations/{id}', [App\Http\Controllers\Api\Sp2dController::class, 'destroy']);
 
+    // Budget
+    Route::get('/budgets/comparison', [App\Http\Controllers\Api\BudgetController::class, 'comparisonReport']);
+    Route::apiResource('budgets', App\Http\Controllers\Api\BudgetController::class);
+
     // Tax Status (PTKP)
     Route::get('/tax-status', [App\Http\Controllers\Api\TaxStatusController::class, 'index']);
     Route::post('/tax-status', [App\Http\Controllers\Api\TaxStatusController::class, 'store']);

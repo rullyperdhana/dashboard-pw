@@ -237,6 +237,14 @@ const menuItems = ref([
     ]
   },
   {
+    title: 'Anggaran & Realisasi',
+    icon: 'mdi-chart-pie',
+    children: [
+      { title: 'Input Anggaran', icon: 'mdi-cash-plus', value: 'budgets', to: '/budget/input' },
+      { title: 'Laporan Realisasi', icon: 'mdi-file-chart-outline', value: 'budgets', to: '/budget/report' },
+    ]
+  },
+  {
     title: 'Data Referensi',
     icon: 'mdi-database-outline',
     children: [
@@ -282,7 +290,7 @@ const filteredMenuItems = computed(() => {
       }
       
       // Fallback: Show basic items by default
-      const basicItems = ['dashboard', 'pns', 'employees', 'payments', 'sp2d-verification', 'tax-status', 'master-pegawai-export', 'tapd-dashboard', 'pph21-report']
+      const basicItems = ['dashboard', 'pns', 'employees', 'payments', 'sp2d-verification', 'tax-status', 'master-pegawai-export', 'tapd-dashboard', 'pph21-report', 'budgets']
       return basicItems.includes(item.value)
     }
     
