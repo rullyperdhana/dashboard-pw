@@ -38,7 +38,7 @@ class BudgetController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'skpd_id' => 'required|exists:skpds,id_skpd',
+            'skpd_id' => 'required|exists:skpd,id_skpd',
             'tahun' => 'required|integer',
             'jenis_anggaran' => 'required|string|max:50',
             'tipe_anggaran' => 'required|string|max:50',
