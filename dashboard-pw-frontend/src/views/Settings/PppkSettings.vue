@@ -21,13 +21,13 @@
               <p class="text-subtitle-1 text-medium-emphasis">Proyeksi iuran ketenagakerjaan dan kesehatan periodik.</p>
             </v-col>
             <v-col cols="12" sm="auto" class="d-flex ga-3">
-              <v-btn variant="tonal" color="primary" rounded="pill" @click="fetchAllEstimations" :loading="loadingEstimation">
+              <v-btn variant="tonal" color="primary" rounded="pill" @click="fetchAllEstimations" :loading="loadingEstimation" flat>
                 <v-icon start icon="mdi-refresh"></v-icon>
-                Refresh
+                Refresh Data
               </v-btn>
-              <v-btn variant="flat" color="primary" rounded="pill" @click="showSettings = !showSettings" class="font-weight-bold">
+              <v-btn variant="flat" color="primary" rounded="pill" @click="showSettings = !showSettings" class="font-weight-bold" flat>
                 <v-icon start icon="mdi-cog-outline"></v-icon>
-                Parameter
+                Pengaturan Iuran
                 <v-icon end icon="mdi-chevron-down" v-if="!showSettings"></v-icon>
                 <v-icon end icon="mdi-chevron-up" v-else></v-icon>
               </v-btn>
@@ -157,6 +157,66 @@
             </v-card-text>
           </v-card>
         </v-expand-transition>
+
+        <!-- Quick Filters -->
+        <div class="d-flex align-center mb-6 flex-wrap ga-4">
+          <v-card class="glass-panel pa-3 d-flex align-center flex-grow-1" elevation="0">
+            <v-icon color="primary" class="mr-3">mdi-filter-variant</v-icon>
+            <div class="text-caption font-weight-black text-primary mr-4 border-e pe-4">KOMPONEN GAJI</div>
+            <v-chip-group
+              v-model="selectedJenisGaji"
+              multiple
+              selected-class="text-primary"
+              column
+            >
+              <v-chip
+                v-for="jg in jenisGajiOptions"
+                :key="jg.value"
+                :value="jg.value"
+                filter
+                variant="tonal"
+                size="small"
+                rounded="lg"
+                class="font-weight-bold"
+              >{{ jg.title }}</v-chip>
+            </v-chip-group>
+            <v-divider vertical class="mx-2"></v-divider>
+            <v-btn 
+              variant="text" 
+              size="small" 
+              color="primary" 
+              class="font-weight-bold" 
+              rounded="pill"
+              @click="toggleAllJenisGaji"
+            >
+              {{ selectedJenisGaji.length === jenisGajiOptions.length ? 'Bersihkan' : 'Pilih Semua' }}
+            </v-btn>
+          </v-card>
+
+          <v-card class="glass-panel pa-3 d-flex align-center" elevation="0" style="min-width: 250px">
+            <v-icon color="secondary" class="mr-3">mdi-calendar-clock</v-icon>
+            <v-select
+              v-model="selectedMonth"
+              :items="months"
+              item-title="text"
+              item-value="value"
+              density="compact"
+              variant="plain"
+              hide-details
+              class="font-weight-bold"
+              @update:modelValue="fetchAllEstimations"
+            ></v-select>
+            <v-select
+              v-model="selectedYear"
+              :items="years"
+              density="compact"
+              variant="plain"
+              hide-details
+              class="ml-2 font-weight-bold"
+              @update:modelValue="fetchAllEstimations"
+            ></v-select>
+          </v-card>
+        </div>
 
         <!-- Full-width Estimation Card -->
         <v-card class="glass-panel overflow-hidden" elevation="0">
@@ -740,7 +800,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import api from '@/api'
 import Sidebar from '@/components/Sidebar.vue'
 import Navbar from '@/components/Navbar.vue'
@@ -801,6 +861,22 @@ const months = [
 const years = []
 for (let i = 2024; i <= 2030; i++) {
     years.push(i)
+}
+
+const jenisGajiOptions = [
+  { title: 'Induk', value: 'Induk' },
+  { title: 'Susulan', value: 'Susulan' },
+  { title: 'Kekurangan', value: 'Kekurangan' },
+  { title: 'Terusan', value: 'Terusan' },
+]
+const selectedJenisGaji = ref(['Induk', 'Susulan', 'Kekurangan', 'Terusan'])
+
+const toggleAllJenisGaji = () => {
+  if (selectedJenisGaji.value.length === jenisGajiOptions.length) {
+    selectedJenisGaji.value = []
+  } else {
+    selectedJenisGaji.value = jenisGajiOptions.map(o => o.value)
+  }
 }
 
 const pwHeaders = [
@@ -916,7 +992,8 @@ const fetchEstimation = async () => {
         const response = await api.get('/settings/pppk-estimation', {
             params: {
                 month: selectedMonth.value,
-                year: selectedYear.value
+                year: selectedYear.value,
+                jenis_gaji: selectedJenisGaji.value
             }
         })
         if (response.data.success) {
@@ -948,7 +1025,8 @@ const fetchEstimationPns = async () => {
         const response = await api.get('/settings/pns-estimation', {
              params: {
                 month: selectedMonth.value,
-                year: selectedYear.value
+                year: selectedYear.value,
+                jenis_gaji: selectedJenisGaji.value
             }
         })
         if (response.data.success) {
@@ -987,7 +1065,8 @@ const openDetail = async (type, item) => {
             params: {
                 month: selectedMonth.value,
                 year: selectedYear.value,
-                kdskpd: item.id_skpd
+                kdskpd: item.id_skpd,
+                jenis_gaji: type !== 'pppk_pw' ? selectedJenisGaji.value : undefined
             }
         })
         if (response.data.success) {
@@ -1014,6 +1093,9 @@ const getExportUrl = (type, kdskpd = null, skpdName = null) => {
     })
     if (kdskpd) params.append('kdskpd', kdskpd)
     if (skpdName) params.append('skpd_name', skpdName)
+    if (type !== 'pppk_pw') {
+        selectedJenisGaji.value.forEach(jg => params.append('jenis_gaji[]', jg))
+    }
     return `/api${endpointMap[type]}?${params.toString()}`
 }
 
@@ -1077,9 +1159,13 @@ const getMonthName = (month) => {
     return date.toLocaleString('id-ID', { month: 'long' })
 }
 
+watch(selectedJenisGaji, () => {
+    fetchAllEstimations()
+})
+
 onMounted(() => {
     fetchSettings()
-    fetchEstimationPns()
+    fetchAllEstimations()
 })
 </script>
 

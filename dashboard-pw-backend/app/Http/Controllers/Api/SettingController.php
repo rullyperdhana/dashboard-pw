@@ -79,8 +79,14 @@ class SettingController extends Controller
         }
 
         $query = GajiPppk::where('bulan', $month)
-            ->where('tahun', $year)
-            ->whereNotIn('jenis_gaji', ['THR', 'Gaji 13', '13', 'Gaji ke-13']);
+            ->where('tahun', $year);
+
+        // Apply jenis_gaji filter from request, or default exclude THR/Gaji 13
+        if ($request->has('jenis_gaji') && is_array($request->jenis_gaji)) {
+            $query->whereIn('jenis_gaji', $request->jenis_gaji);
+        } else {
+            $query->whereNotIn('jenis_gaji', ['THR', 'Gaji 13', '13', 'Gaji ke-13']);
+        }
 
         $totalGajiPokok = (clone $query)->sum('gaji_pokok');
         $totalPegawai = (clone $query)->count();
@@ -139,6 +145,11 @@ class SettingController extends Controller
             ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as sat'), 'gaji_pppk.kdskpd', '=', 'sat.kdskpd')
             ->where('gaji_pppk.bulan', $month)
             ->where('gaji_pppk.tahun', $year)
+            ->when($request->has('jenis_gaji') && is_array($request->jenis_gaji), function ($q) use ($request) {
+                $q->whereIn('gaji_pppk.jenis_gaji', $request->jenis_gaji);
+            }, function ($q) {
+                $q->whereNotIn('gaji_pppk.jenis_gaji', ['THR', 'Gaji 13', '13', 'Gaji ke-13']);
+            })
             ->groupBy('group_id', 'mapped_nama_skpd')
             ->orderBy('mapped_nama_skpd')
             ->get()
@@ -326,8 +337,14 @@ class SettingController extends Controller
         }
 
         $query = GajiPns::where('bulan', $month)
-            ->where('tahun', $year)
-            ->whereNotIn('jenis_gaji', ['THR', 'Gaji 13', '13', 'Gaji ke-13']);
+            ->where('tahun', $year);
+
+        // Apply jenis_gaji filter from request, or default exclude THR/Gaji 13
+        if ($request->has('jenis_gaji') && is_array($request->jenis_gaji)) {
+            $query->whereIn('jenis_gaji', $request->jenis_gaji);
+        } else {
+            $query->whereNotIn('jenis_gaji', ['THR', 'Gaji 13', '13', 'Gaji ke-13']);
+        }
 
         $totalGajiPokok = (clone $query)->sum('gaji_pokok');
         $totalPegawai = (clone $query)->count();
@@ -380,6 +397,11 @@ class SettingController extends Controller
             ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as sat'), 'gaji_pns.kdskpd', '=', 'sat.kdskpd')
             ->where('gaji_pns.bulan', $month)
             ->where('gaji_pns.tahun', $year)
+            ->when($request->has('jenis_gaji') && is_array($request->jenis_gaji), function ($q) use ($request) {
+                $q->whereIn('gaji_pns.jenis_gaji', $request->jenis_gaji);
+            }, function ($q) {
+                $q->whereNotIn('gaji_pns.jenis_gaji', ['THR', 'Gaji 13', '13', 'Gaji ke-13']);
+            })
             ->groupBy('group_id', 'mapped_nama_skpd')
             ->orderBy('mapped_nama_skpd')
             ->get()
@@ -539,8 +561,14 @@ class SettingController extends Controller
         $bpjsCap = 12000000;
 
         $query = $modelClass::where($modelTable . '.bulan', $month)
-            ->where($modelTable . '.tahun', $year)
-            ->whereNotIn($modelTable . '.jenis_gaji', ['THR', 'Gaji 13', '13', 'Gaji ke-13']);
+            ->where($modelTable . '.tahun', $year);
+
+        // Apply jenis_gaji filter from request, or default exclude THR/Gaji 13
+        if ($request->has('jenis_gaji') && is_array($request->jenis_gaji)) {
+            $query->whereIn($modelTable . '.jenis_gaji', $request->jenis_gaji);
+        } else {
+            $query->whereNotIn($modelTable . '.jenis_gaji', ['THR', 'Gaji 13', '13', 'Gaji ke-13']);
+        }
 
         // Add joins for Name Resolution
         $query->leftJoin('skpd_mapping', function ($join) use ($modelTable, $type) {

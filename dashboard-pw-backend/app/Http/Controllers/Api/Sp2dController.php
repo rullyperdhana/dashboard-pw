@@ -574,7 +574,7 @@ class Sp2dController extends Controller
                     'keterangan' => $reals->pluck('keterangan')->implode(' | '),
                     'brutto' => $reals->sum('brutto'),
                     'potongan' => $reals->sum('potongan'),
-                    'netto' => ($category === 'TPP' && $tppReconMode === 'bruto') ? $reals->sum('brutto') : $reals->sum('netto'), 
+                    'netto' => (str_starts_with($category ?? '', 'TPP') && $tppReconMode === 'bruto') ? $reals->sum('brutto') : $reals->sum('netto'), 
                     'is_realized' => true,
                     'sp2d_count' => $reals->count()
                 ]
