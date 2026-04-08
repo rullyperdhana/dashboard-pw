@@ -67,6 +67,12 @@ const router = createRouter({
             meta: { requiresAuth: true, breadcrumb: 'Laporan Bulanan SKPD', app_access: 'skpd-monthly' },
         },
         {
+            path: '/reports/periodic',
+            name: 'PeriodicReport',
+            component: () => import('../views/PeriodicReport.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Laporan Periodik', app_access: 'skpd-monthly' },
+        },
+        {
             path: '/pns',
             name: 'PnsDashboard',
             component: () => import('../views/PnsDashboard.vue'),
@@ -77,6 +83,13 @@ const router = createRouter({
             name: 'PppkPwMonthlyReport',
             component: () => import('../views/PppkPwMonthlyReport.vue'),
             meta: { requiresAuth: true, breadcrumb: 'Laporan Bulanan PW', app_access: 'pppk-pw-thr' },
+        },
+        {
+            path: '/reports/pppk-pw-periodic',
+            name: 'PppkPwPeriodicReport',
+            component: () => import('../views/PeriodicReport.vue'),
+            props: { forcedType: 'pw' },
+            meta: { requiresAuth: true, breadcrumb: 'Laporan Periodik PW', app_access: 'pppk-pw-thr' },
         },
         {
             path: '/tpp/upload',

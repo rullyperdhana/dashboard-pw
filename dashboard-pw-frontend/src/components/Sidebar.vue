@@ -200,6 +200,7 @@ const menuItems = ref([
     children: [
       { title: 'Dashboard PW', icon: 'mdi-view-dashboard-outline', value: 'dashboard', to: '/dashboard-pppk-pw' },
       { title: 'Laporan Bulanan PW', icon: 'mdi-file-table-outline', value: 'pppk-pw-thr', to: '/reports/pppk-pw-monthly' },
+      { title: 'Laporan Periodik PW', icon: 'mdi-calendar-range', value: 'pppk-pw-thr', to: '/reports/pppk-pw-periodic' },
       { title: 'Pegawai PW', icon: 'mdi-account-group-outline', value: 'employees', to: '/employees' },
       { title: 'Payroll PW', icon: 'mdi-wallet-outline', value: 'payments', to: '/payments' },
       { title: 'Trace Gaji', icon: 'mdi-account-search-outline', value: 'employee-trace', to: '/employee-trace' },
@@ -226,6 +227,7 @@ const menuItems = ref([
     children: [
       { title: 'Verifikasi SP2D', icon: 'mdi-file-check-outline', value: 'sp2d-verification', to: '/sp2d-verification' },
       { title: 'Laporan SKPD', icon: 'mdi-file-table-outline', value: 'skpd-monthly', to: '/reports/skpd-monthly' },
+      { title: 'Laporan Periodik', icon: 'mdi-calendar-range', value: 'skpd-monthly', to: '/reports/periodic' },
       { title: 'Analitik TAPD', icon: 'mdi-chart-scatter-plot', value: 'tapd-dashboard', to: '/analytics/tapd' },
       { title: 'Mobile Eksekutif', icon: 'mdi-cellphone-text', value: 'executive-mobile', to: '/executive/mobile' },
       { title: 'Estimasi JKK/JKM', icon: 'mdi-shield-check-outline', value: 'pppk-settings', to: '/settings/pppk' },

@@ -95,6 +95,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/paid-employees', [ReportController::class, 'paidEmployees']);
     Route::get('/reports/paid-employees-export', [ReportController::class, 'exportPaidEmployees']);
     Route::get('/reports/combined-allowance-export', [ReportController::class, 'exportCombinedAllowance']);
+    Route::get('/reports/periodic-skpds', [ReportController::class, 'periodicSkpds']);
+    Route::get('/reports/periodic-export', [ReportController::class, 'exportPeriodicSkpds']);
 
     // THR (PPPK Paruh Waktu)
     Route::get('/thr/pppk-pw', [ThrController::class, 'index']);

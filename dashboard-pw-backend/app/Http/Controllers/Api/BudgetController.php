@@ -118,14 +118,19 @@ class BudgetController extends Controller
     {
         $tahun = $request->query('tahun', date('Y'));
         $tipeAnggaran = $request->query('tipe_anggaran', 'MURNI'); // MURNI, PERUBAHAN_1, dst, atau TERAKHIR
-        $bulan = $request->query('bulan'); // Opsional
+        $bulan = $request->query('bulan'); // Opsional — batas atas
+        $bulanDari = $request->query('bulan_dari'); // Opsional — batas bawah
 
         $skpds = Skpd::where('is_skpd', 1)->get()->keyBy('id_skpd');
         
         // Dapatkan realisasi SP2D
         $realizationQuery = Sp2dRealization::where('tahun', $tahun);
-        if ($bulan) {
+        if ($bulanDari && $bulan) {
+            $realizationQuery->whereBetween('bulan', [(int) $bulanDari, (int) $bulan]);
+        } elseif ($bulan) {
             $realizationQuery->where('bulan', '<=', $bulan);
+        } elseif ($bulanDari) {
+            $realizationQuery->where('bulan', '>=', $bulanDari);
         }
         
         $sp2ds = $realizationQuery->get();
@@ -138,7 +143,14 @@ class BudgetController extends Controller
             
             $category = 'LAINNYA';
             if (str_contains($jenisDataRaw, 'PPPK-PW')) $category = 'PPPK_PW';
-            elseif (str_contains($jenisDataRaw, 'TPP')) $category = 'TPP';
+            elseif (str_contains($jenisDataRaw, 'TPP')) {
+                if (str_contains($jenisDataRaw, 'PNS')) $category = 'TPP_PNS';
+                elseif (str_contains($jenisDataRaw, 'PPPK') || str_contains($jenisDataRaw, 'P3K')) $category = 'TPP_PPPK';
+                else {
+                    if (str_contains($ketRaw, 'PPPK') || str_contains($ketRaw, 'P3K')) $category = 'TPP_PPPK';
+                    else $category = 'TPP_PNS';
+                }
+            }
             elseif (str_contains($jenisDataRaw, 'PPPK') || str_contains($jenisDataRaw, 'P3K')) $category = 'PPPK';
             elseif (str_contains($jenisDataRaw, 'PNS')) $category = 'PNS';
             
@@ -177,28 +189,52 @@ class BudgetController extends Controller
         }
 
         $report = [];
-        // Extract all unique combinations of SKPD + Kategori from both sets
-        $allKeys = array_unique(array_merge(array_keys($parsedReals), array_keys($parsedBudgets)));
 
-        foreach ($allKeys as $key) {
+        // Mapping: consolidated budget categories → SP2D realization sub-categories
+        $consolidatedMap = [
+            'GAJI' => ['PNS', 'PPPK'],
+            'TPP'  => ['TPP_PNS', 'TPP_PPPK'],
+        ];
+
+        // 1. Process each budget entry
+        foreach ($parsedBudgets as $key => $budget) {
             $parts = explode('_', $key, 2);
             $skpdId = $parts[0];
             $kategori = $parts[1];
-            
+
             $skpd = $skpds->get($skpdId);
-            if (!$skpd) continue; // safety check
-            
-            $budget = $parsedBudgets[$key] ?? null;
-            $real = $parsedReals[$key] ?? null;
-            
-            $nominalAnggaran = $budget ? (float) $budget->nominal : 0;
-            $tipe = $budget ? $budget->tipe_anggaran : 'Belum Ada';
-            
-            $totalRealisasiBrutto = $real ? $real['brutto'] : 0;
-            $totalRealisasiNetto = $real ? $real['netto'] : 0;
-            
-            $sisaAnggaran = $nominalAnggaran - $totalRealisasiBrutto; // user minta brutto
-            $persentase = $nominalAnggaran > 0 ? ($totalRealisasiBrutto / $nominalAnggaran) * 100 : 0;
+            if (!$skpd) continue;
+
+            $nominalAnggaran = (float) $budget->nominal;
+            $tipe = $budget->tipe_anggaran;
+
+            // Determine which realization sub-categories to sum
+            $totalBrutto = 0;
+            $totalNetto = 0;
+
+            if (isset($consolidatedMap[$kategori])) {
+                // Consolidated category: sum all sub-categories
+                foreach ($consolidatedMap[$kategori] as $subCat) {
+                    $subKey = $skpdId . '_' . $subCat;
+                    if (isset($parsedReals[$subKey])) {
+                        $totalBrutto += $parsedReals[$subKey]['brutto'];
+                        $totalNetto  += $parsedReals[$subKey]['netto'];
+                        // Mark as consumed so we don't double-count
+                        $parsedReals[$subKey]['_consumed'] = true;
+                    }
+                }
+            } else {
+                // Direct category match (PNS, PPPK, PPPK_PW, etc.)
+                if (isset($parsedReals[$key])) {
+                    $totalBrutto = $parsedReals[$key]['brutto'];
+                    $totalNetto  = $parsedReals[$key]['netto'];
+                    $parsedReals[$key]['_consumed'] = true;
+                }
+            }
+
+            $realisasiAktif = $totalBrutto > 0 ? $totalBrutto : $totalNetto;
+            $sisaAnggaran = $nominalAnggaran - $realisasiAktif;
+            $persentase = $nominalAnggaran > 0 ? ($realisasiAktif / $nominalAnggaran) * 100 : 0;
 
             $report[] = [
                 'skpd_id' => $skpdId,
@@ -206,10 +242,74 @@ class BudgetController extends Controller
                 'kategori' => $kategori,
                 'tipe_anggaran' => $tipe,
                 'nominal_anggaran' => $nominalAnggaran,
-                'realisasi_brutto' => $totalRealisasiBrutto,
-                'realisasi_netto' => $totalRealisasiNetto,
+                'realisasi_brutto' => $realisasiAktif,
+                'realisasi_netto' => $totalNetto,
                 'sisa_anggaran' => $sisaAnggaran,
                 'persentase' => round($persentase, 2)
+            ];
+        }
+
+        // 2. Add realization entries that have no matching budget (unconsumed)
+        // First, consolidate unconsumed realizations into GAJI/TPP categories
+        $reverseMap = []; // subCat => parentCat
+        foreach ($consolidatedMap as $parentCat => $subCats) {
+            foreach ($subCats as $subCat) {
+                $reverseMap[$subCat] = $parentCat;
+            }
+        }
+
+        $unconsumedGrouped = [];
+        foreach ($parsedReals as $key => $real) {
+            if (!empty($real['_consumed'])) continue;
+
+            $skpdId = $real['skpd_id'];
+            $kategori = $real['kategori'];
+
+            // Check if this sub-category was already consumed by a consolidated budget
+            $alreadyConsumed = false;
+            foreach ($consolidatedMap as $parentCat => $subCats) {
+                if (in_array($kategori, $subCats)) {
+                    $parentKey = $skpdId . '_' . $parentCat;
+                    if (isset($parsedBudgets[$parentKey])) {
+                        $alreadyConsumed = true;
+                        break;
+                    }
+                }
+            }
+            if ($alreadyConsumed) continue;
+
+            // Map sub-category to consolidated parent (PNS→GAJI, TPP_PNS→TPP, etc.)
+            $displayKategori = $reverseMap[$kategori] ?? $kategori;
+            $groupKey = $skpdId . '_' . $displayKategori;
+
+            if (!isset($unconsumedGrouped[$groupKey])) {
+                $unconsumedGrouped[$groupKey] = [
+                    'skpd_id' => $skpdId,
+                    'kategori' => $displayKategori,
+                    'brutto' => 0,
+                    'netto' => 0,
+                ];
+            }
+            $unconsumedGrouped[$groupKey]['brutto'] += $real['brutto'];
+            $unconsumedGrouped[$groupKey]['netto']  += $real['netto'];
+        }
+
+        foreach ($unconsumedGrouped as $group) {
+            $skpd = $skpds->get($group['skpd_id']);
+            if (!$skpd) continue;
+
+            $realisasiAktif = $group['brutto'] > 0 ? $group['brutto'] : $group['netto'];
+
+            $report[] = [
+                'skpd_id' => $group['skpd_id'],
+                'nama_skpd' => $skpd->nama_skpd,
+                'kategori' => $group['kategori'],
+                'tipe_anggaran' => 'Belum Ada',
+                'nominal_anggaran' => 0,
+                'realisasi_brutto' => $realisasiAktif,
+                'realisasi_netto' => $group['netto'],
+                'sisa_anggaran' => 0 - $realisasiAktif,
+                'persentase' => 0
             ];
         }
 

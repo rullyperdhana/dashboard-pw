@@ -122,7 +122,7 @@
               <v-col cols="6">
                 <v-select
                   v-model="form.jenis_anggaran"
-                  :items="['PNS', 'PPPK', 'TPP', 'PPPK_PW', 'LAINNYA']"
+                  :items="['GAJI', 'TPP', 'PPPK_PW', 'LAINNYA']"
                   label="Kategori / Jenis"
                   variant="outlined"
                   :rules="[v => !!v || 'Jenis harus diisi']"
@@ -205,7 +205,7 @@ const form = ref({
   id: null,
   skpd_id: null,
   tahun: currentYear,
-  jenis_anggaran: 'PNS',
+  jenis_anggaran: 'GAJI',
   tipe_anggaran: 'MURNI',
   nominal: null,
   keterangan: ''
@@ -233,10 +233,10 @@ const formatCurrency = (val) => {
 
 const getCategoryColor = (cat) => {
   const map = {
-    'PNS': 'blue-darken-1',
-    'PPPK': 'teal-darken-1',
+    'GAJI': 'indigo-darken-1',
     'TPP': 'deep-purple-darken-1',
-    'PPPK_PW': 'orange-darken-2'
+    'PPPK_PW': 'orange-darken-2',
+    'LAINNYA': 'grey-darken-1'
   }
   return map[cat] || 'grey'
 }
@@ -281,7 +281,7 @@ const openDialog = (item = null) => {
       id: null,
       skpd_id: filterSkpd.value || null,
       tahun: filterTahun.value,
-      jenis_anggaran: 'PNS',
+      jenis_anggaran: 'GAJI',
       tipe_anggaran: 'MURNI',
       nominal: null,
       keterangan: ''

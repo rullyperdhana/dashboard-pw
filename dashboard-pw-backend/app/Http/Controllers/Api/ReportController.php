@@ -1104,5 +1104,305 @@ class ReportController extends Controller
             "rincian_tunjangan_gabungan_{$month}_{$year}.xlsx"
         );
     }
+
+    /**
+     * Periodic report: aggregate paid SKPD data across a range of months.
+     * Supports Triwulan, Semesteran, Tahunan, and Custom period.
+     */
+    public function periodicSkpds(Request $request)
+    {
+        $monthFrom = (int) ($request->month_from ?? 1);
+        $monthTo   = (int) ($request->month_to ?? 12);
+        $year      = (int) ($request->year ?? date('Y'));
+        $type      = $request->type ?? 'all'; // pns | pppk | pw | all
+        $jenisGaji = $request->jenis_gaji ?? 'Semua';
+
+        $user = auth()->user();
+        $isSuperAdmin = $user->role === 'superadmin';
+        $accessibleIds = $user->getAccessibleSkpds();
+        $accessibleCodes = $user->getAccessibleSkpdCodes();
+
+        $idFilter = "";
+        if (!$isSuperAdmin && $accessibleIds) {
+            $idList = implode(',', array_map('intval', $accessibleIds));
+            $idFilter = " AND pw.idskpd IN ($idList) ";
+        }
+
+        $codeFilter = "";
+        if (!$isSuperAdmin && $accessibleCodes) {
+            $codeList = "'" . implode("','", $accessibleCodes) . "'";
+            $codeFilter = " AND g.kdskpd IN ($codeList) ";
+        }
+
+        $jenisGajiFilter = "";
+        if ($jenisGaji !== 'Semua') {
+            $jenisGajiFilter = " AND g.jenis_gaji = " . DB::getPdo()->quote($jenisGaji);
+        }
+
+        $stIdFilter = "";
+        if (!$isSuperAdmin && $accessibleIds) {
+            $idList = implode(',', array_map('intval', $accessibleIds));
+            $stIdFilter = " AND st.skpd_id IN ($idList) ";
+        }
+
+        // ── Detailed mode for PNS / PPPK / Gabungan ──────────────────────────
+        if (in_array($type, ['pns', 'pppk', 'all'])) {
+            $parts = [];
+            $params = [];
+
+            $typesToInclude = $type === 'all' ? ['pns', 'pppk'] : [$type];
+
+            foreach ($typesToInclude as $t) {
+                $table = $t === 'pns' ? 'gaji_pns' : 'gaji_pppk';
+                $mapType = $t === 'pns' ? "('pns','all')" : "('pppk','all')";
+
+                $parts[] = "
+                    SELECT
+                        COALESCE(sm.kode_skpd, g.kdskpd) COLLATE utf8mb4_unicode_ci AS kode_skpd,
+                        COALESCE(sm.nama_skpd, s2.nmskpd, g.skpd) COLLATE utf8mb4_unicode_ci AS nama_skpd,
+                        COUNT(DISTINCT g.nip)               AS jumlah_pegawai,
+                        SUM(g.gaji_pokok)                  AS gapok,
+                        SUM(g.tunj_istri)                  AS tj_istri,
+                        SUM(g.tunj_anak)                   AS tj_anak,
+                        SUM(g.tunj_tpp)                    AS tj_tpp,
+                        SUM(g.tunj_eselon)                 AS tj_eselon,
+                        SUM(g.tunj_fungsional)             AS tj_fungsi,
+                        SUM(g.tunj_beras)                  AS tj_beras,
+                        SUM(g.tunj_pph)                    AS tj_pajak,
+                        SUM(g.tunj_umum)                   AS tj_umum,
+                        SUM(g.tunj_khusus)                 AS tj_khusus,
+                        SUM(g.pembulatan)                  AS pembulatan,
+                        SUM(g.kotor)                       AS kotor,
+                        SUM(g.pot_iwp)                     AS pot_iwp,
+                        SUM(CASE WHEN g.pot_iwp1 > 0 THEN g.pot_iwp1 ELSE (g.pot_iwp - g.pot_iwp8) END) AS pot_iwp2,
+                        SUM(g.pot_iwp8)                    AS pot_iwp8,
+                        SUM(g.pot_pph)                     AS pot_pajak,
+                        SUM(g.total_potongan)              AS total_potongan,
+                        SUM(g.bersih)                      AS bersih
+                    FROM {$table} g
+                    LEFT JOIN (SELECT DISTINCT kdskpd, nmskpd FROM satkers) s2 ON g.kdskpd = s2.kdskpd
+                    LEFT JOIN (
+                        SELECT mp.source_code, s2.kode_skpd, s2.nama_skpd
+                        FROM skpd_mapping mp
+                        JOIN skpd s2 ON mp.skpd_id = s2.id_skpd
+                        WHERE mp.type IN {$mapType}
+                    ) sm ON g.kdskpd = sm.source_code
+                    WHERE g.bulan BETWEEN ? AND ? AND g.tahun = ? {$codeFilter} {$jenisGajiFilter}
+                    GROUP BY 1, 2";
+
+                $params = array_merge($params, [$monthFrom, $monthTo, $year]);
+
+                // --- STANDALONE TPP DATA ---
+                $parts[] = "
+                    SELECT
+                        s.kode_skpd COLLATE utf8mb4_unicode_ci AS kode_skpd,
+                        s.nama_skpd COLLATE utf8mb4_unicode_ci AS nama_skpd,
+                        COUNT(DISTINCT st.nip) AS jumlah_pegawai,
+                        0 AS gapok, 0 AS tj_istri, 0 AS tj_anak,
+                        SUM(st.nilai) AS tj_tpp,
+                        0 AS tj_eselon, 0 AS tj_fungsi, 0 AS tj_beras, 0 AS tj_pajak, 0 AS tj_umum, 0 AS tj_khusus, 0 AS pembulatan,
+                        SUM(st.nilai) AS kotor,
+                        0 AS pot_iwp, 0 AS pot_iwp2, 0 AS pot_iwp8, 0 AS pot_pajak, 0 AS total_potongan,
+                        SUM(st.nilai) AS bersih
+                    FROM standalone_tpp st
+                    JOIN skpd s ON st.skpd_id = s.id_skpd
+                    WHERE st.month BETWEEN ? AND ? AND st.year = ? {$stIdFilter}
+                    AND st.employee_type = " . DB::getPdo()->quote($t) . "
+                    AND st.jenis_gaji = " . DB::getPdo()->quote($jenisGaji === 'Semua' ? 'Induk' : $jenisGaji) . "
+                    AND NOT EXISTS (
+                        SELECT 1 FROM {$table} g2
+                        WHERE g2.nip = st.nip
+                        AND g2.bulan = st.month
+                        AND g2.tahun = st.year
+                    )
+                    GROUP BY 1, 2";
+
+                $params = array_merge($params, [$monthFrom, $monthTo, $year]);
+            }
+
+            $unionSql = implode("\n UNION ALL \n", $parts);
+
+            $rows = collect(DB::select("
+                SELECT
+                    kode_skpd, nama_skpd,
+                    SUM(jumlah_pegawai)  AS jumlah_pegawai,
+                    SUM(gapok)           AS gapok,
+                    SUM(tj_istri)        AS tj_istri,
+                    SUM(tj_anak)         AS tj_anak,
+                    SUM(tj_tpp)          AS tj_tpp,
+                    SUM(tj_eselon)       AS tj_eselon,
+                    SUM(tj_fungsi)       AS tj_fungsi,
+                    SUM(tj_beras)        AS tj_beras,
+                    SUM(tj_pajak)        AS tj_pajak,
+                    SUM(tj_umum)         AS tj_umum,
+                    SUM(tj_khusus)       AS tj_khusus,
+                    SUM(pembulatan)      AS pembulatan,
+                    SUM(kotor)           AS kotor,
+                    SUM(pot_iwp)         AS pot_iwp,
+                    SUM(pot_iwp2)        AS pot_iwp2,
+                    SUM(pot_iwp8)        AS pot_iwp8,
+                    SUM(pot_pajak)       AS pot_pajak,
+                    SUM(total_potongan)  AS total_potongan,
+                    SUM(bersih)          AS bersih
+                FROM ({$unionSql}) AS combined
+                GROUP BY kode_skpd, nama_skpd
+                ORDER BY nama_skpd
+            ", $params));
+
+            return response()->json([
+                'success' => true,
+                'data' => $rows,
+                'mode' => 'detail',
+                'meta' => [
+                    'month_from' => $monthFrom,
+                    'month_to' => $monthTo,
+                    'year' => $year,
+                    'type' => $type,
+                    'jenis_gaji' => $jenisGaji,
+                    'total_skpd' => $rows->count(),
+                    'total_employees' => $rows->sum('jumlah_pegawai'),
+                    'grand_total' => $rows->sum('bersih'),
+                ],
+            ]);
+        }
+
+        // ── Summary mode for PW (PPPK Paruh Waktu) ──────────────────────────
+        $parts = [];
+        $params = [];
+
+        if ($type === 'pw') {
+            $sumberDana = $request->sumber_dana;
+            $sumberDanaFilter = "";
+            if ($sumberDana && $sumberDana !== 'Semua') {
+                $sumberDanaFilter = " AND pw.sumber_dana = " . DB::getPdo()->quote($sumberDana);
+            }
+
+            $parts[] = "
+                SELECT
+                    s.kode_skpd COLLATE utf8mb4_unicode_ci AS kode_skpd,
+                    s.nama_skpd,
+                    pw.sumber_dana,
+                    COUNT(DISTINCT pw.id) AS employee_count,
+                    SUM(pd.gaji_pokok)    AS total_gaji_pokok,
+                    SUM(pd.tunjangan)     AS total_tunjangan,
+                    SUM(pd.potongan)      AS total_potongan,
+                    SUM(pd.total_amoun)   AS total_bersih
+                FROM tb_payment_detail pd
+                JOIN pegawai_pw pw ON pd.employee_id = pw.id
+                JOIN skpd s        ON pw.idskpd = s.id_skpd
+                JOIN tb_payment p  ON pd.payment_id = p.id
+                WHERE p.month BETWEEN ? AND ? AND p.year = ? {$idFilter} {$sumberDanaFilter}
+                GROUP BY s.id_skpd, s.kode_skpd, s.nama_skpd, pw.sumber_dana";
+            $params = array_merge($params, [$monthFrom, $monthTo, $year]);
+        }
+
+        $unionSql = implode("\n UNION ALL \n", $parts);
+
+        $unionResults = DB::select("
+            SELECT
+                kode_skpd, nama_skpd, sumber_dana,
+                SUM(employee_count)    as employee_count,
+                SUM(total_gaji_pokok)  as total_gaji_pokok,
+                SUM(total_tunjangan)   as total_tunjangan,
+                SUM(total_potongan)    as total_potongan,
+                SUM(total_bersih)      as total_bersih
+            FROM ($unionSql) AS combined
+            GROUP BY kode_skpd, nama_skpd, sumber_dana
+            ORDER BY nama_skpd, sumber_dana
+        ", $params);
+
+        $paidSkpds = collect($unionResults);
+
+        return response()->json([
+            'success' => true,
+            'data' => $paidSkpds,
+            'meta' => [
+                'month_from' => $monthFrom,
+                'month_to' => $monthTo,
+                'year' => $year,
+                'type' => $type,
+                'jenis_gaji' => $jenisGaji,
+                'sumber_dana' => $request->sumber_dana ?? 'Semua',
+                'total_skpd' => $paidSkpds->count(),
+                'total_employees' => $paidSkpds->sum('employee_count'),
+                'grand_total' => $paidSkpds->sum('total_bersih'),
+            ]
+        ]);
+    }
+
+    /**
+     * Export periodic SKPD report to Excel or PDF
+     */
+    public function exportPeriodicSkpds(Request $request)
+    {
+        $monthFrom = (int) ($request->month_from ?? 1);
+        $monthTo   = (int) ($request->month_to ?? 12);
+        $year      = (int) ($request->year ?? date('Y'));
+        $format    = $request->input('format') ?? 'excel';
+        $type      = $request->type ?? 'all';
+        $jenisGaji = $request->jenis_gaji ?? 'Semua';
+
+        // Re-use periodicSkpds logic
+        $response = $this->periodicSkpds($request);
+        $responseData = json_decode($response->getContent(), true);
+        $data = $responseData['data'] ?? [];
+        $mode = $responseData['mode'] ?? 'summary';
+
+        $monthNames = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
+
+        $fromName = $monthNames[$monthFrom] ?? 'Unknown';
+        $toName   = $monthNames[$monthTo] ?? 'Unknown';
+        $periodLabel = $fromName === $toName ? $fromName : "{$fromName} s.d. {$toName}";
+
+        $typeSlug = $type !== 'all' ? "_{$type}" : '';
+        $jgSlug = $jenisGaji !== 'Semua' ? "_" . strtolower(str_replace(' ', '_', $jenisGaji)) : '';
+        $filename = "laporan_periodik{$typeSlug}{$jgSlug}_{$monthFrom}-{$monthTo}_{$year}";
+
+        $this->logExport("Laporan Periodik SKPD ({$type})", $format === 'pdf' ? 'Cetak PDF' : 'Ekspor Excel', "Periode: {$periodLabel} {$year}, Jenis: {$jenisGaji}");
+
+        if ($format === 'pdf') {
+            if ($mode === 'detail') {
+                $totalEmployees = array_sum(array_column($data, 'jumlah_pegawai'));
+                $grandTotal = array_sum(array_column($data, 'bersih'));
+                $sumGajiPokok = array_sum(array_column($data, 'gapok'));
+            } else {
+                $totalEmployees = array_sum(array_column($data, 'employee_count'));
+                $grandTotal = array_sum(array_column($data, 'total_bersih'));
+                $sumGajiPokok = array_sum(array_column($data, 'total_gaji_pokok'));
+            }
+
+            $paperSize = $request->input('paper_size') ?? 'a4';
+
+            $pdf = Pdf::loadView('exports.paid-skpd-pdf', [
+                'data' => $data,
+                'month' => $monthFrom,
+                'year' => $year,
+                'monthName' => $periodLabel,
+                'mode' => $mode,
+                'type' => $type,
+                'jenis_gaji' => $jenisGaji,
+                'totalEmployees' => $totalEmployees,
+                'grandTotal' => $grandTotal,
+                'sumGajiPokok' => $sumGajiPokok,
+                'sumTunjangan' => array_sum(array_column($data, $mode === 'detail' ? 'kotor' : 'total_tunjangan')),
+                'sumPotongan' => array_sum(array_column($data, 'total_potongan')),
+                'sumPajak' => array_sum(array_column($data, $mode === 'detail' ? 'pot_pajak' : 'total_potongan')),
+                'sumIwp' => array_sum(array_column($data, $mode === 'detail' ? 'pot_iwp' : 'total_potongan')),
+            ]);
+
+            $pdf->setPaper($paperSize, 'landscape');
+            return $pdf->download($filename . '.pdf');
+        }
+
+        // Excel — reuse existing PaidSkpdExport with period info in title
+        return Excel::download(
+            new \App\Exports\PeriodicSkpdExport($data, $monthFrom, $monthTo, $year, $mode, $periodLabel),
+            $filename . '.xlsx'
+        );
+    }
 }
 

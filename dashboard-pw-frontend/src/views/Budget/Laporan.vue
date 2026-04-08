@@ -23,7 +23,7 @@
     <v-card class="mb-4 rounded-xl" elevation="0" border>
       <v-card-text>
         <v-row align="center">
-          <v-col cols="12" md="3">
+          <v-col cols="12" md="2">
             <v-select
               v-model="filterTahun"
               :items="tahunOptions"
@@ -33,17 +33,31 @@
               hide-details
             ></v-select>
           </v-col>
-          <v-col cols="12" md="3">
+          <v-col cols="12" md="2">
             <v-select
               v-model="filterTipe"
               :items="['MURNI', 'PERUBAHAN_1', 'PERUBAHAN_2', 'PERUBAHAN_3', 'TERAKHIR']"
-              label="Pilih Tipe Anggaran"
+              label="Tipe Anggaran"
               variant="outlined"
               density="compact"
               hide-details
             ></v-select>
           </v-col>
           <v-col cols="12" md="2">
+            <v-select
+              v-model="periodMode"
+              :items="periodModeOptions"
+              item-title="title"
+              item-value="value"
+              label="Periode Realisasi"
+              variant="outlined"
+              density="compact"
+              hide-details
+            ></v-select>
+          </v-col>
+
+          <!-- Kumulatif: single month -->
+          <v-col cols="12" md="2" v-if="periodMode === 'kumulatif'">
             <v-select
               v-model="filterBulan"
               :items="bulanOptions"
@@ -54,12 +68,73 @@
               clearable
             ></v-select>
           </v-col>
-          <v-col cols="12" md="4">
+
+          <!-- Triwulan -->
+          <v-col cols="12" md="2" v-if="periodMode === 'triwulan'">
+            <v-select
+              v-model="selectedTriwulan"
+              :items="triwulanOptions"
+              item-title="title"
+              item-value="value"
+              label="Triwulan"
+              variant="outlined"
+              density="compact"
+              hide-details
+            ></v-select>
+          </v-col>
+
+          <!-- Semester -->
+          <v-col cols="12" md="2" v-if="periodMode === 'semester'">
+            <v-select
+              v-model="selectedSemester"
+              :items="semesterOptions"
+              item-title="title"
+              item-value="value"
+              label="Semester"
+              variant="outlined"
+              density="compact"
+              hide-details
+            ></v-select>
+          </v-col>
+
+          <!-- Custom: dari - sampai -->
+          <template v-if="periodMode === 'custom'">
+            <v-col cols="6" md="1">
+              <v-select
+                v-model="customBulanDari"
+                :items="bulanOptions"
+                label="Dari"
+                variant="outlined"
+                density="compact"
+                hide-details
+              ></v-select>
+            </v-col>
+            <v-col cols="6" md="1">
+              <v-select
+                v-model="customBulanSampai"
+                :items="bulanOptions"
+                label="Sampai"
+                variant="outlined"
+                density="compact"
+                hide-details
+              ></v-select>
+            </v-col>
+          </template>
+
+          <v-col cols="12" md="2">
             <v-btn color="primary" variant="tonal" class="mr-2" @click="fetchReport" :loading="loading">
               Tampilkan
             </v-btn>
           </v-col>
         </v-row>
+
+        <!-- Period label chip -->
+        <div class="mt-3" v-if="periodMode !== 'kumulatif'">
+          <v-chip color="primary" variant="tonal" label size="small" class="font-weight-bold">
+            <v-icon start size="14">mdi-calendar-range</v-icon>
+            {{ periodLabel }}
+          </v-chip>
+        </div>
       </v-card-text>
     </v-card>
 
@@ -181,6 +256,78 @@ const filterTahun = ref(currentYear)
 const filterTipe = ref('TERAKHIR')
 const filterBulan = ref(null)
 
+// Period mode
+const periodMode = ref('kumulatif')
+const selectedTriwulan = ref(getCurrentQuarter())
+const selectedSemester = ref(getCurrentSemester())
+const customBulanDari = ref(1)
+const customBulanSampai = ref(new Date().getMonth() + 1)
+
+function getCurrentQuarter() {
+  const m = new Date().getMonth() + 1
+  if (m <= 3) return 1
+  if (m <= 6) return 2
+  if (m <= 9) return 3
+  return 4
+}
+
+function getCurrentSemester() {
+  return new Date().getMonth() + 1 <= 6 ? 1 : 2
+}
+
+const periodModeOptions = [
+  { title: 'Kumulatif (s.d.)', value: 'kumulatif' },
+  { title: 'Triwulan', value: 'triwulan' },
+  { title: 'Semester', value: 'semester' },
+  { title: 'Tahunan', value: 'tahunan' },
+  { title: 'Custom', value: 'custom' },
+]
+
+const triwulanOptions = [
+  { title: 'TW I (Jan-Mar)', value: 1 },
+  { title: 'TW II (Apr-Jun)', value: 2 },
+  { title: 'TW III (Jul-Sep)', value: 3 },
+  { title: 'TW IV (Okt-Des)', value: 4 },
+]
+
+const semesterOptions = [
+  { title: 'Semester I (Jan-Jun)', value: 1 },
+  { title: 'Semester II (Jul-Des)', value: 2 },
+]
+
+const bulanNameMap = {
+  1: 'Januari', 2: 'Februari', 3: 'Maret', 4: 'April',
+  5: 'Mei', 6: 'Juni', 7: 'Juli', 8: 'Agustus',
+  9: 'September', 10: 'Oktober', 11: 'November', 12: 'Desember'
+}
+
+const periodRange = computed(() => {
+  if (periodMode.value === 'triwulan') {
+    const q = selectedTriwulan.value
+    return { dari: (q - 1) * 3 + 1, sampai: q * 3 }
+  }
+  if (periodMode.value === 'semester') {
+    const s = selectedSemester.value
+    return { dari: s === 1 ? 1 : 7, sampai: s === 1 ? 6 : 12 }
+  }
+  if (periodMode.value === 'tahunan') {
+    return { dari: 1, sampai: 12 }
+  }
+  if (periodMode.value === 'custom') {
+    return { dari: customBulanDari.value, sampai: customBulanSampai.value }
+  }
+  return { dari: null, sampai: null }
+})
+
+const periodLabel = computed(() => {
+  if (periodMode.value === 'kumulatif') return ''
+  const { dari, sampai } = periodRange.value
+  if (periodMode.value === 'triwulan') return `Triwulan ${['I','II','III','IV'][selectedTriwulan.value - 1]} ${filterTahun.value}`
+  if (periodMode.value === 'semester') return `Semester ${selectedSemester.value === 1 ? 'I' : 'II'} ${filterTahun.value}`
+  if (periodMode.value === 'tahunan') return `Tahunan ${filterTahun.value}`
+  return `${bulanNameMap[dari]} - ${bulanNameMap[sampai]} ${filterTahun.value}`
+})
+
 const headers = [
   { title: 'SKPD', key: 'nama_skpd' },
   { title: 'Kategori', key: 'kategori', align: 'center' },
@@ -215,10 +362,10 @@ const formatCurrency = (val) => {
 
 const getCategoryColor = (cat) => {
   const map = {
-    'PNS': 'blue-darken-1',
-    'PPPK': 'teal-darken-1',
+    'GAJI': 'indigo-darken-1',
     'TPP': 'deep-purple-darken-1',
-    'PPPK_PW': 'orange-darken-2'
+    'PPPK_PW': 'orange-darken-2',
+    'LAINNYA': 'grey-darken-1'
   }
   return map[cat] || 'grey'
 }
@@ -233,13 +380,20 @@ const getPercentageColor = (val) => {
 const fetchReport = async () => {
   loading.value = true
   try {
-    const res = await api.get('/budgets/comparison', {
-      params: {
-        tahun: filterTahun.value,
-        tipe_anggaran: filterTipe.value,
-        bulan: filterBulan.value || ''
-      }
-    })
+    const params = {
+      tahun: filterTahun.value,
+      tipe_anggaran: filterTipe.value,
+    }
+
+    if (periodMode.value === 'kumulatif') {
+      params.bulan = filterBulan.value || ''
+    } else {
+      const { dari, sampai } = periodRange.value
+      params.bulan_dari = dari
+      params.bulan = sampai
+    }
+
+    const res = await api.get('/budgets/comparison', { params })
     reportData.value = res.data.data
   } catch (err) {
     console.error(err)

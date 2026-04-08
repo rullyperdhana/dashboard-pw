@@ -127,21 +127,25 @@ class Sp2dImport implements ToCollection
 
         foreach ($headerValues as $i => $val) {
             if (empty($val)) continue;
+            $valUpper = strtoupper($val);
 
-            if (str_contains($val, 'NOMOR') || str_contains($val, 'NO. SP2D') || $val === 'NO') $map['nomor_sp2d'] = $i;
-            if (str_contains($val, 'TANGGAL SP2D') || str_contains($val, 'TGL SP2D')) $map['tanggal_sp2d'] = $i;
-            if (str_contains($val, 'TANGGAL CAIR') || str_contains($val, 'TGL CAIR')) $map['tanggal_cair'] = $i;
-            if (str_contains($val, 'UNIT') || str_contains($val, 'SKPD')) $map['unit_skpd'] = $i;
-            if (str_contains($val, 'KETERANGAN') || $val === 'URAIAN') $map['keterangan'] = $i;
-            if (str_contains($val, 'BRUTO') || str_contains($val, 'KOTOR')) $map['brutto'] = $i;
-            if (str_contains($val, 'POTONGAN')) $map['potongan'] = $i;
-            if (str_contains($val, 'NETTO') || str_contains($val, 'BERSIH') || str_contains($val, 'JUMLAH DIBAYARKAN')) $map['netto'] = $i;
+            if (str_contains($valUpper, 'NOMOR') || str_contains($valUpper, 'NO. SP2D') || $valUpper === 'NO') $map['nomor_sp2d'] = $i;
+            if (str_contains($valUpper, 'TANGGAL SP2D') || str_contains($valUpper, 'TGL SP2D')) $map['tanggal_sp2d'] = $i;
+            if (str_contains($valUpper, 'TANGGAL CAIR') || str_contains($valUpper, 'TGL CAIR')) $map['tanggal_cair'] = $i;
+            if (str_contains($valUpper, 'UNIT') || str_contains($valUpper, 'SKPD')) $map['unit_skpd'] = $i;
+            if (str_contains($valUpper, 'KETERANGAN') || $valUpper === 'URAIAN') $map['keterangan'] = $i;
+            if (str_contains($valUpper, 'BRUTO') || str_contains($valUpper, 'KOTOR') || str_contains($valUpper, 'TOTAL') || str_contains($valUpper, 'NILAI BRUTO')) $map['brutto'] = $i;
+            if (str_contains($valUpper, 'POTONGAN') || str_contains($valUpper, 'POT')) $map['potongan'] = $i;
+            if (str_contains($valUpper, 'NETTO') || str_contains($valUpper, 'BERSIH') || str_contains($valUpper, 'JUMLAH DIBAYARKAN')) $map['netto'] = $i;
         }
 
         // Critical overrides for common SIPD Excel layouts if mapping failed
         if ($map['nomor_sp2d'] === -1) $map['nomor_sp2d'] = 1; // Often 2nd col
         if ($map['tanggal_sp2d'] === -1) $map['tanggal_sp2d'] = 2;
         if ($map['netto'] === -1) $map['netto'] = count($headerValues) - 1; // Often last col
+
+        // Fallback: if brutto column not found, use netto column index
+        if ($map['brutto'] === -1 && $map['netto'] !== -1) $map['brutto'] = $map['netto'];
 
         return $map;
     }
