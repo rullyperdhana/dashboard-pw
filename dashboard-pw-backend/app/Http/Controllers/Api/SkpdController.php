@@ -20,16 +20,8 @@ class SkpdController extends Controller
         }
 
         $skpds = \Illuminate\Support\Facades\Cache::remember('ref_skpds', 3600, function () {
-            // Kita ambil data skpd, di-group berdasarkan nama untuk menghindari duplikasi di dropdown
-            $sub = DB::table('skpd')
-                ->select(DB::raw('MIN(id_skpd) as id_skpd'), 'nama_skpd')
-                ->groupBy('nama_skpd');
-
-            $data = DB::table('skpd as s')
-                ->joinSub($sub, 'sub', function ($join) {
-                    $join->on('s.id_skpd', '=', 'sub.id_skpd');
-                })
-                ->orderBy('s.nama_skpd')
+            $data = DB::table('skpd')
+                ->orderBy('nama_skpd')
                 ->get();
 
             // Jika hasil kosong, jangan cache dulu agar bisa dicoba lagi

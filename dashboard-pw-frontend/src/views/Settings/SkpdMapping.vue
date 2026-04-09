@@ -22,6 +22,14 @@
             <v-icon start icon="mdi-delete-sweep"></v-icon>
             Hapus ALL
           </v-btn>
+          <v-btn variant="tonal" color="success" rounded="pill" @click="mapAllSuggestionsGlobal" :loading="bulkSaving" class="mr-3">
+            <v-icon start icon="mdi-auto-fix"></v-icon>
+            Petakan Semua Saran
+          </v-btn>
+          <v-btn variant="tonal" color="warning" rounded="pill" @click="restoreDefaults" :loading="restoringDefaults" class="mr-3">
+            <v-icon start icon="mdi-backup-restore"></v-icon>
+            Pulihkan Mapping Standar
+          </v-btn>
           <v-btn color="primary" rounded="pill" prepend-icon="mdi-plus" @click="openAddDialog">
             Tambah Mapping
           </v-btn>
@@ -251,6 +259,10 @@
                           <v-list-item-title class="text-body-2 font-weight-medium">
                             {{ item.source_name }}
                           </v-list-item-title>
+                          <v-list-item-subtitle v-if="item.is_bridged_issue" class="text-caption text-error font-weight-bold">
+                            <v-icon icon="mdi-link-off" size="14" class="mr-1"></v-icon>
+                            Mapping Terputus (Butuh Bridge)
+                          </v-list-item-subtitle>
                           <v-list-item-subtitle v-if="item.suggestion" class="text-caption text-primary">
                             Saran: {{ item.suggestion }}
                           </v-list-item-subtitle>
@@ -382,6 +394,21 @@
           <v-alert type="info" variant="tonal" class="mb-5 rounded-lg" density="compact">
             Petakan nama SKPD dari file Excel ke SKPD master yang sesuai.
           </v-alert>
+
+          <v-autocomplete
+            v-if="!editMode && !editSourceName"
+            v-model="sourceSkpdHelper"
+            :items="skpdList"
+            item-title="label"
+            item-value="id_skpd"
+            label="Pilih SKPD Sumber dari Master (Lebih Mudah)"
+            variant="outlined"
+            density="comfortable"
+            class="mb-2 bg-blue-lighten-5 rounded-lg"
+            clearable
+            placeholder="Cari nama RS / UPTD / SKPD asal..."
+            @update:modelValue="onSourceSkpdSelected"
+          ></v-autocomplete>
 
           <v-row>
             <v-col cols="12" md="4">
@@ -529,6 +556,7 @@ const loadingSkpd2026 = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
 const bulkSaving = ref(false)
+const restoringDefaults = ref(false)
 
 const mapAllSuggestions = async (type) => {
   let itemsToMap = []
@@ -563,6 +591,55 @@ const mapAllSuggestions = async (type) => {
     bulkSaving.value = false
   }
 }
+
+const restoreDefaults = async () => {
+  restoringDefaults.value = true
+  try {
+    const res = await api.post('/skpd-mapping/restore')
+    notify(res.data.message || 'Mapping standar berhasil dipulihkan!')
+    await loadAll()
+  } catch (e) {
+    notify(e.response?.data?.message || 'Gagal memulihkan mapping standar', 'error')
+  } finally {
+    restoringDefaults.value = false
+  }
+}
+
+const mapAllSuggestionsGlobal = async () => {
+  const allItems = [
+    ...unmappedPns.value.map(i => ({ ...i, fallbackType: 'pns' })),
+    ...unmappedPppk.value.map(i => ({ ...i, fallbackType: 'pppk' })),
+    ...unmappedPppkPw.value.map(i => ({ ...i, fallbackType: 'pppk_pw' })),
+    ...unmappedSp2d.value.map(i => ({ ...i, fallbackType: 'all' }))
+  ];
+
+  const payload = allItems
+    .filter(item => item.suggestion_id)
+    .map(item => ({
+      source_name: item.source_name,
+      source_code: item.source_code || null,
+      skpd_id: item.suggestion_id,
+      skpd_2026_id: null,
+      type: item.type && item.type !== 'all' ? item.type : item.fallbackType
+    }));
+
+  if (payload.length === 0) {
+    notify('Tidak ada satupun saran pemetaan otomatis yang tersedia saat ini', 'warning');
+    return;
+  }
+
+  bulkSaving.value = true
+  try {
+    const res = await api.post('/skpd-mapping/bulk', { mappings: payload })
+    notify(res.data.message || 'Pemetaan massal (Global) berhasil!')
+    await loadAll()
+  } catch (e) {
+    notify(e.response?.data?.message || 'Gagal melakukan pemetaan massal global', 'error')
+  } finally {
+    bulkSaving.value = false
+  }
+}
+
 const dialog = ref(false)
 const deleteDialog = ref(false)
 const deleteAllDialog = ref(false)
@@ -583,6 +660,7 @@ const unmappedSp2d = ref([])
 const skpdList = ref([])
 const skpd2026List = ref([])
 const deletingItem = ref(null)
+const sourceSkpdHelper = ref(null)
 
 const form = ref({
   id: null,
@@ -698,11 +776,25 @@ const loadSkpd2026 = async () => {
 // Dialogs
 const openAddDialog = () => {
   form.value = { id: null, source_name: '', source_code: '', skpd_id: null, skpd_2026_id: null, type: 'all' }
+  sourceSkpdHelper.value = null
   editMode.value = false
   editSourceName.value = false
   loadSkpd()
   loadSkpd2026()
   dialog.value = true
+}
+
+const onSourceSkpdSelected = (val) => {
+  if (!val) {
+    form.value.source_name = ''
+    form.value.source_code = ''
+    return
+  }
+  const selected = skpdList.value.find(s => s.id_skpd === val)
+  if (selected) {
+    form.value.source_name = selected.nama_skpd
+    form.value.source_code = selected.kode_skpd || ''
+  }
 }
 
 const openEditDialog = (item) => {

@@ -42,6 +42,12 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
 ---
 
+### 🛠️ SKPD Mapping Recovery & Intelligent Bridge (v4.9.0)
+- **Intelligent Bridge Detection:** Sistem kini secara cerdas mendeteksi "Mapping Terputus" (SKPD yang sudah terikat ke data realisasi namun kehilangan jembatan kodenya), mencegah kesalahan rekonsiliasi "Minus" yang tidak terduga.
+- **One-Click Standard Recovery:** Penambahan fitur pemulihan massal untuk mengembalikan 150+ pemetaan unit kerja standar dengan resolusi nama otomatis dari tabel Master Satker.
+- **Global Mapping Assistant:** Tombol "Petakan Semua Saran" kini hadir secara global untuk melakukan automapping pada seluruh kategori (PNS, PPPK, SP2D) dalam satu kali klik.
+- **UI Management Restoration:** Pengembalian tombol kontrol utama (Refresh, Hapus ALL) dan penambahan indikator visual untuk status pemetaan yang membutuhkan perhatian.
+
 ### 🚀 Audit Aktivitas & Optimasi SP2D (v4.8.0)
 - **Background SP2D Reconciliation:** Kalkulasi rekonsiliasi SP2D yang berat kini dipindahkan ke *background job* (Laravel Queue). Pengguna mendapatkan *real-time progress bar* dan sistem terhindar dari *timeout* pada data besar.
 - **System Audit Log UI:** Halaman dashboard baru khusus Superadmin untuk memantau setiap perubahan parameter gaji dan aktivitas administratif. Mendukung tampilan perbandingan data lama (*old values*) dan baru (*new values*).
