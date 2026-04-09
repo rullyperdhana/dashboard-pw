@@ -78,6 +78,15 @@ bash deploy-dev.sh
 
 ---
 
+## Langkah 6: Background Job Worker (Dev)
+Karena fitur SP2D Reconciliation v4.8.0 berjalan secara asinkron, Anda harus menjalankan worker di terminal terpisah atau menggunakan `screen`/`tmux` di folder backend dev:
+```bash
+php artisan queue:work --timeout=3600
+```
+*Tanpa ini, proses rekonsiliasi tidak akan pernah selesai.*
+
+---
+
 ## Troubleshooting
 *   **Frontend blank?**: Pastikan `.env` di folder `dashboard-pw-frontend` memiliki `VITE_API_BASE_URL` yang mengarah ke API sub-domain dev Anda.
 *   **Permission error?**: Jalankan `chown -R www:www /www/wwwroot/sip-gaji-dev` untuk memberikan akses ke web server.

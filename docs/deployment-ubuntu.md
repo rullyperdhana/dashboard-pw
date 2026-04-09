@@ -112,7 +112,42 @@ sudo systemctl restart nginx
 
 ---
 
-## 5. Deployment Update Selanjutnya
+## 6. Konfigurasi Background Worker (Supervisor)
+Agar fitur rekonsiliasi SP2D berjalan di latar belakang secara otomatis dan tahan lama, gunakan **Supervisor**.
+
+1. Install Supervisor:
+   ```bash
+   sudo apt install supervisor
+   ```
+2. Buat file konfigurasi:
+   ```bash
+   sudo nano /etc/supervisor/conf.d/dashboard-pw-worker.conf
+   ```
+3. Masukkan konfigurasi berikut:
+   ```ini
+   [program:dashboard-pw-worker]
+   process_name=%(program_name)s_%(process_num)02d
+   command=php /var/www/dashboard-pw/dashboard-pw-backend/artisan queue:work --timeout=3600
+   autostart=true
+   autorestart=true
+   stopasgroup=true
+   killasgroup=true
+   user=www-data
+   numprocs=2
+   redirect_stderr=true
+   stdout_logfile=/var/www/dashboard-pw/dashboard-pw-backend/storage/logs/worker.log
+   stopwaitsecs=3600
+   ```
+4. Jalankan Supervisor:
+   ```bash
+   sudo supervisorctl reread
+   sudo supervisorctl update
+   sudo supervisorctl start dashboard-pw-worker:*
+   ```
+
+---
+
+## 7. Deployment Update Selanjutnya
 
 Setiap ada penambahan fitur/update, Anda cukup menjalankan script deploy tunggal:
 

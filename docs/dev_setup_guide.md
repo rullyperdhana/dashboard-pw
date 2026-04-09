@@ -76,6 +76,13 @@ npm run build
 echo "✅ Dev Server Berhasil Diperbarui!"
 ```
 
+### E. Background Worker (Baru)
+Karena fitur rekonsiliasi SP2D v4.8.0 bersifat asinkron, Anda harus menjalankan worker pada tab terminal terpisah:
+```bash
+cd dashboard-pw-backend
+php artisan queue:work --timeout=3600
+```
+
 ---
 
 ## 4. Alur Kerja (Workflow) dari Dev ke Production

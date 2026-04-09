@@ -61,6 +61,15 @@ Jika Anda perlu menambahkan mapping SKPD secara manual atau reset cache:
 ```bash
 php artisan optimize:clear
 php artisan config:cache
+### 4. Background Job Worker (Penting)
+Modul Rekonsiliasi SP2D v4.8.0 kini berjalan secara asinkron. Agar proses latar belakang berjalan, Anda **WAJIB** menjalankan worker di VPS:
+```bash
+cd dashboard-pw-backend
+# Jalankan secara manual (untuk testing):
+php artisan queue:work --timeout=3600
+
+# Untuk sistem produksi:
+# Sangat disarankan menggunakan Supervisor untuk menjaga worker tetap hidup.
 ```
 
 ---
