@@ -284,8 +284,41 @@
 
         <!-- Reconciliation Table View -->
         <v-card v-else-if="viewMode === 'recon'" class="glass-card rounded-xl overflow-hidden" elevation="0">
+          <!-- Progress Bar for Background Job -->
+          <v-expand-transition>
+            <div v-if="isPolling || reconJobId" class="pa-6 border-bottom" style="background-color: rgba(var(--v-theme-info), 0.05)">
+              <div class="d-flex align-center justify-space-between mb-2">
+                <div class="d-flex align-center">
+                  <v-progress-circular indeterminate size="20" width="2" color="info" class="mr-3"></v-progress-circular>
+                  <span class="text-subtitle-2 font-weight-bold text-info">Sedang Menghitung Rekonsiliasi...</span>
+                </div>
+                <span class="text-caption font-weight-bold text-info">{{ reconProgress }}%</span>
+              </div>
+              <v-progress-linear
+                v-model="reconProgress"
+                color="info"
+                height="8"
+                rounded
+                striped
+              ></v-progress-linear>
+              <div class="text-overline mt-1" style="line-height: 1.2">Proses ini berjalan di latar belakang, Anda dapat berpindah ke menu lain atau menutup halaman ini.</div>
+            </div>
+          </v-expand-transition>
+
           <div class="pa-6 border-bottom d-flex align-center justify-space-between bg-surface-variant-light">
-            <h2 class="text-h6 font-weight-bold mb-0">Tabel Rekonsiliasi SIMGAJI vs SIPD</h2>
+            <div class="d-flex align-center gap-4">
+              <h2 class="text-h6 font-weight-bold mb-0">Tabel Rekonsiliasi SIMGAJI vs SIPD</h2>
+              <v-btn
+                v-if="!isPolling && !reconJobId"
+                size="small"
+                variant="outlined"
+                color="primary"
+                prepend-icon="mdi-refresh"
+                :loading="loading"
+                @click="triggerReconJob"
+                rounded="pill"
+              >Hitung Ulang</v-btn>
+            </div>
             <div class="d-flex align-center gap-2">
               <v-text-field
                 v-model="searchRecon"
@@ -802,6 +835,10 @@ const viewMode = ref('summary')
 const items = ref([])
 const transactions = ref([])
 const reconData = ref([])
+const reconJobId = ref(null)
+const reconProgress = ref(0)
+const isPolling = ref(false)
+let pollingInterval = null
 const skpds = ref([])
 const isEdit = ref(false)
 
@@ -1141,23 +1178,98 @@ const fetchTransactions = async () => {
   }
 }
 
-const fetchReconData = async () => {
+const fetchReconData = async (force = false) => {
   loading.value = true
   try {
     const params = {
       bulan: selectedMonth.value,
       tahun: selectedYear.value,
       jenis_gaji: selectedJenisGaji.value || undefined,
-      tpp_recon_mode: tppReconMode.value
+      tpp_recon_mode: tppReconMode.value,
+      force: force ? '1' : undefined
     }
     const res = await api.get('/sp2d/recon', { params })
-    reconData.value = res.data.data
+    
+    if (res.data.status === 'processing') {
+      reconJobId.value = res.data.job_id
+      reconProgress.value = res.data.progress || 0
+      startPolling()
+    } else {
+      reconData.value = res.data.data
+      reconJobId.value = null
+      reconProgress.value = 0
+      stopPolling()
+    }
   } catch (e) {
     showSnackbar('Gagal memuat data rekonsiliasi', 'error')
+    stopPolling()
   } finally {
     loading.value = false
   }
 }
+
+const triggerReconJob = async () => {
+  loading.value = true
+  try {
+    const res = await api.post('/sp2d/recon/trigger', {
+      bulan: selectedMonth.value,
+      tahun: selectedYear.value,
+      tpp_recon_mode: tppReconMode.value
+    })
+    
+    reconJobId.value = res.data.job_id
+    reconProgress.value = 0
+    showSnackbar('Proses rekonsiliasi dimulai di latar belakang')
+    startPolling()
+  } catch (e) {
+    showSnackbar('Gagal memulai rekonsiliasi', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+const startPolling = () => {
+  if (isPolling.value) return
+  isPolling.value = true
+  
+  if (pollingInterval) clearInterval(pollingInterval)
+  
+  pollingInterval = setInterval(async () => {
+    if (!reconJobId.value) {
+      stopPolling()
+      return
+    }
+
+    try {
+      const res = await api.get(`/sp2d/recon/job-status/${reconJobId.value}`)
+      reconProgress.value = res.data.progress
+      
+      if (res.data.status === 'completed') {
+        stopPolling()
+        fetchReconData(false)
+        showSnackbar('Rekonsiliasi selesai!')
+      } else if (res.data.status === 'failed') {
+        stopPolling()
+        showSnackbar('Rekonsiliasi gagal: ' + res.data.error, 'error')
+      }
+    } catch (e) {
+      console.error('Polling error', e)
+      stopPolling()
+    }
+  }, 3000)
+}
+
+const stopPolling = () => {
+  if (pollingInterval) {
+    clearInterval(pollingInterval)
+    pollingInterval = null
+  }
+  isPolling.value = false
+}
+
+onUnmounted(() => {
+  stopPolling()
+})
 
 const openCreateDialog = () => {
     isEdit.value = false

@@ -6,15 +6,26 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Sp2dRealization;
 use App\Models\Skpd;
+use App\Models\UploadJob;
+use App\Services\Sp2dReconciliationService;
+use App\Jobs\ProcessSp2dReconciliation;
 use App\Imports\Sp2dImport;
 use App\Imports\Sp2dPotonganImport;
 use App\Exports\Sp2dReconExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
 use App\Traits\CacheClearer;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class Sp2dController extends Controller
 {
+    protected $reconService;
+
+    public function __construct(Sp2dReconciliationService $reconService)
+    {
+        $this->reconService = $reconService;
+    }
     use CacheClearer;
     public function import(Request $request)
     {
@@ -318,272 +329,90 @@ class Sp2dController extends Controller
 
     public function getRecon(Request $request)
     {
-        $bulan = $request->query('bulan', date('n'));
-        $tahun = $request->query('tahun', date('Y'));
-        $jenisGaji = $request->query('jenis_gaji');
+        $bulan = (int)$request->query('bulan', date('n'));
+        $tahun = (int)$request->query('tahun', date('Y'));
         $tppReconMode = $request->query('tpp_recon_mode', 'bruto');
+        $force = $request->query('force', false);
 
-        // 1. Get all imported SP2D realizations
-        $realQuery = Sp2dRealization::where('bulan', $bulan)
-            ->where('tahun', $tahun);
-
-        if ($jenisGaji) {
-            $realQuery->where('jenis_data', 'LIKE', '%' . strtoupper($jenisGaji) . '%');
-        }
-
-        // EXCLUDE PPPK-PW from general reconciliation per user request
-        if (!$jenisGaji) {
-            $realQuery->where('jenis_data', 'NOT LIKE', 'PPPK-PW%');
-        }
-
-        $realizations = $realQuery->orderBy('tanggal_sp2d', 'asc')
-            ->get();
-
-        // 2. Get SKPDs to map internal data
-        $skpds = Skpd::where('is_skpd', 1)->get();
-
-        // 3. Get Internal Data (Gaji & TPP) grouped by SKPD and Type
-        $pnsInternal = \DB::table('gaji_pns')
-            ->where('bulan', $bulan)
-            ->where('tahun', $tahun)
-            ->select(
-                'kdskpd',
-                'jenis_gaji',
-                \DB::raw('SUM(kotor - tunj_tpp) as brutto'),
-                \DB::raw('SUM(total_potongan) as potongan'),
-                \DB::raw('SUM(bersih - tunj_tpp) as netto'),
-                \DB::raw('SUM(tunj_tpp) as tpp'),
-                \DB::raw('COUNT(DISTINCT nip) as emp_count')
-            )
-            ->groupBy('kdskpd', 'jenis_gaji')
-            ->get();
-
-        $pppkInternal = \DB::table('gaji_pppk')
-            ->where('bulan', $bulan)
-            ->where('tahun', $tahun)
-            ->select(
-                'kdskpd',
-                'jenis_gaji',
-                \DB::raw('SUM(kotor - tunj_tpp) as brutto'),
-                \DB::raw('SUM(total_potongan) as potongan'),
-                \DB::raw('SUM(bersih - tunj_tpp) as netto'),
-                \DB::raw('SUM(tunj_tpp) as tpp'),
-                \DB::raw('COUNT(DISTINCT nip) as emp_count')
-            )
-            ->groupBy('kdskpd', 'jenis_gaji')
-            ->get();
-
-        $pwInternal = \DB::table('tb_payment_detail as pd')
-            ->join('tb_payment as p', 'pd.payment_id', '=', 'p.id')
-            ->join('pegawai_pw as e', 'pd.employee_id', '=', 'e.id')
-            ->where('p.month', $bulan)
-            ->where('p.year', $tahun)
-            ->select(
-                'e.idskpd',
-                \DB::raw('SUM(pd.gaji_pokok + pd.tunjangan) as brutto'),
-                \DB::raw('SUM(pd.pajak + pd.iwp + pd.potongan) as potongan'),
-                \DB::raw('SUM(pd.total_amoun) as netto'),
-                \DB::raw('COUNT(DISTINCT e.nip) as emp_count')
-            )
-            ->groupBy('e.idskpd')
-            ->get();
-
-        $manualMappings = \DB::table('skpd_mapping')
-            ->get()
-            ->groupBy('skpd_id');
-
-        // 4b. Get Standalone TPP Data for Recon - Excluding those already in gaji_pns/pppk
-        $standaloneTpp = \DB::table('standalone_tpp')
-            ->where('month', $bulan)
-            ->where('year', $tahun)
-            ->whereNotNull('skpd_id')
-            ->whereNotExists(function ($query) use ($bulan, $tahun) {
-                $query->select(\DB::raw(1))
-                    ->from('gaji_pns')
-                    ->whereColumn('gaji_pns.nip', 'standalone_tpp.nip')
-                    ->where('gaji_pns.bulan', $bulan)
-                    ->where('gaji_pns.tahun', $tahun);
-            })
-            ->whereNotExists(function ($query) use ($bulan, $tahun) {
-                $query->select(\DB::raw(1))
-                    ->from('gaji_pppk')
-                    ->whereColumn('gaji_pppk.nip', 'standalone_tpp.nip')
-                    ->where('gaji_pppk.bulan', $bulan)
-                    ->where('gaji_pppk.tahun', $tahun);
-            })
-            ->get();
-
-        // 5. Group and Aggregate Realizations to avoid duplicate internal rows
-        $groupedData = [];
+        $cacheKey = $this->reconService->getCacheKey($bulan, $tahun, $tppReconMode);
         
-        foreach ($realizations as $real) {
-            // A. Detect Category & Jenis Gaji
-            $jenisDataRaw = $real->jenis_data ?? '';
-            $ketRaw = strtoupper($real->keterangan ?? '');
-            
-            $targetJenisGajiDetected = 'Induk';
-            if (str_contains($jenisDataRaw, 'SUSULAN')) $targetJenisGajiDetected = 'Susulan';
-            elseif (str_contains($jenisDataRaw, 'KEKURANGAN')) $targetJenisGajiDetected = 'Kekurangan';
-            elseif (str_contains($jenisDataRaw, 'TERUSAN')) $targetJenisGajiDetected = 'Terusan';
-            elseif (str_contains($jenisDataRaw, 'THR') || str_contains($jenisDataRaw, 'GAJI 14') || str_contains($ketRaw, 'THR')) $targetJenisGajiDetected = 'Gaji 14 / THR';
-            elseif (str_contains($jenisDataRaw, 'GAJI 13')) $targetJenisGajiDetected = 'Gaji 13';
-
-            $category = 'UNKNOWN';
-            if (str_contains($jenisDataRaw, 'PPPK-PW')) $category = 'PPPK_PW';
-            elseif (str_contains($jenisDataRaw, 'TPP')) $category = 'TPP';
-            elseif (str_contains($jenisDataRaw, 'PPPK') || str_contains($jenisDataRaw, 'P3K')) $category = 'PPPK';
-            elseif (str_contains($jenisDataRaw, 'PNS')) $category = 'PNS';
-
-            // Special case for TPP sub-categories (PNS vs PPPK) based on description if not in jenis_data
-            if ($category === 'TPP' && !str_contains($jenisDataRaw, 'PNS') && !str_contains($jenisDataRaw, 'PPPK')) {
-                if (str_contains($ketRaw, 'PPPK') || str_contains($ketRaw, 'P3K')) $category = 'TPP_PPPK';
-                else $category = 'TPP_PNS';
-            }
-
-            $key = $real->skpd_id . '|' . $targetJenisGajiDetected . '|' . $category;
-
-            if (!isset($groupedData[$key])) {
-                $groupedData[$key] = [
-                    'skpd_id' => $real->skpd_id,
-                    'jenis_gaji' => $targetJenisGajiDetected,
-                    'category' => $category,
-                    'reals' => collect(),
-                    'ids' => []
-                ];
-            }
-            $groupedData[$key]['reals']->push($real);
-            $groupedData[$key]['ids'][] = $real->id;
+        if (!$force && Cache::has($cacheKey)) {
+            return response()->json([
+                'status' => 'success',
+                'data' => Cache::get($cacheKey),
+                'source' => 'cache'
+            ]);
         }
 
-        $data = collect($groupedData)->map(function ($group) use ($skpds, $pnsInternal, $pppkInternal, $pwInternal, $manualMappings, $tppReconMode, $standaloneTpp, $bulan, $tahun) {
-            $skpd = $skpds->where('id_skpd', $group['skpd_id'])->first();
-            $category = $group['category'];
-            $targetType = $group['jenis_gaji'];
-            $reals = $group['reals'];
+        // If no cache, check if a job is already running for this period
+        $job = UploadJob::where('type', 'sp2d_reconciliation')
+            ->where('params->bulan', $bulan)
+            ->where('params->tahun', $tahun)
+            ->where('status', 'processing')
+            ->latest()
+            ->first();
 
-            $internalCtx = [
-                'brutto' => 0,
-                'potongan' => 0,
-                'netto' => 0,
-                'gaji_pns' => 0,
-                'gaji_pppk' => 0,
-                'tpp_pns' => 0,
-                'tpp_pppk' => 0,
-                'jenis_gaji' => $targetType,
-                'emp_count' => 0
-            ];
+        if ($job) {
+            return response()->json([
+                'status' => 'processing',
+                'job_id' => $job->id,
+                'progress' => $job->progress,
+                'message' => 'Recon is being calculated in the background'
+            ]);
+        }
 
-            if ($skpd) {
-                $kdskpds = [];
-                if ($skpd->kode_simgaji) $kdskpds[] = $skpd->kode_simgaji;
-                if (isset($manualMappings[$skpd->id_skpd])) {
-                    foreach ($manualMappings[$skpd->id_skpd] as $m) if ($m->source_code) $kdskpds[] = $m->source_code;
-                }
-                $kdskpds = array_unique($kdskpds);
-
-                foreach ($kdskpds as $kd) {
-                    if ($category === 'PNS') {
-                        $p = $pnsInternal->where('kdskpd', $kd)->where('jenis_gaji', $targetType)->first();
-                        if ($p) {
-                            $internalCtx['brutto'] += (float) $p->brutto;
-                            $internalCtx['potongan'] += (float) $p->potongan;
-                            $internalCtx['netto'] += (float) $p->netto;
-                            $internalCtx['gaji_pns'] += (float) $p->netto;
-                            $internalCtx['emp_count'] += (int) $p->emp_count;
-                        }
-                    } elseif ($category === 'PPPK') {
-                        $pk = $pppkInternal->where('kdskpd', $kd)->where('jenis_gaji', $targetType)->first();
-                        if ($pk) {
-                            $internalCtx['brutto'] += (float) $pk->brutto;
-                            $internalCtx['potongan'] += (float) $pk->potongan;
-                            $internalCtx['netto'] += (float) $pk->netto;
-                            $internalCtx['gaji_pppk'] += (float) $pk->netto;
-                            $internalCtx['emp_count'] += (int) $pk->emp_count;
-                        }
-                    } elseif ($category === 'TPP' || $category === 'TPP_PNS') {
-                        $p = $pnsInternal->where('kdskpd', $kd)->where('jenis_gaji', $targetType)->first();
-                        if ($p) {
-                            $internalCtx['brutto'] += (float) $p->tpp;
-                            $internalCtx['netto'] += (float) $p->tpp;
-                            $internalCtx['tpp_pns'] += (float) $p->tpp;
-                            $internalCtx['emp_count'] += (int) $p->emp_count;
-                        }
-                    } elseif ($category === 'TPP_PPPK') {
-                        $pk = $pppkInternal->where('kdskpd', $kd)->where('jenis_gaji', $targetType)->first();
-                        if ($pk) {
-                            $internalCtx['brutto'] += (float) $pk->tpp;
-                            $internalCtx['netto'] += (float) $pk->tpp;
-                            $internalCtx['tpp_pppk'] += (float) $pk->tpp;
-                            $internalCtx['emp_count'] += (int) $pk->emp_count;
-                        }
-                    }
-                }
-
-                // Standalone TPP integration
-                if (str_contains($category, 'TPP')) {
-                    $st = $standaloneTpp->where('skpd_id', $skpd->id_skpd)->where('jenis_gaji', $targetType);
-                    foreach ($st as $item) {
-                        if ($category === 'TPP_PPPK' && $item->employee_type !== 'pppk') continue;
-                        if ($category === 'TPP_PNS' && $item->employee_type !== 'pns') continue;
-                        
-                        $internalCtx['brutto'] += (float) $item->nilai;
-                        $internalCtx['netto'] += (float) $item->nilai;
-                        if ($item->employee_type === 'pns') $internalCtx['tpp_pns'] += (float) $item->nilai;
-                        else $internalCtx['tpp_pppk'] += (float) $item->nilai;
-                        $internalCtx['emp_count'] += 1;
-                    }
-                }
-
-                // PW aggregation
-                if ($category === 'PPPK_PW') {
-                    $prefix = substr($skpd->kode_skpd, 0, 18);
-                    $allUnitIds = Skpd::where('kode_skpd', 'LIKE', $prefix . '%')->pluck('id_skpd')->toArray();
-                    foreach ($allUnitIds as $uid) {
-                        $pw = $pwInternal->where('idskpd', $uid)->first();
-                        if ($pw) {
-                            $internalCtx['brutto'] += (float) $pw->brutto;
-                            $internalCtx['potongan'] += (float) $pw->potongan;
-                            $internalCtx['netto'] += (float) $pw->netto;
-                            $internalCtx['emp_count'] += (int) $pw->emp_count;
-                        }
-                    }
-                }
-            }
-
-            return [
-                'id' => $group['ids'][0], // Use first ID as representative
-                'all_ids' => implode(',', $group['ids']),
-                'simgaji' => [
-                    'nama_skpd' => $skpd ? $skpd->nama_skpd : 'No SKPD Mapping',
-                    'brutto' => $internalCtx['brutto'],
-                    'potongan' => $internalCtx['potongan'],
-                    'netto' => $internalCtx['netto'],
-                    'gaji_pns' => $internalCtx['gaji_pns'],
-                    'gaji_pppk' => $internalCtx['gaji_pppk'],
-                    'tpp_pns' => $internalCtx['tpp_pns'],
-                    'tpp_pppk' => $internalCtx['tpp_pppk'],
-                    'jenis_gaji' => $internalCtx['jenis_gaji'],
-                    'emp_count' => $internalCtx['emp_count'],
-                ],
-                'sipd' => [
-                    'tanggal_sp2d' => $reals->first()->tanggal_sp2d ? $reals->first()->tanggal_sp2d->format('Y-m-d') : null,
-                    'tanggal_cair' => $reals->first()->tanggal_cair ? $reals->first()->tanggal_cair->format('Y-m-d') : null,
-                    'nomor_sp2d' => $reals->pluck('nomor_sp2d')->implode(', '),
-                    'nama_skpd' => $reals->first()->nama_skpd_sipd,
-                    'jenis_data' => $reals->first()->jenis_data . ($reals->count() > 1 ? ' (' . $reals->count() . ' data)' : ''),
-                    'keterangan' => $reals->pluck('keterangan')->implode(' | '),
-                    'brutto' => $reals->sum('brutto'),
-                    'potongan' => $reals->sum('potongan'),
-                    'netto' => (str_starts_with($category ?? '', 'TPP') && $tppReconMode === 'bruto') ? $reals->sum('brutto') : $reals->sum('netto'), 
-                    'is_realized' => true,
-                    'sp2d_count' => $reals->count()
-                ]
-            ];
-        })->values();
+        // Just run it synchronously if not too many records, otherwise tell user to trigger
+        // For now, allow direct run but limit cache time
+        $data = $this->reconService->calculateReconciliation($bulan, $tahun, $tppReconMode);
+        
+        Cache::put($cacheKey, $data, now()->addMinutes(30));
 
         return response()->json([
             'status' => 'success',
-            'data' => $data
+            'data' => $data,
+            'source' => 'direct'
+        ]);
+    }
+
+    public function triggerRecon(Request $request)
+    {
+        $bulan = (int)$request->input('bulan', date('n'));
+        $tahun = (int)$request->input('tahun', date('Y'));
+        $tppReconMode = $request->input('tpp_recon_mode', 'bruto');
+
+        // Create job record
+        $job = UploadJob::create([
+            'type' => 'sp2d_reconciliation',
+            'status' => 'pending',
+            'params' => [
+                'bulan' => $bulan,
+                'tahun' => $tahun,
+                'tpp_recon_mode' => $tppReconMode
+            ],
+            'user_id' => auth()->id()
+        ]);
+
+        ProcessSp2dReconciliation::dispatch($bulan, $tahun, $tppReconMode, $job->id);
+
+        return response()->json([
+            'status' => 'success',
+            'job_id' => $job->id,
+            'message' => 'Background reconciliation started'
+        ]);
+    }
+
+    public function getReconJobStatus($jobId)
+    {
+        $job = UploadJob::find($jobId);
+        if (!$job) {
+            return response()->json(['status' => 'error', 'message' => 'Job not found'], 404);
+        }
+
+        return response()->json([
+            'status' => $job->status,
+            'progress' => $job->progress,
+            'error' => $job->error_message,
+            'summary' => $job->result_summary
         ]);
     }
 

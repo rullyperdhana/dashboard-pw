@@ -290,6 +290,12 @@ const router = createRouter({
             meta: { requiresAuth: true, breadcrumb: 'Log Login Pengguna', roles: ['superadmin'] },
         },
         {
+            path: '/settings/audit-logs',
+            name: 'AuditLogs',
+            component: () => import('../views/Settings/AuditLogs.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Log Aktivitas Sistem', roles: ['superadmin'] },
+        },
+        {
             path: '/settings/bkd-recon',
             name: 'BkdRecon',
             component: () => import('../views/Settings/BkdRecon.vue'),

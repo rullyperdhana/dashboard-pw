@@ -268,6 +268,7 @@ const menuItems = ref([
       { title: 'Riwayat Ekspor', icon: 'mdi-history', value: 'export-logs', to: '/settings/export-logs', roles: ['superadmin'] },
       { title: 'Pemeliharaan', icon: 'mdi-database-wrench', value: 'data-maintenance', to: '/settings/maintenance', roles: ['superadmin'] },
       { title: 'Log Login', icon: 'mdi-shield-history', value: 'login-logs', to: '/settings/login-logs', roles: ['superadmin'] },
+      { title: 'Log Aktivitas', icon: 'mdi-history', value: 'audit-logs', to: '/settings/audit-logs', roles: ['superadmin'] },
       { title: 'Rekon Data BKD', icon: 'mdi-compare-horizontal', value: 'bkd-recon', to: '/settings/bkd-recon', roles: ['superadmin', 'operator'] },
       { title: 'Kelola Pengumuman', icon: 'mdi-bullhorn-outline', value: 'announcements', to: '/settings/announcements', roles: ['superadmin'] },
     ]

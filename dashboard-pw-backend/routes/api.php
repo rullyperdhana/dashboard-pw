@@ -206,6 +206,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('user-groups', \App\Http\Controllers\Api\UserGroupController::class);
         Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword']);
         Route::get('/login-logs', [App\Http\Controllers\Api\LoginLogController::class, 'index']);
+        Route::get('/audit-logs', [App\Http\Controllers\Api\AuditLogController::class, 'index']);
 
         // Data Maintenance
         Route::post('/settings/clear-payroll', [SettingController::class, 'clearPayrollData']);
@@ -265,6 +266,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sp2d/status', [App\Http\Controllers\Api\Sp2dController::class, 'getStatus']);
     Route::get('/sp2d/transactions', [App\Http\Controllers\Api\Sp2dController::class, 'getTransactions']);
     Route::get('/sp2d/recon', [App\Http\Controllers\Api\Sp2dController::class, 'getRecon']);
+    Route::post('/sp2d/recon/trigger', [App\Http\Controllers\Api\Sp2dController::class, 'triggerRecon']);
+    Route::get('/sp2d/recon/job-status/{jobId}', [App\Http\Controllers\Api\Sp2dController::class, 'getReconJobStatus']);
     Route::get('/sp2d/recon/{id}', [App\Http\Controllers\Api\Sp2dController::class, 'getReconDetail']);
     Route::get('/sp2d/export-recon', [App\Http\Controllers\Api\Sp2dController::class, 'exportRecon']);
     Route::post('/sp2d/realizations', [App\Http\Controllers\Api\Sp2dController::class, 'store']);

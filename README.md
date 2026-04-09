@@ -34,13 +34,19 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 | **Pengaturan Akun**| Kelola profil & keamanan (Ganti Password) terintegrasi |
 | **Pusat Bantuan**   | Akses informasi bantuan untuk seluruh level user |
 | **Log Keamanan**     | Audit trail login (berhasil/gagal) & deteksi brute-force |
-| **Verifikasi SP2D**  | Rekon rincian gaji SIMGAJI vs Realisasi SIPD (Gaji & TPP) |
-| **Budget Simulation** | Simulasi "What-if" kenaikan gaji & pegawai baru (Analitik TAPD) |
-| **Anggaran & Realisasi**| Input Pagu Anggaran (Murni/Pergeseran) & Komparasi Kinerja Penyerapan SP2D Bruto |
+| **Audit Aktivitas** | Log perubahan parameter & aktivitas administratif (Superadmin) |
+| **Verifikasi SP2D** | Rekon rincian gaji SIMGAJI vs Realisasi SIPD (Asinkron / Background Job) |
+| **Anggaran & Realisasi**| Input Pagu Anggaran (Murni/Pergeseran) & Komparasi Kinerja Penyerapan |
 | **Cache Management** | Optimasi performa dashboard dangan sistem caching otomatis |
 | **Export Excel & PDF** | Export laporan sesuai tab yang aktif |
 
 ---
+
+### 🚀 Audit Aktivitas & Optimasi SP2D (v4.8.0)
+- **Background SP2D Reconciliation:** Kalkulasi rekonsiliasi SP2D yang berat kini dipindahkan ke *background job* (Laravel Queue). Pengguna mendapatkan *real-time progress bar* dan sistem terhindar dari *timeout* pada data besar.
+- **System Audit Log UI:** Halaman dashboard baru khusus Superadmin untuk memantau setiap perubahan parameter gaji dan aktivitas administratif. Mendukung tampilan perbandingan data lama (*old values*) dan baru (*new values*).
+- **Intelligent Caching:** Hasil rekonsiliasi SP2D kini disimpan dalam *cache* selama 1 jam untuk akses instan, dengan opsi "Hitung Ulang" untuk memperbarui data secara manual.
+- **Security Audit Trail:** Perekaman otomatis IP Address, User Agent, dan detail teknis (JSON) untuk setiap aksi krusial di sistem.
  
 
   
@@ -322,6 +328,7 @@ Lihat [README_DEPLOY.md](README_DEPLOY.md) untuk panduan update mesin dan troubl
 | `settings` | Konfigurasi JKK, JKM, UMP, Bulan Basis Extra Payroll, dll |
 | `users` | Akun pengguna |
 | `tb_extra_payroll_pppk_pw` | Data THR & Gaji 13 PPPK-PW yang tersimpan (Database) |
+| `audit_logs` | Catatan aktivitas administratif dan perubahan sistem |
 | `pph21_calculations` | Hasil perhitungan pajak bulanan per pegawai |
 | `pph21_ter_rates` | Master data tarif efektif rata-rata (Cat A, B, C) |
 | `employee_statuses` | Riwayat status pegawai + SK |
@@ -410,6 +417,8 @@ Export Excel/PDF secara otomatis menyesuaikan kolom dengan tab yang aktif.
 | `/upload/tpg` | Upload TPG |
 | `/reports/pph21` | Laporan PPh 21 TER & Bukti Potong A2 |
 | `/settings/tax-status` | Manajemen Status Pajak (PTKP) |
+| `/settings/audit-logs` | Log Aktivitas Sistem (Superadmin) |
+| `/sp2d-verification` | Rekonsiliasi SP2D vs Simgaji (Background Processing) |
 
 ---
 
