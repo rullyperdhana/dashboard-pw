@@ -34,8 +34,8 @@ class Sp2dReconciliationService
             ->where('bulan', $bulan)
             ->where('tahun', $tahun)
             ->select('kdskpd', 'jenis_gaji', 
-                DB::raw('SUM(brutto) as brutto'), 
-                DB::raw('SUM(potongan) as potongan'), 
+                DB::raw('SUM(kotor) as brutto'), 
+                DB::raw('SUM(total_potongan) as potongan'), 
                 DB::raw('SUM(bersih - tunj_tpp) as netto'),
                 DB::raw('SUM(tunj_tpp) as tpp'),
                 DB::raw('COUNT(id) as emp_count')
@@ -47,8 +47,8 @@ class Sp2dReconciliationService
             ->where('bulan', $bulan)
             ->where('tahun', $tahun)
             ->select('kdskpd', 'jenis_gaji', 
-                DB::raw('SUM(brutto) as brutto'), 
-                DB::raw('SUM(potongan) as potongan'), 
+                DB::raw('SUM(kotor) as brutto'), 
+                DB::raw('SUM(total_potongan) as potongan'), 
                 DB::raw('SUM(bersih - tunj_tpp) as netto'),
                 DB::raw('SUM(tunj_tpp) as tpp'),
                 DB::raw('COUNT(id) as emp_count')
@@ -62,8 +62,8 @@ class Sp2dReconciliationService
             ->where('p.month', $bulan)
             ->where('p.year', $tahun)
             ->select('e.idskpd', 
-                DB::raw('SUM(pd.total_amoun) as brutto'), // Simplified for now
-                DB::raw('SUM(0) as potongan'), 
+                DB::raw('SUM(IFNULL(pd.gaji_pokok, 0) + IFNULL(pd.tunjangan, 0)) as brutto'),
+                DB::raw('SUM(IFNULL(pd.pajak, 0) + IFNULL(pd.iwp, 0)) as potongan'), 
                 DB::raw('SUM(pd.total_amoun) as netto'),
                 DB::raw('COUNT(DISTINCT pd.employee_id) as emp_count')
             )
@@ -87,7 +87,7 @@ class Sp2dReconciliationService
             if (str_contains($jenisDataRaw, 'SUSULAN')) $targetJenisGajiDetected = 'Susulan';
             elseif (str_contains($jenisDataRaw, 'KEKURANGAN')) $targetJenisGajiDetected = 'Kekurangan';
             elseif (str_contains($jenisDataRaw, 'TERUSAN')) $targetJenisGajiDetected = 'Terusan';
-            elseif (str_contains($jenisDataRaw, 'THR') || str_contains($jenisDataRaw, 'GAJI 14') || str_contains($ketRaw, 'THR')) $targetJenisGajiDetected = 'Gaji 14 / THR';
+            elseif (str_contains($jenisDataRaw, 'THR') || str_contains($jenisDataRaw, 'GAJI 14') || str_contains($ketRaw, 'THR')) $targetJenisGajiDetected = 'THR';
             elseif (str_contains($jenisDataRaw, 'GAJI 13')) $targetJenisGajiDetected = 'Gaji 13';
 
             $category = 'UNKNOWN';
@@ -140,8 +140,8 @@ class Sp2dReconciliationService
                         if ($p) {
                             $internalCtx['brutto'] += (float)$p->brutto;
                             $internalCtx['potongan'] += (float)$p->potongan;
-                            $internalCtx['netto'] += (float)$p->netto;
-                            $internalCtx['gaji_pns'] += (float)$p->netto;
+                            $internalCtx['netto'] += ($targetType !== 'Induk') ? (float)$p->brutto : (float)$p->netto;
+                            $internalCtx['gaji_pns'] += (float)$p->brutto;
                             $internalCtx['emp_count'] += (int)$p->emp_count;
                         }
                     } elseif ($category === 'PPPK') {
@@ -149,8 +149,8 @@ class Sp2dReconciliationService
                         if ($pk) {
                             $internalCtx['brutto'] += (float)$pk->brutto;
                             $internalCtx['potongan'] += (float)$pk->potongan;
-                            $internalCtx['netto'] += (float)$pk->netto;
-                            $internalCtx['gaji_pppk'] += (float)$pk->netto;
+                            $internalCtx['netto'] += ($targetType !== 'Induk') ? (float)$pk->brutto : (float)$pk->netto;
+                            $internalCtx['gaji_pppk'] += (float)$pk->brutto;
                             $internalCtx['emp_count'] += (int)$pk->emp_count;
                         }
                     } elseif ($category === 'TPP' || $category === 'TPP_PNS') {
@@ -181,7 +181,7 @@ class Sp2dReconciliationService
                         if ($pw) {
                             $internalCtx['brutto'] += (float)$pw->brutto;
                             $internalCtx['potongan'] += (float)$pw->potongan;
-                            $internalCtx['netto'] += (float)$pw->netto;
+                            $internalCtx['netto'] += ($targetType !== 'Induk') ? (float)$pw->brutto : (float)$pw->netto;
                             $internalCtx['emp_count'] += (int)$pw->emp_count;
                         }
                     }
@@ -225,7 +225,7 @@ class Sp2dReconciliationService
                     'jenis_data' => $reals->first()->jenis_data . ($reals->count() > 1 ? ' (' . $reals->count() . ' items)' : ''),
                     'brutto' => $reals->sum('brutto'),
                     'potongan' => $reals->sum('potongan'),
-                    'netto' => (str_starts_with($category ?? '', 'TPP') && $tppReconMode === 'bruto') ? $reals->sum('brutto') : $reals->sum('netto'),
+                    'netto' => ((str_starts_with($category ?? '', 'TPP') && $tppReconMode === 'bruto') || $targetType !== 'Induk') ? $reals->sum('brutto') : $reals->sum('netto'),
                     'sp2d_count' => $reals->count()
                 ]
             ];

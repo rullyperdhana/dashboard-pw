@@ -811,7 +811,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import api from '../api'
 import StatusChip from '../components/Sp2dStatusChip.vue'
 import Sidebar from '../components/Sidebar.vue'
