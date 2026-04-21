@@ -73,6 +73,7 @@ class SimgajiController extends Controller
 
     public function listGaji(Request $request)
     {
+        try {
         // Parameter parsing
         $period = $request->periode ?? $request->period; // Support both for compatibility
         $kode_instansi = $request->kode_instansi;
@@ -297,11 +298,19 @@ class SimgajiController extends Controller
         // Apply field configuration
         $formattedData = $this->applyFieldConfig('listgaji', $formattedData);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Success',
-            'data' => $formattedData
-        ]);
+            return response()->json([
+                'status' => true,
+                'message' => 'Success',
+                'data' => $formattedData
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Server Error Debug: ' . $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ], 500);
+        }
     }
 
     /**
