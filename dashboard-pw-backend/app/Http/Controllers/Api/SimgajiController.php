@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Models\ApiFieldConfig;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class SimgajiController extends Controller
 {
@@ -29,6 +30,9 @@ class SimgajiController extends Controller
         }
 
         $data = $query->orderBy('s.nmskpd')->get();
+
+        // Apply field configuration
+        $data = $this->applyFieldConfig('listinstansi', $data);
 
         return response()->json([
             'status' => true,
@@ -56,6 +60,9 @@ class SimgajiController extends Controller
         }
 
         $data = $query->get();
+
+        // Apply field configuration
+        $data = $this->applyFieldConfig('listpegawai', $data);
 
         return response()->json([
             'status' => true,
@@ -191,6 +198,10 @@ class SimgajiController extends Controller
 
         $formattedData = [];
         foreach ($results as $row) {
+            // ... (keep the calculation logic same as before, just formatting the output)
+            // I will summarize the loop for brevity in TargetContent but use exact lines for ReplacementContent
+            // (Re-typing the logic carefully)
+            
             // Status Pajak Priority: 1. Fixed Tax Status (from management), 2. Dynamic Calculation
             if (!empty($row->fixed_tax_status) && $row->fixed_tax_status !== '-') {
                 $statusPajak = $row->fixed_tax_status;
@@ -282,10 +293,54 @@ class SimgajiController extends Controller
             ];
         }
 
+        // Apply field configuration
+        $formattedData = $this->applyFieldConfig('listgaji', $formattedData);
+
         return response()->json([
             'status' => true,
             'message' => 'Success',
             'data' => $formattedData
         ]);
+    }
+
+    /**
+     * Helper to filter output fields based on database configuration
+     */
+    private function applyFieldConfig($endpoint, $data)
+    {
+        $enabledConfigs = Cache::remember("api_field_config_{$endpoint}", 3600, function () use ($endpoint) {
+            return ApiFieldConfig::where('endpoint', $endpoint)
+                ->where('is_enabled', true)
+                ->select('field_key', 'native_key')
+                ->get()
+                ->toArray();
+        });
+
+        // Convert collection to array if needed
+        if (method_exists($data, 'toArray')) {
+            $dataArray = $data->toArray();
+        } else {
+            $dataArray = json_decode(json_encode($data), true);
+        }
+
+        $filteredData = array_map(function ($row) use ($enabledConfigs) {
+            $rowArray = (array) $row;
+            $newRow = [];
+            
+            foreach ($enabledConfigs as $config) {
+                $nativeKey = $config['native_key'] ?? $config['field_key'];
+                $fieldKey = $config['field_key'];
+                
+                if (isset($rowArray[$nativeKey])) {
+                    $newRow[$fieldKey] = $rowArray[$nativeKey];
+                } else if (array_key_exists($nativeKey, $rowArray)) {
+                    $newRow[$fieldKey] = $rowArray[$nativeKey];
+                }
+            }
+            
+            return $newRow;
+        }, $dataArray);
+
+        return $filteredData;
     }
 }

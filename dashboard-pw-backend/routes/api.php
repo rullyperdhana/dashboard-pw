@@ -221,6 +221,14 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('/{id}/toggle', [App\Http\Controllers\Api\ApiKeyController::class, 'toggleActive']);
             Route::delete('/{id}', [App\Http\Controllers\Api\ApiKeyController::class, 'destroy']);
         });
+
+        // API Field Config Management
+        Route::prefix('api-field-configs')->group(function () {
+            Route::get('/', [App\Http\Controllers\Api\ApiFieldConfigController::class, 'index']);
+            Route::put('/bulk-update', [App\Http\Controllers\Api\ApiFieldConfigController::class, 'bulkUpdate']);
+            Route::post('/reset', [App\Http\Controllers\Api\ApiFieldConfigController::class, 'reset']);
+            Route::put('/{id}', [App\Http\Controllers\Api\ApiFieldConfigController::class, 'update']);
+        });
     });
 
     Route::middleware('role:superadmin,operator')->group(function () {
