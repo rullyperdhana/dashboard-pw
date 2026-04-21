@@ -222,7 +222,6 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('/{id}', [App\Http\Controllers\Api\ApiKeyController::class, 'destroy']);
         });
 
-        });
     });
 
     Route::middleware('role:superadmin,operator')->group(function () {
