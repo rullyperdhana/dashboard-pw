@@ -27,7 +27,7 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 | **SKPD Mapping** | Pemetaan Kode & Nama SKPD untuk akurasi laporan |
 | **Manajemen User** | Akun admin & admin SKPD |
 | **Status Pajak (PTKP)**| Kelola status PTKP statis tahunan (K/0, TK/1, dll) |
-| **API Integrasi**    | Endpoint API Key & Konfigurasi Output Dinamis (JSON Header Renaming) |
+| **API Integrasi**    | Endpoint API Key untuk integrasi sistem eksternal (SIMGAJI) |
 | **Pajak TER (A2)**  | Perhitungan PPh 21 TER & Export Bukti Potong A2 |
 | **Welcome Hub**    | Beranda interaktif dengan glassmorphism & pengumuman |
 | **Pengumuman**     | Manajemen pengumuman (CRUD) khusus Superadmin |
@@ -39,14 +39,6 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 | **Anggaran & Realisasi**| Input Pagu Anggaran (Murni/Pergeseran) & Komparasi Kinerja Penyerapan |
 | **Cache Management** | Optimasi performa dashboard dangan sistem caching otomatis |
 | **Export Excel & PDF** | Export laporan sesuai tab yang aktif |
-
----
-
-### 🛡️ Dynamic API Output & Programmable Headers (v5.1.0)
-- **Granular Output Control:** Superadmin kini dapat menentukan secara spesifik field mana saja yang boleh keluar pada respons JSON untuk setiap endpoint (`listinstansi`, `listpegawai`, `listgaji`).
-- **Programmable JSON Headers:** Fitur "Header Renaming" memungkinkan penggantian kunci respons (JSON Key) melalui UI. Sistem secara otomatis memetakan data internal ke nama header pilihan Admin menggunakan arsitektur `native_key`.
-- **Performance Optimized Caching:** Konfigurasi output API disimpan dalam *cache* server untuk menjamin responsivitas tinggi dangan *overhead* database minimal.
-- **Integrated Settings UI:** Manajemen field terintegrasi langsung pada halaman API Keys dangan antarmuka tabbed yang modern.
 
 ---
 

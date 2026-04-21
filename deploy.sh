@@ -29,7 +29,6 @@ if [ -f "composer.json" ]; then
 fi
 php artisan migrate --force
 php artisan db:seed --class=HelpArticleSeeder
-php artisan db:seed --class=ApiFieldConfigSeeder
 # php artisan db:seed --class=SkpdMappingSeeder # Removed: Overwrites manual SKPD mappings on every deploy
 php artisan db:seed --class=PPh21TerSeeder
 php artisan optimize:clear
