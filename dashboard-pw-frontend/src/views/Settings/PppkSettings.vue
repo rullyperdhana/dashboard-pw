@@ -883,6 +883,7 @@ const pwHeaders = [
   { title: 'SKPD', key: 'nama_skpd' },
   { title: 'Pegawai', key: 'employee_count', align: 'end' },
   { title: 'Gaji Pokok', key: 'total_gaji_pokok', align: 'end' },
+  { title: 'Tunjangan', key: 'total_tunjangan', align: 'end' },
   { title: 'JKK', key: 'tunjangan_jkk', align: 'end' },
   { title: 'JKM', key: 'tunjangan_jkm', align: 'end' },
   { title: 'BPJS Kes', key: 'bpjs_kesehatan', align: 'end' },

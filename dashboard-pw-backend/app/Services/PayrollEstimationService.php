@@ -236,6 +236,50 @@ class PayrollEstimationService
     }
 
     /**
+     * Get SKPD Breakdown for PPPK-PW estimation
+     */
+    public function getPppkPwEstimationSkpdDetails()
+    {
+        $settings = $this->getSettings();
+        
+        $retirementAge = 58;
+        $cutoffBirthDate = \Carbon\Carbon::now()->subYears($retirementAge);
+        
+        return \App\Models\PegawaiPw::select(
+            'pegawai_pw.idskpd as id_skpd',
+            DB::raw('COALESCE(skpd.nama_skpd, pegawai_pw.skpd) as nama_skpd'),
+            DB::raw('COUNT(pegawai_pw.id) as employee_count'),
+            DB::raw('SUM(pegawai_pw.gapok) as total_gaji_pokok'),
+            DB::raw('SUM(pegawai_pw.tunjangan) as total_tunjangan'),
+            DB::raw("SUM(LEAST(GREATEST(IFNULL(gapok, 0), {$settings['ump_kalsel']}), {$settings['bpjs_cap']})) as total_bpjs_base")
+        )
+        ->leftJoin('skpd', 'pegawai_pw.idskpd', '=', 'skpd.id_skpd')
+        ->whereDate('tgl_lahir', '>=', $cutoffBirthDate->format('Y-m-d'))
+        ->groupBy('id_skpd', 'nama_skpd')
+        ->orderBy('nama_skpd')
+        ->get()
+        ->map(function ($item) use ($settings) {
+            $gapok = (float) $item->total_gaji_pokok;
+            $bpjsBase = (float) $item->total_bpjs_base;
+            $jkk = $gapok * ($settings['jkk_percent'] / 100);
+            $jkm = $gapok * ($settings['jkm_percent'] / 100);
+            $bpjs = $bpjsBase * ($settings['bpjs_percent'] / 100);
+
+            return [
+                'id_skpd' => $item->id_skpd,
+                'nama_skpd' => $item->nama_skpd,
+                'employee_count' => (int) $item->employee_count,
+                'total_gaji_pokok' => $gapok,
+                'total_tunjangan' => (float) $item->total_tunjangan,
+                'tunjangan_jkk' => round($jkk, 2),
+                'tunjangan_jkm' => round($jkm, 2),
+                'bpjs_kesehatan' => round($bpjs, 2),
+                'total_estimation' => round($gapok + (float)$item->total_tunjangan + $jkk + $jkm, 2)
+            ];
+        });
+    }
+
+    /**
      * Get Estimation Details for PPPK-PW
      */
     public function getPppkPwEstimationDetails($idskpd = null)

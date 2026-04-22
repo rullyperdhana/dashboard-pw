@@ -42,6 +42,10 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
 ---
 
+### 🛠️ PPPK-PW Estimation & UI Consistency (v4.9.2)
+- **PPPK-PW SKPD Breakdown Fix:** Menambahkan rincian per SKPD pada tab PPPK Paruh Waktu di halaman Estimasi Iuran. Sebelumnya hanya menampilkan summary global tanpa breakdown unit kerja.
+- **Enhanced Estimation Table:** Menambahkan kolom "Tunjangan" pada tabel rincian estimasi (PNS, PPPK, PW) untuk transparansi perhitungan iuran yang lebih baik.
+
 ### 🛠️ Maintenance Reliability & Theme Optimization (v4.9.1)
 - **Database Restore Fix:** Perbaikan bug kritis (syntax error) pada backend `SettingController` yang menyebabkan kegagalan proses impor database (500 error).
 - **SKPD Mapping Integrity:** Perbaikan sinkronisasi data pada dropdown SKPD di halaman Pemeliharaan Data. Data kini dipetakan dengan benar dari response API yang terbungkus (*wrapped response*).

@@ -106,10 +106,11 @@ class SettingController extends Controller
     public function pppkPwEstimation(Request $request)
     {
         $summary = $this->payrollService->getPppkPwEstimationSummary();
+        $details = $this->payrollService->getPppkPwEstimationSkpdDetails();
 
         return response()->json([
             'success' => true,
-            'data' => $summary
+            'data' => array_merge($summary, ['details' => $details])
         ]);
     }
 
