@@ -236,6 +236,7 @@ const menuItems = ref([
       { title: 'Upload TPG', icon: 'mdi-file-upload-outline', value: 'tpg-upload', to: '/tpg-upload' },
       { title: 'Riwayat Selisih TPP', icon: 'mdi-history', value: 'tpp-discrepancy', to: '/tpp/discrepancy-history' },
       { title: 'Pajak TER (A2)', icon: 'mdi-calculator-variant-outline', value: 'pph21-report', to: '/reports/pph21' },
+      { title: 'Laporan Konsolidasi', icon: 'mdi-file-compare', value: 'consolidated-report', to: '/reports/consolidated' },
     ]
   },
   {

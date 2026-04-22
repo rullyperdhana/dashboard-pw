@@ -202,7 +202,8 @@ class UploadJobController extends Controller
                 'jenis_gaji' => 'required|in:Induk,THR,Gaji 13',
             ],
             'tpg' => [
-                'triwulan' => 'required|integer|min:1|max:4',
+                'triwulan' => 'nullable|integer|min:1|max:4',
+                'month' => 'nullable|integer|min:1|max:12',
                 'tahun' => 'required|integer|min:2020|max:2030',
                 'jenis' => 'required|in:INDUK,SUSULAN',
             ],
@@ -232,7 +233,8 @@ class UploadJobController extends Controller
                 'jenis_gaji' => $request->input('jenis_gaji'),
             ],
             'tpg' => [
-                'triwulan' => (int) $request->input('triwulan'),
+                'month' => (int) $request->input('month'),
+                'triwulan' => (int) ($request->input('month') ? ceil($request->input('month') / 3) : $request->input('triwulan')),
                 'tahun' => (int) $request->input('tahun'),
                 'jenis' => $request->input('jenis'),
             ],

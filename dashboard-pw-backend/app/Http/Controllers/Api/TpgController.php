@@ -24,50 +24,58 @@ class TpgController extends Controller
     {
         $request->validate([
             'file' => 'required|mimes:xlsx,xls',
-            'triwulan' => 'required|integer|min:1|max:4',
+            'triwulan' => 'nullable|integer|min:1|max:4',
+            'month' => 'nullable|integer|min:1|max:12',
             'tahun' => 'required|integer|min:2020|max:2030',
             'jenis' => 'required|in:INDUK,SUSULAN',
         ]);
 
         try {
             ini_set('memory_limit', '512M');
-            $file = $request->file('file');
-            $triwulan = $request->input('triwulan');
+            $month = $request->input('month');
+            $triwulan = (int) ($month ? ceil($month / 3) : $request->input('triwulan'));
             $tahun = $request->input('tahun');
             $jenis = $request->input('jenis');
 
-            // Check if posted (TPG uses tahun but we need to map triwulan to months or just use a generic 'TPG' lock for the year/quarter)
-            // For TPG, we'll use month = triwulan for the lock entry to keep it simple, or use 0? 
-            // Better: use triwulan as month (1,2,3,4) for TPG type.
-            if (PayrollPosting::isLocked((int) $tahun, (int) $triwulan, 'TPG')) {
+            // Check if posted
+            if (PayrollPosting::isLocked((int) $tahun, (int) ($month ?? $triwulan), 'TPG')) {
+                $periodLabel = $month ? "Bulan {$month}" : "Triwulan {$triwulan}";
                 return response()->json([
                     'success' => false,
-                    'message' => "Data TPG periode Triwulan {$triwulan} Tahun {$tahun} sudah di-POSTING (Dikunci) dan tidak dapat diubah."
+                    'message' => "Data TPG periode {$periodLabel} Tahun {$tahun} sudah di-POSTING (Dikunci) dan tidak dapat diubah."
                 ], 403);
             }
 
-            // For INDUK: delete existing INDUK data for this triwulan+tahun before re-importing
+            // For INDUK: delete existing INDUK data for this period before re-importing
             if ($jenis === 'INDUK') {
-                TpgData::where('triwulan', $triwulan)
-                    ->where('tahun', $tahun)
-                    ->where('jenis', 'INDUK')
-                    ->delete();
+                $delQuery = TpgData::where('tahun', $tahun)->where('jenis', 'INDUK');
+                if ($month) {
+                    $delQuery->where('bulan', $month);
+                } else {
+                    $delQuery->where('triwulan', $triwulan);
+                }
+                $delQuery->delete();
             }
 
-            Excel::import(new TpgImport($triwulan, $tahun, $jenis), $file);
+            Excel::import(new TpgImport($triwulan, $tahun, $jenis, $month), $file);
 
-            $count = TpgData::where('triwulan', $triwulan)
-                ->where('tahun', $tahun)
-                ->where('jenis', $jenis)
-                ->count();
+            $countQuery = TpgData::where('tahun', $tahun)->where('jenis', $jenis);
+            if ($month) {
+                $countQuery->where('bulan', $month);
+            } else {
+                $countQuery->where('triwulan', $triwulan);
+            }
+            $count = $countQuery->count();
 
             $jenisLabel = $jenis === 'INDUK' ? 'Induk' : 'Susulan';
 
             $this->clearDashboardCache();
 
+            $periodLabel = $month ? "Bulan {$month}" : "Triwulan {$triwulan}";
+
             return response()->json([
                 'success' => true,
-                'message' => "Data TPG {$jenisLabel} Triwulan {$triwulan} Tahun {$tahun} berhasil diimport. Total: {$count} data.",
+                'message' => "Data TPG {$jenisLabel} {$periodLabel} Tahun {$tahun} berhasil diimport. Total: {$count} data.",
                 'total' => $count,
             ]);
 
@@ -92,14 +100,16 @@ class TpgController extends Controller
         $triwulanSummary = TpgData::where('tahun', $tahun)
             ->select(
                 'triwulan',
+                'bulan',
                 DB::raw('COUNT(*) as total_penerima'),
                 DB::raw('SUM(salur_brut) as total_brut'),
                 DB::raw('SUM(pph) as total_pph'),
                 DB::raw('SUM(pot_jkn) as total_pot_jkn'),
                 DB::raw('SUM(salur_nett) as total_nett')
             )
-            ->groupBy('triwulan')
+            ->groupBy('triwulan', 'bulan')
             ->orderBy('triwulan')
+            ->orderBy('bulan')
             ->get();
 
         // Yearly totals
@@ -117,6 +127,9 @@ class TpgController extends Controller
         $satdikQuery = TpgData::where('tahun', $tahun);
         if ($triwulan) {
             $satdikQuery->where('triwulan', $triwulan);
+        }
+        if ($request->has('bulan')) {
+            $satdikQuery->where('bulan', $request->bulan);
         }
         $satdikBreakdown = $satdikQuery
             ->select(
@@ -163,6 +176,9 @@ class TpgController extends Controller
         if ($triwulan) {
             $query->where('triwulan', $triwulan);
         }
+        if ($request->has('bulan')) {
+            $query->where('bulan', $request->bulan);
+        }
 
         // Exact SATDIK filter (from breakdown link)
         $satdik = $request->input('satdik', '');
@@ -201,5 +217,13 @@ class TpgController extends Controller
         $filename .= '.xlsx';
 
         return Excel::download(new TpgExport($tahun, $triwulan), $filename);
+    }
+
+    /**
+     * Download TPG upload template (XLSX).
+     */
+    public function downloadTemplate()
+    {
+        return Excel::download(new \App\Exports\TpgTemplateExport, 'template_upload_tpg.xlsx');
     }
 }

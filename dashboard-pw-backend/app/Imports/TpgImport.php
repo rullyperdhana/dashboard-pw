@@ -10,15 +10,19 @@ use Illuminate\Support\Facades\Log;
 
 class TpgImport implements ToCollection, WithHeadingRow
 {
+    protected $bulan;
     protected $triwulan;
     protected $tahun;
     protected $jenis;
+    protected $useBulan;
 
-    public function __construct($triwulan, $tahun, $jenis = 'INDUK')
+    public function __construct($triwulan, $tahun, $jenis = 'INDUK', $bulan = null)
     {
         $this->triwulan = $triwulan;
         $this->tahun = $tahun;
         $this->jenis = strtoupper($jenis);
+        $this->bulan = $bulan;
+        $this->useBulan = !empty($bulan);
     }
 
     public function collection(Collection $rows)
@@ -87,11 +91,11 @@ class TpgImport implements ToCollection, WithHeadingRow
                     'netto',
                 ]) ?? 0);
 
-                // Upsert by NIP + triwulan + tahun + jenis
+                // Upsert by NIP + bulan + tahun + jenis
                 TpgData::updateOrCreate(
                     [
                         'nip' => $nip,
-                        'triwulan' => $this->triwulan,
+                        'bulan' => $this->bulan,
                         'tahun' => $this->tahun,
                         'jenis' => $this->jenis,
                     ],
@@ -103,6 +107,7 @@ class TpgImport implements ToCollection, WithHeadingRow
                         'pph' => $pph,
                         'pot_jkn' => $potJkn,
                         'salur_nett' => $salurNett,
+                        'triwulan' => $this->triwulan, // Keep triwulan for backward compatibility
                     ]
                 );
 

@@ -284,6 +284,12 @@ const router = createRouter({
             meta: { requiresAuth: true, breadcrumb: 'Pajak TER (A2)', app_access: 'pph21-report' },
         },
         {
+            path: '/reports/consolidated',
+            name: 'ConsolidatedReport',
+            component: () => import('../views/ConsolidatedReport.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Laporan Konsolidasi', app_access: 'pns' },
+        },
+        {
             path: '/settings/login-logs',
             name: 'LoginLogs',
             component: () => import('../views/Settings/LoginLogs.vue'),

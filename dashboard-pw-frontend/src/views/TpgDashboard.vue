@@ -12,7 +12,7 @@
               <v-icon start color="deep-purple" size="36">mdi-school-outline</v-icon>
               Dashboard TPG
             </h1>
-            <p class="text-subtitle-1 text-grey-darken-1">Monitoring Tunjangan Profesi Guru per Triwulan</p>
+            <p class="text-subtitle-1 text-grey-darken-1">Monitoring Tunjangan Profesi Guru per Bulan/Triwulan</p>
           </v-col>
           <v-col cols="auto" class="d-flex align-center ga-3">
             <v-select
@@ -150,6 +150,18 @@
                       Breakdown per SATDIK
                     </h3>
                     <div class="d-flex align-center ga-3">
+                      <v-select
+                        v-model="selectedMonth"
+                        :items="monthFilterOptions"
+                        label="Bulan"
+                        variant="outlined"
+                        density="compact"
+                        color="deep-purple"
+                        hide-details
+                        style="min-width: 150px"
+                        class="mr-2"
+                        @update:model-value="fetchDashboard"
+                      ></v-select>
                       <v-btn-toggle
                         v-model="selectedTw"
                         mandatory
@@ -157,9 +169,9 @@
                         color="deep-purple"
                         variant="outlined"
                         divided
-                        @update:model-value="fetchDashboard"
+                        @update:model-value="selectedMonth = 'all'; fetchDashboard()"
                       >
-                        <v-btn value="all" size="small">Semua</v-btn>
+                        <v-btn value="all" size="small">Semua TW</v-btn>
                         <v-btn :value="1" size="small">TW1</v-btn>
                         <v-btn :value="2" size="small">TW2</v-btn>
                         <v-btn :value="3" size="small">TW3</v-btn>
@@ -280,9 +292,14 @@
                       {{ (dataPage - 1) * dataPerPage + index + 1 }}
                     </template>
                     <template v-slot:item.triwulan="{ item }">
-                      <v-chip size="x-small" :color="twColors[item.triwulan - 1]" variant="tonal">
-                        TW {{ item.triwulan }}
-                      </v-chip>
+                      <div class="d-flex flex-column">
+                        <v-chip size="x-small" :color="twColors[item.triwulan - 1]" variant="tonal" class="mb-1">
+                          TW {{ item.triwulan }}
+                        </v-chip>
+                        <span v-if="item.bulan" class="text-caption text-grey">
+                          {{ getMonthName(item.bulan) }}
+                        </span>
+                      </div>
                     </template>
                     <template v-slot:item.jenis="{ item }">
                       <v-chip size="x-small" :color="item.jenis === 'INDUK' ? 'blue' : 'orange'" variant="tonal">
@@ -325,6 +342,7 @@ const exporting = ref(false)
 
 const selectedYear = ref(new Date().getFullYear())
 const selectedTw = ref('all')
+const selectedMonth = ref('all')
 const defaultYears = [2024, 2025, 2026, 2027]
 const availableYears = ref([])
 
@@ -333,6 +351,22 @@ const triwulanSummary = ref([])
 const satdikBreakdown = ref([])
 
 const twColors = ['#7C4DFF', '#2979FF', '#00BFA5', '#FF6D00']
+
+const monthFilterOptions = [
+  { title: 'Semua Bulan', value: 'all' },
+  { title: 'Januari', value: 1 },
+  { title: 'Februari', value: 2 },
+  { title: 'Maret', value: 3 },
+  { title: 'April', value: 4 },
+  { title: 'Mei', value: 5 },
+  { title: 'Juni', value: 6 },
+  { title: 'Juli', value: 7 },
+  { title: 'Agustus', value: 8 },
+  { title: 'September', value: 9 },
+  { title: 'Oktober', value: 10 },
+  { title: 'November', value: 11 },
+  { title: 'Desember', value: 12 },
+]
 
 // Data table
 const dataSearch = ref('')
@@ -378,8 +412,10 @@ const triwulanChartSeries = computed(() => {
   const brut = [0, 0, 0, 0]
   const nett = [0, 0, 0, 0]
   triwulanSummary.value.forEach(tw => {
-    brut[tw.triwulan - 1] = parseFloat(tw.total_brut || 0)
-    nett[tw.triwulan - 1] = parseFloat(tw.total_nett || 0)
+    if (tw.triwulan >= 1 && tw.triwulan <= 4) {
+      brut[tw.triwulan - 1] += parseFloat(tw.total_brut || 0)
+      nett[tw.triwulan - 1] += parseFloat(tw.total_nett || 0)
+    }
   })
   return [
     { name: 'Salur Bruto', data: brut },
@@ -402,7 +438,7 @@ const dataHeaders = [
   { title: 'NIP', key: 'nip', sortable: false },
   { title: 'Nama', key: 'nama', sortable: false },
   { title: 'SATDIK', key: 'satdik', sortable: false },
-  { title: 'TW', key: 'triwulan', sortable: false, align: 'center' },
+  { title: 'Periode', key: 'triwulan', sortable: false, align: 'center' },
   { title: 'Jenis', key: 'jenis', sortable: false, align: 'center' },
   { title: 'Salur Bruto', key: 'salur_brut', sortable: false, align: 'end' },
   { title: 'PPH', key: 'pph', sortable: false, align: 'end' },
@@ -419,6 +455,9 @@ const fetchDashboard = async () => {
     const params = { tahun: selectedYear.value }
     if (selectedTw.value !== 'all') {
       params.triwulan = selectedTw.value
+    }
+    if (selectedMonth.value !== 'all') {
+      params.bulan = selectedMonth.value
     }
     const { data } = await api.get('/tpg/dashboard', { params })
 
@@ -448,6 +487,9 @@ const fetchData = async () => {
     }
     if (selectedTw.value !== 'all') {
       params.triwulan = selectedTw.value
+    }
+    if (selectedMonth.value !== 'all') {
+      params.bulan = selectedMonth.value
     }
     if (selectedSatdik.value) {
       params.satdik = selectedSatdik.value
@@ -496,6 +538,9 @@ const exportData = async () => {
     if (selectedTw.value !== 'all') {
       params.triwulan = selectedTw.value
     }
+    if (selectedMonth.value !== 'all') {
+      params.bulan = selectedMonth.value
+    }
     const response = await api.get('/tpg/export', {
       params,
       responseType: 'blob'
@@ -504,7 +549,8 @@ const exportData = async () => {
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', `data_tpg_${selectedYear.value}${selectedTw.value !== 'all' ? '_tw' + selectedTw.value : ''}.xlsx`)
+    const periodSuffix = selectedMonth.value !== 'all' ? `_bulan${selectedMonth.value}` : (selectedTw.value !== 'all' ? `_tw${selectedTw.value}` : '')
+    link.setAttribute('download', `data_tpg_${selectedYear.value}${periodSuffix}.xlsx`)
     document.body.appendChild(link)
     link.click()
     link.remove()
@@ -532,6 +578,11 @@ const formatCurrencyShort = (val) => {
 
 const formatNumber = (val) => {
   return (parseInt(val) || 0).toLocaleString('id-ID')
+}
+
+const getMonthName = (month) => {
+  const m = monthFilterOptions.find(o => o.value === month)
+  return m ? m.title : month
 }
 
 // --- Lifecycle ---

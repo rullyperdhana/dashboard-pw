@@ -14,7 +14,9 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 | **Upload Gaji PPPK** | Import data gaji PPPK Penuh Waktu dari file Excel |
 | **Pembayaran PPPK-PW** | Manajemen pembayaran PPPK Paruh Waktu |
 | **Upload TPP** | Import data Tambahan Penghasilan Pegawai |
-| **Upload TPG** | Import data Tunjangan Profesi Guru (INDUK & SUSULAN) |
+| **Upload TPG** | Import data Tunjangan Profesi Guru (Bulanan) |
+| **Laporan Konsolidasi** | Rekapitulasi Gaji + TPP + TPG per pegawai (Bulanan) |
+| **Dashboard TPG** | Monitoring realisasi TPG bulanan & sisa penyaluran |
 | **Daftar Pegawai PW** | Data master pegawai PW dengan status, sumber dana, dokumen |
 | **Master Pegawai DBF** | Sinkronisasi data induk pegawai & keluarga dari file DBF |
 | **Laporan Bulanan per SKPD** | Laporan gaji per SKPD dengan tab PNS, PPPK, PW, Gabungan |
@@ -41,6 +43,12 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 | **Export Excel & PDF** | Export laporan sesuai tab yang aktif |
 
 ---
+
+### 🚀 TPG Monthly & Consolidated Report (v5.0.0)
+- **Monthly TPG Reporting:** Migrasi sistem pelaporan TPG dari Triwulan ke Bulanan. Mendukung upload file rincian TPG bulanan dengan template Excel otomatis.
+- **Consolidated Payroll Report:** Laporan baru yang menggabungkan Gaji Bruto, TPP, dan TPG dalam satu tampilan terpadu. Memudahkan pemantauan total penghasilan riil pegawai per bulan.
+- **SIMGAJI Master Integration:** Sinkronisasi nama SKPD pada laporan konsolidasi menggunakan data master SIMGAJI untuk akurasi pelaporan unit kerja.
+- **Smart Data Deduplication:** Implementasi normalisasi data pada join query untuk mencegah duplikasi baris akibat perbedaan kode satker di bawah satu SKPD.
 
 ### 🛠️ PPPK-PW Estimation & UI Consistency (v4.9.2)
 - **PPPK-PW SKPD Breakdown Fix:** Menambahkan rincian per SKPD pada tab PPPK Paruh Waktu di halaman Estimasi Iuran. Sebelumnya hanya menampilkan summary global tanpa breakdown unit kerja.

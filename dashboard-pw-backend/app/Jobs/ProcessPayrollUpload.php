@@ -243,6 +243,7 @@ class ProcessPayrollUpload implements ShouldQueue
 
     private function processTpg(UploadJob $job, string $filePath, array $params): void
     {
+        $bulan = $params['month'] ?? null;
         $triwulan = $params['triwulan'];
         $tahun = $params['tahun'];
         $jenis = $params['jenis'];
@@ -250,28 +251,51 @@ class ProcessPayrollUpload implements ShouldQueue
         $job->updateProgress(0, 100);
 
         if ($jenis === 'INDUK') {
-            TpgData::where('triwulan', $triwulan)
-                ->where('tahun', $tahun)
-                ->where('jenis', 'INDUK')
-                ->delete();
+            $query = TpgData::where('tahun', $tahun)
+                ->where('jenis', 'INDUK');
+                
+            if ($bulan) {
+                $query->where('bulan', $bulan);
+            } else {
+                $query->where('triwulan', $triwulan);
+            }
+            
+            $query->delete();
         }
 
         $job->updateProgress(10, 100);
 
-        Excel::import(new TpgImport($triwulan, $tahun, $jenis), $filePath);
+        Excel::import(new TpgImport($triwulan, $tahun, $jenis, $bulan), $filePath);
         $job->updateProgress(90, 100);
 
-        $count = TpgData::where('triwulan', $triwulan)
-            ->where('tahun', $tahun)
-            ->where('jenis', $jenis)
-            ->count();
+        $queryResult = TpgData::where('tahun', $tahun)
+            ->where('jenis', $jenis);
+            
+        if ($bulan) {
+            $queryResult->where('bulan', $bulan);
+        } else {
+            $queryResult->where('triwulan', $triwulan);
+        }
+        
+        $count = $queryResult->count();
 
         $jenisLabel = $jenis === 'INDUK' ? 'Induk' : 'Susulan';
+        $periodLabel = $bulan ? "Bulan " . $this->getMonthName($bulan) : "Triwulan {$triwulan}";
 
         $job->markCompleted([
             'total_records' => $count,
-            'message' => "Berhasil import {$count} data TPG {$jenisLabel} Triwulan {$triwulan} Tahun {$tahun}.",
+            'message' => "Berhasil import {$count} data TPG {$jenisLabel} {$periodLabel} Tahun {$tahun}.",
         ]);
+    }
+
+    private function getMonthName($month)
+    {
+        $months = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+        return $months[$month] ?? $month;
     }
 
     private function processMasterPegawai(UploadJob $job, string $filePath, array $params): void

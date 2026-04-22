@@ -98,6 +98,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/combined-allowance-export', [ReportController::class, 'exportCombinedAllowance']);
     Route::get('/reports/periodic-skpds', [ReportController::class, 'periodicSkpds']);
     Route::get('/reports/periodic-export', [ReportController::class, 'exportPeriodicSkpds']);
+    Route::get('/reports/consolidated', [ReportController::class, 'consolidatedReport']);
+    Route::get('/reports/consolidated-export', [ReportController::class, 'exportConsolidated']);
 
     // THR (PPPK Paruh Waktu)
     Route::get('/thr/pppk-pw', [ThrController::class, 'index']);
@@ -161,6 +163,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tpg/dashboard', [TpgController::class, 'dashboard']);
     Route::get('/tpg/data', [TpgController::class, 'data']);
     Route::get('/tpg/export', [TpgController::class, 'export']);
+    Route::get('/tpg/template', [TpgController::class, 'downloadTemplate']);
 
     // Employees
     Route::get('/employees/get-stats', [EmployeeController::class, 'stats']);

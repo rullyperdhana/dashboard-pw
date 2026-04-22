@@ -12,7 +12,7 @@
               <v-icon start color="deep-purple" size="36">mdi-school-outline</v-icon>
               Upload Data TPG
             </h1>
-            <p class="text-subtitle-1 text-grey-darken-1">Upload data Tunjangan Profesi Guru (TPG) per Triwulan via Excel.</p>
+            <p class="text-subtitle-1 text-grey-darken-1">Upload data Tunjangan Profesi Guru (TPG) per Bulan via Excel.</p>
           </v-col>
         </v-row>
 
@@ -24,16 +24,16 @@
                 <v-row>
                   <v-col cols="12" md="4">
                     <v-select
-                      v-model="selectedTriwulan"
-                      :items="triwulanOptions"
+                      v-model="selectedMonth"
+                      :items="monthOptions"
                       item-title="title"
                       item-value="value"
-                      label="Triwulan"
+                      label="Bulan"
                       variant="outlined"
                       density="comfortable"
                       color="deep-purple"
-                      prepend-inner-icon="mdi-calendar-range"
-                      :rules="[v => !!v || 'Triwulan harus dipilih']"
+                      prepend-inner-icon="mdi-calendar-month"
+                      :rules="[v => !!v || 'Bulan harus dipilih']"
                     ></v-select>
                   </v-col>
                   <v-col cols="12" md="4">
@@ -136,7 +136,7 @@
               <ul class="text-body-2 text-grey-darken-2" style="list-style: none; padding-left: 0;">
                 <li class="mb-3 d-flex align-start">
                   <v-icon size="18" color="deep-purple" class="mr-2 mt-1">mdi-numeric-1-circle</v-icon>
-                  <span>Pilih <strong>Triwulan</strong> (TW1–TW4) dan <strong>Tahun</strong> data TPG.</span>
+                  <span>Pilih <strong>Bulan</strong> dan <strong>Tahun</strong> data TPG.</span>
                 </li>
                 <li class="mb-3 d-flex align-start">
                   <v-icon size="18" color="deep-purple" class="mr-2 mt-1">mdi-numeric-2-circle</v-icon>
@@ -148,7 +148,7 @@
                 </li>
                 <li class="mb-3 d-flex align-start">
                   <v-icon size="18" color="deep-purple" class="mr-2 mt-1">mdi-numeric-4-circle</v-icon>
-                <span>Upload <strong>Induk</strong> untuk triwulan & tahun yang sama akan <strong>menimpa</strong> data Induk sebelumnya. Upload <strong>Susulan</strong> akan <strong>menambahkan</strong> data tanpa menghapus data yang ada.</span>
+                <span>Upload <strong>Induk</strong> untuk bulan & tahun yang sama akan <strong>menimpa</strong> data Induk sebelumnya. Upload <strong>Susulan</strong> akan <strong>menambahkan</strong> data tanpa menghapus data yang ada.</span>
                 </li>
                 <li class="mb-2 d-flex align-start">
                   <v-icon size="18" color="deep-purple" class="mr-2 mt-1">mdi-numeric-5-circle</v-icon>
@@ -158,10 +158,21 @@
 
               <v-divider class="my-4"></v-divider>
 
-              <div class="text-caption text-grey-darken-1">
+              <div class="text-caption text-grey-darken-1 mb-3">
                 <v-icon size="14" class="mr-1">mdi-lightbulb-outline</v-icon>
                 Baris pertama file Excel harus berisi header kolom.
               </div>
+
+              <v-btn
+                block
+                color="deep-purple"
+                variant="outlined"
+                prepend-icon="mdi-download-outline"
+                @click="downloadTemplate"
+                :loading="downloadingTemplate"
+              >
+                Download Template Excel
+              </v-btn>
             </v-card>
           </v-col>
         </v-row>
@@ -233,18 +244,27 @@ import Sidebar from '../components/Sidebar.vue'
 
 const router = useRouter()
 const loading = ref(false)
+const downloadingTemplate = ref(false)
 const valid = ref(false)
 const file = ref(null)
 
-const selectedTriwulan = ref(null)
+const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedYear = ref(new Date().getFullYear())
 const selectedJenis = ref('INDUK')
 
-const triwulanOptions = [
-  { title: 'Triwulan 1 (Jan–Mar)', value: 1 },
-  { title: 'Triwulan 2 (Apr–Jun)', value: 2 },
-  { title: 'Triwulan 3 (Jul–Sep)', value: 3 },
-  { title: 'Triwulan 4 (Okt–Des)', value: 4 },
+const monthOptions = [
+  { title: 'Januari', value: 1 },
+  { title: 'Februari', value: 2 },
+  { title: 'Maret', value: 3 },
+  { title: 'April', value: 4 },
+  { title: 'Mei', value: 5 },
+  { title: 'Juni', value: 6 },
+  { title: 'Juli', value: 7 },
+  { title: 'Agustus', value: 8 },
+  { title: 'September', value: 9 },
+  { title: 'Oktober', value: 10 },
+  { title: 'November', value: 11 },
+  { title: 'Desember', value: 12 },
 ]
 
 const jenisOptions = [
@@ -308,7 +328,7 @@ const submitUpload = async () => {
     const formData = new FormData()
     formData.append('file', fileToUpload)
     formData.append('type', 'tpg')
-    formData.append('triwulan', selectedTriwulan.value)
+    formData.append('month', selectedMonth.value)
     formData.append('tahun', selectedYear.value)
     formData.append('jenis', selectedJenis.value)
 
@@ -373,6 +393,26 @@ onUnmounted(() => {
 
 const showSnackbar = (msg, color = 'success') => {
   snackbar.value = { show: true, message: msg, color }
+}
+
+const downloadTemplate = async () => {
+  downloadingTemplate.value = true
+  try {
+    const response = await api.get('/tpg/template', { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'template_upload_tpg.xlsx')
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+  } catch (e) {
+    console.error('Failed to download template:', e)
+    alert('Gagal mendownload template.')
+  } finally {
+    downloadingTemplate.value = false
+  }
 }
 </script>
 

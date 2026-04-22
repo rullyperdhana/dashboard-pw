@@ -17,12 +17,14 @@ class TpgData extends Model
         'pph',
         'pot_jkn',
         'salur_nett',
+        'bulan',
         'triwulan',
         'tahun',
         'jenis',
     ];
 
     protected $casts = [
+        'bulan' => 'integer',
         'triwulan' => 'integer',
         'tahun' => 'integer',
         'salur_brut' => 'decimal:2',
