@@ -350,7 +350,7 @@ const fetchSkpds = async () => {
   isLoadingSkpd.value = true
   try {
     const res = await api.get('/skpd')
-    skpds.value = res.data
+    skpds.value = res.data.data
   } catch (e) {
     console.error('Failed to fetch SKPDs', e)
   } finally {

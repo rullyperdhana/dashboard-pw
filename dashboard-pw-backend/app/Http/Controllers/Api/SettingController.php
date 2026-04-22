@@ -103,32 +103,6 @@ class SettingController extends Controller
         ]);
     }
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'period' => [
-                    'month' => (int) $month,
-                    'year' => (int) $year
-                ],
-                'employees_count' => $totalPegawai,
-                'total_gaji_pokok' => (float) $totalGajiPokok,
-                'total_tunjangan' => (float) $totalTunjangan,
-                'settings' => [
-                    'jkk_percent' => $jkkPercent,
-                    'jkm_percent' => $jkmPercent,
-                    'bpjs_percent' => $bpjsPercent,
-                ],
-                'estimation' => [
-                    'jkk_amount' => round($estJkk, 2),
-                    'jkm_amount' => round($estJkm, 2),
-                    'bpjs_kesehatan_amount' => round($estBpjs, 2),
-                    'total_amount' => round($totalGajiPokok + $estJkk + $estJkm, 2)
-                ],
-                'details' => $details
-            ]
-        ]);
-    }
-
     public function pppkPwEstimation(Request $request)
     {
         $summary = $this->payrollService->getPppkPwEstimationSummary();

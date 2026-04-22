@@ -3,12 +3,12 @@
     icon
     variant="text"
     @click="toggleTheme"
-    :color="theme.global.name.value === 'dark' ? 'amber' : 'primary'"
+    :color="theme.name.value === 'dark' ? 'amber' : 'primary'"
     class="mr-2"
   >
-    <v-icon>{{ theme.global.name.value === 'dark' ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
+    <v-icon>{{ theme.name.value === 'dark' ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
     <v-tooltip activator="parent" location="bottom">
-      Switch to {{ theme.global.name.value === 'dark' ? 'Light' : 'Dark' }} Mode
+      Switch to {{ theme.name.value === 'dark' ? 'Light' : 'Dark' }} Mode
     </v-tooltip>
   </v-btn>
 </template>
@@ -20,15 +20,15 @@ import { onMounted } from 'vue'
 const theme = useTheme()
 
 const toggleTheme = () => {
-  const newTheme = theme.global.name.value === 'dark' ? 'light' : 'dark'
-  theme.global.name.value = newTheme
+  const newTheme = theme.name.value === 'dark' ? 'light' : 'dark'
+  theme.name.value = newTheme
   localStorage.setItem('theme', newTheme)
 }
 
 onMounted(() => {
   const savedTheme = localStorage.getItem('theme')
   if (savedTheme) {
-    theme.global.name.value = savedTheme
+    theme.name.value = savedTheme
   }
 })
 </script>

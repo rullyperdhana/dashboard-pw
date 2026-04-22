@@ -230,7 +230,7 @@ import VChart, { THEME_KEY } from 'vue-echarts'
 use([CanvasRenderer, BarChart, PieChart, LineChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent])
 
 const theme = useTheme()
-provide(THEME_KEY, computed(() => theme.global.name.value === 'dark' ? 'dark' : 'light'))
+provide(THEME_KEY, computed(() => theme.name.value === 'dark' ? 'dark' : 'light'))
 
 const user = JSON.parse(localStorage.getItem('user') || '{}')
 const loading = ref(false)

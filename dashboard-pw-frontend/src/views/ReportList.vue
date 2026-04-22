@@ -621,10 +621,10 @@ const trendChartOptions = computed(() => ({
     type: 'area',
     toolbar: { show: false },
     zoom: { enabled: false },
-    foreColor: theme.global.name.value === 'dark' ? '#94a3b8' : '#64748b'
+    foreColor: theme.name.value === 'dark' ? '#94a3b8' : '#64748b'
   },
   theme: {
-    mode: theme.global.name.value
+    mode: theme.name.value
   },
   colors: ['#1867C0'],
   dataLabels: { enabled: false },

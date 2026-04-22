@@ -42,6 +42,11 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
 ---
 
+### 🛠️ Maintenance Reliability & Theme Optimization (v4.9.1)
+- **Database Restore Fix:** Perbaikan bug kritis (syntax error) pada backend `SettingController` yang menyebabkan kegagalan proses impor database (500 error).
+- **SKPD Mapping Integrity:** Perbaikan sinkronisasi data pada dropdown SKPD di halaman Pemeliharaan Data. Data kini dipetakan dengan benar dari response API yang terbungkus (*wrapped response*).
+- **Modern Theme Engine:** Migrasi sistem penggantian tema dari properti deprecated `theme.global.name.value` ke API baru `theme.name.value` untuk kompatibilitas Vuetify versi terbaru dan performa UI yang lebih stabil.
+
 ### 🛠️ SKPD Mapping Recovery & Intelligent Bridge (v4.9.0)
 - **Intelligent Bridge Detection:** Sistem kini secara cerdas mendeteksi "Mapping Terputus" (SKPD yang sudah terikat ke data realisasi namun kehilangan jembatan kodenya), mencegah kesalahan rekonsiliasi "Minus" yang tidak terduga.
 - **One-Click Standard Recovery:** Penambahan fitur pemulihan massal untuk mengembalikan 150+ pemetaan unit kerja standar dengan resolusi nama otomatis dari tabel Master Satker.
