@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\GajiPns;
 use App\Models\PayrollPosting;
+use App\Exports\GajiPnsExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Traits\CacheClearer;
 
 class GajiPnsController extends Controller
@@ -300,5 +302,25 @@ class GajiPnsController extends Controller
             'success' => true,
             'message' => 'Data gaji PNS berhasil dihapus',
         ]);
+    }
+
+    /**
+     * Export Gaji PNS data to Excel
+     */
+    public function exportExcel(Request $request)
+    {
+        $filters = [
+            'bulan' => $request->bulan,
+            'tahun' => $request->tahun,
+            'kdskpd' => $request->kdskpd,
+            'jenis_gaji' => $request->jenis_gaji,
+            'search' => $request->search,
+        ];
+
+        $bulan = $request->bulan ? str_pad($request->bulan, 2, '0', STR_PAD_LEFT) : 'ALL';
+        $tahun = $request->tahun ?? date('Y');
+        $filename = "Gaji_PNS_{$tahun}_{$bulan}.xlsx";
+
+        return Excel::download(new GajiPnsExport($filters), $filename);
     }
 }

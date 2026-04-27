@@ -180,7 +180,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('employees', EmployeeController::class);
 
     // Gaji PNS & PPPK CRUD
+    Route::get('gaji-pns/export', [GajiPnsController::class, 'exportExcel']);
     Route::apiResource('gaji-pns', GajiPnsController::class);
+    Route::get('gaji-pppk/export', [GajiPppkController::class, 'exportExcel']);
     Route::apiResource('gaji-pppk', GajiPppkController::class);
 
     // Settings Routes

@@ -44,6 +44,10 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
 ---
 
+### 🚀 PNS & PPPK Excel Export (v5.1.0)
+- **Data Gaji PNS Export:** Fitur export data gaji PNS ke format Excel lengkap dengan semua kolom tunjangan dan potongan, mendukung filter periode dan SKPD.
+- **Data Gaji PPPK Export:** Fitur export data gaji PPPK ke format Excel yang identik dengan format PNS, menggunakan styling dan format angka yang rapi.
+
 ### 🚀 TPG Monthly & Consolidated Report (v5.0.0)
 - **Monthly TPG Reporting:** Migrasi sistem pelaporan TPG dari Triwulan ke Bulanan. Mendukung upload file rincian TPG bulanan dengan template Excel otomatis.
 - **Consolidated Payroll Report:** Laporan baru yang menggabungkan Gaji Bruto, TPP, dan TPG dalam satu tampilan terpadu. Memudahkan pemantauan total penghasilan riil pegawai per bulan.

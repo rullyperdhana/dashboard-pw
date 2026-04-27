@@ -12,6 +12,9 @@
             <p class="text-body-2 text-medium-emphasis mt-1">Kelola data gaji PPPK Penuh Waktu</p>
           </div>
           <v-spacer></v-spacer>
+          <v-btn color="success" prepend-icon="mdi-file-excel" @click="exportExcel" :loading="exporting" class="rounded-lg mr-3" variant="tonal">
+            EXPORT XLS
+          </v-btn>
           <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreateDialog" class="rounded-lg">
             TAMBAH DATA
           </v-btn>
@@ -432,6 +435,7 @@ const formRef = ref(null)
 const formValid = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
+const exporting = ref(false)
 
 // Snackbar
 const snackbar = ref(false)
@@ -618,6 +622,46 @@ const showSnackbar = (message, color = 'success') => {
   snackbarMessage.value = message
   snackbarColor.value = color
   snackbar.value = true
+}
+
+const exportExcel = async () => {
+  exporting.value = true
+  try {
+    const params = {
+      search: search.value || undefined,
+      kdskpd: selectedSkpd.value || undefined,
+      jenis_gaji: selectedJenisGaji.value || undefined,
+    }
+    if (selectedPeriod.value) {
+      const [b, t] = selectedPeriod.value.split('-')
+      params.bulan = b
+      params.tahun = t
+    }
+    const response = await api.get('/gaji-pppk/export', {
+      params,
+      responseType: 'blob',
+    })
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    const contentDisposition = response.headers['content-disposition']
+    let filename = 'Gaji_PPPK_Export.xlsx'
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="?(.+?)"?$/)
+      if (match) filename = match[1]
+    }
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+    showSnackbar('Data berhasil diexport ke Excel', 'success')
+  } catch (err) {
+    console.error('Export error:', err)
+    showSnackbar('Gagal mengexport data', 'error')
+  } finally {
+    exporting.value = false
+  }
 }
 
 onMounted(() => { fetchData() })

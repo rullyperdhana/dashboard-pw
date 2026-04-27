@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\GajiPppk;
 use App\Models\PayrollPosting;
+use App\Exports\GajiPppkExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Traits\CacheClearer;
 
 class GajiPppkController extends Controller
@@ -300,5 +302,25 @@ class GajiPppkController extends Controller
             'success' => true,
             'message' => 'Data gaji PPPK berhasil dihapus',
         ]);
+    }
+
+    /**
+     * Export Gaji PPPK data to Excel
+     */
+    public function exportExcel(Request $request)
+    {
+        $filters = [
+            'bulan' => $request->bulan,
+            'tahun' => $request->tahun,
+            'kdskpd' => $request->kdskpd,
+            'jenis_gaji' => $request->jenis_gaji,
+            'search' => $request->search,
+        ];
+
+        $bulan = $request->bulan ? str_pad($request->bulan, 2, '0', STR_PAD_LEFT) : 'ALL';
+        $tahun = $request->tahun ?? date('Y');
+        $filename = "Gaji_PPPK_{$tahun}_{$bulan}.xlsx";
+
+        return Excel::download(new GajiPppkExport($filters), $filename);
     }
 }
