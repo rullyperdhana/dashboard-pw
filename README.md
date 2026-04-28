@@ -44,6 +44,10 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
 ---
 
+### 🚀 Standalone TPP & UX Optimization (v5.2.0)
+- **Standalone TPP Export:** Menambahkan fitur export data pegawai yang belum terhubung (Standalone) ke format CSV pada modul Upload TPP.
+- **Enhanced SKPD Selection:** Menampilkan Kode SKPD pada dropdown pencarian saat menghubungkan data TPP Standalone untuk mencegah ambiguitas pada SKPD dengan nama yang sama.
+
 ### 🚀 PNS & PPPK Excel Export (v5.1.0)
 - **Data Gaji PNS Export:** Fitur export data gaji PNS ke format Excel lengkap dengan semua kolom tunjangan dan potongan, mendukung filter periode dan SKPD.
 - **Data Gaji PPPK Export:** Fitur export data gaji PPPK ke format Excel yang identik dengan format PNS, menggunakan styling dan format angka yang rapi.
