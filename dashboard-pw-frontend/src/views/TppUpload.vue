@@ -245,6 +245,15 @@
                   </h2>
                   <p class="text-caption text-grey-darken-1">Pegawai yang ada di file Excel TPP periode ini tapi TIDAK DITEMUKAN di data Gaji (Simgaji).</p>
                 </div>
+                <v-btn
+                  v-if="standaloneTpps.length > 0"
+                  color="teal"
+                  variant="tonal"
+                  prepend-icon="mdi-file-export-outline"
+                  @click="exportStandalone"
+                >
+                  Export Data
+                </v-btn>
               </div>
 
               <v-data-table
@@ -357,7 +366,7 @@
                     <v-autocomplete
                         v-model="mappingDialog.skpd_id"
                         :items="skpds"
-                        item-title="nama_skpd"
+                        :item-title="item => `[${item.kode_skpd || '-'}] ${item.nama_skpd}`"
                         item-value="id_skpd"
                         label="Pilih SKPD"
                         variant="outlined"
@@ -507,6 +516,28 @@ const exportDiscrepancies = () => {
   const link = document.createElement("a");
   link.setAttribute("href", encodedUri);
   link.setAttribute("download", `Laporan_Selisih_TPP_${selectedMonth.value}_${selectedYear.value}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+const exportStandalone = () => {
+  const headers = ['PEGAWAI', 'NIP', 'SKPD TERHUBUNG', 'NILAI TPP']
+  const rows = standaloneTpps.value.map(d => [
+    d.nama || 'Tanpa Nama',
+    d.nip,
+    d.skpd ? d.skpd.nama_skpd : 'Belum Terhubung',
+    d.nilai
+  ])
+  
+  let csvContent = "data:text/csv;charset=utf-8," 
+    + headers.join(",") + "\n"
+    + rows.map(e => e.map(item => `"${item}"`).join(",")).join("\n");
+
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `Data_TPP_Belum_Terhubung_${selectedMonth.value}_${selectedYear.value}.csv`);
   document.body.appendChild(link);
   link.click();
   link.remove();
