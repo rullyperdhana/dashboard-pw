@@ -419,7 +419,12 @@
                     </template>
 
                     <v-list-item v-for="emp in group.employees" :key="emp.id" class="pl-8 border-b-sm border-opacity-10 border-error">
-                      <v-list-item-title class="text-caption font-weight-bold">{{ emp.nama }}</v-list-item-title>
+                      <v-list-item-title class="text-caption font-weight-bold">
+                        {{ emp.nama }}
+                        <v-chip :color="getStatusColor(emp.status)" size="x-small" variant="flat" class="ml-2 font-weight-black" style="font-size: 8px !important;">
+                          {{ emp.status || 'AKTIF' }}
+                        </v-chip>
+                      </v-list-item-title>
                       <v-list-item-subtitle class="text-caption">{{ emp.nip }} - {{ emp.jabatan }}</v-list-item-subtitle>
                       <template v-slot:append>
                         <v-icon color="error" size="14">mdi-clock-alert-outline</v-icon>

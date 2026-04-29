@@ -44,6 +44,11 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
 ---
 
+### 🚀 Employee Status & Pending Payroll (v5.4.0)
+- **Employee Status in Pending:** Menambahkan informasi status pegawai (AKTIF, Pensiun, Meninggal, Keluar, Diberhentikan) pada tab "Gaji Belum Masuk (Pending)" rincian PER PEGAWAI.
+- **Enhanced Pending Export:** Penambahan kolom Status pada export Excel untuk daftar gaji yang belum masuk, memberikan informasi lebih lengkap bagi verifikator.
+- **UI Status Indicators:** Implementasi chip status berwarna pada dashboard untuk identifikasi cepat kondisi kepegawaian individu.
+
 ### 🚀 PPPK-PW Detailed Reporting & UI Revamp (v5.3.1)
 - **Monthly Detailed Report:** Modul laporan baru untuk PPPK-PW dengan rincian per pegawai (NIP, Nama, Jabatan, SKPD, Sub Kegiatan, Sumber Dana). Mendukung filter dinamis dan export Excel dengan format yang presisi.
 - **Enhanced Periodic UI:** Pembaruan tampilan Laporan Periodik PPPK-PW dengan KPI Dashboard (Total Pegawai, Gaji, Potongan, Bersih) untuk visibilitas anggaran yang lebih baik.

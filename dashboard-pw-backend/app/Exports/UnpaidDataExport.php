@@ -31,7 +31,7 @@ class UnpaidDataExport implements FromArray, WithHeadings, WithStyles, WithColum
             case 'upt':
                 return ['No', 'UPT Name', 'SKPD Name'];
             case 'employees':
-                return ['No', 'NIP', 'Name', 'Position', 'UPT', 'SKPD'];
+                return ['No', 'NIP', 'Name', 'Position', 'UPT', 'Status', 'SKPD'];
             default:
                 return ['No', 'Name'];
         }
@@ -72,6 +72,7 @@ class UnpaidDataExport implements FromArray, WithHeadings, WithStyles, WithColum
                             $emp['nama'] ?? '',
                             $emp['jabatan'] ?? '',
                             $emp['upt'] ?? '',
+                            $emp['status'] ?? '',
                             $skpdGroup['skpd_name'] ?? '',
                         ];
                     }
@@ -103,7 +104,7 @@ class UnpaidDataExport implements FromArray, WithHeadings, WithStyles, WithColum
             case 'upt':
                 return ['A' => 5, 'B' => 40, 'C' => 50];
             case 'employees':
-                return ['A' => 5, 'B' => 22, 'C' => 35, 'D' => 30, 'E' => 30, 'F' => 50];
+                return ['A' => 5, 'B' => 22, 'C' => 35, 'D' => 30, 'E' => 30, 'F' => 15, 'G' => 50];
             default:
                 return ['A' => 5, 'B' => 50];
         }

@@ -301,7 +301,8 @@ class ReportController extends Controller
                 'pegawai_pw.upt',
                 'skpd.nama_skpd',
                 'skpd.kode_skpd',
-                'pegawai_pw.idskpd'
+                'pegawai_pw.idskpd',
+                'pegawai_pw.status'
             );
 
         if ($user->role !== 'superadmin') {
@@ -343,7 +344,8 @@ class ReportController extends Controller
                         'nip' => $emp->nip,
                         'nama' => $emp->nama,
                         'jabatan' => $emp->jabatan,
-                        'upt' => $emp->upt
+                        'upt' => $emp->upt,
+                        'status' => $emp->status
                     ];
                 })
             ];
