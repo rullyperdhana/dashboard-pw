@@ -1357,6 +1357,8 @@ class ReportController extends Controller
                     'jenis_gaji' => $jenisGaji,
                     'total_skpd' => $rows->count(),
                     'total_employees' => $rows->sum('jumlah_pegawai'),
+                    'total_gaji_pokok' => $rows->sum('gapok'),
+                    'total_potongan' => $rows->sum('total_potongan'),
                     'grand_total' => $rows->sum('bersih'),
                 ],
             ]);
@@ -1425,6 +1427,8 @@ class ReportController extends Controller
                 'sumber_dana' => $request->sumber_dana ?? 'Semua',
                 'total_skpd' => $paidSkpds->count(),
                 'total_employees' => $paidSkpds->sum('employee_count'),
+                'total_gaji_pokok' => $paidSkpds->sum('total_gaji_pokok'),
+                'total_potongan' => $paidSkpds->sum('total_potongan'),
                 'grand_total' => $paidSkpds->sum('total_bersih'),
             ]
         ]);
