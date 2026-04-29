@@ -13,6 +13,19 @@
           </div>
           <v-spacer></v-spacer>
           
+          <!-- BPMP Download Button -->
+          <v-btn
+            color="warning"
+            variant="tonal"
+            prepend-icon="mdi-file-certificate-outline"
+            rounded="xl"
+            elevation="0"
+            class="px-6 font-weight-black mr-4"
+            @click="bpmpDialog = true"
+          >
+            BPMP CORETAX
+          </v-btn>
+
           <!-- Monitoring Button -->
           <v-btn
             color="secondary"
@@ -281,6 +294,82 @@
       </v-card>
     </v-dialog>
 
+    <!-- BPMP Download Dialog -->
+    <v-dialog v-model="bpmpDialog" max-width="500px">
+      <v-card class="glass-modal rounded-xl pa-4">
+        <v-card-title class="pa-4 font-weight-black text-h5">
+          <v-icon start color="warning">mdi-file-certificate-outline</v-icon>
+          Download BPMP Coretax
+        </v-card-title>
+        <v-card-text>
+          <p class="text-subtitle-2 text-medium-emphasis mb-4">
+            Bukti Pemotongan Bulanan Pegawai Tetap — data diambil dari kolom <b>KOTOR</b> pada tabel gaji.
+          </p>
+          <v-text-field
+            v-model="bpmpParams.npwp_pemotong"
+            label="NPWP Pemotong (Instansi/Bendahara)"
+            placeholder="Masukkan 16 digit NPWP"
+            variant="outlined"
+            rounded="lg"
+            prepend-inner-icon="mdi-card-account-details-outline"
+            class="mb-2"
+            :rules="[v => !!v || 'NPWP wajib diisi']"
+          ></v-text-field>
+          <v-select
+            v-model="bpmpParams.month"
+            label="Masa Pajak (Bulan)"
+            :items="months"
+            item-title="name"
+            item-value="value"
+            variant="outlined"
+            rounded="lg"
+          ></v-select>
+          <v-select
+            v-model="bpmpParams.type"
+            label="Jenis Pegawai"
+            :items="[{title:'PNS', value:'pns'}, {title:'PPPK', value:'pppk'}]"
+            item-title="title"
+            item-value="value"
+            variant="outlined"
+            rounded="lg"
+          ></v-select>
+          <v-autocomplete
+            v-model="bpmpParams.skpd"
+            :items="skpdList"
+            item-title="nama_skpd"
+            item-value="id_skpd"
+            label="Filter SKPD (Opsional)"
+            variant="outlined"
+            rounded="lg"
+            clearable
+            placeholder="Semua SKPD"
+          ></v-autocomplete>
+          <v-alert type="info" variant="tonal" density="compact" class="mb-0" rounded="lg">
+            <div class="text-caption">
+              File Excel yang dihasilkan dapat langsung di-upload ke <b>Coretax</b> untuk pelaporan pajak bulanan.
+              Formula TER akan otomatis menghitung tarif pajak berdasarkan status PTKP dan penghasilan kotor.
+            </div>
+          </v-alert>
+        </v-card-text>
+        <v-card-actions class="pa-4 pt-0">
+          <v-spacer></v-spacer>
+          <v-btn color="grey" variant="text" @click="bpmpDialog = false">Batal</v-btn>
+          <v-btn
+            color="warning"
+            variant="flat"
+            class="px-8 font-weight-black"
+            rounded="lg"
+            :loading="bpmpLoading"
+            :disabled="!bpmpParams.npwp_pemotong"
+            @click="downloadBPMP"
+          >
+            <v-icon start>mdi-download</v-icon>
+            DOWNLOAD BPMP
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-dialog v-model="monDialog" max-width="1200px">
       <v-card class="glass-modal rounded-xl pa-4">
         <v-card-title class="pa-4 d-flex align-center">
@@ -394,6 +483,14 @@ const snackColor = ref('info')
 const monDialog = ref(false)
 const monitoringData = ref([])
 const loadingMon = ref(false)
+const bpmpDialog = ref(false)
+const bpmpLoading = ref(false)
+const bpmpParams = ref({
+  month: new Date().getMonth() + 1,
+  type: 'pns',
+  npwp_pemotong: '',
+  skpd: null
+})
 const reportMeta = ref({
   current_page: 1,
   last_page: 1,
@@ -622,6 +719,55 @@ const downloadMonitoring = async () => {
     alert('Gagal mengunduh file Excel monitoring.')
   } finally {
     loadingMon.value = false
+  }
+}
+
+const downloadBPMP = async () => {
+  if (!bpmpParams.value.npwp_pemotong) {
+    showSnack('NPWP Pemotong harus diisi', 'error')
+    return
+  }
+  bpmpLoading.value = true
+  try {
+    const response = await api.get('/pph21/export-bpmp', {
+      params: {
+        year: selectedYear.value,
+        month: bpmpParams.value.month,
+        type: bpmpParams.value.type,
+        npwp_pemotong: bpmpParams.value.npwp_pemotong,
+        skpd: bpmpParams.value.skpd
+      },
+      responseType: 'blob'
+    })
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    const typeLabel = bpmpParams.value.type.toUpperCase()
+    const monthLabel = months.find(m => m.value === bpmpParams.value.month)?.name || bpmpParams.value.month
+    link.setAttribute('download', `BPMP_${typeLabel}_${monthLabel}_${selectedYear.value}.xlsx`)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    showSnack('BPMP berhasil diunduh', 'success')
+    bpmpDialog.value = false
+  } catch (err) {
+    console.error('BPMP Download Error:', err)
+    if (err.response?.data instanceof Blob) {
+      const reader = new FileReader()
+      reader.onload = () => {
+        try {
+          const errorData = JSON.parse(reader.result)
+          showSnack('Gagal: ' + (errorData.message || 'Error tidak diketahui'), 'error')
+        } catch {
+          showSnack('Gagal mengunduh BPMP', 'error')
+        }
+      }
+      reader.readAsText(err.response.data)
+    } else {
+      showSnack('Gagal mengunduh file BPMP', 'error')
+    }
+  } finally {
+    bpmpLoading.value = false
   }
 }
 

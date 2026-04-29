@@ -479,6 +479,210 @@ class PPh21Controller extends Controller
         ]);
     }
 
+    /**
+     * Export BPMP (Bukti Pemotongan Bulanan Pegawai Tetap) for Coretax
+     * Uses KOTOR value from gaji_pns / gaji_pppk
+     */
+    public function exportBPMP(Request $request)
+    {
+        $request->validate([
+            'year'  => 'required|integer',
+            'month' => 'required|integer',
+            'type'  => 'required|in:pns,pppk',
+            'npwp_pemotong' => 'required|string',
+            'skpd'  => 'nullable',
+        ]);
+
+        $year  = $request->year;
+        $month = $request->month;
+        $type  = $request->type;
+        $npwpPemotong = $request->npwp_pemotong;
+        $skpd  = $request->skpd;
+
+        try {
+            set_time_limit(0);
+            ini_set('memory_limit', '512M');
+
+            $user = auth()->user();
+            $table = ($type === 'pns') ? 'gaji_pns' : 'gaji_pppk';
+
+            // Build query
+            $query = DB::table($table . ' as g')
+                ->join('master_pegawai as m', 'g.nip', '=', 'm.nip')
+                ->where('g.tahun', $year)
+                ->where('g.bulan', $month)
+                ->where('g.jenis_gaji', 'Induk');
+
+            // SKPD filtering
+            if ($skpd) {
+                $targetCodes = DB::table('skpd')
+                    ->where('id_skpd', $skpd)
+                    ->whereNotNull('kode_simgaji')
+                    ->pluck('kode_simgaji')
+                    ->merge(
+                        DB::table('skpd_mapping')
+                            ->where('skpd_id', $skpd)
+                            ->pluck('source_code')
+                    )
+                    ->unique()
+                    ->toArray();
+
+                if (empty($targetCodes)) {
+                    $kodeSkpd = DB::table('skpd')->where('id_skpd', $skpd)->value('kode_skpd');
+                    if ($kodeSkpd) $targetCodes = [$kodeSkpd];
+                }
+                $query->whereIn('g.kdskpd', $targetCodes);
+            } else {
+                $skpdCodes = $user->getAccessibleSkpdCodes();
+                if ($skpdCodes !== null) {
+                    $query->whereIn('g.kdskpd', $skpdCodes);
+                }
+            }
+
+            // Use tax_statuses if available
+            $fixedTaxStatuses = DB::table('tax_statuses')
+                ->where('year', $year)
+                ->pluck('tax_status', 'nip')
+                ->toArray();
+
+            $records = $query->select(
+                'g.nip', 'g.nama', 'g.kotor', 'g.kdskpd',
+                'm.noktp', 'm.npwp', 'm.kdstawin', 'm.janak', 'm.jabatan'
+            )->get();
+
+            if ($records->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak ada data gaji ditemukan untuk bulan/tahun/tipe yang dipilih.'
+                ], 404);
+            }
+
+            // Load BPMP Template
+            $templatePath = base_path('BPMP Excel to XML v.3.xlsx');
+            if (!file_exists($templatePath)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Template BPMP tidak ditemukan di server.'
+                ], 404);
+            }
+
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($templatePath);
+            $sheet = $spreadsheet->getSheetByName('DATA');
+            if (!$sheet) {
+                $sheet = $spreadsheet->getActiveSheet();
+            }
+
+            // Set NPWP Pemotong in A1
+            $sheet->setCellValue('A1', 'NPWP Pemotong');
+            $sheet->setCellValueExplicit('B1', (string)$npwpPemotong, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+
+            // ID TKU = NPWP Pemotong + "000000"
+            $idTku = $npwpPemotong . '000000';
+
+            // Tanggal Pemotongan = hari terakhir bulan
+            $withholdingDate = date('Y-m-d', strtotime("$year-$month-01 +1 month -1 day"));
+
+            // Preserve formula templates from row 5
+            $formulaL = $sheet->getCell('L5')->getValue();
+            $formulaP = $sheet->getCell('P5')->getValue();
+            $formulaQ = $sheet->getCell('Q5')->getValue();
+            $formulaR = $sheet->getCell('R5')->getValue();
+
+            // Helper: adjust cell reference row numbers in formulas
+            // Only replaces '5' when preceded by a column letter (A-Z), avoiding
+            // corruption of numeric constants like 5400000 in the TER rate tables.
+            $adjustRowRef = function($formula, $newRow) {
+                // Match cell references: one or two uppercase letters followed by '5'
+                // that ends at a word boundary (not followed by more digits)
+                return preg_replace('/([A-Z]{1,2})5(?!\d)/', '$1' . $newRow, $formula);
+            };
+
+            $this->service->preLoadRates();
+
+            $row = 5; // Start from row 5 (row 4 is headers)
+            foreach ($records as $rec) {
+                $status = $fixedTaxStatuses[$rec->nip]
+                    ?? $this->service->getPTKPStatus($rec->kdstawin, $rec->janak);
+
+                $bruto = (float)$rec->kotor;
+
+                // B: Masa Pajak
+                $sheet->setCellValue('B' . $row, $month);
+                // C: Tahun Pajak
+                $sheet->setCellValue('C' . $row, $year);
+                // D: Status Pegawai
+                $sheet->setCellValue('D' . $row, 'Resident');
+                // E: NPWP/NIK/TIN
+                $nik = $rec->noktp ?: ($rec->npwp ?: $rec->nip);
+                $sheet->setCellValueExplicit('E' . $row, (string)$nik, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                // F: Nomor Passport (empty)
+                // G: Status PTKP
+                $sheet->setCellValue('G' . $row, $status);
+                // H: Posisi
+                $sheet->setCellValue('H' . $row, $rec->jabatan ?? 'PNS');
+                // I: Sertifikat/Fasilitas
+                $sheet->setCellValue('I' . $row, 'ETC');
+                // J: Kode Objek Pajak
+                $sheet->setCellValue('J' . $row, '21-100-01');
+                // K: Penghasilan Kotor (BRUTO)
+                $sheet->setCellValue('K' . $row, $bruto);
+
+                // L: Tarif formula (adjust row reference)
+                if ($formulaL) {
+                    $sheet->setCellValue('L' . $row, $adjustRowRef($formulaL, $row));
+                }
+
+                // M: ID TKU
+                $sheet->setCellValueExplicit('M' . $row, (string)$idTku, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                // N: Tgl Pemotongan
+                $sheet->setCellValue('N' . $row, $withholdingDate);
+
+                // P: TER A formula
+                if ($formulaP) {
+                    $sheet->setCellValue('P' . $row, $adjustRowRef($formulaP, $row));
+                }
+                // Q: TER B formula
+                if ($formulaQ) {
+                    $sheet->setCellValue('Q' . $row, $adjustRowRef($formulaQ, $row));
+                }
+                // R: TER C formula
+                if ($formulaR) {
+                    $sheet->setCellValue('R' . $row, $adjustRowRef($formulaR, $row));
+                }
+
+                $row++;
+            }
+
+            // Remove sample rows if any remain after our data (rows 6-10 from template)
+            // Only if we wrote fewer rows than the template sample
+            $templateLastSample = 10;
+            if ($row <= $templateLastSample) {
+                for ($r = $row; $r <= $templateLastSample; $r++) {
+                    for ($c = 'B'; $c <= 'R'; $c++) {
+                        $sheet->setCellValue($c . $r, '');
+                    }
+                }
+            }
+
+            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+            $typeLabel = strtoupper($type);
+            $monthNames = [1=>'Jan',2=>'Feb',3=>'Mar',4=>'Apr',5=>'Mei',6=>'Jun',7=>'Jul',8=>'Agu',9=>'Sep',10=>'Okt',11=>'Nov',12=>'Des'];
+            $monthLabel = $monthNames[$month] ?? $month;
+            $fileName = "BPMP_{$typeLabel}_{$monthLabel}_{$year}.xlsx";
+            $tempFile = tempnam(sys_get_temp_dir(), 'bpmp');
+            $writer->save($tempFile);
+
+            return response()->download($tempFile, $fileName)->deleteFileAfterSend(true);
+
+        } catch (\Exception $e) {
+            Log::error('BPMP Export Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengekspor BPMP: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     private function doUpsert(array $data)
     {
         DB::table('pph21_calculations')->upsert(

@@ -151,6 +151,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/export-a2', [PPh21Controller::class, 'exportA2']);
         Route::get('/monitoring', [PPh21Controller::class, 'monitoring']);
         Route::get('/export-monitoring', [PPh21Controller::class, 'exportMonitoring']);
+        Route::get('/export-bpmp', [PPh21Controller::class, 'exportBPMP']);
         Route::delete('/', [PPh21Controller::class, 'destroy']);
     });
 

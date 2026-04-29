@@ -23,3 +23,4 @@ debug-*.php
 restore_*.php
 *.xlsx
 !BPA2 Excel to XML.xlsx
+!BPMP Excel to XML v.3.xlsx
