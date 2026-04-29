@@ -1515,83 +1515,68 @@ class ReportController extends Controller
     {
         $month = $request->input('month', date('n'));
         $year = $request->input('year', date('Y'));
-        $search = $request->input('search');
 
         $user = auth()->user();
         $isSuperAdmin = $user->role === 'superadmin';
         $accessibleCodes = $user->getAccessibleSkpdCodes();
 
-        // 1. Build Payroll Subquery (PNS + PPPK)
-        $payrollSub = DB::table('gaji_pns')
-            ->select(
-                'nip', 'bulan', 'tahun',
-                DB::raw('SUM(tunj_tpp) as tpp'),
-                DB::raw('SUM(kotor - tunj_tpp) as gaji_bruto')
-            )
-            ->where('bulan', $month)
-            ->where('tahun', $year)
-            ->where('jenis_gaji', 'Induk')
-            ->groupBy('nip', 'bulan', 'tahun')
-            ->unionAll(
-                DB::table('gaji_pppk')
-                ->select(
-                    'nip', 'bulan', 'tahun',
-                    DB::raw('SUM(tunj_tpp) as tpp'),
-                    DB::raw('SUM(kotor - tunj_tpp) as gaji_bruto')
-                )
-                ->where('bulan', $month)
-                ->where('tahun', $year)
-                ->where('jenis_gaji', 'Induk')
-                ->groupBy('nip', 'bulan', 'tahun')
-            );
+        // 1. Build Subqueries for each source
+        $gajiPns = DB::table('gaji_pns')
+            ->select('nip', DB::raw('SUM(kotor - IFNULL(tunj_tpp, 0)) as gaji_bruto'), DB::raw('SUM(IFNULL(tunj_tpp, 0)) as tpp'), DB::raw('0 as tpg'))
+            ->where('bulan', $month)->where('tahun', $year)->where('jenis_gaji', 'Induk')
+            ->groupBy('nip');
 
-        // 2. Main Query: Start from TPG Data as source of truth
-        $results = DB::table('tpg_data as tpg')
-            ->leftJoin(DB::raw("({$payrollSub->toSql()}) as g"), function($join) {
-                $join->on('tpg.nip', '=', 'g.nip')
-                     ->on('tpg.bulan', '=', 'g.bulan')
-                     ->on('g.tahun', '=', 'tpg.tahun');
-            })
-            ->mergeBindings($payrollSub)
-            // Join with SIMGAJI Master and a DISTINCT list of Satkers for the "Official" SKPD name
-            ->leftJoin('master_pegawai as mp', 'tpg.nip', '=', 'mp.nip')
+        $gajiPppk = DB::table('gaji_pppk')
+            ->select('nip', DB::raw('SUM(kotor - IFNULL(tunj_tpp, 0)) as gaji_bruto'), DB::raw('SUM(IFNULL(tunj_tpp, 0)) as tpp'), DB::raw('0 as tpg'))
+            ->where('bulan', $month)->where('tahun', $year)->where('jenis_gaji', 'Induk')
+            ->groupBy('nip');
+
+        $tpgData = DB::table('tpg_data')
+            ->select('nip', DB::raw('0 as gaji_bruto'), DB::raw('0 as tpp'), DB::raw('SUM(IFNULL(salur_brut, 0)) as tpg'))
+            ->where('bulan', $month)->where('tahun', $year)
+            ->groupBy('nip');
+
+        // 2. Combine all sources into one NIP-indexed list
+        $combined = $gajiPns->unionAll($gajiPppk)->unionAll($tpgData);
+
+        // 3. Final Query joining with Master Data for Metadata (Nama, SKPD)
+        $query = DB::table(DB::raw("({$combined->toSql()}) as c"))
+            ->mergeBindings($combined)
+            ->join('master_pegawai as mp', 'c.nip', '=', 'mp.nip')
             ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as s'), 'mp.kdskpd', '=', 's.kdskpd')
             ->select(
-                'tpg.nip', 
-                'tpg.nama', 
+                'c.nip',
+                'mp.nama',
                 DB::raw('COALESCE(s.nmskpd, mp.kdskpd, "TIDAK TERDAFTAR") as skpd'),
-                DB::raw('SUM(COALESCE(g.gaji_bruto, 0)) as gaji_bruto'),
-                DB::raw('SUM(COALESCE(g.tpp, 0)) as tpp'),
-                DB::raw('SUM(tpg.salur_brut) as tpg'),
-                DB::raw('SUM(COALESCE(g.gaji_bruto, 0) + COALESCE(g.tpp, 0) + tpg.salur_brut) as total_bruto')
+                DB::raw('SUM(c.gaji_bruto) as gaji_bruto'),
+                DB::raw('SUM(c.tpp) as tpp'),
+                DB::raw('SUM(c.tpg) as tpg'),
+                DB::raw('SUM(c.gaji_bruto + c.tpp + c.tpg) as total_bruto')
             )
-            ->where('tpg.bulan', $month)
-            ->where('tpg.tahun', $year)
-            ->where('tpg.salur_brut', '>', 0)
-            ->groupBy('tpg.nip', 'tpg.nama', 'skpd');
+            ->groupBy('c.nip', 'mp.nama', 'skpd');
 
+        // 4. Apply Filters
         if (!$isSuperAdmin && $accessibleCodes) {
-            $results->whereIn('mp.kdskpd', $accessibleCodes);
+            $query->whereIn('mp.kdskpd', $accessibleCodes);
         }
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $results->where(function($q) use ($search) {
-                $q->where('tpg.nama', 'like', "%{$search}%")
-                  ->orWhere('tpg.nip', 'like', "%{$search}%");
+            $query->where(function($q) use ($search) {
+                $q->where('mp.nama', 'like', "%{$search}%")
+                  ->orWhere('c.nip', 'like', "%{$search}%");
             });
         }
 
-        $results->orderBy('skpd')
-            ->orderBy('tpg.nama');
+        $query->orderBy('skpd')->orderBy('mp.nama');
 
         if ($request->has('export') && $request->export === 'true') {
-            return $results->get();
+            return $query->get();
         }
 
         return response()->json([
             'success' => true,
-            'data' => $results->paginate($request->input('per_page', 50))
+            'data' => $query->paginate($request->input('per_page', 50))
         ]);
     }
 
