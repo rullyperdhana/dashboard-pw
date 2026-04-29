@@ -266,8 +266,12 @@
               <v-col cols="12" md="4">
                 <v-text-field v-model.number="form.tunj_pph" label="Tunj. PPH" type="number" variant="outlined" density="compact" prefix="Rp"></v-text-field>
               </v-col>
+
               <v-col cols="12" md="4">
                 <v-text-field v-model.number="form.tunj_tpp" label="Tunj. TPP" type="number" variant="outlined" density="compact" prefix="Rp"></v-text-field>
+              </v-col>
+              <v-col cols="12" md="4">
+                <v-text-field v-model.number="form.tunj_eselon" label="Tunj. Eselon" type="number" variant="outlined" density="compact" prefix="Rp"></v-text-field>
               </v-col>
               <v-col cols="12" md="4">
                 <v-text-field v-model.number="form.tunj_khusus" label="Tunj. Khusus" type="number" variant="outlined" density="compact" prefix="Rp"></v-text-field>
@@ -511,6 +515,7 @@ const tunjanganItems = [
   { label: 'Tunj. Beras', key: 'tunj_beras' },
   { label: 'Tunj. PPH', key: 'tunj_pph' },
   { label: 'Tunj. TPP', key: 'tunj_tpp' },
+  { label: 'Tunj. Eselon', key: 'tunj_eselon' },
   { label: 'Tunj. Khusus', key: 'tunj_khusus' },
   { label: 'Pembulatan', key: 'pembulatan' },
 ]
@@ -712,6 +717,7 @@ watch(() => ({
   tunj_beras: form.value.tunj_beras,
   tunj_pph: form.value.tunj_pph,
   tunj_tpp: form.value.tunj_tpp,
+  tunj_eselon: form.value.tunj_eselon,
   tunj_khusus: form.value.tunj_khusus,
   pembulatan: form.value.pembulatan,
 }), (newVal) => {

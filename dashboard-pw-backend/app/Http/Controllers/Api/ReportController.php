@@ -696,6 +696,90 @@ class ReportController extends Controller
             ]
         ]);
     }
+    
+    /**
+     * Group PPPK-PW data by Jabatan Mapping (Account Code)
+     */
+    public function paidJabatanMappings(Request $request)
+    {
+        $month = $request->month ?? date('n');
+        $year = $request->year ?? date('Y');
+        $sumberDana = $request->sumber_dana;
+        
+        $user = auth()->user();
+        $isSuperAdmin = $user->role === 'superadmin';
+        $accessibleIds = $user->getAccessibleSkpds();
+        
+        $idFilter = "";
+        if (!$isSuperAdmin && $accessibleIds) {
+            $idList = implode(',', array_map('intval', $accessibleIds));
+            $idFilter = " AND pw.idskpd IN ($idList) ";
+        }
+        
+        $sumberDanaFilter = "";
+        if ($sumberDana && $sumberDana !== 'Semua') {
+            $sumberDanaFilter = " AND pw.sumber_dana = " . DB::getPdo()->quote($sumberDana);
+        }
+
+        // Get all mappings
+        $mappings = \App\Models\PppkPwJabatanMapping::orderBy('order_weight', 'desc')->get();
+        
+        if ($mappings->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'data' => [],
+                'meta' => [
+                    'month' => (int) $month,
+                    'year' => (int) $year,
+                    'total_groups' => 0,
+                    'total_employees' => 0,
+                    'grand_total' => 0,
+                ]
+            ]);
+        }
+
+        $caseSql = "CASE ";
+        foreach ($mappings as $m) {
+            $caseSql .= "WHEN pw.jabatan LIKE '%" . addslashes($m->keyword) . "%' THEN " . $m->id . " ";
+        }
+        $caseSql .= "ELSE 0 END as mapping_id";
+
+        $results = DB::select("
+            SELECT 
+                mapped.mapping_id,
+                COALESCE(m.nama_kelompok, 'Lainnya') as nama_kelompok,
+                COALESCE(m.kode_rekening, '-') as kode_rekening,
+                COUNT(DISTINCT mapped.id) as employee_count,
+                SUM(mapped.gaji_pokok) as total_gaji_pokok,
+                SUM(mapped.tunjangan) as total_tunjangan,
+                SUM(mapped.potongan) as total_potongan,
+                SUM(mapped.total_amoun) as total_bersih
+            FROM (
+                SELECT 
+                    pw.id, pw.jabatan, pd.gaji_pokok, pd.tunjangan, pd.potongan, pd.total_amoun,
+                    $caseSql
+                FROM tb_payment_detail pd
+                JOIN pegawai_pw pw ON pd.employee_id = pw.id
+                JOIN tb_payment p  ON pd.payment_id = p.id
+                WHERE p.month = ? AND p.year = ? $idFilter $sumberDanaFilter
+            ) as mapped
+            LEFT JOIN pppk_pw_jabatan_mappings m ON mapped.mapping_id = m.id
+            GROUP BY mapped.mapping_id, m.nama_kelompok, m.kode_rekening
+            ORDER BY m.order_weight DESC, m.nama_kelompok ASC
+        ", [$month, $year]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+            'meta' => [
+                'month' => (int) $month,
+                'year' => (int) $year,
+                'total_groups' => count($results),
+                'total_employees' => collect($results)->sum('employee_count'),
+                'grand_total' => collect($results)->sum('total_bersih'),
+            ]
+        ]);
+    }
 
     /**
      * Export paid SKPD data to Excel or PDF
@@ -707,12 +791,20 @@ class ReportController extends Controller
         $format = $request->input('format') ?? 'excel';
         $type = $request->type ?? 'all';
         $jenisGaji = $request->jenis_gaji ?? 'Induk';
+        $view = $request->input('view') ?? 'skpd';
 
         // Re-use paidSkpds logic (includes type-based mode selection)
-        $response = $this->paidSkpds($request);
+        if ($view === 'mapping') {
+            $response = $this->paidJabatanMappings($request);
+            $mode = 'mapping';
+        } else {
+            $response = $this->paidSkpds($request);
+            $responseData = json_decode($response->getContent(), true);
+            $mode = $responseData['mode'] ?? 'summary';  // 'detail' | 'summary'
+        }
+        
         $responseData = json_decode($response->getContent(), true);
         $data = $responseData['data'] ?? [];
-        $mode = $responseData['mode'] ?? 'summary';  // 'detail' | 'summary'
 
         $monthNames = [
             1 => 'Januari',

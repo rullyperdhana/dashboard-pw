@@ -88,6 +88,8 @@ class GajiPppkExport implements FromQuery, WithHeadings, WithStyles, ShouldAutoS
             'TUNJ. BERAS',
             'TUNJ. PPH',
             'TUNJ. TPP',
+            'TUNJ. KHUSUS',
+            'PEMBULATAN',
             'PENGHASILAN KOTOR',
             'POT. IWP',
             'POT. ASKES',
@@ -123,6 +125,8 @@ class GajiPppkExport implements FromQuery, WithHeadings, WithStyles, ShouldAutoS
             $row->tunj_beras ?? 0,
             $row->tunj_pph ?? 0,
             $row->tunj_tpp ?? 0,
+            $row->tunj_khusus ?? 0,
+            $row->pembulatan ?? 0,
             $row->kotor ?? 0,
             $row->pot_iwp ?? 0,
             $row->pot_askes ?? 0,
@@ -157,6 +161,8 @@ class GajiPppkExport implements FromQuery, WithHeadings, WithStyles, ShouldAutoS
             'Y' => '#,##0',
             'Z' => '#,##0',
             'AA' => '#,##0',
+            'AB' => '#,##0',
+            'AC' => '#,##0',
         ];
     }
 

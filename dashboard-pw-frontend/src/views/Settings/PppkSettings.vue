@@ -610,7 +610,32 @@
                         </v-col>
                         </v-row>
     
-                        <v-divider class="my-4 border-opacity-10"></v-divider>
+                        <v-divider class="my-6 border-opacity-10"></v-divider>
+    
+                        <div v-if="estimationPw.rekening_details && estimationPw.rekening_details.length" class="mb-8">
+                            <h3 class="text-h6 font-weight-black mb-4 text-primary">Rekap Per Kode Rekening</h3>
+                            <v-data-table
+                                :headers="rekeningHeaders"
+                                :items="estimationPw.rekening_details"
+                                items-per-page="-1"
+                                class="elevation-0 border rounded-xl overflow-hidden mb-6"
+                                density="compact"
+                                hide-default-footer
+                            >
+                                <template v-slot:item.kode_rekening="{ item }">
+                                    <v-chip size="small" label color="primary" variant="tonal" class="font-weight-bold">{{ item.kode_rekening }}</v-chip>
+                                </template>
+                                <template v-slot:item.total_gaji_pokok="{ item }">{{ formatCurrency(item.total_gaji_pokok) }}</template>
+                                <template v-slot:item.total_tunjangan="{ item }">{{ formatCurrency(item.total_tunjangan) }}</template>
+                                <template v-slot:item.tunjangan_jkk="{ item }">{{ formatCurrency(item.tunjangan_jkk) }}</template>
+                                <template v-slot:item.tunjangan_jkm="{ item }">{{ formatCurrency(item.tunjangan_jkm) }}</template>
+                                <template v-slot:item.bpjs_kesehatan="{ item }">{{ formatCurrency(item.bpjs_kesehatan) }}</template>
+                                <template v-slot:item.total_estimation="{ item }">
+                                    <span class="font-weight-bold text-primary">{{ formatCurrency(item.total_estimation) }}</span>
+                                </template>
+                            </v-data-table>
+                            <v-divider class="my-6 border-opacity-10"></v-divider>
+                        </div>
     
                         <h3 class="text-h6 font-weight-bold mb-4 text-grey-darken-2">Rincian per SKPD</h3>
                         <p class="text-body-2 text-medium-emphasis mb-3">Klik baris SKPD untuk melihat rincian per pegawai</p>
@@ -881,6 +906,18 @@ const toggleAllJenisGaji = () => {
 
 const pwHeaders = [
   { title: 'SKPD', key: 'nama_skpd' },
+  { title: 'Pegawai', key: 'employee_count', align: 'end' },
+  { title: 'Gaji Pokok', key: 'total_gaji_pokok', align: 'end' },
+  { title: 'Tunjangan', key: 'total_tunjangan', align: 'end' },
+  { title: 'JKK', key: 'tunjangan_jkk', align: 'end' },
+  { title: 'JKM', key: 'tunjangan_jkm', align: 'end' },
+  { title: 'BPJS Kes', key: 'bpjs_kesehatan', align: 'end' },
+  { title: 'Total', key: 'total_estimation', align: 'end' },
+]
+
+const rekeningHeaders = [
+  { title: 'Kode Rekening', key: 'kode_rekening' },
+  { title: 'Kelompok Jabatan', key: 'nama_kelompok' },
   { title: 'Pegawai', key: 'employee_count', align: 'end' },
   { title: 'Gaji Pokok', key: 'total_gaji_pokok', align: 'end' },
   { title: 'Tunjangan', key: 'total_tunjangan', align: 'end' },

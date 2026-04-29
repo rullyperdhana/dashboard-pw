@@ -52,6 +52,19 @@ class PaidSkpdExport implements FromArray, WithHeadings, WithStyles, WithColumnW
             ];
         }
 
+        if ($this->mode === 'mapping') {
+            return [
+                'No',
+                'Kode Rekening',
+                'Kelompok Jabatan',
+                'Jumlah Pegawai',
+                'Total Gaji Pokok',
+                'Total Tunjangan',
+                'Total Potongan',
+                'Total Bersih',
+            ];
+        }
+
         return [
             'No',
             'Kode SKPD',
@@ -98,6 +111,17 @@ class PaidSkpdExport implements FromArray, WithHeadings, WithStyles, WithColumnW
                     $item['total_potongan'] ?? 0,
                     $item['bersih'] ?? 0,
                 ];
+            } elseif ($this->mode === 'mapping') {
+                $rows[] = [
+                    $no++,
+                    $item['kode_rekening'] ?? '',
+                    $item['nama_kelompok'] ?? '',
+                    $item['employee_count'] ?? 0,
+                    $item['total_gaji_pokok'] ?? 0,
+                    $item['total_tunjangan'] ?? 0,
+                    $item['total_potongan'] ?? 0,
+                    $item['total_bersih'] ?? 0,
+                ];
             } else {
                 $rows[] = [
                     $no++,
@@ -123,6 +147,8 @@ class PaidSkpdExport implements FromArray, WithHeadings, WithStyles, WithColumnW
         if ($this->mode === 'detail') {
             // columns E-V are currency (cols 5-22)
             $sheet->getStyle("E2:V{$lastRow}")->getNumberFormat()->setFormatCode('#,##0');
+        } elseif ($this->mode === 'mapping') {
+            $sheet->getStyle("E2:H{$lastRow}")->getNumberFormat()->setFormatCode('#,##0');
         } else {
             $sheet->getStyle("F2:I{$lastRow}")->getNumberFormat()->setFormatCode('#,##0');
         }
@@ -156,6 +182,19 @@ class PaidSkpdExport implements FromArray, WithHeadings, WithStyles, WithColumnW
                 'T' => 12, // PPAJAK
                 'U' => 14, // POTONGAN
                 'V' => 15, // BERSIH
+            ];
+        }
+
+        if ($this->mode === 'mapping') {
+            return [
+                'A' => 5,
+                'B' => 20,
+                'C' => 35,
+                'D' => 15,
+                'E' => 18,
+                'F' => 18,
+                'G' => 18,
+                'H' => 20,
             ];
         }
 

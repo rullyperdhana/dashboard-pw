@@ -107,10 +107,14 @@ class SettingController extends Controller
     {
         $summary = $this->payrollService->getPppkPwEstimationSummary();
         $details = $this->payrollService->getPppkPwEstimationSkpdDetails();
+        $rekeningDetails = $this->payrollService->getPppkPwEstimationRekeningDetails();
 
         return response()->json([
             'success' => true,
-            'data' => array_merge($summary, ['details' => $details])
+            'data' => array_merge($summary, [
+                'details' => $details,
+                'rekening_details' => $rekeningDetails
+            ])
         ]);
     }
 

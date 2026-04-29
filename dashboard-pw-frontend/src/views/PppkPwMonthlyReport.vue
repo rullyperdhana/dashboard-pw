@@ -15,6 +15,11 @@
             <p class="text-subtitle-1 text-grey-darken-1">Rekapitulasi gaji PPPK Paruh Waktu per SKPD.</p>
           </v-col>
           <v-col cols="12" md="6" class="d-flex justify-end align-center ga-2 flex-wrap">
+            <v-btn-toggle v-model="reportView" color="orange-darken-2" mandatory density="comfortable" class="mr-2" @update:modelValue="fetchData">
+              <v-btn value="skpd" prepend-icon="mdi-office-building">SKPD</v-btn>
+              <v-btn value="mapping" prepend-icon="mdi-briefcase-account">REKENING</v-btn>
+            </v-btn-toggle>
+
             <v-menu v-model="menu" :close-on-content-click="false">
               <template v-slot:activator="{ props }">
                 <v-btn color="orange-darken-2" variant="tonal" v-bind="props" prepend-icon="mdi-calendar" size="large">
@@ -50,11 +55,15 @@
         <v-card class="rounded-lg mb-4 pa-3" color="orange-lighten-5" elevation="0" v-if="meta">
           <v-row align="center" dense>
             <v-col cols="auto">
-              <v-chip color="orange-darken-2" label size="small" class="font-weight-bold">PPPK PARUH WAKTU</v-chip>
+              <v-chip color="orange-darken-2" label size="small" class="font-weight-bold">
+                {{ reportView === 'skpd' ? 'PPPK PARUH WAKTU' : 'PPPK PARUH WAKTU (PER REKENING)' }}
+              </v-chip>
             </v-col>
             <v-col>
               <span class="text-body-2 text-medium-emphasis">
-                <strong>{{ meta.total_skpd }}</strong> SKPD &nbsp;·&nbsp;
+                <strong v-if="reportView === 'skpd'">{{ meta.total_skpd }}</strong> 
+                <strong v-else>{{ meta.total_groups }}</strong> 
+                {{ reportView === 'skpd' ? 'SKPD' : 'Kelompok Rekening' }} &nbsp;·&nbsp;
                 <strong>{{ formatNumber(meta.total_employees) }}</strong> Pegawai &nbsp;·&nbsp;
                 Total Bersih: <strong class="text-orange-darken-4">{{ formatCurrency(meta.grand_total) }}</strong>
               </span>
@@ -65,7 +74,7 @@
         <!-- Data table -->
         <v-card class="glass-card rounded-xl" :loading="loading" elevation="0">
           <v-data-table
-            :headers="summaryHeaders"
+            :headers="currentHeaders"
             :items="items"
             :loading="loading"
             class="bg-transparent detail-table"
@@ -83,9 +92,15 @@
             <template v-slot:item.employee_count="{ item }">
               <v-chip size="x-small" color="blue-grey" variant="tonal">{{ item.employee_count }}</v-chip>
             </template>
-            <template v-slot:item.kode_skpd="{ item }">
+            
+            <template v-slot:[`item.kode_skpd`]="{ item }">
               <span class="font-weight-medium text-caption text-grey-darken-1">{{ item.kode_skpd }}</span>
             </template>
+            
+            <template v-slot:[`item.kode_rekening`]="{ item }">
+              <v-chip size="small" label variant="tonal" color="primary" class="font-weight-bold">{{ item.kode_rekening }}</v-chip>
+            </template>
+
             <template v-slot:item.sumber_dana="{ item }">
               <v-chip size="x-small" :color="item.sumber_dana === 'APBD' ? 'indigo' : 'teal'" variant="tonal" class="font-weight-bold">
                 {{ item.sumber_dana }}
@@ -122,6 +137,7 @@ const jenisGajiOptions = ['Semua', 'Induk', 'THR', 'Gaji 13', 'Susulan', 'Kekura
 const selectedSumberDana = ref('Semua')
 const sumberDanaOptions = ['Semua', 'APBD', 'BLUD']
 const menu          = ref(false)
+const reportView    = ref('skpd')
 
 const summaryHeaders = [
   { title: 'Kode SKPD',      key: 'kode_skpd',        align: 'start',  width: 140 },
@@ -133,6 +149,18 @@ const summaryHeaders = [
   { title: 'Potongan',       key: 'total_potongan',    align: 'end'   },
   { title: 'Bersih',         key: 'total_bersih',      align: 'end'   },
 ]
+
+const mappingHeaders = [
+  { title: 'Kode Rekening',   key: 'kode_rekening',    align: 'start',  width: 180 },
+  { title: 'Kelompok Jabatan', key: 'nama_kelompok',    align: 'start'  },
+  { title: 'PEG',            key: 'employee_count',    align: 'center', width: 80  },
+  { title: 'Gaji Pokok',     key: 'total_gaji_pokok',  align: 'end'   },
+  { title: 'Tunjangan',      key: 'total_tunjangan',   align: 'end'   },
+  { title: 'Potongan',       key: 'total_potongan',    align: 'end'   },
+  { title: 'Bersih',         key: 'total_bersih',      align: 'end'   },
+]
+
+const currentHeaders = computed(() => reportView.value === 'skpd' ? summaryHeaders : mappingHeaders)
 
 const currencyCols = ['total_gaji_pokok','total_tunjangan','total_potongan','total_bersih']
 
@@ -150,7 +178,8 @@ const selectedMonthName = computed(() => months.find(m => m.value === selectedMo
 const fetchData = async () => {
   loading.value = true
   try {
-    const res = await api.get('/reports/paid-skpds', {
+    const endpoint = reportView.value === 'skpd' ? '/reports/paid-skpds' : '/reports/paid-jabatan-mappings'
+    const res = await api.get(endpoint, {
       params: { 
         month: selectedMonth.value, 
         year: selectedYear.value, 
@@ -178,7 +207,8 @@ const exportData = async (format) => {
         format, 
         type: 'pw',
         jenis_gaji: selectedJenisGaji.value,
-        sumber_dana: selectedSumberDana.value
+        sumber_dana: selectedSumberDana.value,
+        view: reportView.value
       },
       responseType: 'blob'
     })
@@ -186,7 +216,8 @@ const exportData = async (format) => {
     const link = document.createElement('a')
     link.href  = url
     const ext  = format === 'pdf' ? 'pdf' : 'xlsx'
-    link.setAttribute('download', `laporan_skpd_pw_${selectedMonth.value}_${selectedYear.value}.${ext}`)
+    const viewLabel = reportView.value === 'skpd' ? 'skpd' : 'rekening'
+    link.setAttribute('download', `laporan_pw_${viewLabel}_${selectedMonth.value}_${selectedYear.value}.${ext}`)
     document.body.appendChild(link)
     link.click()
     link.remove()

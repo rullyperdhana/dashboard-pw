@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\PPh21Controller;
 use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\EssAuthController;
 use App\Http\Controllers\Api\CacheController;
+use App\Http\Controllers\Api\PppkPwJabatanMappingController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -92,6 +93,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/unpaid-employees', [ReportController::class, 'unpaidEmployees']);
     Route::get('/reports/unpaid-export', [ReportController::class, 'exportUnpaid']);
     Route::get('/reports/paid-skpds', [ReportController::class, 'paidSkpds']);
+    Route::get('/reports/paid-jabatan-mappings', [ReportController::class, 'paidJabatanMappings']);
     Route::get('/reports/paid-export', [ReportController::class, 'exportPaidSkpds']);
     Route::get('/reports/paid-employees', [ReportController::class, 'paidEmployees']);
     Route::get('/reports/paid-employees-export', [ReportController::class, 'exportPaidEmployees']);
@@ -255,6 +257,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/payroll-postings/unpost', [PayrollPostingController::class, 'unpost']);
 
     Route::get('/settings/satker-list', [SatkerController::class, 'index']);
+    Route::apiResource('pppk-pw-jabatan-mapping', PppkPwJabatanMappingController::class);
 
     // Master Pegawai & Keluarga (DBF)
     Route::prefix('master')->group(function () {

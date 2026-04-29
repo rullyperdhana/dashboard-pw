@@ -44,6 +44,12 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
 ---
 
+### 🚀 Budget Mapping & Enhanced Reporting (v5.3.0)
+- **Dynamic Jabatan-to-Rekening Mapping:** Sistem pemetaan jabatan ke kode rekening anggaran yang fleksibel menggunakan kata kunci (*keyword matching*). Mendukung pengelolaan manual via UI untuk penambahan atau perubahan kode rekening di masa mendatang.
+- **Enhanced BPJS Reconciliation:** Penambahan tampilan laporan "Per Rekening" dan "SKPD & Rekening" pada modul Rekon BPJS. Memudahkan Bagian Keuangan dalam memverifikasi setoran BPJS berdasarkan klasifikasi belanja (Guru, Kesehatan, Teknis, dll).
+- **Rekening-based Estimation Summary:** Integrasi ringkasan anggaran per kode rekening pada halaman Estimasi Iuran PPPK-PW, memberikan gambaran total kebutuhan pagu per kategori belanja.
+- **Advanced Excel Export:** Dukungan penuh ekspor laporan berbasis pemetaan rekening ke format Excel untuk keperluan pelaporan formal ke instansi terkait.
+
 ### 🚀 Standalone TPP & UX Optimization (v5.2.0)
 - **Standalone TPP Export:** Menambahkan fitur export data pegawai yang belum terhubung (Standalone) ke format CSV pada modul Upload TPP.
 - **Enhanced SKPD Selection:** Menampilkan Kode SKPD pada dropdown pencarian saat menghubungkan data TPP Standalone untuk mencegah ambiguitas pada SKPD dengan nama yang sama.

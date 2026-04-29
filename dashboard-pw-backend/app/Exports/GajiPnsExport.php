@@ -88,6 +88,7 @@ class GajiPnsExport implements FromQuery, WithHeadings, WithStyles, ShouldAutoSi
             'TUNJ. BERAS',
             'TUNJ. PPH',
             'TUNJ. TPP',
+            'TUNJ. ESELON',
             'TUNJ. KHUSUS',
             'PEMBULATAN',
             'PENGHASILAN KOTOR',
@@ -125,6 +126,7 @@ class GajiPnsExport implements FromQuery, WithHeadings, WithStyles, ShouldAutoSi
             $row->tunj_beras ?? 0,
             $row->tunj_pph ?? 0,
             $row->tunj_tpp ?? 0,
+            $row->tunj_eselon ?? 0,
             $row->tunj_khusus ?? 0,
             $row->pembulatan ?? 0,
             $row->kotor ?? 0,
@@ -151,18 +153,19 @@ class GajiPnsExport implements FromQuery, WithHeadings, WithStyles, ShouldAutoSi
             'O' => '#,##0',
             'P' => '#,##0',
             'Q' => '#,##0',
-            'R' => '#,##0',
-            'S' => '#,##0',
-            'T' => '#,##0',
-            'U' => '#,##0',
-            'V' => '#,##0',
-            'W' => '#,##0',
-            'X' => '#,##0',
-            'Y' => '#,##0',
-            'Z' => '#,##0',
-            'AA' => '#,##0',
-            'AB' => '#,##0',
-            'AC' => '#,##0',
+            'R' => '#,##0', // TUNJ. TPP
+            'S' => '#,##0', // TUNJ. ESELON
+            'T' => '#,##0', // TUNJ. KHUSUS
+            'U' => '#,##0', // PEMBULATAN
+            'V' => '#,##0', // PENGHASILAN KOTOR
+            'W' => '#,##0', // POT. IWP
+            'X' => '#,##0', // POT. ASKES
+            'Y' => '#,##0', // POT. PPH
+            'Z' => '#,##0', // POT. TAPERUM
+            'AA' => '#,##0', // POT. JKK
+            'AB' => '#,##0', // POT. JKM
+            'AC' => '#,##0', // TOTAL POTONGAN
+            'AD' => '#,##0', // PENGHASILAN BERSIH
         ];
     }
 

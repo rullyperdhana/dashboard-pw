@@ -206,6 +206,7 @@ const menuItems = ref([
       { title: 'Trace Gaji', icon: 'mdi-account-search-outline', value: 'pw-trace', to: '/employee-trace' },
       { title: 'THR PPPK-PW', icon: 'mdi-cash-fast', value: 'pw-thr', to: '/reports/thr-pppk-pw' },
       { title: 'Gaji 13 PPPK-PW', icon: 'mdi-cash-check', value: 'pw-g13', to: '/reports/gaji-13-pppk-pw' },
+      { title: 'Mapping Jabatan PW', icon: 'mdi-briefcase-account-outline', value: 'pw-mapping-jabatan', to: '/settings/pppk-pw-mapping' },
     ]
   },
   {

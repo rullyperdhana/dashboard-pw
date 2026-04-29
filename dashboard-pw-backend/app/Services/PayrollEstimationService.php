@@ -280,6 +280,64 @@ class PayrollEstimationService
     }
 
     /**
+     * Get Rekening (Mapping) Breakdown for PPPK-PW estimation
+     */
+    public function getPppkPwEstimationRekeningDetails()
+    {
+        $settings = $this->getSettings();
+        
+        $retirementAge = 58;
+        $cutoffBirthDate = \Carbon\Carbon::now()->subYears($retirementAge);
+        
+        $mappings = DB::table('pppk_pw_jabatan_mappings')->orderBy('order_weight', 'desc')->get();
+        if ($mappings->isEmpty()) return collect([]);
+
+        $caseSql = "CASE ";
+        foreach ($mappings as $m) {
+            $caseSql .= "WHEN pegawai_pw.jabatan LIKE '%" . addslashes($m->keyword) . "%' THEN " . $m->id . " ";
+        }
+        $caseSql .= "ELSE 0 END";
+
+        return DB::table('pegawai_pw')
+            ->select(
+                DB::raw("$caseSql as mapping_id"),
+                DB::raw('COALESCE(m.nama_kelompok, "Lainnya") as nama_kelompok'),
+                DB::raw('COALESCE(m.kode_rekening, "-") as kode_rekening'),
+                DB::raw('COUNT(pegawai_pw.id) as employee_count'),
+                DB::raw('SUM(pegawai_pw.gapok) as total_gaji_pokok'),
+                DB::raw('SUM(pegawai_pw.tunjangan) as total_tunjangan'),
+                DB::raw("SUM(LEAST(GREATEST(IFNULL(gapok, 0), {$settings['ump_kalsel']}), {$settings['bpjs_cap']})) as total_bpjs_base")
+            )
+            ->leftJoin('pppk_pw_jabatan_mappings as m', DB::raw("($caseSql)"), '=', 'm.id')
+            ->whereDate('tgl_lahir', '>=', $cutoffBirthDate->format('Y-m-d'))
+            ->groupBy('mapping_id', 'm.nama_kelompok', 'm.kode_rekening', 'm.order_weight')
+            ->orderBy('m.order_weight', 'desc')
+            ->orderBy('m.nama_kelompok', 'asc')
+            ->get()
+            ->map(function ($item) use ($settings) {
+                $gapok = (float) $item->total_gaji_pokok;
+                $tunj = (float) $item->total_tunjangan;
+                $bpjsBase = (float) $item->total_bpjs_base;
+                $jkk = $gapok * ($settings['jkk_percent'] / 100);
+                $jkm = $gapok * ($settings['jkm_percent'] / 100);
+                $bpjs = $bpjsBase * ($settings['bpjs_percent'] / 100);
+
+                return [
+                    'mapping_id' => $item->mapping_id,
+                    'nama_kelompok' => $item->nama_kelompok,
+                    'kode_rekening' => $item->kode_rekening,
+                    'employee_count' => (int) $item->employee_count,
+                    'total_gaji_pokok' => $gapok,
+                    'total_tunjangan' => $tunj,
+                    'tunjangan_jkk' => round($jkk, 2),
+                    'tunjangan_jkm' => round($jkm, 2),
+                    'bpjs_kesehatan' => round($bpjs, 2),
+                    'total_estimation' => round($gapok + $tunj + $jkk + $jkm, 2)
+                ];
+            });
+    }
+
+    /**
      * Get Estimation Details for PPPK-PW
      */
     public function getPppkPwEstimationDetails($idskpd = null)

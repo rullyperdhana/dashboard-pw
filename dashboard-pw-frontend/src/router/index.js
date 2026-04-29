@@ -122,6 +122,12 @@ const router = createRouter({
             meta: { requiresAuth: true, breadcrumb: 'Pemetaan SKPD', app_access: 'skpd-mapping' },
         },
         {
+            path: '/settings/pppk-pw-mapping',
+            name: 'PppkPwJabatanMapping',
+            component: () => import('../views/Settings/PppkPwJabatanMapping.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Mapping Jabatan PW', app_access: 'pppk-pw-thr' },
+        },
+        {
             path: '/settings/tax-status',
             name: 'TaxStatusList',
             component: () => import('../views/Settings/TaxStatusList.vue'),

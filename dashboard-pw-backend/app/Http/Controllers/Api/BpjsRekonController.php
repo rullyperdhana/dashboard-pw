@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 
 use App\Exports\BpjsRekonSkpdExport;
 use App\Exports\BpjsRekonJabatanExport;
+use App\Exports\BpjsRekonRekeningExport;
+use App\Exports\BpjsRekonSkpdRekeningExport;
 use App\Exports\BpjsRekonDetailExport;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -119,6 +121,85 @@ class BpjsRekonController extends Controller
             ->orderBy('pegawai_pw.jabatan')
             ->get();
 
+        // Summary per Rekening (Mapping)
+        $mappings = DB::table('pppk_pw_jabatan_mappings')->orderBy('order_weight', 'desc')->get();
+        $rekeningSummary = [];
+
+        if ($mappings->isNotEmpty()) {
+            $caseSql = "CASE ";
+            foreach ($mappings as $m) {
+                $caseSql .= "WHEN pw.jabatan LIKE '%" . addslashes($m->keyword) . "%' THEN " . $m->id . " ";
+            }
+            $caseSql .= "ELSE 0 END as mapping_id";
+
+            $rekeningSummary = DB::select("
+                SELECT 
+                    mapped.mapping_id,
+                    COALESCE(m.nama_kelompok, 'Lainnya') as nama_kelompok,
+                    COALESCE(m.kode_rekening, '-') as kode_rekening,
+                    COUNT(*) as jumlah_pegawai,
+                    SUM(mapped.gaji_pokok) as total_gaji_pokok,
+                    SUM(mapped.bpjs_4_persen) as total_bpjs_4_persen,
+                    SUM(mapped.total_amoun) as total_gaji_bersih,
+                    SUM(CASE WHEN mapped.gaji_pokok < ? THEN 1 ELSE 0 END) as pegawai_bawah_ump
+                FROM (
+                    SELECT 
+                        pw.jabatan, pd.gaji_pokok, pd.total_amoun,
+                        CASE 
+                            WHEN pd.gaji_pokok < ? THEN ?
+                            ELSE ROUND(pd.gaji_pokok * 0.04, 0) 
+                        END as bpjs_4_persen,
+                        $caseSql
+                    FROM tb_payment_detail pd
+                    JOIN pegawai_pw pw ON pd.employee_id = pw.id
+                    JOIN tb_payment p  ON pd.payment_id = p.id
+                    WHERE p.month = ? AND p.year = ? " . ($sumberDana && $sumberDana !== 'Semua' ? "AND pw.sumber_dana = " . DB::getPdo()->quote($sumberDana) : "") . "
+                ) as mapped
+                LEFT JOIN pppk_pw_jabatan_mappings m ON mapped.mapping_id = m.id
+                GROUP BY mapped.mapping_id, m.nama_kelompok, m.kode_rekening, m.order_weight
+                ORDER BY m.order_weight DESC, m.nama_kelompok ASC
+            ", [$ump, $ump, $bpjsUmp, $month, $year]);
+        }
+
+        // Summary per SKPD & Rekening (Mapping)
+        $skpdRekeningSummary = [];
+        if ($mappings->isNotEmpty()) {
+            $caseSql = "CASE ";
+            foreach ($mappings as $m) {
+                $caseSql .= "WHEN pw.jabatan LIKE '%" . addslashes($m->keyword) . "%' THEN " . $m->id . " ";
+            }
+            $caseSql .= "ELSE 0 END as mapping_id";
+
+            $skpdRekeningSummary = DB::select("
+                SELECT 
+                    mapped.skpd,
+                    mapped.mapping_id,
+                    COALESCE(m.nama_kelompok, 'Lainnya') as nama_kelompok,
+                    COALESCE(m.kode_rekening, '-') as kode_rekening,
+                    COUNT(*) as jumlah_pegawai,
+                    SUM(mapped.gaji_pokok) as total_gaji_pokok,
+                    SUM(mapped.bpjs_4_persen) as total_bpjs_4_persen,
+                    SUM(mapped.total_amoun) as total_gaji_bersih,
+                    SUM(CASE WHEN mapped.gaji_pokok < ? THEN 1 ELSE 0 END) as pegawai_bawah_ump
+                FROM (
+                    SELECT 
+                        pw.skpd, pw.jabatan, pd.gaji_pokok, pd.total_amoun,
+                        CASE 
+                            WHEN pd.gaji_pokok < ? THEN ?
+                            ELSE ROUND(pd.gaji_pokok * 0.04, 0) 
+                        END as bpjs_4_persen,
+                        $caseSql
+                    FROM tb_payment_detail pd
+                    JOIN pegawai_pw pw ON pd.employee_id = pw.id
+                    JOIN tb_payment p  ON pd.payment_id = p.id
+                    WHERE p.month = ? AND p.year = ? " . ($sumberDana && $sumberDana !== 'Semua' ? "AND pw.sumber_dana = " . DB::getPdo()->quote($sumberDana) : "") . "
+                ) as mapped
+                LEFT JOIN pppk_pw_jabatan_mappings m ON mapped.mapping_id = m.id
+                GROUP BY mapped.skpd, mapped.mapping_id, m.nama_kelompok, m.kode_rekening, m.order_weight
+                ORDER BY mapped.skpd ASC, m.order_weight DESC
+            ", [$ump, $ump, $bpjsUmp, $month, $year]);
+        }
+
         // Grand total
         $grandTotal = [
             'jumlah_pegawai' => $data->count(),
@@ -135,6 +216,8 @@ class BpjsRekonController extends Controller
                 'detail' => $data,
                 'skpd_summary' => $skpdSummary,
                 'jabatan_summary' => $jabatanSummary,
+                'rekening_summary' => $rekeningSummary,
+                'skpd_rekening_summary' => $skpdRekeningSummary,
                 'grand_total' => $grandTotal,
                 'period' => [
                     'month' => $month,
@@ -154,7 +237,7 @@ class BpjsRekonController extends Controller
         $request->validate([
             'month' => 'required|integer|min:1|max:12',
             'year' => 'required|integer|min:2000',
-            'type' => 'required|in:skpd,detail,jabatan',
+            'type' => 'required|in:skpd,detail,jabatan,rekening,skpd-rekening',
         ]);
 
         $month = (int) $request->month;
@@ -202,6 +285,109 @@ class BpjsRekonController extends Controller
 
             $fileName = "Rekon_BPJS_4persen_PerSKPD_{$month}_{$year}.xlsx";
             return Excel::download(new BpjsRekonSkpdExport($summary->toArray(), $month, $year, $grandTotal), $fileName);
+
+        } elseif ($type === 'skpd-rekening') {
+            $mappings = DB::table('pppk_pw_jabatan_mappings')->orderBy('order_weight', 'desc')->get();
+            $skpdRekeningSummary = [];
+
+            if ($mappings->isNotEmpty()) {
+                $caseSql = "CASE ";
+                foreach ($mappings as $m) {
+                    $caseSql .= "WHEN pw.jabatan LIKE '%" . addslashes($m->keyword) . "%' THEN " . $m->id . " ";
+                }
+                $caseSql .= "ELSE 0 END as mapping_id";
+
+                $skpdRekeningSummary = DB::select("
+                    SELECT 
+                        mapped.skpd,
+                        mapped.mapping_id,
+                        COALESCE(m.nama_kelompok, 'Lainnya') as nama_kelompok,
+                        COALESCE(m.kode_rekening, '-') as kode_rekening,
+                        COUNT(*) as jumlah_pegawai,
+                        SUM(mapped.gaji_pokok) as total_gaji_pokok,
+                        SUM(mapped.bpjs_4_persen) as total_bpjs_4_persen,
+                        SUM(mapped.total_amoun) as total_gaji_bersih,
+                        SUM(CASE WHEN mapped.gaji_pokok < ? THEN 1 ELSE 0 END) as pegawai_bawah_ump
+                    FROM (
+                        SELECT 
+                            pw.skpd, pw.jabatan, pd.gaji_pokok, pd.total_amoun,
+                            CASE 
+                                WHEN pd.gaji_pokok < ? THEN ?
+                                ELSE ROUND(pd.gaji_pokok * 0.04, 0) 
+                            END as bpjs_4_persen,
+                            $caseSql
+                        FROM tb_payment_detail pd
+                        JOIN pegawai_pw pw ON pd.employee_id = pw.id
+                        JOIN tb_payment p  ON pd.payment_id = p.id
+                        WHERE p.month = ? AND p.year = ? " . ($sumberDana && $sumberDana !== 'Semua' ? "AND pw.sumber_dana = " . DB::getPdo()->quote($sumberDana) : "") . "
+                    ) as mapped
+                    LEFT JOIN pppk_pw_jabatan_mappings m ON mapped.mapping_id = m.id
+                    GROUP BY mapped.skpd, mapped.mapping_id, m.nama_kelompok, m.kode_rekening, m.order_weight
+                    ORDER BY mapped.skpd ASC, m.order_weight DESC
+                ", [$ump, $ump, $bpjsUmp, $month, $year]);
+            }
+
+            $grandTotal = [
+                'jumlah_pegawai' => collect($skpdRekeningSummary)->sum('jumlah_pegawai'),
+                'total_gaji_pokok' => collect($skpdRekeningSummary)->sum('total_gaji_pokok'),
+                'total_bpjs_4_persen' => collect($skpdRekeningSummary)->sum('total_bpjs_4_persen'),
+                'total_gaji_bersih' => collect($skpdRekeningSummary)->sum('total_gaji_bersih'),
+                'pegawai_bawah_ump' => collect($skpdRekeningSummary)->sum('pegawai_bawah_ump'),
+            ];
+
+            $fileName = "Rekon_BPJS_4persen_PerSKPD_Rekening_{$month}_{$year}.xlsx";
+            return Excel::download(new BpjsRekonSkpdRekeningExport($skpdRekeningSummary, $month, $year, $grandTotal), $fileName);
+
+        } elseif ($type === 'rekening') {
+            $mappings = DB::table('pppk_pw_jabatan_mappings')->orderBy('order_weight', 'desc')->get();
+            $rekeningSummary = [];
+
+            if ($mappings->isNotEmpty()) {
+                $caseSql = "CASE ";
+                foreach ($mappings as $m) {
+                    $caseSql .= "WHEN pw.jabatan LIKE '%" . addslashes($m->keyword) . "%' THEN " . $m->id . " ";
+                }
+                $caseSql .= "ELSE 0 END as mapping_id";
+
+                $rekeningSummary = DB::select("
+                    SELECT 
+                        mapped.mapping_id,
+                        COALESCE(m.nama_kelompok, 'Lainnya') as nama_kelompok,
+                        COALESCE(m.kode_rekening, '-') as kode_rekening,
+                        COUNT(*) as jumlah_pegawai,
+                        SUM(mapped.gaji_pokok) as total_gaji_pokok,
+                        SUM(mapped.bpjs_4_persen) as total_bpjs_4_persen,
+                        SUM(mapped.total_amoun) as total_gaji_bersih,
+                        SUM(CASE WHEN mapped.gaji_pokok < ? THEN 1 ELSE 0 END) as pegawai_bawah_ump
+                    FROM (
+                        SELECT 
+                            pw.jabatan, pd.gaji_pokok, pd.total_amoun,
+                            CASE 
+                                WHEN pd.gaji_pokok < ? THEN ?
+                                ELSE ROUND(pd.gaji_pokok * 0.04, 0) 
+                            END as bpjs_4_persen,
+                            $caseSql
+                        FROM tb_payment_detail pd
+                        JOIN pegawai_pw pw ON pd.employee_id = pw.id
+                        JOIN tb_payment p  ON pd.payment_id = p.id
+                        WHERE p.month = ? AND p.year = ? " . ($sumberDana && $sumberDana !== 'Semua' ? "AND pw.sumber_dana = " . DB::getPdo()->quote($sumberDana) : "") . "
+                    ) as mapped
+                    LEFT JOIN pppk_pw_jabatan_mappings m ON mapped.mapping_id = m.id
+                    GROUP BY mapped.mapping_id, m.nama_kelompok, m.kode_rekening, m.order_weight
+                    ORDER BY m.order_weight DESC, m.nama_kelompok ASC
+                ", [$ump, $ump, $bpjsUmp, $month, $year]);
+            }
+
+            $grandTotal = [
+                'jumlah_pegawai' => collect($rekeningSummary)->sum('jumlah_pegawai'),
+                'total_gaji_pokok' => collect($rekeningSummary)->sum('total_gaji_pokok'),
+                'total_bpjs_4_persen' => collect($rekeningSummary)->sum('total_bpjs_4_persen'),
+                'total_gaji_bersih' => collect($rekeningSummary)->sum('total_gaji_bersih'),
+                'pegawai_bawah_ump' => collect($rekeningSummary)->sum('pegawai_bawah_ump'),
+            ];
+
+            $fileName = "Rekon_BPJS_4persen_PerRekening_{$month}_{$year}.xlsx";
+            return Excel::download(new BpjsRekonRekeningExport($rekeningSummary, $month, $year, $grandTotal), $fileName);
 
         } elseif ($type === 'jabatan') {
             $summary = $query->select(

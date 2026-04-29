@@ -134,6 +134,12 @@
               <v-btn value="skpd" variant="outlined">
                 <v-icon start>mdi-office-building</v-icon> Per SKPD
               </v-btn>
+              <v-btn value="rekening" variant="outlined">
+                <v-icon start>mdi-briefcase-account</v-icon> Per Rekening
+              </v-btn>
+              <v-btn value="skpd-rekening" variant="outlined">
+                <v-icon start>mdi-office-building-cog</v-icon> SKPD & Rekening
+              </v-btn>
               <v-btn value="jabatan" variant="outlined">
                 <v-icon start>mdi-account-tie</v-icon> Per Jabatan
               </v-btn>
@@ -176,6 +182,55 @@
 
                 <template v-slot:body.append>
                   <tr class="font-weight-black total-row">
+                    <td></td>
+                    <td>TOTAL</td>
+                    <td class="text-end">{{ grandTotal.jumlah_pegawai?.toLocaleString() }}</td>
+                    <td class="text-end">{{ formatCurrency(grandTotal.total_gaji_pokok) }}</td>
+                    <td class="text-end text-red-darken-1">{{ formatCurrency(grandTotal.total_bpjs_4_persen) }}</td>
+                    <td class="text-end">{{ formatCurrency(grandTotal.total_gaji_bersih) }}</td>
+                    <td class="text-center">{{ grandTotal.pegawai_bawah_ump || 0 }}</td>
+                  </tr>
+                </template>
+              </v-data-table>
+            </v-card>
+          </v-col>
+        </v-row>
+        <!-- Rekening Summary Table -->
+        <v-row v-if="viewMode === 'rekening' && rekeningSummary.length" class="mt-2">
+          <v-col cols="12">
+            <v-card class="glass-card rounded-xl" elevation="0">
+              <v-card-title class="d-flex align-center pa-4">
+                <span class="text-body-1 font-weight-bold">Rekap Per Kode Rekening</span>
+                <v-spacer></v-spacer>
+                <v-btn size="small" color="teal" variant="tonal" prepend-icon="mdi-microsoft-excel" @click="exportExcel('rekening')">
+                  Export Excel
+                </v-btn>
+              </v-card-title>
+              <v-data-table
+                :headers="rekeningHeaders"
+                :items="rekeningSummary"
+                class="modern-table"
+                hover
+                density="compact"
+                :items-per-page="-1"
+              >
+                <template v-slot:item.no="{ index }">{{ index + 1 }}</template>
+                <template v-slot:item.kode_rekening="{ item }">
+                  <v-chip size="small" label color="primary" variant="tonal" class="font-weight-bold">{{ item.kode_rekening }}</v-chip>
+                </template>
+                <template v-slot:item.total_gaji_pokok="{ item }">{{ formatCurrency(item.total_gaji_pokok) }}</template>
+                <template v-slot:item.total_bpjs_4_persen="{ item }">
+                  <span class="font-weight-bold text-red-darken-1">{{ formatCurrency(item.total_bpjs_4_persen) }}</span>
+                </template>
+                <template v-slot:item.total_gaji_bersih="{ item }">{{ formatCurrency(item.total_gaji_bersih) }}</template>
+                <template v-slot:item.pegawai_bawah_ump="{ item }">
+                  <v-chip v-if="item.pegawai_bawah_ump > 0" color="orange" size="x-small" variant="tonal">{{ item.pegawai_bawah_ump }}</v-chip>
+                  <span v-else class="text-medium-emphasis">-</span>
+                </template>
+
+                <template v-slot:body.append>
+                  <tr class="font-weight-black total-row">
+                    <td></td>
                     <td></td>
                     <td>TOTAL</td>
                     <td class="text-end">{{ grandTotal.jumlah_pegawai?.toLocaleString() }}</td>
@@ -283,6 +338,57 @@
           </v-col>
         </v-row>
 
+        <!-- SKPD & Rekening Summary Table -->
+        <v-row v-if="viewMode === 'skpd-rekening' && skpdRekeningSummary.length" class="mt-2">
+          <v-col cols="12">
+            <v-card class="glass-card rounded-xl" elevation="0">
+              <v-card-title class="d-flex align-center pa-4">
+                <span class="text-body-1 font-weight-bold">Rekap Per SKPD & Kode Rekening</span>
+                <v-spacer></v-spacer>
+                <v-btn size="small" color="teal" variant="tonal" prepend-icon="mdi-microsoft-excel" @click="exportExcel('skpd-rekening')">
+                  Export Excel
+                </v-btn>
+              </v-card-title>
+              <v-data-table
+                :headers="skpdRekeningHeaders"
+                :items="skpdRekeningSummary"
+                class="modern-table"
+                hover
+                density="compact"
+                :items-per-page="-1"
+              >
+                <template v-slot:item.no="{ index }">{{ index + 1 }}</template>
+                <template v-slot:item.kode_rekening="{ item }">
+                  <v-chip size="x-small" label color="primary" variant="tonal" class="font-weight-bold">{{ item.kode_rekening }}</v-chip>
+                </template>
+                <template v-slot:item.total_gaji_pokok="{ item }">{{ formatCurrency(item.total_gaji_pokok) }}</template>
+                <template v-slot:item.total_bpjs_4_persen="{ item }">
+                  <span class="font-weight-bold text-red-darken-1">{{ formatCurrency(item.total_bpjs_4_persen) }}</span>
+                </template>
+                <template v-slot:item.total_gaji_bersih="{ item }">{{ formatCurrency(item.total_gaji_bersih) }}</template>
+                <template v-slot:item.pegawai_bawah_ump="{ item }">
+                  <v-chip v-if="item.pegawai_bawah_ump > 0" color="orange" size="x-small" variant="tonal">{{ item.pegawai_bawah_ump }}</v-chip>
+                  <span v-else class="text-medium-emphasis">-</span>
+                </template>
+
+                <template v-slot:body.append>
+                  <tr class="font-weight-black total-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td>TOTAL</td>
+                    <td class="text-end">{{ grandTotal.jumlah_pegawai?.toLocaleString() }}</td>
+                    <td class="text-end">{{ formatCurrency(grandTotal.total_gaji_pokok) }}</td>
+                    <td class="text-end text-red-darken-1">{{ formatCurrency(grandTotal.total_bpjs_4_persen) }}</td>
+                    <td class="text-end">{{ formatCurrency(grandTotal.total_gaji_bersih) }}</td>
+                    <td class="text-center">{{ grandTotal.pegawai_bawah_ump || 0 }}</td>
+                  </tr>
+                </template>
+              </v-data-table>
+            </v-card>
+          </v-col>
+        </v-row>
+
         <!-- Empty State -->
         <v-row v-if="!loading && !grandTotal" class="mt-8">
           <v-col cols="12" class="text-center">
@@ -348,6 +454,8 @@ const sumberDanaOptions = ['Semua', 'APBD', 'BLUD']
 const detail = ref([])
 const skpdSummary = ref([])
 const jabatanSummary = ref([])
+const rekeningSummary = ref([])
+const skpdRekeningSummary = ref([])
 const grandTotal = ref(null)
 const umpValue = ref(null)
 const bpjsUmpValue = ref(null)
@@ -378,6 +486,29 @@ const skpdHeaders = [
 const jabatanHeaders = [
   { title: 'No', key: 'no', width: '50px', sortable: false },
   { title: 'Jabatan', key: 'jabatan', width: '30%' },
+  { title: 'Jml Pegawai', key: 'jumlah_pegawai', align: 'end' },
+  { title: 'Total Gaji Pokok', key: 'total_gaji_pokok', align: 'end' },
+  { title: 'BPJS 4%', key: 'total_bpjs_4_persen', align: 'end' },
+  { title: 'Total Gaji Bersih', key: 'total_gaji_bersih', align: 'end' },
+  { title: '< UMP', key: 'pegawai_bawah_ump', align: 'center', width: '80px' },
+]
+
+const rekeningHeaders = [
+  { title: 'No', key: 'no', width: '50px', sortable: false },
+  { title: 'Kode Rekening', key: 'kode_rekening', width: '180px' },
+  { title: 'Kelompok Jabatan', key: 'nama_kelompok' },
+  { title: 'Jml Pegawai', key: 'jumlah_pegawai', align: 'end' },
+  { title: 'Total Gaji Pokok', key: 'total_gaji_pokok', align: 'end' },
+  { title: 'BPJS 4%', key: 'total_bpjs_4_persen', align: 'end' },
+  { title: 'Total Gaji Bersih', key: 'total_gaji_bersih', align: 'end' },
+  { title: '< UMP', key: 'pegawai_bawah_ump', align: 'center', width: '80px' },
+]
+
+const skpdRekeningHeaders = [
+  { title: 'No', key: 'no', width: '50px', sortable: false },
+  { title: 'SKPD', key: 'skpd', width: '25%' },
+  { title: 'Kode Rekening', key: 'kode_rekening', width: '120px' },
+  { title: 'Kelompok Jabatan', key: 'nama_kelompok' },
   { title: 'Jml Pegawai', key: 'jumlah_pegawai', align: 'end' },
   { title: 'Total Gaji Pokok', key: 'total_gaji_pokok', align: 'end' },
   { title: 'BPJS 4%', key: 'total_bpjs_4_persen', align: 'end' },
@@ -422,6 +553,8 @@ const fetchData = async () => {
       detail.value = res.data.data.detail
       skpdSummary.value = res.data.data.skpd_summary
       jabatanSummary.value = res.data.data.jabatan_summary
+      rekeningSummary.value = res.data.data.rekening_summary
+      skpdRekeningSummary.value = res.data.data.skpd_rekening_summary
       grandTotal.value = res.data.data.grand_total
       umpValue.value = res.data.data.ump
       bpjsUmpValue.value = res.data.data.bpjs_ump
@@ -483,6 +616,10 @@ const exportExcel = async (type) => {
     let fileName = ''
     if (type === 'skpd') {
       fileName = `Rekon_BPJS_4persen_PerSKPD_${selectedMonth.value}_${selectedYear.value}.xlsx`
+    } else if (type === 'skpd-rekening') {
+      fileName = `Rekon_BPJS_4persen_PerSKPD_Rekening_${selectedMonth.value}_${selectedYear.value}.xlsx`
+    } else if (type === 'rekening') {
+      fileName = `Rekon_BPJS_4persen_PerRekening_${selectedMonth.value}_${selectedYear.value}.xlsx`
     } else if (type === 'jabatan') {
       fileName = `Rekon_BPJS_4persen_PerJabatan_${selectedMonth.value}_${selectedYear.value}.xlsx`
     } else {
