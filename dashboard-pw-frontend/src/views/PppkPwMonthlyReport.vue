@@ -1,117 +1,290 @@
 <template>
   <div class="modern-dashboard">
-    <Navbar @show-coming-soon="(msg) => alert('Coming soon: ' + msg)" />
-    <Sidebar @show-coming-soon="(msg) => alert('Coming soon: ' + msg)" />
+    <Navbar />
+    <Sidebar />
 
-    <v-main class="bg-light">
+    <v-main class="bg-dashboard">
       <v-container fluid class="pa-8">
-        <!-- Header -->
-        <v-row class="mb-6 align-center">
-          <v-col cols="12" md="6">
-            <h1 class="text-h4 font-weight-bold mb-1">
-              <v-icon start color="orange-darken-2" size="36">mdi-account-clock-outline</v-icon>
-              Laporan Bulanan PPPK-PW
+        <!-- Header Section -->
+        <div class="d-flex justify-space-between align-center mb-6">
+          <div>
+            <h1 class="text-h4 font-weight-black text-primary mb-1">
+              Laporan Penggajian
             </h1>
-            <p class="text-subtitle-1 text-grey-darken-1">Rekapitulasi gaji PPPK Paruh Waktu per SKPD.</p>
-          </v-col>
-          <v-col cols="12" md="6" class="d-flex justify-end align-center ga-2 flex-wrap">
-            <v-btn-toggle v-model="reportView" color="orange-darken-2" mandatory density="comfortable" class="mr-2" @update:modelValue="fetchData">
-              <v-btn value="skpd" prepend-icon="mdi-office-building">SKPD</v-btn>
-              <v-btn value="mapping" prepend-icon="mdi-briefcase-account">REKENING</v-btn>
-            </v-btn-toggle>
+            <p class="text-subtitle-1 text-medium-emphasis">
+              Rekap realisasi pembayaran gaji berdasarkan periode dan sub kegiatan
+            </p>
+          </div>
+          <v-chip color="primary" variant="tonal" class="font-weight-bold px-4" size="large">
+            {{ selectedYear }}
+          </v-chip>
+        </div>
 
-            <v-menu v-model="menu" :close-on-content-click="false">
-              <template v-slot:activator="{ props }">
-                <v-btn color="orange-darken-2" variant="tonal" v-bind="props" prepend-icon="mdi-calendar" size="large">
-                  {{ selectedMonthName }} {{ selectedYear }}
-                </v-btn>
-              </template>
-              <v-card min-width="300" class="pa-4 rounded-xl">
-                <v-row dense>
-                  <v-col cols="6">
-                    <v-select v-model="selectedMonth" :items="months" item-title="title" item-value="value" label="Bulan" density="compact" variant="outlined" hide-details></v-select>
-                  </v-col>
-                  <v-col cols="6">
-                    <v-select v-model="selectedYear" :items="years" label="Tahun" density="compact" variant="outlined" hide-details></v-select>
-                  </v-col>
-                  <v-col cols="12">
-                    <v-select v-model="selectedJenisGaji" :items="jenisGajiOptions" label="Jenis Gaji" density="compact" variant="outlined" hide-details></v-select>
-                  </v-col>
-                  <v-col cols="12">
-                    <v-select v-model="selectedSumberDana" :items="sumberDanaOptions" label="Sumber Dana" density="compact" variant="outlined" hide-details></v-select>
-                  </v-col>
-                  <v-col cols="12" class="mt-2 text-right">
-                    <v-btn block color="orange-darken-2" @click="fetchData(); menu = false">TERAPKAN</v-btn>
-                  </v-col>
-                </v-row>
-              </v-card>
-            </v-menu>
-            <v-btn color="success" prepend-icon="mdi-file-excel" @click="exportData('excel')" :loading="exporting" variant="flat">Excel</v-btn>
-            <v-btn color="error"   prepend-icon="mdi-file-pdf-box" @click="exportData('pdf')" :loading="exporting" variant="flat">PDF</v-btn>
+        <!-- Filter Card -->
+        <v-card class="glass-panel mb-8 pa-6" elevation="0">
+          <div class="d-flex align-center mb-6">
+            <v-icon color="primary" class="mr-2">mdi-filter-variant</v-icon>
+            <span class="text-overline font-weight-bold text-primary">FILTER & PARAMETER LAPORAN</span>
+          </div>
+
+          <v-row>
+            <v-col cols="12" md="3">
+              <label class="text-caption font-weight-bold text-grey-darken-1 mb-1 d-block">
+                <v-icon size="14" class="mr-1">mdi-calendar-range</v-icon>Tahun
+              </label>
+              <v-select
+                v-model="selectedYear"
+                :items="years"
+                variant="outlined"
+                density="comfortable"
+                rounded="lg"
+                hide-details
+              ></v-select>
+            </v-col>
+
+            <v-col cols="12" md="3">
+              <label class="text-caption font-weight-bold text-grey-darken-1 mb-1 d-block">
+                <v-icon size="14" class="mr-1">mdi-calendar-month</v-icon>Bulan
+              </label>
+              <v-select
+                v-model="selectedMonth"
+                :items="months"
+                item-title="title"
+                item-value="value"
+                variant="outlined"
+                density="comfortable"
+                rounded="lg"
+                hide-details
+              ></v-select>
+            </v-col>
+
+            <v-col cols="12" md="3">
+              <label class="text-caption font-weight-bold text-grey-darken-1 mb-1 d-block">
+                <v-icon size="14" class="mr-1">mdi-office-building</v-icon>SKPD
+              </label>
+              <v-autocomplete
+                v-model="selectedSkpd"
+                :items="skpdOptions"
+                item-title="title"
+                item-value="value"
+                variant="outlined"
+                density="comfortable"
+                rounded="lg"
+                hide-details
+                placeholder="Semua SKPD"
+                clearable
+              ></v-autocomplete>
+            </v-col>
+
+            <v-col cols="12" md="3">
+              <label class="text-caption font-weight-bold text-grey-darken-1 mb-1 d-block">
+                <v-icon size="14" class="mr-1">mdi-file-tree</v-icon>Sub Kegiatan
+              </label>
+              <v-autocomplete
+                v-model="selectedSubGiat"
+                :items="subGiatOptions"
+                item-title="title"
+                item-value="value"
+                variant="outlined"
+                density="comfortable"
+                rounded="lg"
+                hide-details
+                placeholder="— Semua Sub Kegiatan —"
+                clearable
+              >
+                <template v-slot:item="{ props, item }">
+                  <v-list-item v-bind="props" :subtitle="item.raw.kode_sub_giat"></v-list-item>
+                </template>
+              </v-autocomplete>
+            </v-col>
+          </v-row>
+
+          <div class="d-flex justify-space-between align-center mt-6">
+            <div class="d-flex ga-3">
+              <v-btn
+                color="primary"
+                prepend-icon="mdi-magnify"
+                size="large"
+                rounded="lg"
+                @click="fetchData"
+                :loading="loading"
+                elevation="2"
+              >
+                Tampilkan
+              </v-btn>
+              <v-btn
+                color="indigo-lighten-5"
+                class="text-indigo-darken-2"
+                prepend-icon="mdi-file-excel"
+                size="large"
+                rounded="lg"
+                variant="flat"
+                @click="exportExcel"
+                :loading="exporting"
+              >
+                Export Excel
+              </v-btn>
+              <v-btn
+                color="success"
+                prepend-icon="mdi-printer"
+                size="large"
+                rounded="lg"
+                variant="flat"
+                @click="printReport"
+              >
+                Cetak
+              </v-btn>
+            </div>
+            <div v-if="items.length" class="text-caption text-medium-emphasis">
+              {{ items.length }} pegawai ditemukan
+            </div>
+          </div>
+        </v-card>
+
+        <!-- KPI Summary -->
+        <v-row class="mb-8">
+          <v-col cols="12" md="3">
+            <v-card class="kpi-card glass-panel border-left-blue pa-4" elevation="0">
+              <div class="d-flex align-center">
+                <v-avatar color="blue-lighten-5" class="mr-4">
+                  <v-icon color="blue-darken-2">mdi-account-group</v-icon>
+                </v-avatar>
+                <div>
+                  <div class="text-h5 font-weight-black">{{ summary.total_pegawai }}</div>
+                  <div class="text-caption text-medium-emphasis font-weight-bold">Total Pegawai</div>
+                </div>
+              </div>
+            </v-card>
+          </v-col>
+
+          <v-col cols="12" md="3">
+            <v-card class="kpi-card glass-panel border-left-green pa-4" elevation="0">
+              <div class="d-flex align-center">
+                <v-avatar color="green-lighten-5" class="mr-4">
+                  <v-icon color="green-darken-2">mdi-cash-multiple</v-icon>
+                </v-avatar>
+                <div>
+                  <div class="text-h5 font-weight-black">{{ formatCurrency(summary.total_gaji_pokok) }}</div>
+                  <div class="text-caption text-medium-emphasis font-weight-bold">Total Gaji Pokok</div>
+                </div>
+              </div>
+            </v-card>
+          </v-col>
+
+          <v-col cols="12" md="3">
+            <v-card class="kpi-card glass-panel border-left-red pa-4" elevation="0">
+              <div class="d-flex align-center">
+                <v-avatar color="red-lighten-5" class="mr-4">
+                  <v-icon color="red-darken-2">mdi-cash-minus</v-icon>
+                </v-avatar>
+                <div>
+                  <div class="text-h5 font-weight-black">{{ formatCurrency(summary.total_potongan) }}</div>
+                  <div class="text-caption text-medium-emphasis font-weight-bold">Total Potongan</div>
+                </div>
+              </div>
+            </v-card>
+          </v-col>
+
+          <v-col cols="12" md="3">
+            <v-card class="kpi-card glass-panel border-left-purple pa-4" elevation="0">
+              <div class="d-flex align-center">
+                <v-avatar color="purple-lighten-5" class="mr-4">
+                  <v-icon color="purple-darken-2">mdi-bank-transfer</v-icon>
+                </v-avatar>
+                <div>
+                  <div class="text-h5 font-weight-black">{{ formatCurrency(summary.total_bersih) }}</div>
+                  <div class="text-caption text-medium-emphasis font-weight-bold">Total Bersih Diterima</div>
+                </div>
+              </div>
+            </v-card>
           </v-col>
         </v-row>
 
-        <!-- Grand total bar -->
-        <v-card class="rounded-lg mb-4 pa-3" color="orange-lighten-5" elevation="0" v-if="meta">
-          <v-row align="center" dense>
-            <v-col cols="auto">
-              <v-chip color="orange-darken-2" label size="small" class="font-weight-bold">
-                {{ reportView === 'skpd' ? 'PPPK PARUH WAKTU' : 'PPPK PARUH WAKTU (PER REKENING)' }}
-              </v-chip>
-            </v-col>
-            <v-col>
-              <span class="text-body-2 text-medium-emphasis">
-                <strong v-if="reportView === 'skpd'">{{ meta.total_skpd }}</strong> 
-                <strong v-else>{{ meta.total_groups }}</strong> 
-                {{ reportView === 'skpd' ? 'SKPD' : 'Kelompok Rekening' }} &nbsp;·&nbsp;
-                <strong>{{ formatNumber(meta.total_employees) }}</strong> Pegawai &nbsp;·&nbsp;
-                Total Bersih: <strong class="text-orange-darken-4">{{ formatCurrency(meta.grand_total) }}</strong>
-              </span>
-            </v-col>
-          </v-row>
-        </v-card>
+        <!-- Table Card -->
+        <v-card class="glass-panel rounded-xl overflow-hidden" elevation="0">
+          <div class="pa-4 d-flex justify-space-between align-center bg-grey-lighten-4 border-bottom">
+            <div class="d-flex align-center">
+              <v-icon color="primary" class="mr-2">mdi-table-large</v-icon>
+              <h2 class="text-h6 font-weight-black text-grey-darken-3">HASIL LAPORAN</h2>
+              <v-chip color="primary" size="small" class="ml-3 font-weight-bold">{{ selectedMonthName }} {{ selectedYear }}</v-chip>
+            </div>
+            <v-text-field
+              v-model="search"
+              prepend-inner-icon="mdi-magnify"
+              placeholder="Cari nama, NIP, jabatan..."
+              variant="outlined"
+              density="compact"
+              rounded="lg"
+              hide-details
+              style="max-width: 300px"
+              class="bg-white"
+            ></v-text-field>
+          </div>
 
-        <!-- Data table -->
-        <v-card class="glass-card rounded-xl" :loading="loading" elevation="0">
           <v-data-table
-            :headers="currentHeaders"
+            :headers="headers"
             :items="items"
+            :search="search"
             :loading="loading"
-            class="bg-transparent detail-table"
+            class="report-table"
             hover
-            items-per-page="25"
-            density="compact"
+            items-per-page="50"
+            no-data-text="Belum ada data. Silakan pilih filter dan klik Tampilkan."
           >
-            <!-- Currency formatting -->
-            <template v-for="col in currencyCols" :key="col" v-slot:[`item.${col}`]="{ item }">
-              <span :class="col === 'total_bersih' ? 'font-weight-bold text-orange-darken-2' : ''">
-                {{ formatCurrency(item[col]) }}
-              </span>
+            <template v-slot:item.no="{ index }">
+              {{ index + 1 }}
+            </template>
+            
+            <template v-slot:item.nama="{ item }">
+              <div class="font-weight-black text-grey-darken-3">{{ item.nama }}</div>
             </template>
 
-            <template v-slot:item.employee_count="{ item }">
-              <v-chip size="x-small" color="blue-grey" variant="tonal">{{ item.employee_count }}</v-chip>
+            <template v-slot:item.nip="{ item }">
+              <span class="text-caption font-weight-bold text-grey-darken-1">{{ item.nip }}</span>
             </template>
-            
-            <template v-slot:[`item.kode_skpd`]="{ item }">
-              <span class="font-weight-medium text-caption text-grey-darken-1">{{ item.kode_skpd }}</span>
+
+            <template v-slot:item.jabatan="{ item }">
+              <div class="text-caption font-weight-medium text-wrap" style="max-width: 200px">
+                {{ item.jabatan }}
+              </div>
             </template>
-            
-            <template v-slot:[`item.kode_rekening`]="{ item }">
-              <v-chip size="small" label variant="tonal" color="primary" class="font-weight-bold">{{ item.kode_rekening }}</v-chip>
+
+            <template v-slot:item.skpd="{ item }">
+              <div class="text-caption font-weight-medium text-wrap" style="max-width: 200px">
+                {{ item.skpd }}
+              </div>
+            </template>
+
+            <template v-slot:item.nama_sub_giat="{ item }">
+              <v-chip size="x-small" color="blue" variant="tonal" class="font-weight-bold text-wrap" style="max-height: auto; height: auto; padding: 4px 8px;">
+                {{ item.nama_sub_giat }}
+              </v-chip>
             </template>
 
             <template v-slot:item.sumber_dana="{ item }">
-              <v-chip size="x-small" :color="item.sumber_dana === 'APBD' ? 'indigo' : 'teal'" variant="tonal" class="font-weight-bold">
-                {{ item.sumber_dana }}
+              <v-chip size="x-small" :color="item.sumber_dana === 'BLUD' ? 'orange' : 'indigo'" variant="tonal" class="font-weight-bold">
+                {{ item.sumber_dana || 'APBD' }}
               </v-chip>
             </template>
 
-            <template v-slot:no-data>
-              <div class="py-8 text-center text-medium-emphasis">
-                <v-icon icon="mdi-database-off-outline" size="48" class="mb-2"></v-icon>
-                <div>Tidak ada data untuk periode ini.</div>
-              </div>
+            <template v-slot:item.gaji_pokok="{ item }">
+              <div class="text-right font-weight-bold">{{ formatCurrency(item.gaji_pokok) }}</div>
+            </template>
+
+            <template v-slot:item.pajak="{ item }">
+              <div class="text-right text-red font-weight-bold">{{ formatCurrency(item.pajak) }}</div>
+            </template>
+
+            <template v-slot:item.iwp="{ item }">
+              <div class="text-right font-weight-bold">{{ formatCurrency(item.iwp) }}</div>
+            </template>
+
+            <template v-slot:item.potongan="{ item }">
+              <div class="text-right text-red font-weight-bold">{{ formatCurrency(item.potongan) }}</div>
+            </template>
+
+            <template v-slot:item.total_amoun="{ item }">
+              <div class="text-right font-weight-black text-success">{{ formatCurrency(item.total_amoun) }}</div>
             </template>
           </v-data-table>
         </v-card>
@@ -122,74 +295,81 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import api from '../api'
 import Navbar from '../components/Navbar.vue'
 import Sidebar from '../components/Sidebar.vue'
+import api from '../api'
 
-const loading   = ref(false)
+const loading = ref(false)
 const exporting = ref(false)
-const items     = ref([])
-const meta      = ref(null)
+const search = ref('')
+const items = ref([])
+const summary = ref({
+  total_pegawai: 0,
+  total_gaji_pokok: 0,
+  total_potongan: 0,
+  total_bersih: 0
+})
+
+const skpdOptions = ref([])
+const subGiatOptions = ref([])
+
+const selectedYear = ref(new Date().getFullYear())
 const selectedMonth = ref(new Date().getMonth() + 1)
-const selectedYear  = ref(new Date().getFullYear())
-const selectedJenisGaji = ref('Induk')
-const jenisGajiOptions = ['Semua', 'Induk', 'THR', 'Gaji 13', 'Susulan', 'Kekurangan', 'Terusan']
-const selectedSumberDana = ref('Semua')
-const sumberDanaOptions = ['Semua', 'APBD', 'BLUD']
-const menu          = ref(false)
-const reportView    = ref('skpd')
+const selectedSkpd = ref(null)
+const selectedSubGiat = ref(null)
 
-const summaryHeaders = [
-  { title: 'Kode SKPD',      key: 'kode_skpd',        align: 'start',  width: 140 },
-  { title: 'Nama SKPD',      key: 'nama_skpd',         align: 'start'  },
-  { title: 'Sumber Dana',    key: 'sumber_dana',       align: 'start',  width: 120 },
-  { title: 'PEG',            key: 'employee_count',    align: 'center', width: 80  },
-  { title: 'Gaji Pokok',     key: 'total_gaji_pokok',  align: 'end'   },
-  { title: 'Tunjangan',      key: 'total_tunjangan',   align: 'end'   },
-  { title: 'Potongan',       key: 'total_potongan',    align: 'end'   },
-  { title: 'Bersih',         key: 'total_bersih',      align: 'end'   },
-]
-
-const mappingHeaders = [
-  { title: 'Kode Rekening',   key: 'kode_rekening',    align: 'start',  width: 180 },
-  { title: 'Kelompok Jabatan', key: 'nama_kelompok',    align: 'start'  },
-  { title: 'PEG',            key: 'employee_count',    align: 'center', width: 80  },
-  { title: 'Gaji Pokok',     key: 'total_gaji_pokok',  align: 'end'   },
-  { title: 'Tunjangan',      key: 'total_tunjangan',   align: 'end'   },
-  { title: 'Potongan',       key: 'total_potongan',    align: 'end'   },
-  { title: 'Bersih',         key: 'total_bersih',      align: 'end'   },
-]
-
-const currentHeaders = computed(() => reportView.value === 'skpd' ? summaryHeaders : mappingHeaders)
-
-const currencyCols = ['total_gaji_pokok','total_tunjangan','total_potongan','total_bersih']
-
+const years = [2024, 2025, 2026, 2027, 2028]
 const months = [
-  { title: 'Januari',   value: 1  }, { title: 'Februari',  value: 2  },
-  { title: 'Maret',     value: 3  }, { title: 'April',     value: 4  },
-  { title: 'Mei',       value: 5  }, { title: 'Juni',      value: 6  },
-  { title: 'Juli',      value: 7  }, { title: 'Agustus',   value: 8  },
-  { title: 'September', value: 9  }, { title: 'Oktober',   value: 10 },
-  { title: 'November',  value: 11 }, { title: 'Desember',  value: 12 },
+  { title: 'Januari', value: 1 },
+  { title: 'Februari', value: 2 },
+  { title: 'Maret', value: 3 },
+  { title: 'April', value: 4 },
+  { title: 'Mei', value: 5 },
+  { title: 'Juni', value: 6 },
+  { title: 'Juli', value: 7 },
+  { title: 'Agustus', value: 8 },
+  { title: 'September', value: 9 },
+  { title: 'Oktober', value: 10 },
+  { title: 'November', value: 11 },
+  { title: 'Desember', value: 12 }
 ]
-const years = [2023, 2024, 2025, 2026, 2027]
-const selectedMonthName = computed(() => months.find(m => m.value === selectedMonth.value)?.title ?? '')
+
+const selectedMonthName = computed(() => {
+  return months.find(m => m.value === selectedMonth.value)?.title || ''
+})
+
+const headers = [
+  { title: '#', key: 'no', sortable: false, width: '40px' },
+  { title: 'NIP', key: 'nip', width: '150px' },
+  { title: 'NAMA PEGAWAI', key: 'nama' },
+  { title: 'JABATAN', key: 'jabatan' },
+  { title: 'SKPD', key: 'skpd' },
+  { title: 'SUB KEGIATAN', key: 'nama_sub_giat' },
+  { title: 'SUMBER DANA', key: 'sumber_dana', align: 'center' },
+  { title: 'GAJI POKOK', key: 'gaji_pokok', align: 'end' },
+  { title: 'PAJAK', key: 'pajak', align: 'end' },
+  { title: 'IWP', key: 'iwp', align: 'end' },
+  { title: 'POT. LAIN', key: 'potongan', align: 'end' },
+  { title: 'BERSIH DITERIMA', key: 'total_amoun', align: 'end' },
+]
 
 const fetchData = async () => {
   loading.value = true
   try {
-    const endpoint = reportView.value === 'skpd' ? '/reports/paid-skpds' : '/reports/paid-jabatan-mappings'
-    const res = await api.get(endpoint, {
-      params: { 
-        month: selectedMonth.value, 
-        year: selectedYear.value, 
-        type: 'pw',
-        jenis_gaji: selectedJenisGaji.value,
-        sumber_dana: selectedSumberDana.value
+    const res = await api.get('/reports/pppk-pw-monthly', {
+      params: {
+        year: selectedYear.value,
+        month: selectedMonth.value,
+        idskpd: selectedSkpd.value,
+        rka_id: selectedSubGiat.value
       }
     })
-    items.value = res.data.data
-    meta.value  = res.data.meta
+    if (res.data.success) {
+      items.value = res.data.data
+      summary.value = res.data.summary
+      skpdOptions.value = res.data.filters.skpds
+      subGiatOptions.value = res.data.filters.sub_kegiatans
+    }
   } catch (e) {
     console.error('Error fetching data:', e)
   } finally {
@@ -197,62 +377,121 @@ const fetchData = async () => {
   }
 }
 
-const exportData = async (format) => {
+const exportExcel = async () => {
   exporting.value = true
   try {
-    const res = await api.get('/reports/paid-export', {
-      params: { 
-        month: selectedMonth.value, 
-        year: selectedYear.value, 
-        format, 
-        type: 'pw',
-        jenis_gaji: selectedJenisGaji.value,
-        sumber_dana: selectedSumberDana.value,
-        view: reportView.value
+    const res = await api.get('/reports/pppk-pw-monthly-export', {
+      params: {
+        year: selectedYear.value,
+        month: selectedMonth.value,
+        idskpd: selectedSkpd.value,
+        rka_id: selectedSubGiat.value
       },
       responseType: 'blob'
     })
-    const url  = window.URL.createObjectURL(new Blob([res.data]))
+    const url = window.URL.createObjectURL(new Blob([res.data]))
     const link = document.createElement('a')
-    link.href  = url
-    const ext  = format === 'pdf' ? 'pdf' : 'xlsx'
-    const viewLabel = reportView.value === 'skpd' ? 'skpd' : 'rekening'
-    link.setAttribute('download', `laporan_pw_${viewLabel}_${selectedMonth.value}_${selectedYear.value}.${ext}`)
+    link.href = url
+    link.setAttribute('download', `laporan_pppk_pw_bulanan_${selectedMonth.value}_${selectedYear.value}.xlsx`)
     document.body.appendChild(link)
     link.click()
     link.remove()
-  } catch (e) { console.error('Error exporting:', e) }
-  finally { exporting.value = false }
+  } catch (e) {
+    console.error('Error exporting excel:', e)
+  } finally {
+    exporting.value = false
+  }
 }
 
-const formatCurrency = (v) =>
-  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(v ?? 0)
+const printReport = () => {
+  window.print()
+}
 
-const formatNumber = (v) => new Intl.NumberFormat('id-ID').format(v ?? 0)
+const formatCurrency = (v) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0
+  }).format(v || 0).replace('Rp', 'Rp ')
+}
 
-onMounted(async () => {
-  await fetchData()
+onMounted(() => {
+  fetchData()
 })
 </script>
 
 <style scoped>
-.modern-dashboard { background-color: rgb(var(--v-theme-background)) !important; }
-.bg-light         { background-color: rgb(var(--v-theme-background)) !important; }
-.glass-card {
-  background-color: rgb(var(--v-theme-surface)) !important;
-  border: 1px solid rgba(var(--v-border-color), 0.08) !important;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07) !important;
-  overflow-x: auto;
+.modern-dashboard {
+  min-height: 100vh;
 }
 
-:deep(.v-data-table) { background: transparent !important; }
-:deep(.v-data-table__th) {
-  font-weight: 700 !important;
-  text-transform: uppercase;
-  font-size: 0.7rem;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
+.bg-dashboard {
+  background-color: #f8fafc !important;
+  background-image: radial-gradient(at 0% 0%, rgba(var(--v-theme-primary), 0.03) 0, transparent 50%),
+                    radial-gradient(at 100% 100%, rgba(var(--v-theme-info), 0.03) 0, transparent 50%);
 }
-:deep(.v-data-table__td) { white-space: nowrap; font-size: 0.78rem; }
-:deep(.v-data-table__tr:hover) { background-color: rgba(255, 152, 0, 0.05) !important; }
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(var(--v-border-color), 0.08) !important;
+  border-radius: 20px !important;
+}
+
+.border-left-blue { border-left: 5px solid #3b82f6 !important; }
+.border-left-green { border-left: 5px solid #10b981 !important; }
+.border-left-red { border-left: 5px solid #ef4444 !important; }
+.border-left-purple { border-left: 5px solid #8b5cf6 !important; }
+
+.kpi-card {
+  transition: transform 0.2s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-5px);
+}
+
+.report-table {
+  background: transparent !important;
+}
+
+:deep(.v-data-table-header) {
+  background: #f1f5f9 !important;
+}
+
+:deep(.v-data-table-header th) {
+  font-weight: 800 !important;
+  text-transform: uppercase;
+  font-size: 0.75rem !important;
+  color: #475569 !important;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid #e2e8f0 !important;
+}
+
+:deep(.v-data-table__tr:hover) {
+  background-color: rgba(var(--v-theme-primary), 0.02) !important;
+}
+
+:deep(.v-data-table__td) {
+  padding: 12px 16px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.text-wrap {
+  white-space: normal !important;
+}
+
+@media print {
+  .v-navigation-drawer, .v-app-bar, .v-btn, .v-card:not(.report-table-card) {
+    display: none !important;
+  }
+  .v-main {
+    padding: 0 !important;
+  }
+  .glass-panel {
+    border: none !important;
+    background: white !important;
+  }
+}
 </style>

@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\EssAuthController;
 use App\Http\Controllers\Api\CacheController;
 use App\Http\Controllers\Api\PppkPwJabatanMappingController;
+use App\Http\Controllers\Api\PppkPwReportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -102,6 +103,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/periodic-export', [ReportController::class, 'exportPeriodicSkpds']);
     Route::get('/reports/consolidated', [ReportController::class, 'consolidatedReport']);
     Route::get('/reports/consolidated-export', [ReportController::class, 'exportConsolidated']);
+
+    // PPPK-PW Monthly Detailed Report
+    Route::get('/reports/pppk-pw-monthly', [PppkPwReportController::class, 'monthlyReport']);
+    Route::get('/reports/pppk-pw-monthly-export', [PppkPwReportController::class, 'exportExcel']);
 
     // THR (PPPK Paruh Waktu)
     Route::get('/thr/pppk-pw', [ThrController::class, 'index']);

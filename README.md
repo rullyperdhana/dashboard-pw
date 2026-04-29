@@ -44,6 +44,13 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
 ---
 
+### 🚀 PPPK-PW Detailed Reporting & UI Revamp (v5.3.1)
+- **Monthly Detailed Report:** Modul laporan baru untuk PPPK-PW dengan rincian per pegawai (NIP, Nama, Jabatan, SKPD, Sub Kegiatan, Sumber Dana). Mendukung filter dinamis dan export Excel dengan format yang presisi.
+- **Enhanced Periodic UI:** Pembaruan tampilan Laporan Periodik PPPK-PW dengan KPI Dashboard (Total Pegawai, Gaji, Potongan, Bersih) untuk visibilitas anggaran yang lebih baik.
+- **Sumber Dana Integration:** Penambahan kolom Sumber Dana (APBD/BLUD) pada seluruh laporan rincian PPPK-PW.
+- **Professional Formatting:** Perbaikan format angka IWP dan penataan kolom laporan agar lebih profesional dan mudah dibaca.
+- **Version Tracking:** Sinkronisasi versi aplikasi pada sidebar dengan `package.json` untuk pelacakan rilis yang akurat.
+
 ### 🚀 Budget Mapping & Enhanced Reporting (v5.3.0)
 - **Dynamic Jabatan-to-Rekening Mapping:** Sistem pemetaan jabatan ke kode rekening anggaran yang fleksibel menggunakan kata kunci (*keyword matching*). Mendukung pengelolaan manual via UI untuk penambahan atau perubahan kode rekening di masa mendatang.
 - **Enhanced BPJS Reconciliation:** Penambahan tampilan laporan "Per Rekening" dan "SKPD & Rekening" pada modul Rekon BPJS. Memudahkan Bagian Keuangan dalam memverifikasi setoran BPJS berdasarkan klasifikasi belanja (Guru, Kesehatan, Teknis, dll).

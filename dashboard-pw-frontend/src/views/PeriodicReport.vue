@@ -70,27 +70,59 @@
                   </v-col>
 
                   <v-col cols="12" class="mt-2 text-right">
-                    <v-btn block :color="themeColor" @click="fetchData(); menu = false">TERAPKAN</v-btn>
+                    <v-btn block :color="themeColor" @click="fetchData(); menu = false" rounded="lg">TERAPKAN</v-btn>
                   </v-col>
                 </v-row>
               </v-card>
             </v-menu>
 
-            <v-btn color="success" prepend-icon="mdi-file-excel" @click="exportData('excel')" :loading="exporting" variant="flat">Excel</v-btn>
-            <v-btn color="error" prepend-icon="mdi-file-pdf-box" @click="exportData('pdf')" :loading="exporting" variant="flat">PDF</v-btn>
-          </v-col>
-        </v-row>
+            <v-btn color="success" prepend-icon="mdi-file-excel" @click="exportData('excel')" :loading="exporting" variant="flat" rounded="lg">Excel</v-btn>
+            <v-btn color="error" prepend-icon="mdi-file-pdf-box" @click="exportData('pdf')" :loading="exporting" variant="flat" rounded="lg">PDF</v-btn>
+          </div>
+        </div>
 
-        <!-- Period Chip -->
-        <v-row class="mb-2">
-          <v-col>
-            <v-chip :color="themeColor" variant="tonal" label size="small" class="font-weight-bold mr-2">
-              <v-icon start size="14">mdi-calendar-clock</v-icon>
-              {{ periodDisplayLabel }}
-            </v-chip>
-            <v-chip v-if="selectedJenisGaji !== 'Semua'" color="blue-grey" variant="tonal" label size="small" class="font-weight-bold">
-              {{ selectedJenisGaji }}
-            </v-chip>
+        <!-- KPI Cards for PW Mode -->
+        <v-row class="mb-6" v-if="isPwMode && meta">
+          <v-col cols="12" sm="6" md="3">
+            <v-card class="glass-panel kpi-card border-left-blue" elevation="0">
+              <v-card-text>
+                <div class="text-overline mb-1 text-medium-emphasis">Total Pegawai</div>
+                <div class="text-h4 font-weight-black">{{ formatNumber(meta.total_employees) }}</div>
+                <div class="text-caption text-blue mt-1 font-weight-bold">
+                  <v-icon size="12">mdi-account-group</v-icon> {{ meta.total_skpd }} SKPD Terdata
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+
+          <v-col cols="12" sm="6" md="3">
+            <v-card class="glass-panel kpi-card border-left-green" elevation="0">
+              <v-card-text>
+                <div class="text-overline mb-1 text-medium-emphasis">Total Gaji Pokok</div>
+                <div class="text-h4 font-weight-black text-green">{{ formatCurrency(meta.total_gaji_pokok) }}</div>
+                <div class="text-caption text-medium-emphasis mt-1">Bruto Periodik</div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+
+          <v-col cols="12" sm="6" md="3">
+            <v-card class="glass-panel kpi-card border-left-red" elevation="0">
+              <v-card-text>
+                <div class="text-overline mb-1 text-medium-emphasis">Total Potongan</div>
+                <div class="text-h4 font-weight-black text-red">{{ formatCurrency(meta.total_potongan) }}</div>
+                <div class="text-caption text-medium-emphasis mt-1">Total IWP & Pajak</div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+
+          <v-col cols="12" sm="6" md="3">
+            <v-card class="glass-panel kpi-card border-left-purple" elevation="0">
+              <v-card-text>
+                <div class="text-overline mb-1 text-medium-emphasis">Bersih Diterima</div>
+                <div class="text-h4 font-weight-black text-primary">{{ formatCurrency(meta.grand_total) }}</div>
+                <div class="text-caption text-medium-emphasis mt-1">Netto Periodik</div>
+              </v-card-text>
+            </v-card>
           </v-col>
         </v-row>
 
@@ -105,8 +137,8 @@
           </v-tab>
         </v-tabs>
 
-        <!-- Grand total bar -->
-        <v-card class="rounded-lg mb-4 pa-3" :color="isPwMode ? 'orange-lighten-5' : 'deep-purple-lighten-5'" elevation="0" v-if="meta">
+        <!-- Grand total bar (Only show for non-PW mode or if summary not shown) -->
+        <v-card class="rounded-lg mb-4 pa-3" :color="isPwMode ? 'orange-lighten-5' : 'deep-purple-lighten-5'" elevation="0" v-if="meta && !isPwMode">
           <v-row align="center" dense>
             <v-col cols="auto">
               <v-chip :color="currentTab.color" label size="small" class="font-weight-bold">{{ currentTab.label }}</v-chip>
@@ -471,6 +503,27 @@ onMounted(async () => {
   border: 1px solid rgba(var(--v-border-color), 0.08) !important;
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07) !important;
   overflow-x: auto;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(var(--v-border-color), 0.08) !important;
+  border-radius: 20px !important;
+}
+
+.border-left-blue { border-left: 5px solid #3b82f6 !important; }
+.border-left-green { border-left: 5px solid #10b981 !important; }
+.border-left-red { border-left: 5px solid #ef4444 !important; }
+.border-left-purple { border-left: 5px solid #8b5cf6 !important; }
+
+.kpi-card {
+  transition: transform 0.2s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-5px);
 }
 
 :deep(.v-data-table) { background: transparent !important; }
