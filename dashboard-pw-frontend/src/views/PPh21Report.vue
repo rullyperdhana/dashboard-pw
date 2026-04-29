@@ -13,17 +13,17 @@
           </div>
           <v-spacer></v-spacer>
           
-          <!-- BPMP Download Button -->
+          <!-- BPMP Download Button (Primary) -->
           <v-btn
-            color="warning"
-            variant="tonal"
-            prepend-icon="mdi-file-certificate-outline"
+            color="primary"
+            variant="flat"
+            prepend-icon="mdi-calculator"
             rounded="xl"
             elevation="0"
             class="px-6 font-weight-black mr-4"
             @click="bpmpDialog = true"
           >
-            BPMP CORETAX
+            HITUNG PAJAK
           </v-btn>
 
           <!-- Monitoring Button -->
@@ -39,24 +39,25 @@
             MONITORING REKAP A2
           </v-btn>
 
-          <!-- Calculation Dialog with Activator -->
+          <!-- Calculation Dialog with Activator (Secondary for A2) -->
           <v-dialog v-if="isSuperAdmin" v-model="calcDialog" max-width="450px">
             <template v-slot:activator="{ props }">
               <v-btn
                 v-bind="props"
-                color="primary"
-                prepend-icon="mdi-calculator"
+                color="warning"
+                variant="tonal"
+                prepend-icon="mdi-database-sync"
                 rounded="xl"
                 elevation="0"
                 class="px-6 font-weight-black"
                 :loading="calculating"
               >
-                HITUNG PAJAK
+                PROSES REKAP A2
               </v-btn>
             </template>
 
             <v-card class="glass-modal rounded-xl pa-4">
-              <v-card-title class="pa-4 font-weight-black text-h5">Hitung PPh 21 TER</v-card-title>
+              <v-card-title class="pa-4 font-weight-black text-h5">Proses Rekap A2</v-card-title>
               <v-card-text>
                 <v-select
                   v-model="calcParams.month"
@@ -298,8 +299,8 @@
     <v-dialog v-model="bpmpDialog" max-width="500px">
       <v-card class="glass-modal rounded-xl pa-4">
         <v-card-title class="pa-4 font-weight-black text-h5">
-          <v-icon start color="warning">mdi-file-certificate-outline</v-icon>
-          Download BPMP Coretax
+          <v-icon start color="primary">mdi-calculator</v-icon>
+          Hitung Pajak (BPMP Coretax)
         </v-card-title>
         <v-card-text>
           <p class="text-subtitle-2 text-medium-emphasis mb-4">
@@ -355,7 +356,7 @@
           <v-spacer></v-spacer>
           <v-btn color="grey" variant="text" @click="bpmpDialog = false">Batal</v-btn>
           <v-btn
-            color="warning"
+            color="primary"
             variant="flat"
             class="px-8 font-weight-black"
             rounded="lg"
