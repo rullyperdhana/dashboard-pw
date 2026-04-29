@@ -1564,12 +1564,8 @@ class ReportController extends Controller
                 DB::raw('CAST(COALESCE(gp.pns_bruto, 0) + COALESCE(gpk.pppk_bruto, 0) + COALESCE(gp.pns_tpp, 0) + COALESCE(gpk.pppk_tpp, 0) + COALESCE(tpg.tpg_bruto, 0) AS DECIMAL(15,2)) as total_bruto')
             );
 
-        // Filter: only show people who have some income in the selected month
-        $query->where(function($q) {
-            $q->whereNotNull('gp.nip')
-              ->orWhereNotNull('gpk.nip')
-              ->orWhereNotNull('tpg.nip');
-        });
+        // Filter: only show employees who are TPG recipients for the selected month
+        $query->where('tpg.tpg_bruto', '>', 0);
 
         if (!$isSuperAdmin && $accessibleCodes) {
             $query->whereIn('mp.kdskpd', $accessibleCodes);
