@@ -1520,42 +1520,57 @@ class ReportController extends Controller
         $isSuperAdmin = $user->role === 'superadmin';
         $accessibleCodes = $user->getAccessibleSkpdCodes();
 
-        // 1. Build Subqueries for each source
-        $gajiPns = DB::table('gaji_pns')
-            ->select('nip', DB::raw('SUM(kotor - IFNULL(tunj_tpp, 0)) as gaji_bruto'), DB::raw('SUM(IFNULL(tunj_tpp, 0)) as tpp'), DB::raw('0 as tpg'))
-            ->where('bulan', $month)->where('tahun', $year)->where('jenis_gaji', 'Induk')
+        // 1. PNS Payroll Subquery
+        $gpSub = DB::table('gaji_pns')
+            ->select('nip', 
+                DB::raw('SUM(kotor - IFNULL(tunj_tpp, 0)) as pns_bruto'), 
+                DB::raw('SUM(IFNULL(tunj_tpp, 0)) as pns_tpp'))
+            ->where('bulan', $month)
+            ->where('tahun', $year)
+            ->where('jenis_gaji', 'Induk')
             ->groupBy('nip');
 
-        $gajiPppk = DB::table('gaji_pppk')
-            ->select('nip', DB::raw('SUM(kotor - IFNULL(tunj_tpp, 0)) as gaji_bruto'), DB::raw('SUM(IFNULL(tunj_tpp, 0)) as tpp'), DB::raw('0 as tpg'))
-            ->where('bulan', $month)->where('tahun', $year)->where('jenis_gaji', 'Induk')
+        // 2. PPPK Payroll Subquery
+        $gpkSub = DB::table('gaji_pppk')
+            ->select('nip', 
+                DB::raw('SUM(kotor - IFNULL(tunj_tpp, 0)) as pppk_bruto'), 
+                DB::raw('SUM(IFNULL(tunj_tpp, 0)) as pppk_tpp'))
+            ->where('bulan', $month)
+            ->where('tahun', $year)
+            ->where('jenis_gaji', 'Induk')
             ->groupBy('nip');
 
-        $tpgData = DB::table('tpg_data')
-            ->select('nip', DB::raw('0 as gaji_bruto'), DB::raw('0 as tpp'), DB::raw('SUM(IFNULL(salur_brut, 0)) as tpg'))
-            ->where('bulan', $month)->where('tahun', $year)
+        // 3. TPG Data Subquery
+        $tpgSub = DB::table('tpg_data')
+            ->select('nip', 
+                DB::raw('SUM(IFNULL(salur_brut, 0)) as tpg_bruto'))
+            ->where('bulan', $month)
+            ->where('tahun', $year)
             ->groupBy('nip');
 
-        // 2. Combine all sources into one NIP-indexed list
-        $combined = $gajiPns->unionAll($gajiPppk)->unionAll($tpgData);
-
-        // 3. Final Query joining with Master Data for Metadata (Nama, SKPD)
-        $query = DB::table(DB::raw("({$combined->toSql()}) as c"))
-            ->mergeBindings($combined)
-            ->join('master_pegawai as mp', 'c.nip', '=', 'mp.nip')
+        // 4. Main Query: Start from master_pegawai
+        $query = DB::table('master_pegawai as mp')
+            ->leftJoinSub($gpSub, 'gp', 'mp.nip', '=', 'gp.nip')
+            ->leftJoinSub($gpkSub, 'gpk', 'mp.nip', '=', 'gpk.nip')
+            ->leftJoinSub($tpgSub, 'tpg', 'mp.nip', '=', 'tpg.nip')
             ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as s'), 'mp.kdskpd', '=', 's.kdskpd')
             ->select(
-                'c.nip',
+                'mp.nip',
                 'mp.nama',
                 DB::raw('COALESCE(s.nmskpd, mp.kdskpd, "TIDAK TERDAFTAR") as skpd'),
-                DB::raw('SUM(c.gaji_bruto) as gaji_bruto'),
-                DB::raw('SUM(c.tpp) as tpp'),
-                DB::raw('SUM(c.tpg) as tpg'),
-                DB::raw('SUM(c.gaji_bruto + c.tpp + c.tpg) as total_bruto')
-            )
-            ->groupBy('c.nip', 'mp.nama', 'skpd');
+                DB::raw('CAST(COALESCE(gp.pns_bruto, 0) + COALESCE(gpk.pppk_bruto, 0) AS DECIMAL(15,2)) as gaji_bruto'),
+                DB::raw('CAST(COALESCE(gp.pns_tpp, 0) + COALESCE(gpk.pppk_tpp, 0) AS DECIMAL(15,2)) as tpp'),
+                DB::raw('CAST(COALESCE(tpg.tpg_bruto, 0) AS DECIMAL(15,2)) as tpg'),
+                DB::raw('CAST(COALESCE(gp.pns_bruto, 0) + COALESCE(gpk.pppk_bruto, 0) + COALESCE(gp.pns_tpp, 0) + COALESCE(gpk.pppk_tpp, 0) + COALESCE(tpg.tpg_bruto, 0) AS DECIMAL(15,2)) as total_bruto')
+            );
 
-        // 4. Apply Filters
+        // Filter: only show people who have some income in the selected month
+        $query->where(function($q) {
+            $q->whereNotNull('gp.nip')
+              ->orWhereNotNull('gpk.nip')
+              ->orWhereNotNull('tpg.nip');
+        });
+
         if (!$isSuperAdmin && $accessibleCodes) {
             $query->whereIn('mp.kdskpd', $accessibleCodes);
         }
@@ -1564,7 +1579,7 @@ class ReportController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('mp.nama', 'like', "%{$search}%")
-                  ->orWhere('c.nip', 'like', "%{$search}%");
+                  ->orWhere('mp.nip', 'like', "%{$search}%");
             });
         }
 
