@@ -6,27 +6,27 @@
     <v-main class="bg-light">
       <v-container fluid class="pa-8">
         <!-- Header -->
-        <v-row class="mb-6 align-center">
-          <v-col cols="12" md="5">
+        <div class="d-flex justify-space-between align-center mb-6">
+          <div>
             <h1 class="text-h4 font-weight-bold mb-1">
               <v-icon start :color="themeColor" size="36">{{ isPwMode ? 'mdi-account-clock-outline' : 'mdi-calendar-range' }}</v-icon>
               {{ isPwMode ? 'Laporan Periodik PPPK-PW' : 'Laporan Periodik' }}
             </h1>
             <p class="text-subtitle-1 text-grey-darken-1">{{ isPwMode ? 'Rekapitulasi gaji PPPK Paruh Waktu per SKPD untuk periode tertentu.' : 'Rekapitulasi gaji per SKPD untuk periode tertentu (Triwulan, Semester, Tahunan, Custom).' }}</p>
-          </v-col>
-          <v-col cols="12" md="7" class="d-flex justify-end align-center ga-2 flex-wrap">
+          </div>
+          <div class="d-flex align-center ga-2 flex-wrap">
             <!-- Period Controls -->
             <v-menu v-model="menu" :close-on-content-click="false">
               <template v-slot:activator="{ props }">
-                <v-btn :color="themeColor" variant="tonal" v-bind="props" prepend-icon="mdi-calendar-range" size="large">
+                <v-btn :color="themeColor" variant="tonal" v-bind="props" prepend-icon="mdi-calendar-range" size="large" rounded="lg">
                   {{ periodDisplayLabel }}
                 </v-btn>
               </template>
-              <v-card min-width="360" class="pa-4 rounded-xl">
+              <v-card min-width="360" class="pa-4 rounded-xl shadow-lg border">
                 <v-row dense>
                   <!-- Period type selector -->
                   <v-col cols="12">
-                    <v-btn-toggle v-model="periodType" mandatory :color="themeColor" density="compact" class="mb-2" rounded="lg" divided>
+                    <v-btn-toggle v-model="periodType" mandatory :color="themeColor" density="compact" class="mb-2" rounded="lg" divided block>
                       <v-btn value="triwulan" size="small">Triwulan</v-btn>
                       <v-btn value="semester" size="small">Semester</v-btn>
                       <v-btn value="tahunan" size="small">Tahunan</v-btn>
@@ -36,37 +36,37 @@
 
                   <!-- Triwulan selector -->
                   <v-col cols="12" v-if="periodType === 'triwulan'">
-                    <v-select v-model="selectedTriwulan" :items="triwulanOptions" item-title="title" item-value="value" label="Pilih Triwulan" density="compact" variant="outlined" hide-details></v-select>
+                    <v-select v-model="selectedTriwulan" :items="triwulanOptions" item-title="title" item-value="value" label="Pilih Triwulan" density="compact" variant="outlined" hide-details rounded="lg"></v-select>
                   </v-col>
 
                   <!-- Semester selector -->
                   <v-col cols="12" v-if="periodType === 'semester'">
-                    <v-select v-model="selectedSemester" :items="semesterOptions" item-title="title" item-value="value" label="Pilih Semester" density="compact" variant="outlined" hide-details></v-select>
+                    <v-select v-model="selectedSemester" :items="semesterOptions" item-title="title" item-value="value" label="Pilih Semester" density="compact" variant="outlined" hide-details rounded="lg"></v-select>
                   </v-col>
 
                   <!-- Custom period -->
                   <template v-if="periodType === 'custom'">
                     <v-col cols="6">
-                      <v-select v-model="customMonthFrom" :items="months" item-title="title" item-value="value" label="Dari Bulan" density="compact" variant="outlined" hide-details></v-select>
+                      <v-select v-model="customMonthFrom" :items="months" item-title="title" item-value="value" label="Dari Bulan" density="compact" variant="outlined" hide-details rounded="lg"></v-select>
                     </v-col>
                     <v-col cols="6">
-                      <v-select v-model="customMonthTo" :items="months" item-title="title" item-value="value" label="Sampai Bulan" density="compact" variant="outlined" hide-details></v-select>
+                      <v-select v-model="customMonthTo" :items="months" item-title="title" item-value="value" label="Sampai Bulan" density="compact" variant="outlined" hide-details rounded="lg"></v-select>
                     </v-col>
                   </template>
 
                   <!-- Year -->
                   <v-col cols="12">
-                    <v-select v-model="selectedYear" :items="years" label="Tahun" density="compact" variant="outlined" hide-details></v-select>
+                    <v-select v-model="selectedYear" :items="years" label="Tahun" density="compact" variant="outlined" hide-details rounded="lg"></v-select>
                   </v-col>
 
                   <!-- Jenis Gaji -->
                   <v-col cols="12">
-                    <v-select v-model="selectedJenisGaji" :items="jenisGajiOptions" label="Jenis Gaji" density="compact" variant="outlined" hide-details></v-select>
+                    <v-select v-model="selectedJenisGaji" :items="jenisGajiOptions" label="Jenis Gaji" density="compact" variant="outlined" hide-details rounded="lg"></v-select>
                   </v-col>
 
                   <!-- Paper size for PDF -->
                   <v-col cols="12">
-                    <v-select v-model="selectedPaperSize" :items="paperSizeOptions" item-title="title" item-value="value" label="Ukuran Kertas (PDF)" density="compact" variant="outlined" hide-details></v-select>
+                    <v-select v-model="selectedPaperSize" :items="paperSizeOptions" item-title="title" item-value="value" label="Ukuran Kertas (PDF)" density="compact" variant="outlined" hide-details rounded="lg"></v-select>
                   </v-col>
 
                   <v-col cols="12" class="mt-2 text-right">
