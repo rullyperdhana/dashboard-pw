@@ -72,8 +72,9 @@ class PaidSkpdExport implements FromArray, WithHeadings, WithStyles, WithColumnW
             'Sumber Dana',
             'Jumlah Pegawai',
             'Total Gaji Pokok',
-            'Total Tunjangan',
-            'Total Potongan',
+            'Total Pajak',
+            'Total IWP',
+            'Total Pot. Lain',
             'Total Bersih',
         ];
     }
@@ -130,7 +131,8 @@ class PaidSkpdExport implements FromArray, WithHeadings, WithStyles, WithColumnW
                     $item['sumber_dana'] ?? '',
                     $item['employee_count'] ?? 0,
                     $item['total_gaji_pokok'] ?? 0,
-                    $item['total_tunjangan'] ?? 0,
+                    $item['total_pajak'] ?? 0,
+                    $item['total_iwp'] ?? 0,
                     $item['total_potongan'] ?? 0,
                     $item['total_bersih'] ?? 0,
                 ];
@@ -150,7 +152,7 @@ class PaidSkpdExport implements FromArray, WithHeadings, WithStyles, WithColumnW
         } elseif ($this->mode === 'mapping') {
             $sheet->getStyle("E2:H{$lastRow}")->getNumberFormat()->setFormatCode('#,##0');
         } else {
-            $sheet->getStyle("F2:I{$lastRow}")->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle("F2:J{$lastRow}")->getNumberFormat()->setFormatCode('#,##0');
         }
 
         return [
@@ -204,10 +206,11 @@ class PaidSkpdExport implements FromArray, WithHeadings, WithStyles, WithColumnW
             'C' => 40,
             'D' => 14,
             'E' => 15,
-            'F' => 18,
-            'G' => 18,
-            'H' => 18,
-            'I' => 20,
+            'F' => 18, // Gapok
+            'G' => 15, // Pajak
+            'H' => 15, // IWP
+            'I' => 18, // Pot Lain
+            'J' => 20, // Bersih
         ];
     }
 }

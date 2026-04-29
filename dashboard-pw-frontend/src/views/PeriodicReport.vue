@@ -359,14 +359,15 @@ const currentTab = computed(() => allTabs.find(t => t.type === activeTab.value) 
 
 // Headers
 const summaryHeaders = [
-  { title: 'Kode SKPD',      key: 'kode_skpd',        align: 'start',  width: 120, fixed: true },
-  { title: 'Nama SKPD',      key: 'nama_skpd',        align: 'start', minWidth: 250, fixed: true },
-  { title: 'Sumber Dana',    key: 'sumber_dana',       align: 'start',  width: 120 },
-  { title: 'PEG',            key: 'employee_count',    align: 'center', width: 80  },
-  { title: 'Gaji Pokok',     key: 'total_gaji_pokok',  align: 'end'   },
-  { title: 'Tunjangan',      key: 'total_tunjangan',   align: 'end'   },
-  { title: 'Potongan',       key: 'total_potongan',    align: 'end'   },
-  { title: 'Bersih',         key: 'total_bersih',      align: 'end'   },
+  { title: 'KODE SKPD',      key: 'kode_skpd',        align: 'start',  width: 120, fixed: true },
+  { title: 'NAMA SKPD',      key: 'nama_skpd',        align: 'start', minWidth: 250, fixed: true },
+  { title: 'SUMBER DANA',    key: 'sumber_dana',       align: 'start',  width: 120 },
+  { title: 'PEG',            key: 'employee_count',    align: 'center', width: 60  },
+  { title: 'GAJI POKOK',     key: 'total_gaji_pokok',  align: 'end'   },
+  { title: 'PAJAK',          key: 'total_pajak',       align: 'end'   },
+  { title: 'IWP',            key: 'total_iwp',         align: 'end'   },
+  { title: 'POT. LAIN',      key: 'total_potongan',    align: 'end'   },
+  { title: 'BERSIH DITERIMA',key: 'total_bersih',      align: 'end'   },
 ]
 
 const detailHeaders = [
@@ -398,7 +399,7 @@ const currentHeaders = computed(() => mode.value === 'detail' ? detailHeaders : 
 const detailCurrencyCols = ['gapok','tj_istri','tj_anak','tj_tpp','tj_eselon','tj_fungsi',
             'tj_beras','tj_pajak','tj_umum','tj_khusus','pembulatan','kotor',
             'pot_iwp','pot_iwp2','pot_iwp8','pot_pajak','total_potongan','bersih']
-const summaryCurrencyCols = ['total_gaji_pokok','total_tunjangan','total_potongan','total_bersih']
+const summaryCurrencyCols = ['total_gaji_pokok', 'total_pajak', 'total_iwp', 'total_tunjangan', 'total_potongan', 'total_bersih']
 
 const currencyCols = computed(() => {
   if (mode.value === 'detail') return detailCurrencyCols
