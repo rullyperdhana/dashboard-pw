@@ -47,11 +47,11 @@ class PppkPwReportController extends Controller
         // Calculate summaries
         $summary = [
             'total_pegawai' => $data->count(),
-            'total_gaji_pokok' => $data->sum('gaji_pokok'),
+            'total_gaji_pokok' => $data->sum(fn($i) => (float)$i->gaji_pokok),
             'total_potongan' => $data->sum(function($item) {
-                return $item->pajak + $item->iwp + $item->potongan;
+                return (float)($item->pajak ?? 0) + (float)($item->iwp ?? 0) + (float)($item->potongan ?? 0);
             }),
-            'total_bersih' => $data->sum('total_amoun'),
+            'total_bersih' => $data->sum(fn($i) => (float)$i->total_amoun),
         ];
 
         // Filter data

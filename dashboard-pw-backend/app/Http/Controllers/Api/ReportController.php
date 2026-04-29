@@ -651,12 +651,12 @@ class ReportController extends Controller
                     s.nama_skpd,
                     pw.sumber_dana,
                     COUNT(DISTINCT pw.id) AS employee_count,
-                    SUM(pd.gaji_pokok)    AS total_gaji_pokok,
-                    SUM(pd.pajak)         AS total_pajak,
-                    SUM(pd.iwp)           AS total_iwp,
-                    SUM(pd.tunjangan)     AS total_tunjangan,
-                    SUM(pd.pajak + pd.iwp + pd.potongan) AS total_potongan,
-                    SUM(pd.total_amoun)   AS total_bersih
+                    SUM(IFNULL(pd.gaji_pokok, 0))    AS total_gaji_pokok,
+                    SUM(IFNULL(pd.pajak, 0))         AS total_pajak,
+                    SUM(IFNULL(pd.iwp, 0))           AS total_iwp,
+                    SUM(IFNULL(pd.tunjangan, 0))     AS total_tunjangan,
+                    SUM(IFNULL(pd.pajak, 0) + IFNULL(pd.iwp, 0) + IFNULL(pd.potongan, 0)) AS total_potongan,
+                    SUM(IFNULL(pd.total_amoun, 0))   AS total_bersih
                 FROM tb_payment_detail pd
                 JOIN pegawai_pw pw ON pd.employee_id = pw.id
                 JOIN skpd s        ON pw.idskpd = s.id_skpd
@@ -1379,10 +1379,12 @@ class ReportController extends Controller
                     s.nama_skpd,
                     pw.sumber_dana,
                     COUNT(DISTINCT pw.id) AS employee_count,
-                    SUM(pd.gaji_pokok)    AS total_gaji_pokok,
-                    SUM(pd.tunjangan)     AS total_tunjangan,
-                    SUM(pd.potongan)      AS total_potongan,
-                    SUM(pd.total_amoun)   AS total_bersih
+                    SUM(IFNULL(pd.gaji_pokok, 0))    AS total_gaji_pokok,
+                    SUM(IFNULL(pd.pajak, 0))         AS total_pajak,
+                    SUM(IFNULL(pd.iwp, 0))           AS total_iwp,
+                    SUM(IFNULL(pd.tunjangan, 0))     AS total_tunjangan,
+                    SUM(IFNULL(pd.pajak, 0) + IFNULL(pd.iwp, 0) + IFNULL(pd.potongan, 0)) AS total_potongan,
+                    SUM(IFNULL(pd.total_amoun, 0))   AS total_bersih
                 FROM tb_payment_detail pd
                 JOIN pegawai_pw pw ON pd.employee_id = pw.id
                 JOIN skpd s        ON pw.idskpd = s.id_skpd
@@ -1399,6 +1401,8 @@ class ReportController extends Controller
                 kode_skpd, nama_skpd, sumber_dana,
                 SUM(employee_count)    as employee_count,
                 SUM(total_gaji_pokok)  as total_gaji_pokok,
+                SUM(total_pajak)       as total_pajak,
+                SUM(total_iwp)         as total_iwp,
                 SUM(total_tunjangan)   as total_tunjangan,
                 SUM(total_potongan)    as total_potongan,
                 SUM(total_bersih)      as total_bersih
