@@ -43,6 +43,10 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 | **Export Excel & PDF** | Export laporan sesuai tab yang aktif |
 
 ---
+### 🚀 Enhanced Payroll Visibility (v5.5.1)
+- **Bulan Pembayaran di Daftar Gaji:** Penambahan kolom "BULAN" pada tabel Daftar Gaji PNS dan Daftar Gaji PPPK. Memberikan kejelasan periode pembayaran secara langsung pada list data tanpa harus membuka detail.
+- **Improved Data Table UI:** Penyesuaian layout tabel untuk mengakomodasi kolom periode pembayaran dengan tetap menjaga responsivitas tampilan.
+
 
 ### 🚀 Tax Status Enhancements & SQL Optimization (v5.5.0)
 - **Tax Status SKPD Visibility:** Penambahan kolom "Nama SKPD" pada daftar Status Pajak (PTKP). Data ditarik secara dinamis menggunakan join lintas tabel antara data status pajak, master pegawai (PNS), pegawai PW (PPPK), dan master SKPD.

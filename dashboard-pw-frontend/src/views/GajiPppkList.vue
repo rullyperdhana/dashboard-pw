@@ -143,6 +143,10 @@
                   <div class="text-body-2 text-truncate" style="max-width: 200px;">{{ item.skpd || '-' }}</div>
                 </template>
 
+                <template v-slot:item.bulan_pembayaran="{ item }">
+                  <div class="text-body-2 font-weight-medium">{{ monthName(item.bulan) }} {{ item.tahun }}</div>
+                </template>
+
                 <template v-slot:item.gaji_pokok="{ item }">
                   <span class="font-weight-medium">{{ formatCurrency(item.gaji_pokok) }}</span>
                 </template>
@@ -477,6 +481,7 @@ const rules = { required: v => !!v || 'Field ini wajib diisi' }
 const headers = [
   { title: 'PEGAWAI', key: 'nama', sortable: false },
   { title: 'GOLONGAN', key: 'golongan', sortable: false, width: '100px' },
+  { title: 'BULAN', key: 'bulan_pembayaran', sortable: false, width: '120px' },
   { title: 'SKPD', key: 'skpd', sortable: false },
   { title: 'GAJI POKOK', key: 'gaji_pokok', sortable: false, align: 'end' },
   { title: 'KOTOR', key: 'kotor', sortable: false, align: 'end' },
