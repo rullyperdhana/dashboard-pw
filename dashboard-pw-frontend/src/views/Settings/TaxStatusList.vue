@@ -93,6 +93,7 @@
               <tr>
                 <th class="text-uppercase text-caption font-weight-bold">NIP</th>
                 <th class="text-uppercase text-caption font-weight-bold">Nama Pegawai</th>
+                <th class="text-uppercase text-caption font-weight-bold">Nama SKPD</th>
                 <th class="text-uppercase text-caption font-weight-bold">Tipe</th>
                 <th class="text-uppercase text-caption font-weight-bold">Status Pajak</th>
                 <th class="text-uppercase text-caption font-weight-bold text-center">Status Data</th>
@@ -113,6 +114,11 @@
                   <span class="text-body-2 font-weight-bold">{{ item.nip }}</span>
                 </td>
                 <td>{{ item.nama }}</td>
+                <td>
+                  <div class="text-caption text-truncate" style="max-width: 250px">
+                    {{ item.skpd_name || '-' }}
+                  </div>
+                </td>
                 <td>
                   <v-chip
                     :color="item.employee_type === 'pns' ? 'info' : 'warning'"
@@ -157,7 +163,7 @@
               </tr>
               
               <tr v-if="tableData.length === 0 && !loading">
-                <td colspan="6" class="text-center py-10">
+                <td colspan="7" class="text-center py-10">
                   <v-icon icon="mdi-account-off" size="large" color="grey-lighten-1" class="mb-2"></v-icon>
                   <div class="text-subtitle-1 text-medium-emphasis">Tidak ada data ditemukan</div>
                 </td>

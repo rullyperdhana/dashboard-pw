@@ -25,10 +25,17 @@ class TaxStatusController extends Controller
             'type' => 'nullable|in:pns,pppk',
         ]);
 
-        $query = TaxStatus::where('year', $request->year);
+        $query = TaxStatus::query()
+            ->leftJoin('master_pegawai', 'tax_statuses.nip', '=', 'master_pegawai.nip')
+            ->leftJoin('skpd as skpd_pns', 'master_pegawai.kdskpd', '=', DB::raw('skpd_pns.kode_skpd COLLATE utf8mb4_unicode_ci'))
+            ->leftJoin('pegawai_pw', 'tax_statuses.nip', '=', 'pegawai_pw.nip')
+            ->leftJoin('skpd as skpd_pppk', 'pegawai_pw.idskpd', '=', 'skpd_pppk.id_skpd')
+            ->select('tax_statuses.*')
+            ->addSelect(DB::raw('COALESCE(skpd_pns.nama_skpd, skpd_pppk.nama_skpd) as skpd_name'))
+            ->where('tax_statuses.year', $request->year);
 
         if ($request->type) {
-            $query->where('employee_type', $request->type);
+            $query->where('tax_statuses.employee_type', $request->type);
         }
 
         $user = auth()->user();
@@ -37,10 +44,10 @@ class TaxStatusController extends Controller
             $skpdCodes = $user->getAccessibleSkpdCodes();
             
             $query->where(function($q) use ($skpdIds, $skpdCodes) {
-                $q->whereIn('nip', function($sq) use ($skpdCodes) {
+                $q->whereIn('tax_statuses.nip', function($sq) use ($skpdCodes) {
                     $sq->select('nip')->from('master_pegawai')->whereIn('kdskpd', $skpdCodes);
                 })
-                ->orWhereIn('nip', function($sq) use ($skpdIds) {
+                ->orWhereIn('tax_statuses.nip', function($sq) use ($skpdIds) {
                     $sq->select('nip')->from('pegawai_pw')->whereIn('idskpd', $skpdIds);
                 });
             });
@@ -49,13 +56,13 @@ class TaxStatusController extends Controller
         if ($request->search) {
             $s = $request->search;
             $query->where(function ($q) use ($s) {
-                $q->where('nip', 'like', "%$s%")
-                    ->orWhere('nama', 'like', "%$s%")
-                    ->orWhere('tax_status', 'like', "%$s%");
+                $q->where('tax_statuses.nip', 'like', "%$s%")
+                    ->orWhere('tax_statuses.nama', 'like', "%$s%")
+                    ->orWhere('tax_statuses.tax_status', 'like', "%$s%");
             });
         }
 
-        $data = $query->orderBy('nama')->paginate($request->per_page ?? 15);
+        $data = $query->orderBy('tax_statuses.nama')->paginate($request->per_page ?? 15);
 
         return response()->json([
             'status' => 'success',

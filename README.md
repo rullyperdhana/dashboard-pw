@@ -44,6 +44,11 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 
 ---
 
+### 🚀 Tax Status Enhancements & SQL Optimization (v5.5.0)
+- **Tax Status SKPD Visibility:** Penambahan kolom "Nama SKPD" pada daftar Status Pajak (PTKP). Data ditarik secara dinamis menggunakan join lintas tabel antara data status pajak, master pegawai (PNS), pegawai PW (PPPK), dan master SKPD.
+- **SQL Join Optimization:** Implementasi penanganan *collation* otomatis (`COLLATE utf8mb4_unicode_ci`) pada join query untuk mencegah *error* "Illegal mix of collations" saat penggabungan data dari tabel dengan karakter set berbeda.
+- **Enhanced Data Transparency:** Memberikan informasi unit kerja langsung pada manajemen status pajak untuk memudahkan verifikasi data per SKPD.
+
 ### 🚀 Employee Status & Pending Payroll (v5.4.0)
 - **Employee Status in Pending:** Menambahkan informasi status pegawai (AKTIF, Pensiun, Meninggal, Keluar, Diberhentikan) pada tab "Gaji Belum Masuk (Pending)" rincian PER PEGAWAI.
 - **Enhanced Pending Export:** Penambahan kolom Status pada export Excel untuk daftar gaji yang belum masuk, memberikan informasi lebih lengkap bagi verifikator.

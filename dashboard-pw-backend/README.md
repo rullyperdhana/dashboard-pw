@@ -2,7 +2,8 @@
 
 API core untuk aplikasi manajemen penggajian kalsel.
 
-## ✨ Fitur Backend Baru (v4.5.0)
+## ✨ Fitur Backend Baru (v5.5.0)
+- **Tax Status Enhancements**: Ditambahkan kolom Nama SKPD pada manajemen status pajak (PTKP) dengan dukungan join lintas tabel (PNS & PPPK) dan optimasi collation (`utf8mb4_unicode_ci`).
 - **Advanced Budget Prediction Engine**: Menggunakan rata-rata 3 bulan (Induk) x 14 bulan basis. Mendukung simulasi penambahan pegawai baru dan kenaikan gaji pokok.
 - **Smart Dashboard Caching**: Menggunakan Redis/File cache untuk menyimpan data ringkasan eksekutif dan dashboard statistik (TTL 6 jam).
 - **Automated Cache Invalidation**: Trait `CacheClearer` yang diintegrasikan pada 5+ controller import untuk pembersihan cache otomatis saat data berubah.
