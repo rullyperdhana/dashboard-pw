@@ -147,6 +147,12 @@
                   <div class="text-body-2 font-weight-medium">{{ monthName(item.bulan) }} {{ item.tahun }}</div>
                 </template>
 
+                <template v-slot:item.jenis_gaji="{ item }">
+                  <v-chip size="x-small" :color="item.jenis_gaji === 'Induk' ? 'teal' : 'orange'" variant="tonal" class="font-weight-bold">
+                    {{ item.jenis_gaji || 'Induk' }}
+                  </v-chip>
+                </template>
+
                 <template v-slot:item.gaji_pokok="{ item }">
                   <span class="font-weight-medium">{{ formatCurrency(item.gaji_pokok) }}</span>
                 </template>
@@ -482,6 +488,7 @@ const headers = [
   { title: 'PEGAWAI', key: 'nama', sortable: false },
   { title: 'GOLONGAN', key: 'golongan', sortable: false, width: '100px' },
   { title: 'BULAN', key: 'bulan_pembayaran', sortable: false, width: '120px' },
+  { title: 'JENIS', key: 'jenis_gaji', sortable: false, width: '100px' },
   { title: 'SKPD', key: 'skpd', sortable: false },
   { title: 'GAJI POKOK', key: 'gaji_pokok', sortable: false, align: 'end' },
   { title: 'KOTOR', key: 'kotor', sortable: false, align: 'end' },
