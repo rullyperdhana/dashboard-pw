@@ -507,7 +507,6 @@ const rules = { required: v => !!v || 'Field ini wajib diisi' }
 
 const headers = [
   { title: 'PEGAWAI', key: 'nama', sortable: false },
-  { title: 'GOLONGAN', key: 'golongan', sortable: false, width: '100px' },
   { title: 'BULAN', key: 'bulan_pembayaran', sortable: false, width: '120px' },
   { title: 'JENIS', key: 'jenis_gaji', sortable: false, width: '100px' },
   { title: 'SKPD', key: 'skpd', sortable: false },

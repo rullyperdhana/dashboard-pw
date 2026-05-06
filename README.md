@@ -43,8 +43,9 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 | **Export Excel & PDF** | Export laporan sesuai tab yang aktif |
 
 ---
-### 🚀 Enhanced Payroll Visibility (v5.5.2)
-- **Periode & Jenis Gaji di Daftar Gaji:** Penambahan kolom "BULAN" dan "JENIS" pada tabel Daftar Gaji PNS dan Daftar Gaji PPPK. Memberikan kejelasan periode pembayaran dan tipe gaji (Induk, Susulan, dll) secara langsung pada list data.
+### 🚀 Enhanced Payroll Visibility (v5.5.3)
+- **Periode & Jenis Gaji di Daftar Gaji:** Penambahan kolom "BULAN" dan "JENIS" pada tabel Daftar Gaji PNS dan Daftar Gaji PPPK.
+- **Golongan Column Removal:** Menghapus kolom "GOLONGAN" dari tabel utama untuk menyederhanakan tampilan dan memberikan ruang lebih untuk kolom periode dan jenis gaji.
 - **Visual Indicators for Gaji Type:** Implementasi chip berwarna untuk membedakan jenis gaji agar lebih mudah diidentifikasi secara visual.
 - **Improved Data Table UI:** Penyesuaian layout tabel untuk mengakomodasi kolom tambahan dengan tetap menjaga responsivitas tampilan.
 
