@@ -145,9 +145,10 @@ class SettingController extends Controller
     public function clearPayrollData(Request $request)
     {
         $validated = $request->validate([
-            'target' => 'required|string|in:pns,pppk,both',
+            'target' => 'required|string|in:pns,pppk,both,tpp,tpg',
             'month' => 'nullable|integer|between:1,12',
             'year' => 'nullable|integer',
+            'triwulan' => 'nullable|integer|between:1,4',
             'jenis_gaji' => 'nullable|string',
             'confirmation_code' => 'required|string',
         ]);
@@ -164,6 +165,7 @@ class SettingController extends Controller
         $target = $validated['target'];
         $month = $validated['month'] ?? null;
         $year = $validated['year'] ?? null;
+        $triwulan = $validated['triwulan'] ?? null;
         $jenisGaji = $validated['jenis_gaji'] ?? null;
 
         $results = [];
@@ -192,6 +194,32 @@ class SettingController extends Controller
 
             $count = $query->delete();
             $results['pppk'] = $count;
+        }
+
+        if ($target === 'tpp' || $target === 'both') {
+            $query = \App\Models\StandaloneTpp::query();
+            if ($month)
+                $query->where('month', $month);
+            if ($year)
+                $query->where('year', $year);
+            if ($jenisGaji)
+                $query->where('jenis_gaji', $jenisGaji);
+
+            $count = $query->delete();
+            $results['tpp'] = $count;
+        }
+
+        if ($target === 'tpg' || $target === 'both') {
+            $query = \App\Models\TpgData::query();
+            if ($month)
+                $query->where('bulan', $month);
+            if ($triwulan)
+                $query->where('triwulan', $triwulan);
+            if ($year)
+                $query->where('tahun', $year);
+
+            $count = $query->delete();
+            $results['tpg'] = $count;
         }
 
         Log::info("User " . auth()->user()->username . " cleared payroll data", [
