@@ -19,12 +19,14 @@ return new class extends Migration
         }
 
         // Backfill existing data for 2026
-        DB::statement("
-            UPDATE tb_extra_payroll_pppk_pw t
-            JOIN pegawai_pw p ON t.employee_id = p.id
-            SET t.sumber_dana = p.sumber_dana
-            WHERE t.year = 2026 AND t.sumber_dana IS NULL
-        ");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("
+                UPDATE tb_extra_payroll_pppk_pw t
+                JOIN pegawai_pw p ON t.employee_id = p.id
+                SET t.sumber_dana = p.sumber_dana
+                WHERE t.year = 2026 AND t.sumber_dana IS NULL
+            ");
+        }
     }
 
     /**

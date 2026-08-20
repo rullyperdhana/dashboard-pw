@@ -30,6 +30,17 @@ return new class extends Migration
      */
     private function addIndexIfNotExists($tableName, $column, $indexName)
     {
+        if (DB::getDriverName() === 'sqlite') {
+            try {
+                Schema::table($tableName, function (Blueprint $table) use ($column, $indexName) {
+                    $table->index($column, $indexName);
+                });
+            } catch (\Exception $e) {
+                // index probably exists
+            }
+            return;
+        }
+        
         $indexes = DB::select("SHOW INDEX FROM {$tableName} WHERE Key_name = '{$indexName}'");
         if (empty($indexes)) {
             Schema::table($tableName, function (Blueprint $table) use ($column, $indexName) {

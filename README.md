@@ -43,6 +43,10 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 | **Export Excel & PDF** | Export laporan sesuai tab yang aktif |
 
 ---
+### 🐛 Token Expiration & Authentication Fix (v5.5.4)
+- **Token Server Expiration:** Menambahkan masa kadaluarsa (expiration) token sesi Sanctum di sisi server untuk mencegah sesi berlaku selamanya (infinite session).
+- **Graceful Error Handling:** Memperbaiki penanganan sesi *expired* di *frontend* SPA dengan mengimplementasikan standar header `Accept: application/json`. Hal ini membuat *backend* sukses mengembalikan status `401 Unauthorized` (bukan 500 Error), yang selanjutnya akan memicu pembersihan *cache* otomatis dan memulangkan user ke halaman login secara sempurna.
+
 ### 🚀 Enhanced Payroll Visibility (v5.5.3)
 - **Periode & Jenis Gaji di Daftar Gaji:** Penambahan kolom "BULAN" dan "JENIS" pada tabel Daftar Gaji PNS dan Daftar Gaji PPPK.
 - **Golongan Column Removal:** Menghapus kolom "GOLONGAN" dari tabel utama untuk menyederhanakan tampilan dan memberikan ruang lebih untuk kolom periode dan jenis gaji.
