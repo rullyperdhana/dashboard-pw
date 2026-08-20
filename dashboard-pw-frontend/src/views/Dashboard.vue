@@ -627,7 +627,7 @@ import Sidebar from '../components/Sidebar.vue'
 import Navbar from '../components/Navbar.vue'
 
 const theme = useTheme()
-provide(THEME_KEY, computed(() => theme.name.value === 'dark' ? 'dark' : 'light'))
+provide(THEME_KEY, computed(() => theme.global.name.value === 'dark' ? 'dark' : 'light'))
 const router = useRouter()
 const user = ref(null)
 const loading = ref(true)
@@ -692,7 +692,7 @@ const compositionOption = computed(() => {
       left: 'left',
       bottom: '0',
       textStyle: {
-        color: theme.name.value === 'dark' ? '#fff' : '#000'
+        color: theme.global.name.value === 'dark' ? '#fff' : '#000'
       }
     },
     series: [
@@ -976,9 +976,9 @@ const trendSeries = computed(() => {
 const trendChartOptions = computed(() => ({
   chart: {
     height: 350, type: 'area', toolbar: { show: false }, zoom: { enabled: false },
-    foreColor: theme.name.value === 'dark' ? '#94a3b8' : '#64748b'
+    foreColor: theme.global.name.value === 'dark' ? '#94a3b8' : '#64748b'
   },
-  theme: { mode: theme.name.value },
+  theme: { mode: theme.global.name.value },
   colors: ['#1867C0'],
   dataLabels: { enabled: false },
   stroke: { curve: 'smooth', width: 3 },
