@@ -144,7 +144,8 @@ class SettingController extends Controller
 
     public function clearPayrollData(Request $request)
     {
-        $validated = $request->validate([
+        try {
+            $validated = $request->validate([
             'target' => 'required|string|in:pns,pppk,both,tpp,tpg',
             'month' => 'nullable|integer|between:1,12',
             'year' => 'nullable|integer',
@@ -253,6 +254,12 @@ class SettingController extends Controller
             'message' => 'Data berhasil dihapus.',
             'details' => $results
         ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'System Error: ' . $e->getMessage() . ' di file ' . basename($e->getFile()) . ' baris ' . $e->getLine()
+            ], 500);
+        }
     }
 
     // ========== PER-EMPLOYEE DETAIL METHODS ==========
