@@ -146,7 +146,7 @@ class SettingController extends Controller
     {
         try {
             $validated = $request->validate([
-            'target' => 'required|string|in:pns,pppk,both,tpp,tpg',
+            'target' => 'required|string|in:pns,pppk,both,tpp,tpg,tpp_pns,tpp_pppk',
             'month' => 'nullable|integer|between:1,12',
             'year' => 'nullable|integer',
             'triwulan' => 'nullable|integer|between:1,4',
@@ -221,6 +221,32 @@ class SettingController extends Controller
 
             $count = $query->delete();
             $results['tpg'] = $count;
+        }
+
+        if ($target === 'tpp_pns' || $target === 'both_tpp') { // both_tpp is not in validation but just in case
+            $query = \App\Models\GajiPns::query();
+            if ($month)
+                $query->where('bulan', $month);
+            if ($year)
+                $query->where('tahun', $year);
+            if ($jenisGaji)
+                $query->where('jenis_gaji', $jenisGaji);
+
+            $count = $query->update(['tunj_tpp' => 0]);
+            $results['tpp_pns'] = $count;
+        }
+
+        if ($target === 'tpp_pppk' || $target === 'both_tpp') {
+            $query = \App\Models\GajiPppk::query();
+            if ($month)
+                $query->where('bulan', $month);
+            if ($year)
+                $query->where('tahun', $year);
+            if ($jenisGaji)
+                $query->where('jenis_gaji', $jenisGaji);
+
+            $count = $query->update(['tunj_tpp' => 0]);
+            $results['tpp_pppk'] = $count;
         }
 
         Log::info("User " . auth()->user()->username . " cleared payroll data", [

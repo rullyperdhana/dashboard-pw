@@ -99,7 +99,7 @@
                         variant="outlined"
                         density="comfortable"
                         clearable
-                        :disabled="!['pns', 'pppk', 'both', 'tpp', 'pns_kekurangan', 'pppk_kekurangan'].includes(clearParams.target)"
+                        :disabled="!['pns', 'pppk', 'both', 'tpp', 'pns_kekurangan', 'pppk_kekurangan', 'tpp_pns', 'tpp_pppk'].includes(clearParams.target)"
                       ></v-select>
                     </v-col>
                     <v-col cols="12" sm="6">
@@ -311,6 +311,8 @@ const targetOptions = [
   { title: 'Gaji Kekurangan PNS', value: 'pns_kekurangan' },
   { title: 'Gaji Kekurangan PPPK', value: 'pppk_kekurangan' },
   { title: 'Data TPP Standalone', value: 'tpp' },
+  { title: 'Kosongkan TPP di Gaji PNS', value: 'tpp_pns' },
+  { title: 'Kosongkan TPP di Gaji PPPK', value: 'tpp_pppk' },
   { title: 'Data TPG (Sertifikasi Guru)', value: 'tpg' },
 ]
 
