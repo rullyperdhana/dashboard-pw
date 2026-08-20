@@ -202,10 +202,10 @@
 
         <!-- Table Card -->
         <v-card class="glass-panel rounded-xl overflow-hidden" elevation="0">
-          <div class="pa-4 d-flex justify-space-between align-center bg-grey-lighten-4 border-bottom">
+          <div class="pa-4 d-flex justify-space-between align-center border-bottom" style="background: rgba(var(--v-theme-on-surface), 0.03)">
             <div class="d-flex align-center">
               <v-icon color="primary" class="mr-2">mdi-table-large</v-icon>
-              <h2 class="text-h6 font-weight-black text-grey-darken-3">HASIL LAPORAN</h2>
+              <h2 class="text-h6 font-weight-black">HASIL LAPORAN</h2>
               <v-chip color="primary" size="small" class="ml-3 font-weight-bold">{{ selectedMonthName }} {{ selectedYear }}</v-chip>
             </div>
             <v-text-field
@@ -217,7 +217,6 @@
               rounded="lg"
               hide-details
               style="max-width: 300px"
-              class="bg-white"
             ></v-text-field>
           </div>
 
@@ -236,11 +235,11 @@
             </template>
             
             <template v-slot:item.nama="{ item }">
-              <div class="font-weight-black text-grey-darken-3">{{ item.nama }}</div>
+              <div class="font-weight-black">{{ item.nama }}</div>
             </template>
 
             <template v-slot:item.nip="{ item }">
-              <span class="text-caption font-weight-bold text-grey-darken-1">{{ item.nip }}</span>
+              <span class="text-caption font-weight-bold text-medium-emphasis">{{ item.nip }}</span>
             </template>
 
             <template v-slot:item.jabatan="{ item }">
@@ -426,13 +425,13 @@ onMounted(() => {
 }
 
 .bg-dashboard {
-  background-color: #f8fafc !important;
+  background-color: rgb(var(--v-theme-background)) !important;
   background-image: radial-gradient(at 0% 0%, rgba(var(--v-theme-primary), 0.03) 0, transparent 50%),
                     radial-gradient(at 100% 100%, rgba(var(--v-theme-info), 0.03) 0, transparent 50%);
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.8) !important;
+  background: rgba(var(--v-theme-surface), 0.85) !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(var(--v-border-color), 0.08) !important;
@@ -457,25 +456,25 @@ onMounted(() => {
 }
 
 :deep(.v-data-table-header) {
-  background: #f1f5f9 !important;
+  background: rgba(var(--v-theme-on-surface), 0.03) !important;
 }
 
 :deep(.v-data-table-header th) {
   font-weight: 800 !important;
   text-transform: uppercase;
   font-size: 0.75rem !important;
-  color: #475569 !important;
+  color: rgba(var(--v-theme-on-surface), 0.7) !important;
   letter-spacing: 0.05em;
-  border-bottom: 2px solid #e2e8f0 !important;
+  border-bottom: 2px solid rgba(var(--v-border-color), 0.1) !important;
 }
 
 :deep(.v-data-table__tr:hover) {
-  background-color: rgba(var(--v-theme-primary), 0.02) !important;
+  background-color: rgba(var(--v-theme-primary), 0.05) !important;
 }
 
 :deep(.v-data-table__td) {
   padding: 12px 16px !important;
-  border-bottom: 1px solid #f1f5f9 !important;
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.1) !important;
 }
 
 .text-wrap {
