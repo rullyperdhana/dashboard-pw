@@ -34,6 +34,13 @@ class TppImport implements ToCollection, WithHeadingRow
                 ->where('year', $this->year)
                 ->where('employee_type', $this->type)
                 ->delete();
+                
+            // Clear previous TppDetails for this period/type/jenis_gaji
+            \App\Models\TppDetail::where('month', $this->month)
+                ->where('year', $this->year)
+                ->where('employee_type', $this->type)
+                ->where('jenis_gaji', $this->jenisGaji)
+                ->delete();
 
             // Note: We don't delete standalone records here anymore to preserve manual mappings.
             // We will cleanup at the end for NIPs not present in the new Excel.
@@ -51,6 +58,28 @@ class TppImport implements ToCollection, WithHeadingRow
                 $excelNips[] = $nip;
                 $nilaiRaw = $row['yang_dibayarkan_transfer'] ?? 0;
                 $nilai = $this->parseCurrency($nilaiRaw);
+                
+                // Save to tpp_details table for reporting purposes
+                \App\Models\TppDetail::create([
+                    'month' => $this->month,
+                    'year' => $this->year,
+                    'employee_type' => $this->type,
+                    'jenis_gaji' => $this->jenisGaji,
+                    'nip' => $nip,
+                    'nama_lengkap' => $row['nama_lengkap'] ?? $row['nama'] ?? null,
+                    'instansi_upt' => $row['instansi_upt'] ?? $row['skpd'] ?? $row['unit_skpd'] ?? null,
+                    'jabatan' => $row['jabatan'] ?? null,
+                    'status_pegawai' => $row['status_pegawai'] ?? null,
+                    'tpp_bruto' => $this->parseCurrency($row['tpp_bruto'] ?? 0),
+                    'bruto_plus' => $this->parseCurrency($row['bruto_plus'] ?? 0),
+                    'tpp_netto' => $this->parseCurrency($row['tpp_netto'] ?? 0),
+                    'dpp_pajak' => $this->parseCurrency($row['dpp_pajak'] ?? 0),
+                    'pph_21' => $this->parseCurrency($row['pph_21'] ?? 0),
+                    'potongan_tpp_lainnya' => $this->parseCurrency($row['potongan_tpp_lainnya'] ?? 0),
+                    'iuran_iwp' => $this->parseCurrency($row['iuran_iwp'] ?? 0),
+                    'total_potongan' => $this->parseCurrency($row['total_potongan'] ?? 0),
+                    'yang_dibayarkan_transfer' => $nilai,
+                ]);
 
                 $model = $this->type === 'pppk' ? GajiPppk::class : GajiPns::class;
 

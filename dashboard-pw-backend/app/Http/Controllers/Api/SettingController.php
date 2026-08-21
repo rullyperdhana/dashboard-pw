@@ -233,6 +233,16 @@ class SettingController extends Controller
                 $query->where('jenis_gaji', $jenisGaji);
 
             $count = $query->update(['tunj_tpp' => 0]);
+            
+            // Also delete from tpp_details
+            \App\Models\TppDetail::where('month', $month)
+                ->where('year', $year)
+                ->where('employee_type', 'pns')
+                ->when($jenisGaji, function ($q) use ($jenisGaji) {
+                    $q->where('jenis_gaji', $jenisGaji);
+                })
+                ->delete();
+                
             $results['tpp_pns'] = $count;
         }
 
@@ -246,6 +256,16 @@ class SettingController extends Controller
                 $query->where('jenis_gaji', $jenisGaji);
 
             $count = $query->update(['tunj_tpp' => 0]);
+            
+            // Also delete from tpp_details
+            \App\Models\TppDetail::where('month', $month)
+                ->where('year', $year)
+                ->where('employee_type', 'pppk')
+                ->when($jenisGaji, function ($q) use ($jenisGaji) {
+                    $q->where('jenis_gaji', $jenisGaji);
+                })
+                ->delete();
+                
             $results['tpp_pppk'] = $count;
         }
 
