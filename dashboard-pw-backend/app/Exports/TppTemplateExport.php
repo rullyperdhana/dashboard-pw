@@ -21,8 +21,9 @@ class TppTemplateExport implements FromArray, WithHeadings, WithStyles
     {
         return [
             'NIP',
-            'NAMA',
-            'NILAI',
+            'Nama Lengkap',
+            'Yang Dibayarkan (Transfer)',
+            'Instansi / UPT'
         ];
     }
 

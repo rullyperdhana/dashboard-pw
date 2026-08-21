@@ -49,7 +49,7 @@ class TppImport implements ToCollection, WithHeadingRow
 
                 $nip = (string) $row['nip'];
                 $excelNips[] = $nip;
-                $nilaiRaw = $row['nilai'] ?? 0;
+                $nilaiRaw = $row['yang_dibayarkan_transfer'] ?? 0;
                 $nilai = $this->parseCurrency($nilaiRaw);
 
                 $model = $this->type === 'pppk' ? GajiPppk::class : GajiPns::class;
@@ -82,8 +82,8 @@ class TppImport implements ToCollection, WithHeadingRow
 
                     // Save to standalone_tpp so operator can map it
                     $skpdId = null;
-                    if (isset($row['skpd']) || isset($row['unit_skpd'])) {
-                        $skpdName = $row['skpd'] ?? $row['unit_skpd'];
+                    if (isset($row['instansi_upt']) || isset($row['skpd']) || isset($row['unit_skpd'])) {
+                        $skpdName = $row['instansi_upt'] ?? $row['skpd'] ?? $row['unit_skpd'];
                         $skpdId = $this->findSkpdIdByName($skpdName);
                     }
 
@@ -97,7 +97,7 @@ class TppImport implements ToCollection, WithHeadingRow
                         ]
                     );
 
-                    $standalone->nama = $row['nama'] ?? $standalone->nama;
+                    $standalone->nama = $row['nama_lengkap'] ?? $row['nama'] ?? $standalone->nama;
                     $standalone->nilai = $nilai;
 
                     // Only set skpd_id if it's currently null AND we found a match from the file

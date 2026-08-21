@@ -23,7 +23,7 @@ class TppController extends Controller
         ]);
 
         $expectedHeaders = [
-            'NIP', 'NAMA', 'NILAI'
+            'NIP', 'Nama Lengkap', 'Yang Dibayarkan (Transfer)'
         ];
 
         $result = ExcelValidationService::validateHeaders($request->file('file'), $expectedHeaders);
