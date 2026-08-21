@@ -47,18 +47,6 @@
                     </v-col>
                 </v-row>
 
-                 <v-select
-                  v-model="employeeType"
-                  :items="employeeTypes"
-                  item-title="title"
-                  item-value="value"
-                  label="Tipe Pegawai"
-                  variant="outlined"
-                  color="teal"
-                  class="mt-2"
-                  prepend-inner-icon="mdi-account-group"
-                  :rules="[v => !!v || 'Tipe pegawai harus dipilih']"
-                ></v-select>
 
                 <v-select
                   v-model="selectedJenisGaji"
@@ -125,47 +113,16 @@
               </v-form>
             </v-card>
 
-            <!-- Preview Data -->
-            <v-card v-if="validationResult && validationResult.success" class="glass-card rounded-xl pa-6 mt-4 animate__animated animate__fadeIn">
-              <div class="d-flex align-center justify-space-between mb-4">
-                <h3 class="text-h6 font-weight-bold text-teal">
-                  <v-icon start>mdi-table-eye</v-icon>
-                  Preview Data (5 Baris Pertama)
-                </h3>
-                <v-btn icon="mdi-close" variant="text" size="small" @click="validationResult = null"></v-btn>
-              </div>
-              <v-table density="compact" class="preview-table">
-                <thead>
-                  <tr>
-                    <th v-for="h in validationResult.preview[0]" :key="h">{{ h }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(row, i) in validationResult.preview.slice(1)" :key="i">
-                    <td v-for="(col, j) in row" :key="j">{{ col }}</td>
-                  </tr>
-                </tbody>
-              </v-table>
-              <v-alert type="success" variant="tonal" density="compact" class="mt-4 text-caption">
-                Format Header Sesuai. Klik tombol hijau di atas untuk memproses seluruh data.
-              </v-alert>
-            </v-card>
 
-            <!-- Error Validation -->
-            <v-alert v-if="validationResult && !validationResult.success" type="error" variant="tonal" class="mt-4 rounded-xl">
-              <div class="font-weight-bold">Format File Tidak Sesuai</div>
-              <div>{{ validationResult.message }}</div>
-              <v-btn variant="text" size="small" class="mt-2" @click="validationResult = null">Ganti File</v-btn>
-            </v-alert>
           </v-col>
 
           <v-col cols="12" md="4" lg="6">
              <v-card class="glass-card rounded-xl pa-6 bg-teal-lighten-5">
                 <h3 class="text-h6 font-weight-bold mb-2 text-teal-darken-2">Petunjuk Upload</h3>
                 <ul class="pl-4 text-body-2 text-grey-darken-3">
-                    <li class="mb-2">Pastikan file Excel memiliki header: <strong>NIP, NAMA, NILAI</strong>.</li>
+                    <li class="mb-2">Pastikan file Excel sesuai dengan format <strong>Template Terbaru</strong> (berisi kolom NIP, Nama, Status Pegawai, TPP Bruto, dsb).</li>
                     <li class="mb-2">Kolom <strong>NIP</strong> wajib diisi dan harus sesuai dengan data pegawai.</li>
-                    <li class="mb-2">Kolom <strong>NILAI</strong> berisi nominal TPP (contoh: 1500000 atau 1.500.000).</li>
+                    <li class="mb-2">Kolom <strong>Yang Dibayarkan (Transfer)</strong> berisi nominal bersih TPP yang diterima.</li>
                     <li class="mb-2">Sistem akan otomatis menghitung ulang Total Tunjangan, Gaji Kotor, dan Gaji Bersih.</li>
                     <li class="mb-2">Format file yang didukung: .xlsx, .xls, .csv.</li>
                 </ul>
@@ -182,6 +139,46 @@
                   Riwayat Selisih TPP
                 </v-btn>
              </v-card>
+          </v-col>
+        </v-row>
+
+        <!-- PREVIEW FULLPAGE -->
+        <v-row v-if="validationResult" class="mt-4 animate__animated animate__fadeIn">
+          <v-col cols="12">
+            <!-- Preview Data -->
+            <v-card v-if="validationResult.success" class="glass-card rounded-xl pa-6">
+              <div class="d-flex align-center justify-space-between mb-4">
+                <h3 class="text-h6 font-weight-bold text-teal">
+                  <v-icon start>mdi-table-eye</v-icon>
+                  Preview Data (5 Baris Pertama)
+                </h3>
+                <v-btn icon="mdi-close" variant="text" size="small" @click="validationResult = null"></v-btn>
+              </div>
+              <div style="overflow-x: auto;">
+                <v-table class="preview-table" style="min-width: 1000px;">
+                  <thead>
+                    <tr>
+                      <th v-for="h in validationResult.preview[0]" :key="h">{{ h }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(row, i) in validationResult.preview.slice(1)" :key="i">
+                      <td v-for="(col, j) in row" :key="j">{{ col }}</td>
+                    </tr>
+                  </tbody>
+                </v-table>
+              </div>
+              <v-alert type="success" variant="tonal" density="compact" class="mt-4 text-caption">
+                Format Header Sesuai. Klik tombol hijau di atas untuk memproses seluruh data.
+              </v-alert>
+            </v-card>
+
+            <!-- Error Validation -->
+            <v-alert v-if="!validationResult.success" type="error" variant="tonal" class="rounded-xl">
+              <div class="font-weight-bold">Format File Tidak Sesuai</div>
+              <div>{{ validationResult.message }}</div>
+              <v-btn variant="text" size="small" class="mt-2" @click="validationResult = null">Ganti File</v-btn>
+            </v-alert>
           </v-col>
         </v-row>
       
@@ -206,6 +203,15 @@
                 :indeterminate="activeJobStatus === 'processing' && activeJobProgress < 10"
               ></v-progress-linear>
               <div class="text-caption text-center text-grey mb-4">{{ activeJobProgress }}%</div>
+
+              <!-- Terminal-style Log Container -->
+              <v-card v-if="activeJobLogs.length > 0" class="mb-4 bg-grey-darken-4 rounded-lg overflow-y-auto" max-height="250" id="log-container">
+                <div class="pa-3 font-monospace text-caption">
+                  <div v-for="(log, i) in activeJobLogs" :key="i" class="text-green-accent-3" style="font-family: monospace;">
+                    {{ log }}
+                  </div>
+                </div>
+              </v-card>
 
               <v-alert v-if="activeJobStatus === 'completed'" type="success" variant="tonal" class="mb-4">
                 <div class="font-weight-bold mb-1">Import Berhasil!</div>
@@ -405,7 +411,7 @@ const valid = ref(false)
 const file = ref([])
 const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedYear = ref(new Date().getFullYear())
-const employeeType = ref('pns')
+const employeeType = ref('gabungan')
 const selectedJenisGaji = ref('Induk')
 const jenisGajiOptions = ['Induk', 'THR', 'Gaji 13']
 
@@ -570,8 +576,9 @@ const months = [
 const years = [2024, 2025, 2026, 2027]
 
 const employeeTypes = [
-    { title: 'PNS', value: 'pns' },
-    { title: 'PPPK', value: 'pppk' }
+  { title: 'Gabungan (PNS & PPPK)', value: 'gabungan' },
+  { title: 'PNS', value: 'pns' },
+  { title: 'PPPK', value: 'pppk' }
 ]
 
 const downloadTemplate = async () => {
@@ -597,6 +604,7 @@ const activeJobFileName = ref('')
 const activeJobResult = ref(null)
 const activeJobError = ref('')
 const activeJobErrorDetail = ref('')
+const activeJobLogs = ref([])
 let pollInterval = null
 
 const jobStatusColor = computed(() => {
@@ -679,6 +687,7 @@ const submitUpload = async () => {
         activeJobResult.value = null
         activeJobError.value = ''
         activeJobErrorDetail.value = ''
+        activeJobLogs.value = []
         file.value = []
         validationResult.value = null
         
@@ -692,14 +701,29 @@ const submitUpload = async () => {
     }
 }
 
+const scrollToBottom = () => {
+    setTimeout(() => {
+        const container = document.getElementById('log-container')
+        if (container) {
+            container.scrollTop = container.scrollHeight
+        }
+    }, 100)
+}
+
 const startPolling = () => {
   if (pollInterval) clearInterval(pollInterval)
   pollInterval = setInterval(async () => {
     try {
       const res = await api.get(`/upload-jobs/${activeJobId.value}`)
       const job = res.data.data
+      
       activeJobStatus.value = job.status
       activeJobProgress.value = job.progress
+      
+      if (job.logs && job.logs.length > 0) {
+          activeJobLogs.value = job.logs
+          scrollToBottom()
+      }
       
       if (job.status === 'completed') {
         clearInterval(pollInterval)
@@ -769,11 +793,11 @@ const showSnackbar = (msg, color = 'success') => {
   font-weight: bold !important;
   color: rgb(var(--v-theme-primary)) !important;
   text-transform: uppercase;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
 }
 
 .preview-table :deep(td) {
-  font-size: 0.85rem;
+  font-size: 1rem;
 }
 
 .glass-card {

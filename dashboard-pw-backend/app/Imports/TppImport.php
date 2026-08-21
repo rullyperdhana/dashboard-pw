@@ -17,13 +17,24 @@ class TppImport implements ToCollection, WithHeadingRow
     protected $year;
     protected $type;
     protected $jenisGaji;
+    protected $jobId;
 
-    public function __construct($month, $year, $type = 'pns', $jenisGaji = 'Induk')
+    public function __construct($month, $year, $type = 'pns', $jenisGaji = 'Induk', $jobId = null)
     {
         $this->month = $month;
         $this->year = $year;
         $this->type = $type;
         $this->jenisGaji = $jenisGaji;
+        $this->jobId = $jobId;
+    }
+
+    protected function logProgress($message)
+    {
+        if ($this->jobId) {
+            $logPath = storage_path('logs/upload_jobs/job_' . $this->jobId . '.log');
+            $timestamp = now()->format('Y-m-d H:i:s');
+            file_put_contents($logPath, "[$timestamp] $message\n", FILE_APPEND);
+        }
     }
 
     public function collection(Collection $rows)
@@ -36,11 +47,18 @@ class TppImport implements ToCollection, WithHeadingRow
                 ->delete();
                 
             // Clear previous TppDetails for this period/type/jenis_gaji
-            \App\Models\TppDetail::where('month', $this->month)
-                ->where('year', $this->year)
-                ->where('employee_type', $this->type)
-                ->where('jenis_gaji', $this->jenisGaji)
-                ->delete();
+            if ($this->type === 'gabungan') {
+                \App\Models\TppDetail::where('month', $this->month)
+                    ->where('year', $this->year)
+                    ->where('jenis_gaji', $this->jenisGaji)
+                    ->delete();
+            } else {
+                \App\Models\TppDetail::where('month', $this->month)
+                    ->where('year', $this->year)
+                    ->where('employee_type', $this->type)
+                    ->where('jenis_gaji', $this->jenisGaji)
+                    ->delete();
+            }
 
             // Note: We don't delete standalone records here anymore to preserve manual mappings.
             // We will cleanup at the end for NIPs not present in the new Excel.
@@ -59,11 +77,54 @@ class TppImport implements ToCollection, WithHeadingRow
                 $nilaiRaw = $row['yang_dibayarkan_transfer'] ?? 0;
                 $nilai = $this->parseCurrency($nilaiRaw);
                 
+                $namaPegawai = $row['nama_lengkap'] ?? $row['nama'] ?? 'Tanpa Nama';
+                $this->logProgress("Memproses NIP: $nip - $namaPegawai");
+                
+                $employee = null;
+                $actualEmployeeType = $this->type;
+
+                if ($this->type === 'gabungan') {
+                    // Cek di tabel PNS dulu
+                    $employee = GajiPns::where('nip', $nip)
+                        ->where('bulan', $this->month)
+                        ->where('tahun', $this->year)
+                        ->where('jenis_gaji', $this->jenisGaji)
+                        ->first();
+                    $actualEmployeeType = 'pns';
+
+                    // Jika tidak ada di PNS, cek di PPPK
+                    if (!$employee) {
+                        $employee = GajiPppk::where('nip', $nip)
+                            ->where('bulan', $this->month)
+                            ->where('tahun', $this->year)
+                            ->where('jenis_gaji', $this->jenisGaji)
+                            ->first();
+                        $actualEmployeeType = 'pppk';
+                    }
+                    
+                    // Fallback jika tidak ketemu di keduanya, gunakan status dari excel
+                    if (!$employee && isset($row['status_pegawai'])) {
+                        $statusExcel = strtolower(trim($row['status_pegawai']));
+                        if ($statusExcel === 'cpns' || $statusExcel === 'pns') {
+                            $actualEmployeeType = 'pns';
+                        } elseif (str_contains($statusExcel, 'pppk')) {
+                            $actualEmployeeType = 'pppk';
+                        }
+                    }
+                } else {
+                    $model = $this->type === 'pppk' ? GajiPppk::class : GajiPns::class;
+                    $employee = $model::where('nip', $nip)
+                        ->where('bulan', $this->month)
+                        ->where('tahun', $this->year)
+                        ->where('jenis_gaji', $this->jenisGaji)
+                        ->first();
+                }
+
                 // Save to tpp_details table for reporting purposes
                 \App\Models\TppDetail::create([
                     'month' => $this->month,
                     'year' => $this->year,
-                    'employee_type' => $this->type,
+                    'employee_type' => $actualEmployeeType,
                     'jenis_gaji' => $this->jenisGaji,
                     'nip' => $nip,
                     'nama_lengkap' => $row['nama_lengkap'] ?? $row['nama'] ?? null,
@@ -81,14 +142,6 @@ class TppImport implements ToCollection, WithHeadingRow
                     'yang_dibayarkan_transfer' => $nilai,
                 ]);
 
-                $model = $this->type === 'pppk' ? GajiPppk::class : GajiPns::class;
-
-                $employee = $model::where('nip', $nip)
-                    ->where('bulan', $this->month)
-                    ->where('tahun', $this->year)
-                    ->where('jenis_gaji', $this->jenisGaji)
-                    ->first();
-
                 if ($employee) {
                     $employee->tunj_tpp = $nilai;
                     
@@ -101,7 +154,6 @@ class TppImport implements ToCollection, WithHeadingRow
                     // If employee is found in DB, we should REMOVE them from standalone_tpp if they were there
                     StandaloneTpp::where('month', $this->month)
                         ->where('year', $this->year)
-                        ->where('employee_type', $this->type)
                         ->where('nip', $nip)
                         ->where('jenis_gaji', $this->jenisGaji)
                         ->delete();
@@ -120,7 +172,7 @@ class TppImport implements ToCollection, WithHeadingRow
                         [
                             'month' => $this->month,
                             'year' => $this->year,
-                            'employee_type' => $this->type,
+                            'employee_type' => $actualEmployeeType,
                             'nip' => $nip,
                             'jenis_gaji' => $this->jenisGaji
                         ]
@@ -243,7 +295,6 @@ class TppImport implements ToCollection, WithHeadingRow
         $name = trim($name);
         
         $skpd = Skpd::where('nama_skpd', 'LIKE', '%' . $name . '%')
-            ->orWhere('kode_simgaji', $name)
             ->first();
             
         return $skpd ? $skpd->id_skpd : null;

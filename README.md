@@ -43,6 +43,13 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 | **Export Excel & PDF** | Export laporan sesuai tab yang aktif |
 
 ---
+### 📊 TPP Report & Real-time Import Tracking (v5.5.5)
+- **Laporan Khusus TPP:** Menambahkan modul laporan baru untuk melacak rincian komponen TPP (Bruto, Pajak, Potongan IWP/Lainnya, Netto, dan Transfer) yang disajikan dalam mode Fullpage, lengkap dengan dukungan filter per instansi (RBAC).
+- **Penyesuaian Laporan SKPD:** Memperbarui visual *Laporan Bulanan per SKPD* untuk menyorot tebal (bold-teal) kolom komponen TPP (TJTPP), memudahkan perbandingan langsung terhadap gaji induk.
+- **Asynchronous Live Log (Queue):** Migrasi sistem pemrosesan *upload* TPP ke *background jobs* (`QUEUE_CONNECTION=database`) dilengkapi antarmuka Live Log interaktif (auto-scroll) untuk memonitor progres import data bervolume besar secara *real-time* tanpa membuat browser *hang*.
+- **Penyederhanaan UI Upload:** Menggabungkan format unggahan TPP menjadi satu alur (tanpa memisahkan PNS dan PPPK) sehingga proses jauh lebih ringkas.
+
+---
 ### 🐛 Token Expiration & Authentication Fix (v5.5.4)
 - **Token Server Expiration:** Menambahkan masa kadaluarsa (expiration) token sesi Sanctum di sisi server untuk mencegah sesi berlaku selamanya (infinite session).
 - **Graceful Error Handling:** Memperbaiki penanganan sesi *expired* di *frontend* SPA dengan mengimplementasikan standar header `Accept: application/json`. Hal ini membuat *backend* sukses mengembalikan status `401 Unauthorized` (bukan 500 Error), yang selanjutnya akan memicu pembersihan *cache* otomatis dan memulangkan user ke halaman login secara sempurna.

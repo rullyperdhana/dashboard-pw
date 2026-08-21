@@ -228,6 +228,7 @@ const menuItems = ref([
     children: [
       { title: 'Verifikasi SP2D', icon: 'mdi-file-check-outline', value: 'sp2d-verification', to: '/sp2d-verification' },
       { title: 'Laporan SKPD', icon: 'mdi-file-table-outline', value: 'skpd-report-monthly', to: '/reports/skpd-monthly' },
+      { title: 'Laporan Khusus TPP', icon: 'mdi-currency-usd', value: 'tpp-report-monthly', to: '/reports/tpp-monthly' },
       { title: 'Laporan Periodik', icon: 'mdi-calendar-range', value: 'skpd-report-periodic', to: '/reports/periodic' },
       { title: 'Analitik TAPD', icon: 'mdi-chart-scatter-plot', value: 'tapd-dashboard', to: '/analytics/tapd' },
       { title: 'Mobile Eksekutif', icon: 'mdi-cellphone-text', value: 'executive-mobile', to: '/executive/mobile' },

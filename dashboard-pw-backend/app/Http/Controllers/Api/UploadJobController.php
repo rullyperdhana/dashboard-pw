@@ -145,6 +145,14 @@ class UploadJobController extends Controller
     {
         $uploadJob = UploadJob::findOrFail($id);
 
+        $logs = [];
+        $logPath = storage_path('logs/upload_jobs/job_' . $id . '.log');
+        if (file_exists($logPath)) {
+            // Read last 200 lines to avoid massive payload
+            $lines = file($logPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            $logs = array_slice($lines, -200);
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -160,6 +168,7 @@ class UploadJobController extends Controller
                 'result_summary' => $uploadJob->result_summary,
                 'started_at' => $uploadJob->started_at,
                 'completed_at' => $uploadJob->completed_at,
+                'logs' => $logs,
                 'created_at' => $uploadJob->created_at,
             ],
         ]);
@@ -198,7 +207,7 @@ class UploadJobController extends Controller
             'tpp' => [
                 'month' => 'required|integer|min:1|max:12',
                 'year' => 'required|integer|min:2020|max:2030',
-                'tpp_type' => 'required|in:pns,pppk',
+                'tpp_type' => 'required|in:pns,pppk,gabungan',
                 'jenis_gaji' => 'required|in:Induk,THR,Gaji 13',
             ],
             'tpg' => [

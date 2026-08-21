@@ -67,6 +67,12 @@ const router = createRouter({
             meta: { requiresAuth: true, breadcrumb: 'Laporan Bulanan SKPD', app_access: 'skpd-monthly' },
         },
         {
+            path: '/reports/tpp-monthly',
+            name: 'TppMonthlyReport',
+            component: () => import('../views/TppMonthlyReport.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Laporan Khusus TPP', app_access: 'skpd-monthly' },
+        },
+        {
             path: '/reports/periodic',
             name: 'PeriodicReport',
             component: () => import('../views/PeriodicReport.vue'),

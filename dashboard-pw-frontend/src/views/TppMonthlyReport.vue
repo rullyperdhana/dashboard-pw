@@ -9,10 +9,10 @@
         <v-row class="mb-6 align-center">
           <v-col cols="12" md="6">
             <h1 class="text-h4 font-weight-bold mb-1">
-              <v-icon start color="teal" size="36">mdi-file-table</v-icon>
-              Laporan Bulanan per SKPD
+              <v-icon start color="teal" size="36">mdi-currency-usd</v-icon>
+              Laporan Khusus TPP
             </h1>
-            <p class="text-subtitle-1 text-grey-darken-1">Rekapitulasi gaji per SKPD berdasarkan jenis kepegawaian.</p>
+            <p class="text-subtitle-1 text-grey-darken-1">Rekapitulasi komponen TPP (Bruto, Pajak, Netto) per Instansi.</p>
           </v-col>
           <v-col cols="12" md="6" class="d-flex justify-end align-center ga-2 flex-wrap">
             <v-menu v-model="menu" :close-on-content-click="false">
@@ -88,7 +88,7 @@
           >
             <!-- Currency formatting for detail mode -->
             <template v-for="col in currencyCols" :key="col" v-slot:[`item.${col}`]="{ item }">
-              <span :class="col === 'bersih' || col === 'total_bersih' || col === 'tj_tpp' ? 'font-weight-bold text-teal' : ''">
+              <span :class="col === 'yang_dibayarkan_transfer' || col === 'tpp_netto' ? 'font-weight-bold text-teal' : ''">
                 {{ formatCurrency(item[col]) }}
               </span>
             </template>
@@ -119,17 +119,12 @@
                 </td>
                 <td class="text-center summary-cell">
                   <v-chip size="x-small" color="teal" variant="flat" class="font-weight-bold">
-                    {{ formatNumber(columnTotal(mode === 'detail' ? 'jumlah_pegawai' : 'employee_count')) }}
+                    {{ formatNumber(columnTotal('jumlah_pegawai')) }}
                   </v-chip>
                 </td>
-                <template v-if="mode === 'detail'">
-                  <td v-for="col in detailCurrencyCols" :key="col" class="text-end summary-cell font-weight-bold">
-                    <span :class="col === 'bersih' ? 'text-teal' : ''">{{ formatCurrency(columnTotal(col)) }}</span>
-                  </td>
-                </template>
-                <template v-else>
-                  <td v-for="col in summaryCurrencyCols" :key="col" class="text-end summary-cell font-weight-bold">
-                    <span :class="col === 'total_bersih' ? 'text-teal' : ''">{{ formatCurrency(columnTotal(col)) }}</span>
+                <template v-if="true">
+                  <td v-for="col in currencyCols" :key="col" class="text-end summary-cell font-weight-bold">
+                    <span :class="col === 'yang_dibayarkan_transfer' ? 'text-teal' : ''">{{ formatCurrency(columnTotal(col)) }}</span>
                   </td>
                 </template>
               </tr>
@@ -177,52 +172,27 @@ const tabs = [
 const currentTab = computed(() => tabs.find(t => t.type === activeTab.value) ?? tabs[0])
 
 // ── Headers ────────────────────────────────────────────────────────────────
-const summaryHeaders = [
-  { title: 'Kode SKPD',      key: 'kode_skpd',        align: 'start',  width: 120, fixed: true },
-  { title: 'Nama SKPD',      key: 'nama_skpd',        align: 'start', minWidth: 250, fixed: true },
-  { title: 'PEG',            key: 'employee_count',    align: 'center', width: 80  },
-  { title: 'Gaji Pokok',     key: 'total_gaji_pokok',  align: 'end'   },
-  { title: 'Tunjangan',      key: 'total_tunjangan',   align: 'end'   },
-  { title: 'Potongan',       key: 'total_potongan',    align: 'end'   },
-  { title: 'Bersih',         key: 'total_bersih',      align: 'end'   },
+const tppHeaders = [
+  { title: 'Nama Instansi',   key: 'instansi_upt',    align: 'start', minWidth: 250, fixed: true },
+  { title: 'PEG',             key: 'jumlah_pegawai',  align: 'center', width: 80  },
+  { title: 'TPP Bruto',       key: 'tpp_bruto',       align: 'end'   },
+  { title: 'TPP Tambahan',    key: 'bruto_plus',      align: 'end'   },
+  { title: 'DPP Pajak',       key: 'dpp_pajak',       align: 'end'   },
+  { title: 'PPh 21',          key: 'pph_21',          align: 'end'   },
+  { title: 'IWP',             key: 'iuran_iwp',       align: 'end'   },
+  { title: 'Pot Lainnya',     key: 'potongan_tpp_lainnya', align: 'end'   },
+  { title: 'Total Pot',       key: 'total_potongan',  align: 'end'   },
+  { title: 'TPP Netto',       key: 'tpp_netto',       align: 'end'   },
+  { title: 'Transfer',        key: 'yang_dibayarkan_transfer', align: 'end'   },
 ]
 
-const detailHeaders = [
-  { title: 'Kode SKPD',   key: 'kode_skpd',       align: 'start',  width: 120, fixed: true },
-  { title: 'Nama SKPD',   key: 'nama_skpd',       align: 'start', minWidth: 250, fixed: true },
-  { title: 'PEG',         key: 'jumlah_pegawai',   align: 'center', width: 60  },
-  { title: 'GAPOK',       key: 'gapok',            align: 'end'   },
-  { title: 'TJISTRI',     key: 'tj_istri',         align: 'end'   },
-  { title: 'TJANAK',      key: 'tj_anak',          align: 'end'   },
-  { title: 'TJTPP',       key: 'tj_tpp',           align: 'end'   },
-  { title: 'TJESELON',    key: 'tj_eselon',        align: 'end'   },
-  { title: 'TJFUNGSI',    key: 'tj_fungsi',        align: 'end'   },
-  { title: 'TJBERAS',     key: 'tj_beras',         align: 'end'   },
-  { title: 'TJPAJAK',     key: 'tj_pajak',         align: 'end'   },
-  { title: 'TJUMUM',      key: 'tj_umum',          align: 'end'   },
-  { title: 'TJKHUSUS',    key: 'tj_khusus',        align: 'end'   },
-  { title: 'BULAT',       key: 'pembulatan',       align: 'end'   },
-  { title: 'KOTOR',       key: 'kotor',            align: 'end'   },
-  { title: 'PIWP',        key: 'pot_iwp',          align: 'end'   },
-  { title: 'PIWP2',       key: 'pot_iwp2',         align: 'end'   },
-  { title: 'PIWP8',       key: 'pot_iwp8',         align: 'end'   },
-  { title: 'PPAJAK',      key: 'pot_pajak',        align: 'end'   },
-  { title: 'POTONGAN',    key: 'total_potongan',   align: 'end'   },
-  { title: 'BERSIH',      key: 'bersih',           align: 'end'   },
-]
-
-const currentHeaders = computed(() => mode.value === 'detail' ? detailHeaders : summaryHeaders)
+const currentHeaders = computed(() => tppHeaders)
 
 // columns that need currency formatting
-const detailCurrencyCols = ['gapok','tj_istri','tj_anak','tj_tpp','tj_eselon','tj_fungsi',
-            'tj_beras','tj_pajak','tj_umum','tj_khusus','pembulatan','kotor',
-            'pot_iwp','pot_iwp2','pot_iwp8','pot_pajak','total_potongan','bersih']
-const summaryCurrencyCols = ['total_gaji_pokok','total_tunjangan','total_potongan','total_bersih']
-
-const currencyCols = computed(() => {
-  if (mode.value === 'detail') return detailCurrencyCols
-  return summaryCurrencyCols
-})
+const currencyCols = computed(() => [
+  'tpp_bruto','bruto_plus','dpp_pajak','pph_21','iuran_iwp',
+  'potongan_tpp_lainnya','total_potongan','tpp_netto','yang_dibayarkan_transfer'
+])
 
 const columnTotal = (col) => {
   return items.value.reduce((sum, row) => sum + (parseFloat(row[col]) || 0), 0)
@@ -242,7 +212,7 @@ const selectedMonthName = computed(() => months.find(m => m.value === selectedMo
 const fetchData = async () => {
   loading.value = true
   try {
-    const res = await api.get('/reports/paid-skpds', {
+    const res = await api.get('/reports/tpp-skpds', {
       params: { 
         month: selectedMonth.value, 
         year: selectedYear.value, 
@@ -265,7 +235,7 @@ const preloadSummaries = async () => {
   for (const tab of tabs) {
     if (summary.value[tab.type]) continue
     try {
-      const res = await api.get('/reports/paid-skpds', {
+      const res = await api.get('/reports/tpp-skpds', {
         params: { 
           month: selectedMonth.value, 
           year: selectedYear.value, 

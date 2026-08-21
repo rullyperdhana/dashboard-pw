@@ -238,6 +238,11 @@ class SettingController extends Controller
             \App\Models\TppDetail::where('month', $month)
                 ->where('year', $year)
                 ->where('employee_type', 'pns')
+                ->delete();
+
+            \App\Models\StandaloneTpp::where('month', $month)
+                ->where('year', $year)
+                ->where('employee_type', 'pns')
                 ->when($jenisGaji, function ($q) use ($jenisGaji) {
                     $q->where('jenis_gaji', $jenisGaji);
                 })
@@ -259,6 +264,14 @@ class SettingController extends Controller
             
             // Also delete from tpp_details
             \App\Models\TppDetail::where('month', $month)
+                ->where('year', $year)
+                ->where('employee_type', 'pppk')
+                ->when($jenisGaji, function ($q) use ($jenisGaji) {
+                    $q->where('jenis_gaji', $jenisGaji);
+                })
+                ->delete();
+
+            \App\Models\StandaloneTpp::where('month', $month)
                 ->where('year', $year)
                 ->where('employee_type', 'pppk')
                 ->when($jenisGaji, function ($q) use ($jenisGaji) {

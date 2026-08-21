@@ -23,7 +23,7 @@ class TppController extends Controller
         ]);
 
         $expectedHeaders = [
-            'NIP', 'Nama Lengkap', 'Yang Dibayarkan (Transfer)'
+            'NO', 'Periode', 'NIP', 'Nama Lengkap', 'Instansi / UPT', 'Jabatan', 'Status Pegawai', 'TPP Bruto', 'Bruto Plus', 'TPP Netto', 'DPP Pajak', 'PPh 21', 'Potongan TPP (Lainnya)', 'Iuran IWP', 'Total Potongan', 'Yang Dibayarkan (Transfer)'
         ];
 
         $result = ExcelValidationService::validateHeaders($request->file('file'), $expectedHeaders);
@@ -37,7 +37,7 @@ class TppController extends Controller
             'file' => 'required|mimes:xlsx,xls,csv',
             'month' => 'required|integer|min:1|max:12',
             'year' => 'required|integer|min:2020|max:2030',
-            'type' => 'required|in:pns,pppk',
+            'type' => 'required|in:pns,pppk,gabungan',
         ]);
 
         try {

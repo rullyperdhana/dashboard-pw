@@ -93,6 +93,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/unpaid-upts', [ReportController::class, 'unpaidUpts']);
     Route::get('/reports/unpaid-employees', [ReportController::class, 'unpaidEmployees']);
     Route::get('/reports/unpaid-export', [ReportController::class, 'exportUnpaid']);
+    Route::get('/reports/tpp-skpds', [ReportController::class, 'tppSkpds']);
     Route::get('/reports/paid-skpds', [ReportController::class, 'paidSkpds']);
     Route::get('/reports/paid-jabatan-mappings', [ReportController::class, 'paidJabatanMappings']);
     Route::get('/reports/paid-export', [ReportController::class, 'exportPaidSkpds']);

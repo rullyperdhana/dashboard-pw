@@ -233,8 +233,15 @@ class ProcessPayrollUpload implements ShouldQueue
 
         $job->updateProgress(0, 100);
 
-        Excel::import(new TppImport($month, $year, $type, $jenisGaji), $filePath);
-        $job->updateProgress(90, 100);
+        // Inisialisasi file log
+        $logPath = storage_path('logs/upload_jobs/job_' . $job->id . '.log');
+        @mkdir(dirname($logPath), 0777, true);
+        file_put_contents($logPath, "[" . now()->format('Y-m-d H:i:s') . "] Memulai proses import TPP...\n", FILE_APPEND);
+
+        Excel::import(new TppImport($month, $year, $type, $jenisGaji, $job->id), $filePath);
+        
+        file_put_contents($logPath, "[" . now()->format('Y-m-d H:i:s') . "] Import TPP Selesai.\n", FILE_APPEND);
+        $job->updateProgress(100, 100);
 
         $job->markCompleted([
             'message' => "Berhasil import data TPP ({$type}) untuk periode {$month}/{$year}.",

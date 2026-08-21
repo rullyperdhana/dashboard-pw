@@ -635,6 +635,8 @@ class ReportController extends Controller
             ]);
         }
 
+
+
         // ── Summary mode for PW (PPPK Paruh Waktu) ──────────────────────────────────────────
         $parts = [];
         $params = [];
@@ -790,6 +792,77 @@ class ReportController extends Controller
     /**
      * Export paid SKPD data to Excel or PDF
      */
+    public function tppSkpds(Request $request)
+    {
+        $month = $request->month ?? date('n');
+        $year = $request->year ?? date('Y');
+        $type = $request->type ?? 'all'; // pns | pppk | all
+        $jenisGaji = $request->jenis_gaji ?? 'Induk';
+
+        $user = auth()->user();
+        $isSuperAdmin = $user->role === 'superadmin';
+        $accessibleIds = $user->getAccessibleSkpds();
+        $accessibleCodes = $user->getAccessibleSkpdCodes();
+
+        // Build the base query
+        $query = DB::table('tpp_details')
+            ->select(
+                'instansi_upt',
+                DB::raw('COUNT(DISTINCT nip) as jumlah_pegawai'),
+                DB::raw('SUM(tpp_bruto) as tpp_bruto'),
+                DB::raw('SUM(bruto_plus) as bruto_plus'),
+                DB::raw('SUM(dpp_pajak) as dpp_pajak'),
+                DB::raw('SUM(pph_21) as pph_21'),
+                DB::raw('SUM(potongan_tpp_lainnya) as potongan_tpp_lainnya'),
+                DB::raw('SUM(iuran_iwp) as iuran_iwp'),
+                DB::raw('SUM(total_potongan) as total_potongan'),
+                DB::raw('SUM(tpp_netto) as tpp_netto'),
+                DB::raw('SUM(yang_dibayarkan_transfer) as yang_dibayarkan_transfer')
+            )
+            ->where('month', $month)
+            ->where('year', $year);
+
+        if ($type !== 'all') {
+            $query->where('employee_type', $type);
+        }
+
+        if ($jenisGaji !== 'Semua') {
+            $query->where('jenis_gaji', $jenisGaji);
+        }
+
+        // Apply RBAC filters
+        if (!$isSuperAdmin && $accessibleIds) {
+            $skpdNames = DB::table('skpd')->whereIn('id_skpd', $accessibleIds)->pluck('nama_skpd')->toArray();
+            
+            $query->where(function ($q) use ($skpdNames, $accessibleCodes) {
+                foreach ($skpdNames as $name) {
+                    $q->orWhere('instansi_upt', 'LIKE', '%' . $name . '%');
+                }
+                foreach ($accessibleCodes as $code) {
+                    $q->orWhere('instansi_upt', $code);
+                }
+            });
+        }
+
+        $rows = $query->groupBy('instansi_upt')
+            ->orderBy('instansi_upt')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $rows,
+            'meta' => [
+                'month' => (int) $month,
+                'year' => (int) $year,
+                'type' => $type,
+                'jenis_gaji' => $jenisGaji,
+                'grand_total' => $rows->sum('yang_dibayarkan_transfer'),
+                'total_skpd' => $rows->count(),
+                'total_employees' => $rows->sum('jumlah_pegawai')
+            ]
+        ]);
+    }
+
     public function exportPaidSkpds(Request $request)
     {
         $month = $request->month ?? date('n');
