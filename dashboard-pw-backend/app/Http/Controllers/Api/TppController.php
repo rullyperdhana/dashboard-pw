@@ -18,6 +18,8 @@ class TppController extends Controller
     use CacheClearer;
     public function validateUpload(Request $request)
     {
+        ini_set('memory_limit', '512M');
+        
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv',
         ]);
