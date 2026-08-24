@@ -78,7 +78,7 @@ class TppController extends Controller
         $request->validate([
             'month' => 'required|integer|min:1|max:12',
             'year' => 'required|integer',
-            'type' => 'required|in:pns,pppk',
+            'type' => 'required|in:pns,pppk,gabungan',
         ]);
 
         $logs = \App\Models\TppDiscrepancyLog::where('month', $request->month)
