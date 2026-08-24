@@ -619,6 +619,38 @@ class ReportController extends Controller
                 ORDER BY nama_skpd
             ", $params));
 
+            // --- Inject TPP Data via NIP mapping ---
+            $tppQuery = DB::table('tpp_details as t')
+                ->where('t.month', $month)
+                ->where('t.year', $year)
+                ->select('g.kdskpd', DB::raw('SUM(t.yang_dibayarkan_transfer) as total_tpp'));
+
+            if ($jenisGaji !== 'Semua') {
+                $tppQuery->where('t.jenis_gaji', $jenisGaji);
+            }
+
+            $tppMap = [];
+            if ($type === 'all' || $type === 'pns') {
+                $pnsTpp = (clone $tppQuery)->join('gaji_pns as g', 't.nip', '=', 'g.nip')
+                    ->where('g.bulan', $month)->where('g.tahun', $year)
+                    ->groupBy('g.kdskpd')->pluck('total_tpp', 'g.kdskpd')->toArray();
+                foreach ($pnsTpp as $k => $v) {
+                    $tppMap[$k] = ($tppMap[$k] ?? 0) + $v;
+                }
+            }
+            if ($type === 'all' || $type === 'pppk') {
+                $pppkTpp = (clone $tppQuery)->join('gaji_pppk as g', 't.nip', '=', 'g.nip')
+                    ->where('g.bulan', $month)->where('g.tahun', $year)
+                    ->groupBy('g.kdskpd')->pluck('total_tpp', 'g.kdskpd')->toArray();
+                foreach ($pppkTpp as $k => $v) {
+                    $tppMap[$k] = ($tppMap[$k] ?? 0) + $v;
+                }
+            }
+
+            foreach ($rows as $row) {
+                $row->tj_tpp = $tppMap[$row->kode_skpd] ?? 0;
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $rows,

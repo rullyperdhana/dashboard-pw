@@ -43,6 +43,10 @@ Aplikasi dashboard manajemen dan pelaporan gaji untuk pegawai **PNS**, **PPPK Pe
 | **Export Excel & PDF** | Export laporan sesuai tab yang aktif |
 
 ---
+### 🚀 TPP Data Injection & NIP Mapping (v5.5.6)
+- **TPP Data Injection via NIP Mapping:** Menambahkan fitur injeksi data TPP (Tambahan Penghasilan Pegawai) secara dinamis. Sistem kini memetakan rincian TPP per pegawai (PNS & PPPK) menggunakan `NIP` lalu diagregasi (SUM) berdasarkan `kdskpd` untuk ditampilkan langsung secara akurat dalam satu baris pelaporan per SKPD.
+
+---
 ### 📊 TPP Report & Real-time Import Tracking (v5.5.5)
 - **Laporan Khusus TPP:** Menambahkan modul laporan baru untuk melacak rincian komponen TPP (Bruto, Pajak, Potongan IWP/Lainnya, Netto, dan Transfer) yang disajikan dalam mode Fullpage, lengkap dengan dukungan filter per instansi (RBAC).
 - **Penyesuaian Laporan SKPD:** Memperbarui visual *Laporan Bulanan per SKPD* untuk menyorot tebal (bold-teal) kolom komponen TPP (TJTPP), memudahkan perbandingan langsung terhadap gaji induk.
