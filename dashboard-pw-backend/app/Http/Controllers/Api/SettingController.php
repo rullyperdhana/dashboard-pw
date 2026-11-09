@@ -232,7 +232,11 @@ class SettingController extends Controller
             if ($jenisGaji)
                 $query->where('jenis_gaji', $jenisGaji);
 
-            $count = $query->update(['tunj_tpp' => 0]);
+            $count = $query->update([
+                'kotor' => DB::raw('kotor - IFNULL(tunj_tpp, 0)'),
+                'bersih' => DB::raw('bersih - IFNULL(tunj_tpp, 0)'),
+                'tunj_tpp' => 0
+            ]);
             
             // Also delete from tpp_details
             \App\Models\TppDetail::where('month', $month)
@@ -260,7 +264,11 @@ class SettingController extends Controller
             if ($jenisGaji)
                 $query->where('jenis_gaji', $jenisGaji);
 
-            $count = $query->update(['tunj_tpp' => 0]);
+            $count = $query->update([
+                'kotor' => DB::raw('kotor - IFNULL(tunj_tpp, 0)'),
+                'bersih' => DB::raw('bersih - IFNULL(tunj_tpp, 0)'),
+                'tunj_tpp' => 0
+            ]);
             
             // Also delete from tpp_details
             \App\Models\TppDetail::where('month', $month)

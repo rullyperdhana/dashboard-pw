@@ -80,6 +80,35 @@ class PnsPayrollController extends Controller
     }
 
     /**
+     * Resolve TPP amount for employee type, month, year, and optional jenis_gaji
+     */
+    private function resolveTppTotal($employeeType, $month, $year, $jenisGaji = null)
+    {
+        $user = auth()->user();
+        $skpds = $user ? $user->getAccessibleSkpdCodes() : null;
+
+        $tppQuery = DB::table('tpp_details')
+            ->where('month', $month)
+            ->where('year', $year)
+            ->where('employee_type', $employeeType);
+
+        if ($jenisGaji && $jenisGaji !== 'Semua') {
+            $tppQuery->where('jenis_gaji', $jenisGaji);
+        }
+
+        if ($skpds !== null) {
+            $table = $employeeType === 'pns' ? 'gaji_pns' : 'gaji_pppk';
+            $tppQuery->join($table . ' as g', function($join) use ($month, $year) {
+                $join->on('tpp_details.nip', '=', 'g.nip')
+                     ->where('g.bulan', '=', $month)
+                     ->where('g.tahun', '=', $year);
+            })->whereIn('g.kdskpd', $skpds);
+        }
+
+        return (float) $tppQuery->sum('tpp_details.yang_dibayarkan_transfer');
+    }
+
+    /**
      * Dashboard Summary
      */
     public function dashboard(Request $request)
@@ -116,11 +145,24 @@ class PnsPayrollController extends Controller
             ->first();
 
         \Log::info('PNS Dashboard Stats', [
-            'stats' => $stats->toArray()
+            'stats' => $stats ? $stats->toArray() : []
         ]);
 
+        // Resolve TPP from tpp_details or fallback to table tunj_tpp
+        $tppDetailSum = $this->resolveTppTotal('pns', $month, $year, $jenisGaji);
+        $gajiTppInTable = (float) ($stats->total_tunj_tpp ?? 0);
+        $finalTpp = $tppDetailSum > 0 ? $tppDetailSum : $gajiTppInTable;
+
+        // Separate pure salary gross & net from TPP
+        $pureGross = (float) (($stats->total_gross_salary ?? 0) - $gajiTppInTable);
+        $pureNet = (float) (($stats->total_net_salary ?? 0) - $gajiTppInTable);
+
+        $stats->total_tunj_tpp = $finalTpp;
+        $stats->total_gross_salary = $pureGross;
+        $stats->total_net_salary = $pureNet;
+
         // Budget Projection (12 months + THR + Gaji 13 = ~14 months)
-        $projectedBudget = ($stats->total_gross_salary ?? 0) * 14;
+        $projectedBudget = (($pureGross + $finalTpp) * 12) + ($pureGross * 2);
 
         // Top 5 Earners
         $topEarnersQuery = GajiPns::where('gaji_pns.tahun', $year)
@@ -169,7 +211,7 @@ class PnsPayrollController extends Controller
             ->select(
                 DB::raw('COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, gaji_pns.satker, gaji_pns.skpd) as skpd'),
                 DB::raw('COUNT(*) as total'),
-                DB::raw('SUM(gaji_pns.kotor) as cost')
+                DB::raw('SUM(gaji_pns.kotor - IFNULL(gaji_pns.tunj_tpp, 0)) as cost')
             )
             ->groupBy(DB::raw('COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, gaji_pns.satker, gaji_pns.skpd)'))
             ->orderByDesc('cost')
@@ -187,7 +229,7 @@ class PnsPayrollController extends Controller
         $this->applySkpdFilter($byGolonganQuery);
 
         $byGolongan = $byGolonganQuery->whereNotNull('kdpangkat')
-            ->select('kdpangkat as golongan', DB::raw('COUNT(*) as total'), DB::raw('SUM(kotor) as cost'))
+            ->select('kdpangkat as golongan', DB::raw('COUNT(*) as total'), DB::raw('SUM(kotor - IFNULL(tunj_tpp, 0)) as cost'))
             ->groupBy('kdpangkat')
             ->orderBy('kdpangkat')
             ->get();
@@ -197,7 +239,9 @@ class PnsPayrollController extends Controller
             'data' => [
                 'summary' => array_merge($stats->toArray(), [
                     'projected_annual_budget' => $projectedBudget,
-                    'tpp_forecast_next_year' => ($stats->total_tunj_tpp ?? 0) * 12 // Simplified for now, or use average
+                    'tpp_forecast_next_year' => $finalTpp * 12,
+                    'total_salary_and_tpp' => $pureGross + $finalTpp,
+                    'total_net_and_tpp' => $pureNet + $finalTpp,
                 ]),
                 'top_earners' => $topEarners,
                 'skpd_breakdown' => $skpdStats,
@@ -316,10 +360,24 @@ class PnsPayrollController extends Controller
             ->first();
 
         \Log::info('PPPK Dashboard Stats', [
-            'stats' => $stats->toArray()
+            'stats' => $stats ? $stats->toArray() : []
         ]);
 
-        $projectedBudget = ($stats->total_gross_salary ?? 0) * 14;
+        // Resolve TPP from tpp_details or fallback to table tunj_tpp
+        $tppDetailSum = $this->resolveTppTotal('pppk', $month, $year, $jenisGaji);
+        $gajiTppInTable = (float) ($stats->total_tunj_tpp ?? 0);
+        $finalTpp = $tppDetailSum > 0 ? $tppDetailSum : $gajiTppInTable;
+
+        // Separate pure salary gross & net from TPP
+        $pureGross = (float) (($stats->total_gross_salary ?? 0) - $gajiTppInTable);
+        $pureNet = (float) (($stats->total_net_salary ?? 0) - $gajiTppInTable);
+
+        $stats->total_tunj_tpp = $finalTpp;
+        $stats->total_gross_salary = $pureGross;
+        $stats->total_net_salary = $pureNet;
+
+        // Budget Projection (12 months + THR + Gaji 13 = ~14 months)
+        $projectedBudget = (($pureGross + $finalTpp) * 12) + ($pureGross * 2);
 
         // Top 5 Earners
         $topEarnersQuery = GajiPppk::where('gaji_pppk.tahun', $year)
@@ -368,7 +426,7 @@ class PnsPayrollController extends Controller
             ->select(
                 DB::raw('COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, gaji_pppk.satker, gaji_pppk.skpd) as skpd'),
                 DB::raw('COUNT(*) as total'),
-                DB::raw('SUM(gaji_pppk.kotor) as cost')
+                DB::raw('SUM(gaji_pppk.kotor - IFNULL(gaji_pppk.tunj_tpp, 0)) as cost')
             )
             ->groupBy(DB::raw('COALESCE(sm.nama_skpd, s1.nmsatker, s2.nmskpd, gaji_pppk.satker, gaji_pppk.skpd)'))
             ->orderByDesc('cost')
@@ -385,7 +443,7 @@ class PnsPayrollController extends Controller
         $this->applySkpdFilter($byGolonganQuery);
 
         $byGolongan = $byGolonganQuery->whereNotNull('kdpangkat')
-            ->select('kdpangkat as golongan', DB::raw('COUNT(*) as total'), DB::raw('SUM(kotor) as cost'))
+            ->select('kdpangkat as golongan', DB::raw('COUNT(*) as total'), DB::raw('SUM(kotor - IFNULL(tunj_tpp, 0)) as cost'))
             ->groupBy('kdpangkat')
             ->orderBy('kdpangkat')
             ->get();
@@ -395,7 +453,9 @@ class PnsPayrollController extends Controller
             'data' => [
                 'summary' => array_merge($stats->toArray(), [
                     'projected_annual_budget' => $projectedBudget,
-                    'tpp_forecast_next_year' => ($stats->total_tunj_tpp ?? 0) * 12
+                    'tpp_forecast_next_year' => $finalTpp * 12,
+                    'total_salary_and_tpp' => $pureGross + $finalTpp,
+                    'total_net_and_tpp' => $pureNet + $finalTpp,
                 ]),
                 'top_earners' => $topEarners,
                 'skpd_breakdown' => $skpdStats,
@@ -451,11 +511,50 @@ class PnsPayrollController extends Controller
 
         $this->applySkpdFilter($query);
 
-        $trend = $query->select('bulan', DB::raw('COUNT(DISTINCT nip) as total_employees'), DB::raw('SUM(kotor) as total_gross'), DB::raw('SUM(bersih) as total_net'), DB::raw('SUM(tunj_tpp) as total_tpp'))
-            ->groupBy('bulan')
-            ->having('total_employees', '>', 0)
-            ->orderBy('bulan')
-            ->get();
+        $trend = $query->select(
+            'bulan', 
+            DB::raw('COUNT(DISTINCT nip) as total_employees'), 
+            DB::raw('SUM(kotor - IFNULL(tunj_tpp, 0)) as total_gross'), 
+            DB::raw('SUM(bersih - IFNULL(tunj_tpp, 0)) as total_net'), 
+            DB::raw('SUM(tunj_tpp) as total_tpp')
+        )
+        ->groupBy('bulan')
+        ->having('total_employees', '>', 0)
+        ->orderBy('bulan')
+        ->get();
+
+        // Query monthly TPP from tpp_details
+        $tppMonthlyQuery = DB::table('tpp_details')
+            ->where('year', $year)
+            ->where('employee_type', 'pns');
+        if ($jenisGaji) {
+            $tppMonthlyQuery->where('jenis_gaji', $jenisGaji);
+        }
+        $user = auth()->user();
+        $skpds = $user ? $user->getAccessibleSkpdCodes() : null;
+        if ($skpds !== null) {
+            $tppMonthlyQuery->join('gaji_pns as g', function($join) use ($year) {
+                $join->on('tpp_details.nip', '=', 'g.nip')
+                     ->on('tpp_details.month', '=', 'g.bulan')
+                     ->where('g.tahun', '=', $year);
+            })->whereIn('g.kdskpd', $skpds);
+        }
+        $tppMonthly = $tppMonthlyQuery->groupBy('tpp_details.month')
+            ->select('tpp_details.month', DB::raw('SUM(tpp_details.yang_dibayarkan_transfer) as total_tpp'))
+            ->pluck('total_tpp', 'tpp_details.month')
+            ->toArray();
+
+        foreach ($trend as $item) {
+            $m = (int) $item->bulan;
+            $detailTpp = (float) ($tppMonthly[$m] ?? 0);
+            if ($detailTpp > 0) {
+                $item->total_tpp = $detailTpp;
+            } else {
+                $item->total_tpp = (float) $item->total_tpp;
+            }
+            $item->total_gross = (float) $item->total_gross;
+            $item->total_net = (float) $item->total_net;
+        }
 
         return response()->json([
             'success' => true,
@@ -483,11 +582,50 @@ class PnsPayrollController extends Controller
 
         $this->applySkpdFilter($query);
 
-        $trend = $query->select('bulan', DB::raw('COUNT(DISTINCT nip) as total_employees'), DB::raw('SUM(kotor) as total_gross'), DB::raw('SUM(bersih) as total_net'), DB::raw('SUM(tunj_tpp) as total_tpp'))
-            ->groupBy('bulan')
-            ->having('total_employees', '>', 0)
-            ->orderBy('bulan')
-            ->get();
+        $trend = $query->select(
+            'bulan', 
+            DB::raw('COUNT(DISTINCT nip) as total_employees'), 
+            DB::raw('SUM(kotor - IFNULL(tunj_tpp, 0)) as total_gross'), 
+            DB::raw('SUM(bersih - IFNULL(tunj_tpp, 0)) as total_net'), 
+            DB::raw('SUM(tunj_tpp) as total_tpp')
+        )
+        ->groupBy('bulan')
+        ->having('total_employees', '>', 0)
+        ->orderBy('bulan')
+        ->get();
+
+        // Query monthly TPP from tpp_details
+        $tppMonthlyQuery = DB::table('tpp_details')
+            ->where('year', $year)
+            ->where('employee_type', 'pppk');
+        if ($jenisGaji) {
+            $tppMonthlyQuery->where('jenis_gaji', $jenisGaji);
+        }
+        $user = auth()->user();
+        $skpds = $user ? $user->getAccessibleSkpdCodes() : null;
+        if ($skpds !== null) {
+            $tppMonthlyQuery->join('gaji_pppk as g', function($join) use ($year) {
+                $join->on('tpp_details.nip', '=', 'g.nip')
+                     ->on('tpp_details.month', '=', 'g.bulan')
+                     ->where('g.tahun', '=', $year);
+            })->whereIn('g.kdskpd', $skpds);
+        }
+        $tppMonthly = $tppMonthlyQuery->groupBy('tpp_details.month')
+            ->select('tpp_details.month', DB::raw('SUM(tpp_details.yang_dibayarkan_transfer) as total_tpp'))
+            ->pluck('total_tpp', 'tpp_details.month')
+            ->toArray();
+
+        foreach ($trend as $item) {
+            $m = (int) $item->bulan;
+            $detailTpp = (float) ($tppMonthly[$m] ?? 0);
+            if ($detailTpp > 0) {
+                $item->total_tpp = $detailTpp;
+            } else {
+                $item->total_tpp = (float) $item->total_tpp;
+            }
+            $item->total_gross = (float) $item->total_gross;
+            $item->total_net = (float) $item->total_net;
+        }
 
         return response()->json([
             'success' => true,
@@ -631,6 +769,34 @@ class PnsPayrollController extends Controller
             ->orderBy('jenis_gaji')
             ->get();
 
+        // Query TPP details for the year
+        $tppQuery = DB::table('tpp_details')
+            ->where('year', $year)
+            ->where('employee_type', $employeeType);
+
+        if ($jenisGajiFilter) {
+            $tppQuery->where('jenis_gaji', $jenisGajiFilter);
+        }
+
+        $user = auth()->user();
+        $accessibleSkpds = $user ? $user->getAccessibleSkpdCodes() : null;
+        $effectiveSkpds = $skpdFilter ? [$skpdFilter] : $accessibleSkpds;
+
+        if ($effectiveSkpds !== null) {
+            $tppQuery->join($tableName . ' as g_skpd', function($join) use ($year) {
+                $join->on('tpp_details.nip', '=', 'g_skpd.nip')
+                     ->on('tpp_details.month', '=', 'g_skpd.bulan')
+                     ->where('g_skpd.tahun', '=', $year);
+            })->whereIn('g_skpd.kdskpd', $effectiveSkpds);
+        }
+
+        $tppGrouped = $tppQuery->select(
+            'tpp_details.month',
+            'tpp_details.jenis_gaji',
+            DB::raw('SUM(tpp_details.yang_dibayarkan_transfer) as total_tpp')
+        )->groupBy('tpp_details.month', 'tpp_details.jenis_gaji')
+         ->get();
+
         $monthlyData = [];
         for ($month = 1; $month <= 12; $month++) {
             $monthResults = $results->where('bulan', $month);
@@ -655,11 +821,33 @@ class PnsPayrollController extends Controller
                     'jenis_gaji' => $data->jenis_gaji,
                 ];
 
+                // Resolve TPP: check tpp_details first, fallback to table tunj_tpp
+                $tppDetailItem = $tppGrouped->first(function($item) use ($month, $data) {
+                    return $item->month == $month && (empty($item->jenis_gaji) || strcasecmp($item->jenis_gaji, $data->jenis_gaji) === 0);
+                });
+                $tppDetailVal = $tppDetailItem ? (float) $tppDetailItem->total_tpp : 0;
+                $gajiTppVal = (float) ($data->total_tunj_tpp ?? 0);
+                $finalTpp = $tppDetailVal > 0 ? $tppDetailVal : $gajiTppVal;
+
+                $pureKotor = (float) (($data->total_kotor ?? 0) - $gajiTppVal);
+                $pureBersih = (float) (($data->total_bersih ?? 0) - $gajiTppVal);
+
                 foreach ($numericKeys as $key) {
                     if ($key === 'total_employees') {
                         $val = (int) ($data->$key ?? 0);
                         $typeRow[$key] = $val;
                         $row[$key] += $val; // Sum for monthly total
+                    } elseif ($key === 'total_tunj_tpp') {
+                        $typeRow[$key] = $finalTpp;
+                        $row[$key] += $finalTpp;
+                    } elseif ($key === 'total_kotor') {
+                        $adjustedKotor = $pureKotor + $finalTpp;
+                        $typeRow[$key] = $adjustedKotor;
+                        $row[$key] += $adjustedKotor;
+                    } elseif ($key === 'total_bersih') {
+                        $adjustedBersih = $pureBersih + $finalTpp;
+                        $typeRow[$key] = $adjustedBersih;
+                        $row[$key] += $adjustedBersih;
                     } else {
                         $val = (float) ($data->$key ?? 0);
                         $typeRow[$key] = $val;

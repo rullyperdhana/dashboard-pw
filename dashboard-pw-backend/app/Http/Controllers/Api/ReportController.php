@@ -620,35 +620,68 @@ class ReportController extends Controller
             ", $params));
 
             // --- Inject TPP Data via NIP mapping ---
-            $tppQuery = DB::table('tpp_details as t')
-                ->where('t.month', $month)
-                ->where('t.year', $year)
-                ->select('g.kdskpd', DB::raw('SUM(t.yang_dibayarkan_transfer) as total_tpp'));
-
-            if ($jenisGaji !== 'Semua') {
-                $tppQuery->where('t.jenis_gaji', $jenisGaji);
-            }
-
             $tppMap = [];
             if ($type === 'all' || $type === 'pns') {
-                $pnsTpp = (clone $tppQuery)->join('gaji_pns as g', 't.nip', '=', 'g.nip')
-                    ->where('g.bulan', $month)->where('g.tahun', $year)
-                    ->groupBy('g.kdskpd')->pluck('total_tpp', 'g.kdskpd')->toArray();
-                foreach ($pnsTpp as $k => $v) {
-                    $tppMap[$k] = ($tppMap[$k] ?? 0) + $v;
+                $pnsTppQuery = DB::table('tpp_details as t')
+                    ->join('gaji_pns as g', function($join) use ($month, $year) {
+                        $join->on('t.nip', '=', 'g.nip')
+                             ->where('g.bulan', '=', $month)
+                             ->where('g.tahun', '=', $year);
+                    })
+                    ->leftJoin(DB::raw("(SELECT mp.source_code, s2.kode_skpd FROM skpd_mapping mp JOIN skpd s2 ON mp.skpd_id = s2.id_skpd WHERE mp.type IN ('pns','all')) as sm"), 'g.kdskpd', '=', 'sm.source_code')
+                    ->where('t.month', $month)
+                    ->where('t.year', $year)
+                    ->where('t.employee_type', 'pns');
+
+                if ($jenisGaji !== 'Semua') {
+                    $pnsTppQuery->where('t.jenis_gaji', $jenisGaji);
                 }
-            }
-            if ($type === 'all' || $type === 'pppk') {
-                $pppkTpp = (clone $tppQuery)->join('gaji_pppk as g', 't.nip', '=', 'g.nip')
-                    ->where('g.bulan', $month)->where('g.tahun', $year)
-                    ->groupBy('g.kdskpd')->pluck('total_tpp', 'g.kdskpd')->toArray();
-                foreach ($pppkTpp as $k => $v) {
-                    $tppMap[$k] = ($tppMap[$k] ?? 0) + $v;
+
+                $pnsTpp = $pnsTppQuery->groupBy(DB::raw('COALESCE(sm.kode_skpd, g.kdskpd)'))
+                    ->select(DB::raw('COALESCE(sm.kode_skpd, g.kdskpd) as skpd_code'), DB::raw('SUM(t.yang_dibayarkan_transfer) as total_tpp'))
+                    ->pluck('total_tpp', 'skpd_code')
+                    ->toArray();
+
+                foreach ($pnsTpp as $k => $v) {
+                    $tppMap[$k] = ($tppMap[$k] ?? 0) + (float) $v;
                 }
             }
 
+            if ($type === 'all' || $type === 'pppk') {
+                $pppkTppQuery = DB::table('tpp_details as t')
+                    ->join('gaji_pppk as g', function($join) use ($month, $year) {
+                        $join->on('t.nip', '=', 'g.nip')
+                             ->where('g.bulan', '=', $month)
+                             ->where('g.tahun', '=', $year);
+                    })
+                    ->leftJoin(DB::raw("(SELECT mp.source_code, s2.kode_skpd FROM skpd_mapping mp JOIN skpd s2 ON mp.skpd_id = s2.id_skpd WHERE mp.type IN ('pppk','all')) as sm"), 'g.kdskpd', '=', 'sm.source_code')
+                    ->where('t.month', $month)
+                    ->where('t.year', $year)
+                    ->where('t.employee_type', 'pppk');
+
+                if ($jenisGaji !== 'Semua') {
+                    $pppkTppQuery->where('t.jenis_gaji', $jenisGaji);
+                }
+
+                $pppkTpp = $pppkTppQuery->groupBy(DB::raw('COALESCE(sm.kode_skpd, g.kdskpd)'))
+                    ->select(DB::raw('COALESCE(sm.kode_skpd, g.kdskpd) as skpd_code'), DB::raw('SUM(t.yang_dibayarkan_transfer) as total_tpp'))
+                    ->pluck('total_tpp', 'skpd_code')
+                    ->toArray();
+
+                foreach ($pppkTpp as $k => $v) {
+                    $tppMap[$k] = ($tppMap[$k] ?? 0) + (float) $v;
+                }
+            }
+
+            $hasTppDetails = count($tppMap) > 0;
             foreach ($rows as $row) {
-                $row->tj_tpp = $tppMap[$row->kode_skpd] ?? 0;
+                if ($hasTppDetails) {
+                    $oldTpp = (float) ($row->tj_tpp ?? 0);
+                    $newTpp = (float) ($tppMap[$row->kode_skpd] ?? 0);
+                    $row->tj_tpp = $newTpp;
+                    $row->kotor = (float) $row->kotor - $oldTpp + $newTpp;
+                    $row->bersih = (float) $row->bersih - $oldTpp + $newTpp;
+                }
             }
 
             return response()->json([
@@ -1452,6 +1485,71 @@ class ReportController extends Controller
                 ORDER BY nama_skpd
             ", $params));
 
+            // --- Inject TPP Data via NIP mapping ---
+            $tppMap = [];
+            if ($type === 'all' || $type === 'pns') {
+                $pnsTppQuery = DB::table('tpp_details as t')
+                    ->join('gaji_pns as g', function($join) use ($year) {
+                        $join->on('t.nip', '=', 'g.nip')
+                             ->on('t.month', '=', 'g.bulan')
+                             ->where('g.tahun', '=', $year);
+                    })
+                    ->leftJoin(DB::raw("(SELECT mp.source_code, s2.kode_skpd FROM skpd_mapping mp JOIN skpd s2 ON mp.skpd_id = s2.id_skpd WHERE mp.type IN ('pns','all')) as sm"), 'g.kdskpd', '=', 'sm.source_code')
+                    ->whereBetween('t.month', [$monthFrom, $monthTo])
+                    ->where('t.year', $year)
+                    ->where('t.employee_type', 'pns');
+
+                if ($jenisGaji !== 'Semua') {
+                    $pnsTppQuery->where('t.jenis_gaji', $jenisGaji);
+                }
+
+                $pnsTpp = $pnsTppQuery->groupBy(DB::raw('COALESCE(sm.kode_skpd, g.kdskpd)'))
+                    ->select(DB::raw('COALESCE(sm.kode_skpd, g.kdskpd) as skpd_code'), DB::raw('SUM(t.yang_dibayarkan_transfer) as total_tpp'))
+                    ->pluck('total_tpp', 'skpd_code')
+                    ->toArray();
+
+                foreach ($pnsTpp as $k => $v) {
+                    $tppMap[$k] = ($tppMap[$k] ?? 0) + (float) $v;
+                }
+            }
+
+            if ($type === 'all' || $type === 'pppk') {
+                $pppkTppQuery = DB::table('tpp_details as t')
+                    ->join('gaji_pppk as g', function($join) use ($year) {
+                        $join->on('t.nip', '=', 'g.nip')
+                             ->on('t.month', '=', 'g.bulan')
+                             ->where('g.tahun', '=', $year);
+                    })
+                    ->leftJoin(DB::raw("(SELECT mp.source_code, s2.kode_skpd FROM skpd_mapping mp JOIN skpd s2 ON mp.skpd_id = s2.id_skpd WHERE mp.type IN ('pppk','all')) as sm"), 'g.kdskpd', '=', 'sm.source_code')
+                    ->whereBetween('t.month', [$monthFrom, $monthTo])
+                    ->where('t.year', $year)
+                    ->where('t.employee_type', 'pppk');
+
+                if ($jenisGaji !== 'Semua') {
+                    $pppkTppQuery->where('t.jenis_gaji', $jenisGaji);
+                }
+
+                $pppkTpp = $pppkTppQuery->groupBy(DB::raw('COALESCE(sm.kode_skpd, g.kdskpd)'))
+                    ->select(DB::raw('COALESCE(sm.kode_skpd, g.kdskpd) as skpd_code'), DB::raw('SUM(t.yang_dibayarkan_transfer) as total_tpp'))
+                    ->pluck('total_tpp', 'skpd_code')
+                    ->toArray();
+
+                foreach ($pppkTpp as $k => $v) {
+                    $tppMap[$k] = ($tppMap[$k] ?? 0) + (float) $v;
+                }
+            }
+
+            $hasTppDetails = count($tppMap) > 0;
+            foreach ($rows as $row) {
+                if ($hasTppDetails) {
+                    $oldTpp = (float) ($row->tj_tpp ?? 0);
+                    $newTpp = (float) ($tppMap[$row->kode_skpd] ?? 0);
+                    $row->tj_tpp = $newTpp;
+                    $row->kotor = (float) $row->kotor - $oldTpp + $newTpp;
+                    $row->bersih = (float) $row->bersih - $oldTpp + $newTpp;
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $rows,
@@ -1647,7 +1745,16 @@ class ReportController extends Controller
             ->where('jenis_gaji', 'Induk')
             ->groupBy('nip');
 
-        // 3. TPG Data Subquery
+        // 3. TPP Details Subquery
+        $tppSub = DB::table('tpp_details')
+            ->select('nip', 
+                DB::raw('SUM(yang_dibayarkan_transfer) as tpp_transfer'))
+            ->where('month', $month)
+            ->where('year', $year)
+            ->where('jenis_gaji', 'Induk')
+            ->groupBy('nip');
+
+        // 4. TPG Data Subquery
         $tpgSub = DB::table('tpg_data')
             ->select('nip', 
                 DB::raw('SUM(IFNULL(salur_brut, 0)) as tpg_bruto'))
@@ -1655,10 +1762,11 @@ class ReportController extends Controller
             ->where('tahun', $year)
             ->groupBy('nip');
 
-        // 4. Main Query: Start from master_pegawai
+        // 5. Main Query: Start from master_pegawai
         $query = DB::table('master_pegawai as mp')
             ->leftJoinSub($gpSub, 'gp', 'mp.nip', '=', 'gp.nip')
             ->leftJoinSub($gpkSub, 'gpk', 'mp.nip', '=', 'gpk.nip')
+            ->leftJoinSub($tppSub, 'tpp_d', 'mp.nip', '=', 'tpp_d.nip')
             ->leftJoinSub($tpgSub, 'tpg', 'mp.nip', '=', 'tpg.nip')
             ->leftJoin(DB::raw('(SELECT DISTINCT kdskpd, nmskpd FROM satkers) as s'), 'mp.kdskpd', '=', 's.kdskpd')
             ->select(
@@ -1666,9 +1774,9 @@ class ReportController extends Controller
                 'mp.nama',
                 DB::raw('COALESCE(s.nmskpd, mp.kdskpd, "TIDAK TERDAFTAR") as skpd'),
                 DB::raw('CAST(COALESCE(gp.pns_bruto, 0) + COALESCE(gpk.pppk_bruto, 0) AS DECIMAL(15,2)) as gaji_bruto'),
-                DB::raw('CAST(COALESCE(gp.pns_tpp, 0) + COALESCE(gpk.pppk_tpp, 0) AS DECIMAL(15,2)) as tpp'),
+                DB::raw('CAST(CASE WHEN COALESCE(tpp_d.tpp_transfer, 0) > 0 THEN tpp_d.tpp_transfer ELSE (COALESCE(gp.pns_tpp, 0) + COALESCE(gpk.pppk_tpp, 0)) END AS DECIMAL(15,2)) as tpp'),
                 DB::raw('CAST(COALESCE(tpg.tpg_bruto, 0) AS DECIMAL(15,2)) as tpg'),
-                DB::raw('CAST(COALESCE(gp.pns_bruto, 0) + COALESCE(gpk.pppk_bruto, 0) + COALESCE(gp.pns_tpp, 0) + COALESCE(gpk.pppk_tpp, 0) + COALESCE(tpg.tpg_bruto, 0) AS DECIMAL(15,2)) as total_bruto')
+                DB::raw('CAST(COALESCE(gp.pns_bruto, 0) + COALESCE(gpk.pppk_bruto, 0) + (CASE WHEN COALESCE(tpp_d.tpp_transfer, 0) > 0 THEN tpp_d.tpp_transfer ELSE (COALESCE(gp.pns_tpp, 0) + COALESCE(gpk.pppk_tpp, 0)) END) + COALESCE(tpg.tpg_bruto, 0) AS DECIMAL(15,2)) as total_bruto')
             );
 
         // Filter: only show employees who are TPG recipients for the selected month
@@ -1714,6 +1822,166 @@ class ReportController extends Controller
         return Excel::download(
             new \App\Exports\ConsolidatedReportExport($data, $month, $year),
             "laporan_konsolidasi_{$month}_{$year}.xlsx"
+        );
+    }
+
+    /**
+     * Get Rincian TPP Data
+     */
+    public function tppRincianData(Request $request, $isExport = false)
+    {
+        $month = $request->input('month', date('n'));
+        $year = $request->input('year', date('Y'));
+        
+        $tppData = DB::table('tpp_details')
+            ->leftJoin('master_pegawai_rekon', 'tpp_details.nip', '=', 'master_pegawai_rekon.nip')
+            ->select(
+                'tpp_details.instansi_upt',
+                // PNS
+                DB::raw("SUM(CASE WHEN master_pegawai_rekon.status = 'PNS' AND master_pegawai_rekon.jenis NOT IN ('GURU', 'KESEHATAN') THEN 1 ELSE 0 END) as pns_umum"),
+                DB::raw("SUM(CASE WHEN master_pegawai_rekon.status = 'PNS' AND master_pegawai_rekon.jenis = 'GURU' THEN 1 ELSE 0 END) as pns_guru"),
+                DB::raw("SUM(CASE WHEN master_pegawai_rekon.status = 'PNS' AND master_pegawai_rekon.jenis = 'KESEHATAN' THEN 1 ELSE 0 END) as pns_nakes"),
+                
+                // PPPK
+                DB::raw("SUM(CASE WHEN master_pegawai_rekon.status = 'PPPK' AND master_pegawai_rekon.jenis NOT IN ('GURU', 'KESEHATAN') THEN 1 ELSE 0 END) as pppk_umum"),
+                DB::raw("SUM(CASE WHEN master_pegawai_rekon.status = 'PPPK' AND master_pegawai_rekon.jenis = 'GURU' THEN 1 ELSE 0 END) as pppk_guru"),
+                DB::raw("SUM(CASE WHEN master_pegawai_rekon.status = 'PPPK' AND master_pegawai_rekon.jenis = 'KESEHATAN' THEN 1 ELSE 0 END) as pppk_nakes"),
+                
+                // Total Pegawai
+                DB::raw("COUNT(tpp_details.id) as total_pegawai"),
+
+                // Realisasi PNS
+                DB::raw("SUM(CASE WHEN master_pegawai_rekon.status = 'PNS' AND master_pegawai_rekon.jenis NOT IN ('GURU', 'KESEHATAN') THEN tpp_details.yang_dibayarkan_transfer ELSE 0 END) as rp_pns_umum"),
+                DB::raw("SUM(CASE WHEN master_pegawai_rekon.status = 'PNS' AND master_pegawai_rekon.jenis = 'GURU' THEN tpp_details.yang_dibayarkan_transfer ELSE 0 END) as rp_pns_guru"),
+                DB::raw("SUM(CASE WHEN master_pegawai_rekon.status = 'PNS' AND master_pegawai_rekon.jenis = 'KESEHATAN' THEN tpp_details.yang_dibayarkan_transfer ELSE 0 END) as rp_pns_nakes"),
+
+                // Realisasi PPPK
+                DB::raw("SUM(CASE WHEN master_pegawai_rekon.status = 'PPPK' AND master_pegawai_rekon.jenis NOT IN ('GURU', 'KESEHATAN') THEN tpp_details.yang_dibayarkan_transfer ELSE 0 END) as rp_pppk_umum"),
+                DB::raw("SUM(CASE WHEN master_pegawai_rekon.status = 'PPPK' AND master_pegawai_rekon.jenis = 'GURU' THEN tpp_details.yang_dibayarkan_transfer ELSE 0 END) as rp_pppk_guru"),
+                DB::raw("SUM(CASE WHEN master_pegawai_rekon.status = 'PPPK' AND master_pegawai_rekon.jenis = 'KESEHATAN' THEN tpp_details.yang_dibayarkan_transfer ELSE 0 END) as rp_pppk_nakes"),
+
+                // Total Realisasi
+                DB::raw("SUM(tpp_details.yang_dibayarkan_transfer) as rp_total")
+            )
+            ->where('tpp_details.month', $month)
+            ->where('tpp_details.year', $year)
+            ->groupBy('tpp_details.instansi_upt')
+            ->get()->keyBy('instansi_upt');
+            
+        $pwData = DB::table('tb_payment_detail')
+            ->join('tb_payment as p', 'tb_payment_detail.payment_id', '=', 'p.id')
+            ->join('pegawai_pw as pw', 'tb_payment_detail.employee_id', '=', 'pw.id')
+            ->leftJoin('master_pegawai_rekon', 'pw.nip', '=', 'master_pegawai_rekon.nip')
+            ->select(
+                DB::raw("COALESCE(master_pegawai_rekon.skpd, pw.skpd) as instansi_upt"),
+                DB::raw("SUM(CASE WHEN master_pegawai_rekon.jenis NOT IN ('GURU', 'KESEHATAN') THEN 1 ELSE 0 END) as pppk_pw_umum"),
+                DB::raw("SUM(CASE WHEN master_pegawai_rekon.jenis = 'GURU' THEN 1 ELSE 0 END) as pppk_pw_guru"),
+                DB::raw("SUM(CASE WHEN master_pegawai_rekon.jenis = 'KESEHATAN' THEN 1 ELSE 0 END) as pppk_pw_nakes"),
+                
+                DB::raw("SUM(CASE WHEN master_pegawai_rekon.jenis NOT IN ('GURU', 'KESEHATAN') THEN tb_payment_detail.total_amoun ELSE 0 END) as rp_pppk_pw_umum"),
+                DB::raw("SUM(CASE WHEN master_pegawai_rekon.jenis = 'GURU' THEN tb_payment_detail.total_amoun ELSE 0 END) as rp_pppk_pw_guru"),
+                DB::raw("SUM(CASE WHEN master_pegawai_rekon.jenis = 'KESEHATAN' THEN tb_payment_detail.total_amoun ELSE 0 END) as rp_pppk_pw_nakes")
+            )
+            ->where('p.month', $month)
+            ->where('p.year', $year)
+            ->groupBy(DB::raw("COALESCE(master_pegawai_rekon.skpd, pw.skpd)"))
+            ->get()->keyBy('instansi_upt');
+            
+        $all_instansi = $tppData->keys()->merge($pwData->keys())->unique()->sort();
+        
+        $merged_data = collect();
+        foreach ($all_instansi as $instansi) {
+            $t = $tppData->get($instansi) ?? (object)[
+                'pns_umum' => 0, 'pns_guru' => 0, 'pns_nakes' => 0,
+                'pppk_umum' => 0, 'pppk_guru' => 0, 'pppk_nakes' => 0,
+                'total_pegawai' => 0,
+                'rp_pns_umum' => 0, 'rp_pns_guru' => 0, 'rp_pns_nakes' => 0,
+                'rp_pppk_umum' => 0, 'rp_pppk_guru' => 0, 'rp_pppk_nakes' => 0,
+                'rp_total' => 0
+            ];
+            
+            $pw = $pwData->get($instansi) ?? (object)[
+                'pppk_pw_umum' => 0, 'pppk_pw_guru' => 0, 'pppk_pw_nakes' => 0,
+                'rp_pppk_pw_umum' => 0, 'rp_pppk_pw_guru' => 0, 'rp_pppk_pw_nakes' => 0,
+            ];
+            
+            $merged_data->push((object)[
+                'instansi_upt' => $instansi,
+                'pns_umum' => $t->pns_umum,
+                'pns_guru' => $t->pns_guru,
+                'pns_nakes' => $t->pns_nakes,
+                'pppk_umum' => $t->pppk_umum,
+                'pppk_guru' => $t->pppk_guru,
+                'pppk_nakes' => $t->pppk_nakes,
+                'pppk_pw_umum' => $pw->pppk_pw_umum,
+                'pppk_pw_guru' => $pw->pppk_pw_guru,
+                'pppk_pw_nakes' => $pw->pppk_pw_nakes,
+                'total_pegawai' => $t->total_pegawai + $pw->pppk_pw_umum + $pw->pppk_pw_guru + $pw->pppk_pw_nakes,
+                'rp_pns_umum' => $t->rp_pns_umum,
+                'rp_pns_guru' => $t->rp_pns_guru,
+                'rp_pns_nakes' => $t->rp_pns_nakes,
+                'rp_pppk_umum' => $t->rp_pppk_umum,
+                'rp_pppk_guru' => $t->rp_pppk_guru,
+                'rp_pppk_nakes' => $t->rp_pppk_nakes,
+                'rp_pppk_pw_umum' => $pw->rp_pppk_pw_umum,
+                'rp_pppk_pw_guru' => $pw->rp_pppk_pw_guru,
+                'rp_pppk_pw_nakes' => $pw->rp_pppk_pw_nakes,
+                'rp_total' => $t->rp_total + $pw->rp_pppk_pw_umum + $pw->rp_pppk_pw_guru + $pw->rp_pppk_pw_nakes,
+            ]);
+        }
+        
+        $data = $merged_data;
+            
+        if ($isExport) {
+            // For Excel export, we format the output as an array
+            return $data->map(function ($row) {
+                return [
+                    'instansi_upt' => $row->instansi_upt,
+                    'pns_umum' => $row->pns_umum,
+                    'pns_guru' => $row->pns_guru,
+                    'pns_nakes' => $row->pns_nakes,
+                    'pppk_umum' => $row->pppk_umum,
+                    'pppk_guru' => $row->pppk_guru,
+                    'pppk_nakes' => $row->pppk_nakes,
+                    'pppk_pw_umum' => $row->pppk_pw_umum,
+                    'pppk_pw_guru' => $row->pppk_pw_guru,
+                    'pppk_pw_nakes' => $row->pppk_pw_nakes,
+                    'total_pegawai' => $row->total_pegawai,
+                    'rp_pns_umum' => $row->rp_pns_umum,
+                    'rp_pns_guru' => $row->rp_pns_guru,
+                    'rp_pns_nakes' => $row->rp_pns_nakes,
+                    'rp_pppk_umum' => $row->rp_pppk_umum,
+                    'rp_pppk_guru' => $row->rp_pppk_guru,
+                    'rp_pppk_nakes' => $row->rp_pppk_nakes,
+                    'rp_pppk_pw_umum' => $row->rp_pppk_pw_umum,
+                    'rp_pppk_pw_guru' => $row->rp_pppk_pw_guru,
+                    'rp_pppk_pw_nakes' => $row->rp_pppk_pw_nakes,
+                    'rp_total' => $row->rp_total,
+                ];
+            })->toArray();
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+        ]);
+    }
+
+    public function tppRincianExport(Request $request)
+    {
+        $month = $request->input('month', date('n'));
+        $year = $request->input('year', date('Y'));
+        
+        $monthNames = [1=>'Januari',2=>'Februari',3=>'Maret',4=>'April',5=>'Mei',6=>'Juni',7=>'Juli',8=>'Agustus',9=>'September',10=>'Oktober',11=>'November',12=>'Desember'];
+        $monthName = $monthNames[(int)$month] ?? 'Unknown';
+
+        $data = $this->tppRincianData($request, true);
+        
+        $this->logExport("Laporan Rincian TPP", "Ekspor Excel", "Periode: {$monthName} {$year}");
+
+        return Excel::download(
+            new \App\Exports\TppRincianExport($data, $monthName, $year),
+            "laporan_rincian_tpp_{$month}_{$year}.xlsx"
         );
     }
 }

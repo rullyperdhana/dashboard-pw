@@ -41,6 +41,7 @@
                 </v-row>
               </v-card>
             </v-menu>
+            <v-btn v-if="activeTab === 'rincian'" color="purple" prepend-icon="mdi-file-excel-outline" @click="exportRincian()" :loading="exportingRincian" variant="flat" class="mr-2">Export Excel Rincian</v-btn>
             <v-btn color="success" prepend-icon="mdi-file-excel" @click="exportData('excel')" :loading="exporting" variant="flat">Excel</v-btn>
             <v-btn color="error"   prepend-icon="mdi-file-pdf-box" @click="exportData('pdf')" :loading="exporting" variant="flat">PDF</v-btn>
           </v-col>
@@ -88,7 +89,7 @@
           >
             <!-- Currency formatting for detail mode -->
             <template v-for="col in currencyCols" :key="col" v-slot:[`item.${col}`]="{ item }">
-              <span :class="col === 'yang_dibayarkan_transfer' || col === 'tpp_netto' ? 'font-weight-bold text-teal' : ''">
+              <span :class="col === 'yang_dibayarkan_transfer' || col === 'tpp_netto' || col === 'rp_total' ? 'font-weight-bold text-teal' : ''">
                 {{ formatCurrency(item[col]) }}
               </span>
             </template>
@@ -144,6 +145,7 @@ import Sidebar from '../components/Sidebar.vue'
 
 const loading   = ref(false)
 const exporting = ref(false)
+const exportingRincian = ref(false)
 const items     = ref([])
 const meta      = ref(null)
 const mode      = ref('summary')   // 'summary' | 'detail'
@@ -167,6 +169,7 @@ const tabs = [
   { type: 'all',  label: 'Gabungan',          icon: 'mdi-layers-triple',          color: 'teal'   },
   { type: 'pns',  label: 'PNS',               icon: 'mdi-account-tie-outline',    color: 'blue'   },
   { type: 'pppk', label: 'PPPK Penuh Waktu',  icon: 'mdi-account-check-outline',  color: 'green'  },
+  { type: 'rincian', label: 'Rincian (Format Excel)', icon: 'mdi-table-large',    color: 'purple' },
 ]
 
 const currentTab = computed(() => tabs.find(t => t.type === activeTab.value) ?? tabs[0])
@@ -186,10 +189,38 @@ const tppHeaders = [
   { title: 'Transfer',        key: 'yang_dibayarkan_transfer', align: 'end'   },
 ]
 
-const currentHeaders = computed(() => tppHeaders)
+const rincianHeaders = [
+  { title: 'Instansi', key: 'instansi_upt', align: 'start', minWidth: 250, fixed: true },
+  { title: 'PNS Umum', key: 'pns_umum', align: 'center' },
+  { title: 'PNS Guru', key: 'pns_guru', align: 'center' },
+  { title: 'PNS Nakes', key: 'pns_nakes', align: 'center' },
+  { title: 'PPPK Umum', key: 'pppk_umum', align: 'center' },
+  { title: 'PPPK Guru', key: 'pppk_guru', align: 'center' },
+  { title: 'PPPK Nakes', key: 'pppk_nakes', align: 'center' },
+  { title: 'PPPK PW Umum', key: 'pppk_pw_umum', align: 'center' },
+  { title: 'PPPK PW Guru', key: 'pppk_pw_guru', align: 'center' },
+  { title: 'PPPK PW Nakes', key: 'pppk_pw_nakes', align: 'center' },
+  { title: 'Total Pegawai', key: 'total_pegawai', align: 'center' },
+  { title: 'Rp PNS Umum', key: 'rp_pns_umum', align: 'end' },
+  { title: 'Rp PNS Guru', key: 'rp_pns_guru', align: 'end' },
+  { title: 'Rp PNS Nakes', key: 'rp_pns_nakes', align: 'end' },
+  { title: 'Rp PPPK Umum', key: 'rp_pppk_umum', align: 'end' },
+  { title: 'Rp PPPK Guru', key: 'rp_pppk_guru', align: 'end' },
+  { title: 'Rp PPPK Nakes', key: 'rp_pppk_nakes', align: 'end' },
+  { title: 'Rp PPPK PW Umum', key: 'rp_pppk_pw_umum', align: 'end' },
+  { title: 'Rp PPPK PW Guru', key: 'rp_pppk_pw_guru', align: 'end' },
+  { title: 'Rp PPPK PW Nakes', key: 'rp_pppk_pw_nakes', align: 'end' },
+  { title: 'Total Realisasi', key: 'rp_total', align: 'end' },
+]
+
+const currentHeaders = computed(() => activeTab.value === 'rincian' ? rincianHeaders : tppHeaders)
 
 // columns that need currency formatting
-const currencyCols = computed(() => [
+const currencyCols = computed(() => activeTab.value === 'rincian' ? [
+  'rp_pns_umum', 'rp_pns_guru', 'rp_pns_nakes',
+  'rp_pppk_umum', 'rp_pppk_guru', 'rp_pppk_nakes', 
+  'rp_pppk_pw_umum', 'rp_pppk_pw_guru', 'rp_pppk_pw_nakes', 'rp_total'
+] : [
   'tpp_bruto','bruto_plus','dpp_pajak','pph_21','iuran_iwp',
   'potongan_tpp_lainnya','total_potongan','tpp_netto','yang_dibayarkan_transfer'
 ])
@@ -212,18 +243,26 @@ const selectedMonthName = computed(() => months.find(m => m.value === selectedMo
 const fetchData = async () => {
   loading.value = true
   try {
-    const res = await api.get('/reports/tpp-skpds', {
-      params: { 
-        month: selectedMonth.value, 
-        year: selectedYear.value, 
-        type: activeTab.value,
-        jenis_gaji: selectedJenisGaji.value
-      }
-    })
-    items.value = res.data.data
-    meta.value  = res.data.meta
-    mode.value  = res.data.mode ?? 'summary'
-    summary.value[activeTab.value] = res.data.meta
+    if (activeTab.value === 'rincian') {
+      const res = await api.get('/reports/tpp-rincian', {
+        params: { month: selectedMonth.value, year: selectedYear.value }
+      })
+      items.value = res.data.data
+      meta.value = null // Rincian doesn't need summary meta object
+    } else {
+      const res = await api.get('/reports/tpp-skpds', {
+        params: { 
+          month: selectedMonth.value, 
+          year: selectedYear.value, 
+          type: activeTab.value,
+          jenis_gaji: selectedJenisGaji.value
+        }
+      })
+      items.value = res.data.data
+      meta.value  = res.data.meta
+      mode.value  = res.data.mode ?? 'summary'
+      summary.value[activeTab.value] = res.data.meta
+    }
   } catch (e) {
     console.error('Error fetching data:', e)
   } finally {
@@ -272,6 +311,27 @@ const exportData = async (format) => {
     link.remove()
   } catch (e) { console.error('Error exporting:', e) }
   finally { exporting.value = false }
+}
+
+const exportRincian = async () => {
+  exportingRincian.value = true
+  try {
+    const res = await api.get('/reports/tpp-rincian-export', {
+      params: { 
+        month: selectedMonth.value, 
+        year: selectedYear.value 
+      },
+      responseType: 'blob'
+    })
+    const url  = window.URL.createObjectURL(new Blob([res.data]))
+    const link = document.createElement('a')
+    link.href  = url
+    link.setAttribute('download', `laporan_rincian_tpp_${selectedMonth.value}_${selectedYear.value}.xlsx`)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+  } catch (e) { console.error('Error exporting rincian:', e) }
+  finally { exportingRincian.value = false }
 }
 
 const formatCurrency = (v) =>
