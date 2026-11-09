@@ -215,6 +215,7 @@ const menuItems = ref([
     children: [
       { title: 'Dashboard PNS', icon: 'mdi-view-quilt-outline', value: 'pns-dashboard', to: '/pns' },
       { title: 'Update NIK Massal', icon: 'mdi-account-plus-outline', value: 'pns-import-nik', to: '/employees/import-nik' },
+      { title: 'Ubah NIP Pegawai', icon: 'mdi-card-account-details-outline', value: 'change-nip', to: '/change-nip' },
       { title: 'Data Gaji PNS', icon: 'mdi-badge-account-horizontal-outline', value: 'gaji-pns', to: '/gaji-pns' },
       { title: 'Data Gaji PPPK', icon: 'mdi-account-check-outline', value: 'gaji-pppk', to: '/gaji-pppk' },
       { title: 'Master Pegawai (DBF)', icon: 'mdi-master-pegawai', to: '/master-pegawai' },

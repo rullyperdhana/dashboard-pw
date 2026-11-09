@@ -178,6 +178,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Employees
     Route::get('/employees/get-stats', [EmployeeController::class, 'stats']);
+    Route::post('/employees/check-nip', [EmployeeController::class, 'checkNip']);
+    Route::post('/employees/change-nip', [EmployeeController::class, 'changeNip']);
     Route::get('/employees/statuses', [EmployeeController::class, 'getStatuses']);
     Route::get('/employees/export', [EmployeeController::class, 'export']);
     Route::get('/employees/{id}/history', [EmployeeController::class, 'payrollHistory']);

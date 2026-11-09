@@ -260,6 +260,12 @@ const router = createRouter({
             meta: { requiresAuth: true, breadcrumb: 'Update NIK Massal', app_access: 'employees' },
         },
         {
+            path: '/change-nip',
+            name: 'ChangeNip',
+            component: () => import('../views/Master/ChangeNip.vue'),
+            meta: { requiresAuth: true, breadcrumb: 'Ubah NIP Pegawai' },
+        },
+        {
             path: '/budget/input',
             name: 'BudgetInput',
             component: () => import('../views/Budget/Input.vue'),

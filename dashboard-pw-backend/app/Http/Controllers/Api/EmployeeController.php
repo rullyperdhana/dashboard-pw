@@ -549,5 +549,170 @@ class EmployeeController extends Controller
             ],
         ]);
     }
+
+    private function getNipTables()
+    {
+        return [
+            ['table' => 'gaji_pppk', 'column' => 'nip', 'label' => 'Riwayat Gaji PPPK'],
+            ['table' => 'master_pegawai', 'column' => 'nip', 'label' => 'Master Pegawai (PNS/PPPK)'],
+            ['table' => 'master_keluarga', 'column' => 'nip', 'label' => 'Master Keluarga (NIP Pegawai)'],
+            ['table' => 'master_keluarga', 'column' => 'nipsuamiis', 'label' => 'Master Keluarga (NIP Pasangan)'],
+            ['table' => 'history_gaji_pokok', 'column' => 'nip', 'label' => 'Riwayat Gaji Pokok'],
+            ['table' => 'gaji_pns', 'column' => 'nip', 'label' => 'Riwayat Gaji PNS'],
+            ['table' => 'tpp_details', 'column' => 'nip', 'label' => 'Rincian TPP'],
+            ['table' => 'standalone_tpp', 'column' => 'nip', 'label' => 'TPP Standalone'],
+            ['table' => 'tpg_data', 'column' => 'nip', 'label' => 'Data TPG (Sertifikasi)'],
+            ['table' => 'tax_statuses', 'column' => 'nip', 'label' => 'Status PTKP Pajak'],
+            ['table' => 'pph21_calculations', 'column' => 'nip', 'label' => 'Kalkulasi PPh 21'],
+            ['table' => 'pegawai_pw', 'column' => 'nip', 'label' => 'Pegawai PW'],
+            ['table' => 'thr_pppk_pw', 'column' => 'nip', 'label' => 'THR PPPK PW'],
+            ['table' => 'extra_payroll_pppk_pw', 'column' => 'nip', 'label' => 'Gaji Tambahan PPPK PW'],
+            ['table' => 'master_pegawai_rekon', 'column' => 'nip', 'label' => 'Master Pegawai Rekon'],
+            ['table' => 'bkd_pegawai', 'column' => 'nip', 'label' => 'Data BKD Pegawai'],
+            ['table' => 'users', 'column' => 'nip', 'label' => 'Akun Pengguna (ESS/User)'],
+        ];
+    }
+
+    /**
+     * Cek data yang terkait dengan NIP lama
+     */
+    public function checkNip(Request $request)
+    {
+        $request->validate([
+            'old_nip' => 'required|string',
+        ]);
+
+        $oldNip = trim($request->old_nip);
+        $tables = $this->getNipTables();
+
+        $employeeName = null;
+        $employeeSkpd = null;
+        $summary = [];
+        $totalRecords = 0;
+
+        foreach ($tables as $t) {
+            if (!\Illuminate\Support\Facades\Schema::hasTable($t['table']) || !\Illuminate\Support\Facades\Schema::hasColumn($t['table'], $t['column'])) {
+                continue;
+            }
+
+            $count = \Illuminate\Support\Facades\DB::table($t['table'])->where($t['column'], $oldNip)->count();
+            if ($count > 0) {
+                $summary[] = [
+                    'table' => $t['table'],
+                    'label' => $t['label'],
+                    'count' => $count,
+                ];
+                $totalRecords += $count;
+
+                // Cari nama dan unit kerja pegawai
+                if (!$employeeName) {
+                    $row = \Illuminate\Support\Facades\DB::table($t['table'])->where($t['column'], $oldNip)->first();
+                    if ($row) {
+                        $employeeName = $row->nama ?? $row->name ?? null;
+                        $employeeSkpd = $row->skpd ?? $row->satker ?? $row->nmsatker ?? null;
+                    }
+                }
+            }
+        }
+
+        if ($totalRecords === 0) {
+            return response()->json([
+                'success' => false,
+                'message' => "Data dengan NIP '{$oldNip}' tidak ditemukan di sistem.",
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'old_nip' => $oldNip,
+                'name' => $employeeName ?: 'Nama tidak tercantum',
+                'skpd' => $employeeSkpd ?: '-',
+                'total_records' => $totalRecords,
+                'details' => $summary,
+            ],
+        ]);
+    }
+
+    /**
+     * Proses perbarui NIP lama ke NIP baru secara menyeluruh
+     */
+    public function changeNip(Request $request)
+    {
+        if ($request->user() && $request->user()->isOperator()) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak memiliki hak akses untuk mengubah NIP pegawai.'], 403);
+        }
+
+        $request->validate([
+            'old_nip' => 'required|string',
+            'new_nip' => 'required|string|different:old_nip',
+        ]);
+
+        $oldNip = trim($request->old_nip);
+        $newNip = trim($request->new_nip);
+
+        // Cek apakah NIP baru sudah digunakan di tabel master
+        $conflictTables = ['master_pegawai', 'pegawai_pw'];
+        foreach ($conflictTables as $table) {
+            if (\Illuminate\Support\Facades\Schema::hasTable($table) && \Illuminate\Support\Facades\Schema::hasColumn($table, 'nip')) {
+                if (\Illuminate\Support\Facades\DB::table($table)->where('nip', $newNip)->exists()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "NIP baru '{$newNip}' sudah digunakan di tabel {$table}. Harap periksa kembali.",
+                    ], 422);
+                }
+            }
+        }
+
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            $tables = $this->getNipTables();
+            $updated = [];
+
+            foreach ($tables as $t) {
+                if (!\Illuminate\Support\Facades\Schema::hasTable($t['table']) || !\Illuminate\Support\Facades\Schema::hasColumn($t['table'], $t['column'])) {
+                    continue;
+                }
+
+                $query = \Illuminate\Support\Facades\DB::table($t['table'])->where($t['column'], $oldNip);
+
+                if ($t['table'] === 'master_pegawai' && $t['column'] === 'nip') {
+                    $updateData = ['nip' => $newNip];
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('master_pegawai', 'niplama')) {
+                        $updateData['niplama'] = $oldNip;
+                    }
+                    $affected = $query->update($updateData);
+                } else {
+                    $affected = $query->update([$t['column'] => $newNip]);
+                }
+
+                if ($affected > 0) {
+                    $updated[] = [
+                        'table' => $t['table'],
+                        'label' => $t['label'],
+                        'affected' => $affected,
+                    ];
+                }
+            }
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "NIP berhasil diperbarui dari {$oldNip} menjadi {$newNip}.",
+                'data' => [
+                    'old_nip' => $oldNip,
+                    'new_nip' => $newNip,
+                    'updated_tables' => $updated,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memperbarui database: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }
 
