@@ -228,7 +228,22 @@ class EmployeeController extends Controller
             'sumber_dana' => 'nullable|in:APBD,BLUD',
         ]);
 
+        $oldNip = $employee->nip;
         $employee->update($validated);
+
+        // Jika NIP berubah, sinkronkan ke tabel-tabel terkait PPPK PW
+        if (!empty($validated['nip']) && $oldNip && $validated['nip'] !== $oldNip) {
+            $newNip = $validated['nip'];
+            if (\Illuminate\Support\Facades\Schema::hasTable('thr_pppk_pw')) {
+                \Illuminate\Support\Facades\DB::table('thr_pppk_pw')->where('nip', $oldNip)->update(['nip' => $newNip]);
+            }
+            if (\Illuminate\Support\Facades\Schema::hasTable('extra_payroll_pppk_pw')) {
+                \Illuminate\Support\Facades\DB::table('extra_payroll_pppk_pw')->where('nip', $oldNip)->update(['nip' => $newNip]);
+            }
+            if (\Illuminate\Support\Facades\Schema::hasTable('users')) {
+                \Illuminate\Support\Facades\DB::table('users')->where('nip', $oldNip)->update(['nip' => $newNip]);
+            }
+        }
 
         return response()->json([
             'success' => true,

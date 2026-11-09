@@ -246,7 +246,15 @@
               <!-- Data Pribadi -->
               <v-col cols="12"><div class="text-overline text-primary mb-2">Data Pribadi</div></v-col>
               <v-col cols="12" md="6">
-                <v-text-field v-model="form.nip" label="NIP *" variant="outlined" density="compact" :rules="[rules.required]" :disabled="isEditing"></v-text-field>
+                <v-text-field 
+                  v-model="form.nip" 
+                  label="NIP *" 
+                  variant="outlined" 
+                  density="compact" 
+                  :rules="[rules.required]"
+                  :hint="isEditing ? 'Perubahan NIP akan otomatis menyinkronkan data riwayat pegawai' : ''"
+                  persistent-hint
+                ></v-text-field>
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field v-model="form.nik" label="NIK" variant="outlined" density="compact"></v-text-field>
